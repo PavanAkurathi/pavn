@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-import { updateOrganization } from "../../app/(protected)/settings/actions";
+import { updateOrganization } from "@/actions/organization";
 
 export interface BusinessFormProps {
     organization: {
@@ -25,7 +25,25 @@ export interface BusinessFormProps {
 export function BusinessForm({ organization }: BusinessFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [businessName, setBusinessName] = useState(organization?.name || "");
-    const [description, setDescription] = useState(organization?.metadata || ""); // Using metadata for description for now
+
+    // Parse metadata if it's a JSON string
+    const getInitialDescription = () => {
+        if (!organization?.metadata) return "";
+        try {
+            const parsed = JSON.parse(organization.metadata);
+            // If it's an object with a description field, use that
+            if (typeof parsed === "object" && parsed !== null && "description" in parsed) {
+                return parsed.description;
+            }
+            // If it's just a string wrapped in JSON
+            if (typeof parsed === "string") return parsed;
+            return organization.metadata;
+        } catch {
+            return organization.metadata;
+        }
+    };
+
+    const [description, setDescription] = useState(getInitialDescription());
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();

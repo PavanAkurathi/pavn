@@ -1,3 +1,5 @@
+// apps/web/components/nav-user.tsx
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -54,7 +56,7 @@ export function NavUser() {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/dashboard/profile")}>
+                <DropdownMenuItem onClick={() => router.push("/settings")}>
                     <User className="mr-2 h-4 w-4" />
                     Profile
                 </DropdownMenuItem>

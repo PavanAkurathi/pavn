@@ -1,3 +1,5 @@
+// packages/auth/src/client.ts
+
 import { createAuthClient } from "better-auth/react";
 import { organizationClient, emailOTPClient } from "better-auth/client/plugins";
 export { betterFetch } from "better-auth/client";

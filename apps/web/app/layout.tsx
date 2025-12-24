@@ -50,6 +50,7 @@ export default function RootLayout({
             }}
           />
           {children}
+          <Toaster />
         </div>
       </body>
     </html>

@@ -11,16 +11,16 @@ The main web application for Workers Hive / Pavn. It is a **Next.js 15+** applic
 
 ## Directory Structure
 
-- \`app/api/auth\`: API Route for Better Auth integration.
-- \`app/(auth)\`: Public authentication pages (Login, Signup).
-- \`app/(dashboard)\`: Protected application routes.
-- \`middleware.ts\`: Route protection logic.
+- `app/api/auth`: API Route for Better Auth integration.
+- `app/(auth)`: Public authentication pages (Login, Signup).
+- `app/(dashboard)`: Protected application routes.
+- `proxy.ts`: Route protection logic.
 
 ## Commands
 
-- \`bun dev\`: Start the development server (localhost:3000).
-- \`bun run build\`: Build the application for production.
-- \`bun start\`: Start the production server.
+- `bun dev`: Start the development server (localhost:3000).
+- `bun run build`: Build the application for production.
+- `bun start`: Start the production server.
 
 ## Environment Variables
 

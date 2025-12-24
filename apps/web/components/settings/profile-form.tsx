@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { authClient } from "@repo/auth/client";
 import { Loader2, Lock } from "lucide-react";
+import { Badge } from "@repo/ui/components/ui/badge";
 
 export interface ProfileFormProps {
     user: {
@@ -33,6 +34,7 @@ export interface ProfileFormProps {
 export function ProfileForm({ user }: ProfileFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+    const [isPhoneVerifyOpen, setIsPhoneVerifyOpen] = useState(false);
 
     // Initial state derived from props (server data)
     const [name, setName] = useState(user.name);
@@ -113,20 +115,53 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     type="email"
-                                    disabled // Usually email change requires re-verification
-                                    className="bg-slate-50 text-slate-500"
+                                    className="bg-white"
                                 />
                             </Field>
                             <Field>
                                 <FieldLabel htmlFor="phone">Contact Number</FieldLabel>
-                                <Input
-                                    id="phone"
-                                    value={phone}
-                                    onChange={(e) => setPhone(e.target.value)}
-                                    placeholder="+1 (555) 000-0000"
-                                    type="tel"
-                                    className="bg-white"
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="phone"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                        placeholder="+1 (555) 000-0000"
+                                        type="tel"
+                                        className="bg-white pr-24" // Add padding for the badge
+                                    />
+                                    {phone && (
+                                        <Dialog open={isPhoneVerifyOpen} onOpenChange={setIsPhoneVerifyOpen}>
+                                            <DialogTrigger asChild>
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:bg-red-100 bg-red-50 text-red-600 hover:text-red-700 border-red-100"
+                                                >
+                                                    Not Verified
+                                                </Badge>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <DialogTitle>Verify Phone Number</DialogTitle>
+                                                    <DialogDescription>
+                                                        We need to verify your phone number to secure your account.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="py-4 space-y-4">
+                                                    <p className="text-sm text-slate-600">
+                                                        Would you like us to send a verification code to <span className="font-bold">{phone}</span>?
+                                                    </p>
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button variant="outline" onClick={() => setIsPhoneVerifyOpen(false)}>Cancel</Button>
+                                                        <Button onClick={() => {
+                                                            toast.success("Verification code sent!");
+                                                            setIsPhoneVerifyOpen(false);
+                                                        }}>Send Code</Button>
+                                                    </div>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
+                                    )}
+                                </div>
                             </Field>
                         </FieldGroup>
                         <div className="flex justify-between items-center pt-4 border-t">

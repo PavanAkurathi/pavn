@@ -8,7 +8,7 @@ import { Plus } from "lucide-react";
 import { NavUser } from "./nav-user";
 
 const NAV_ITEMS = [
-    { label: "Shifts", href: "/dashboard" },
+    { label: "Shifts", href: "/dashboard/shifts" },
     { label: "Rosters", href: "/rosters" },
     { label: "Time-sheet", href: "/timesheet" },
     { label: "Reports", href: "/reports" },
@@ -23,7 +23,7 @@ export function NavHeader() {
                 {/* Left: Logo & Nav */}
                 <div className="flex items-center gap-8">
                     {/* Logo */}
-                    <Link href="/dashboard" className="flex items-center gap-2">
+                    <Link href="/dashboard/shifts" className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-lg">
                             W
                         </div>
@@ -33,16 +33,16 @@ export function NavHeader() {
                     {/* Desktop Navigation */}
                     <nav className="hidden md:flex items-center gap-1">
                         {NAV_ITEMS.map((item) => {
-                            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                             return (
                                 <Link
                                     key={item.href}
                                     href={item.href}
                                     className={cn(
-                                        "px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                                        "px-3 py-2 text-sm font-medium transition-colors",
                                         isActive
-                                            ? "bg-slate-100 text-slate-900"
-                                            : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                            ? "text-primary border-b-2 border-primary"
+                                            : "text-muted-foreground hover:text-foreground"
                                     )}
                                 >
                                     {item.label}

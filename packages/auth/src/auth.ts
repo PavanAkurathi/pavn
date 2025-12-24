@@ -1,3 +1,5 @@
+// packages/auth/src/auth.ts
+
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization, emailOTP } from "better-auth/plugins";
@@ -39,15 +41,53 @@ export const auth = betterAuth({
         },
     },
 
+    databaseHooks: {
+        user: {
+            create: {
+                after: async (user, ctx) => {
+                    if (ctx?.body?.companyName) {
+                        const companyName = ctx.body.companyName as string;
+                        console.log(`[HOOK] Creating organization "${companyName}" for user ${user.id}`);
+
+                        const orgId = nanoid();
+                        const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + nanoid(4);
+
+                        try {
+                            await db.insert(schema.organization).values({
+                                id: orgId,
+                                name: companyName,
+                                slug: slug,
+                                createdAt: new Date(),
+                                metadata: JSON.stringify({ description: "" })
+                            });
+
+                            await db.insert(schema.member).values({
+                                id: nanoid(),
+                                organizationId: orgId,
+                                userId: user.id,
+                                role: "admin",
+                                createdAt: new Date()
+                            });
+
+                            console.log(`[HOOK] Successfully created Org "${companyName}" (${orgId})`);
+                        } catch (e) {
+                            console.error("[HOOK] Failed to create organization:", e);
+                        }
+                    }
+                }
+            }
+        }
+    },
+
     emailAndPassword: {
         enabled: true,
         autoSignIn: true, // Signs in immediately, session created
-        requireEmailVerification: true,
+        requireEmailVerification: false, // We will enforce this in middleware/proxy instead
     },
 
     plugins: [
         organization({
-            allowUserToCreateOrganization: false,
+            allowUserToCreateOrganization: true,
         }),
         emailOTP({
             async sendVerificationOTP({ email, otp, type }) {

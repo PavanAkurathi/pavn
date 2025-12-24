@@ -1,3 +1,4 @@
+// packages/auth/check-users.ts
 
 import { db } from "@repo/database";
 import { user } from "@repo/database/schema";

@@ -22,7 +22,6 @@
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.58 0.22 27);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  /* Kept original FG or assume white? using partial match from json, mostly same */
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -46,10 +45,8 @@
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
-  /* different */
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.145 0 0);
-  /* different */
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.985 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -58,12 +55,10 @@
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
   --accent: oklch(0.269 0 0);
-  /* different in json? json says 0.371 for accent? */
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
-  /* json says 1 0 0 / 10%? I'll stick to similar opaque unless sure */
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
   --chart-1: oklch(0.809 0.105 251.813);
@@ -150,4 +145,9 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Fix for Google Maps Autocomplete z-index issue */
+.pac-container {
+  z-index: 99999 !important;
 }

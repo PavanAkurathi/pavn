@@ -1,4 +1,6 @@
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+// packages/database/src/schema.ts
+
+import { pgTable, text, timestamp, boolean, index, json } from "drizzle-orm/pg-core";
 
 // ============================================================================
 // 1. IDENTITY & AUTH (Using Account Table for better compatibility)
@@ -70,6 +72,8 @@ export const organization = pgTable("organization", {
     logo: text("logo"),
     createdAt: timestamp("created_at").notNull(),
     metadata: text("metadata"),
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
 });
 
 export const location = pgTable("location", {
@@ -81,6 +85,10 @@ export const location = pgTable("location", {
     slug: text("slug").notNull(),
     timezone: text("timezone").notNull().default("UTC"),
     address: text("address"),
+    zip: text("zip"), // Added for explicit zip code storage
+    parking: text("parking").default("free"),
+    specifics: json("specifics").$type<string[]>(),
+    instructions: text("instructions"),
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
 }, (table) => ({

@@ -44,3 +44,17 @@ function Login() {
   };
 }
 ```
+
+## Security Architecture
+
+### Data Collection & Privacy
+- **Identity**: Stores Name, Email, Phone, and optional Profile Image.
+- **Credentials**: Passwords are **hashed** and stored in the `account` table, never in the `user` table.
+- **Audit**: Captures IP Address and User Agent for session security.
+
+### The "Bouncer & Bridge" Model
+- **The Bridge (`@repo/auth`)**: Handles identity verification, session creation, and organization management.
+- **The Bouncer (`apps/web/proxy.ts`)**: Enforces access control at the edge.
+  - **Dashboard**: Protected by strict session validation.
+  - **Registration**: Geo-fenced to US/CA IP addresses.
+
