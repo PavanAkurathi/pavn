@@ -34,52 +34,85 @@ export async function POST(req: Request) {
     // Handle the event
     try {
         switch (event.type) {
+            // 1. Checkout Completed -> Link Sub to Org
             case "checkout.session.completed": {
                 const session = event.data.object as Stripe.Checkout.Session;
-                // Retrieve the subscription details
                 if (session.subscription) {
-                    const subscriptionId = typeof session.subscription === 'string' ? session.subscription : session.subscription.id;
+                    const subscriptionId = typeof session.subscription === 'string'
+                        ? session.subscription
+                        : session.subscription.id;
 
-                    // We stored orgId in metadata during checkout creation
                     const orgId = session.metadata?.orgId;
 
                     if (orgId && subscriptionId) {
                         await db.update(organization)
-                            .set({ stripeSubscriptionId: subscriptionId })
+                            .set({
+                                stripeSubscriptionId: subscriptionId,
+                                subscriptionStatus: "active", // Assume active on creation
+                                // Retrieve the subscription object to get current_period_end if needed,
+                                // or wait for the 'customer.subscription.created' event which usually fires too.
+                                // For immediate UX, "active" is good enough.
+                            })
                             .where(eq(organization.id, orgId));
                         console.log(`[Webhook] Linked subscription ${subscriptionId} to org ${orgId}`);
                     }
                 }
                 break;
             }
+
+            // 2. Subscription Created/Updated -> Sync Status & Period
+            case "customer.subscription.created":
             case "customer.subscription.updated": {
-                // Good place to update status or expiration in DB if we were caching it
-                // For now we fetch live status so this is less critical, but good for logs
                 const sub = event.data.object as Stripe.Subscription;
-                console.log(`[Webhook] Subscription updated: ${sub.id}, status: ${sub.status}`);
-                break;
-            }
-            case "customer.subscription.deleted": {
-                const sub = event.data.object as Stripe.Subscription;
-                // Find org with this subscription and remove it
+                const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+
+                // Find org by Stripe Customer ID
                 const org = await db.query.organization.findFirst({
-                    where: eq(organization.stripeSubscriptionId, sub.id)
+                    where: eq(organization.stripeCustomerId, customerId)
                 });
 
                 if (org) {
                     await db.update(organization)
-                        .set({ stripeSubscriptionId: null })
+                        .set({
+                            stripeSubscriptionId: sub.id,
+                            subscriptionStatus: sub.status,
+                            currentPeriodEnd: new Date((sub as any).current_period_end * 1000)
+                        })
                         .where(eq(organization.id, org.id));
-                    console.log(`[Webhook] Subscription ${sub.id} deleted. Removed from org ${org.id}`);
+                    console.log(`[Webhook] Synced subscription ${sub.id} for org ${org.id}. Status: ${sub.status}`);
                 }
                 break;
             }
+
+            // 3. Subscription Deleted -> Set Inactive
+            case "customer.subscription.deleted": {
+                const sub = event.data.object as Stripe.Subscription;
+                const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+
+                const org = await db.query.organization.findFirst({
+                    where: eq(organization.stripeCustomerId, customerId)
+                });
+
+                if (org) {
+                    await db.update(organization)
+                        .set({
+                            subscriptionStatus: "inactive",
+                            currentPeriodEnd: undefined, // Clear or keep as last known? Usually clear to avoid confusion.
+                            stripeSubscriptionId: null
+                        })
+                        .where(eq(organization.id, org.id));
+                    console.log(`[Webhook] Subscription ${sub.id} deleted. Marked org ${org.id} inactive.`);
+                }
+                break;
+            }
+
             default:
-                console.log(`[Webhook] Unhandled event type ${event.type}`);
+            // console.log(`[Webhook] Unhandled event type ${event.type}`);
         }
     } catch (error) {
+        // Return 200 anyway so Stripe doesn't retry infinitely on logic errors
         console.error("[Webhook] Handler Error:", error);
-        return NextResponse.json({ error: "Handler Error" }, { status: 500 });
+        return NextResponse.json({ received: true, error: "Logic Error" });
     }
 
     return NextResponse.json({ received: true });

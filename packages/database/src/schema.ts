@@ -74,6 +74,8 @@ export const organization = pgTable("organization", {
     metadata: text("metadata"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
+    subscriptionStatus: text("subscription_status").default("inactive"),
+    currentPeriodEnd: timestamp("current_period_end"),
 });
 
 export const location = pgTable("location", {

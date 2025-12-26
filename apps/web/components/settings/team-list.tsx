@@ -1,3 +1,5 @@
+// apps/web/components/settings/team-list.tsx
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";

@@ -1,81 +1,137 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+
+/* 
+  1. SCANNING: We point to the components folder relative to this file 
+     (src/styles/ -> src/components/) 
+*/
+@source "../../packages/ui/src";
 @source "../components";
 @source "../lib";
 
+@plugin "tailwindcss-animate";
+
 @custom-variant dark (&:is(.dark *));
 
+/* 
+  2. ROOT VARIABLES (Light Mode) 
+*/
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.58 0.22 27);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Base Application Colors */
+  --background: #FFFFFF;
+  --foreground: #0D0D0D;
+  /* ✅ Your specific Font Color */
+
+  /* Surface / Cards */
+  --card: #FFFFFF;
+  --card-foreground: #0D0D0D;
+  --popover: #FFFFFF;
+  --popover-foreground: #0D0D0D;
+
+  /* Brand Colors */
+  --primary: #D92B3A;
+  /* Brand Red */
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #182540;
+  /* Navy Blue */
+  --secondary-foreground: #FFFFFF;
+
+  /* UI Elements */
+  --muted: #F2F2F2;
+  /* Brand Light Gray */
+  --muted-foreground: #64748B;
+  /* Slate-500 for readability on Gray */
+
+  --accent: #F2F2F2;
+  /* Hover states use the light gray */
+  --accent-foreground: #182540;
+  /* Text turns Navy on hover */
+
+  --destructive: #BF1111;
+  /* Error Red */
+  --destructive-foreground: #FFFFFF;
+
+  /* Borders & Inputs */
+  --border: #E2E2E2;
+  --input: #E2E2E2;
+  --ring: #D92B3A;
+  /* Focus ring matches Brand Red */
+
+  /* Chart Colors (Optional - kept for dashboard compatibility) */
+  --chart-1: #D92B3A;
+  --chart-2: #182540;
+  --chart-3: #BF1111;
+  --chart-4: #40030E;
+  --chart-5: #F2F2F2;
+
+  /* Sidebar (Admin Panel) */
+  --sidebar: #182540;
+  /* Navy Sidebar for contrast */
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #D92B3A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1e2e4e;
+  /* Slightly lighter Navy */
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #182540;
+  --sidebar-ring: #D92B3A;
 }
 
+/* 
+  3. DARK MODE VARIABLES 
+  Mapped logically to use your dark palette options.
+*/
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.809 0.105 251.813);
-  --chart-2: oklch(0.623 0.214 259.815);
-  --chart-3: oklch(0.546 0.245 262.881);
-  --chart-4: oklch(0.488 0.243 264.376);
-  --chart-5: oklch(0.424 0.199 265.638);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --background: #0D0D0D;
+  /* Using your Black for background */
+  --foreground: #F2F2F2;
+  /* Using your White/Gray for text */
+
+  --card: #182540;
+  /* Cards become Navy Blue */
+  --card-foreground: #FFFFFF;
+  --popover: #182540;
+  --popover-foreground: #FFFFFF;
+
+  --primary: #D92B3A;
+  /* Red stays Red to keep brand identity */
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #40030E;
+  /* Dark Red for secondary areas */
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #40030E;
+  /* Dark Red for muted areas */
+  --muted-foreground: #A1A1AA;
+
+  --accent: #40030E;
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #7f1d1d;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #1e2e4e;
+  --input: #1e2e4e;
+  --ring: #D92B3A;
+
+  --sidebar: #0D0D0D;
+  --sidebar-foreground: #F2F2F2;
+  --sidebar-primary: #D92B3A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #182540;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #182540;
+  --sidebar-ring: #D92B3A;
 }
 
+/* 
+  4. TAILWIND THEME MAPPING 
+  This connects the CSS variables to Tailwind classes (e.g., bg-primary)
+*/
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -101,10 +157,12 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -113,6 +171,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 

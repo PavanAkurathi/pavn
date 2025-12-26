@@ -91,7 +91,11 @@ export const auth = betterAuth({
         }),
         emailOTP({
             async sendVerificationOTP({ email, otp, type }) {
-                console.log(`[OTP DEBUG] Sending ${type} OTP to ${email}: ${otp}`);
+                if (process.env.NODE_ENV === "development") {
+                    console.log(`[OTP DEBUG] Sending ${type} OTP to ${email}: ${otp}`);
+                } else {
+                    console.log(`[OTP] Sending ${type} OTP to ${email}: ****`);
+                }
                 try {
                     // Check if sendOtp is actually implemented
                     if (sendOtp) {

@@ -1,22 +1,41 @@
 # @repo/typescript-config
 
-Shared TypeScript configurations for the monorepo.
-
-## Available Configs
-
-- \`base.json\`: The strict base configuration used by most packages.
-- \`nextjs.json\`: Configuration tailored for Next.js applications (apps/web).
-- \`react-library.json\`: Configuration for React component libraries (@repo/ui).
+Shared TypeScript configurations for the Antigravity SaaS monorepo.
 
 ## Usage
 
-In your package's \`tsconfig.json\`:
+Extend one of the base configurations in your `tsconfig.json`:
+
+### Next.js Apps
 
 ```json
 {
-  "extends": "@repo/typescript-config/base.json",
+  "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
-    "outDir": "dist"
-  }
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+```
+
+### React Libraries
+
+```json
+{
+  "extends": "@repo/typescript-config/react-library.json",
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
+```
+
+### Base (Node.js)
+
+```json
+{
+  "extends": "@repo/typescript-config/base.json"
 }
 ```

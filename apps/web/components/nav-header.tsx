@@ -1,3 +1,4 @@
+// apps/web/components/nav-header.tsx
 "use client";
 
 import Link from "next/link";
@@ -10,7 +11,6 @@ import { NavUser } from "./nav-user";
 const NAV_ITEMS = [
     { label: "Shifts", href: "/dashboard/shifts" },
     { label: "Rosters", href: "/rosters" },
-    { label: "Time-sheet", href: "/timesheet" },
     { label: "Reports", href: "/reports" },
 ];
 

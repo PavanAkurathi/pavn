@@ -23,7 +23,7 @@ async function getSession() {
 // ---------------------------------------------------------
 export async function createCheckoutSession() {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) return { error: "Unauthorized" };
+    if (!session?.session.activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
 
     const orgId = session.session.activeOrganizationId;
     const org = await db.query.organization.findFirst({
@@ -67,7 +67,7 @@ export async function createCheckoutSession() {
 // ---------------------------------------------------------
 export async function createCustomerPortal() {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) return { error: "Unauthorized" };
+    if (!session?.session.activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
 
     const org = await db.query.organization.findFirst({
         where: eq(organization.id, session.session.activeOrganizationId),
@@ -125,7 +125,7 @@ export async function getInvoiceHistory() {
 }
 
 // ---------------------------------------------------------
-// 4. GET SUBSCRIPTION DETAILS
+// 4. GET SUBSCRIPTION DETAILS (Optimized: Local Cache)
 // ---------------------------------------------------------
 export async function getSubscriptionDetails() {
     const session = await getSession();
@@ -133,39 +133,16 @@ export async function getSubscriptionDetails() {
 
     const org = await db.query.organization.findFirst({
         where: eq(organization.id, session.session.activeOrganizationId),
-        columns: { stripeCustomerId: true, stripeSubscriptionId: true }
+        columns: {
+            subscriptionStatus: true,
+            currentPeriodEnd: true
+        }
     });
 
-    if (!org?.stripeCustomerId) return { status: "inactive" };
+    if (!org) return { status: "inactive" };
 
-    try {
-        // If we have a sub ID, fetch it
-        if (org.stripeSubscriptionId) {
-            const sub = await stripe.subscriptions.retrieve(org.stripeSubscriptionId);
-            return {
-                status: sub.status,
-                currentPeriodEnd: (sub as any).current_period_end ? new Date((sub as any).current_period_end * 1000) : undefined
-            };
-        }
-
-        // Fallback: list subs
-        const subs = await stripe.subscriptions.list({
-            customer: org.stripeCustomerId,
-            limit: 1,
-            status: "active"
-        });
-
-        const sub = subs.data[0];
-        if (sub) {
-            return {
-                status: sub.status,
-                currentPeriodEnd: (sub as any).current_period_end ? new Date((sub as any).current_period_end * 1000) : undefined
-            };
-        }
-
-        return { status: "inactive" };
-    } catch (e) {
-        console.error("Stripe Sub Fetch Error", e);
-        return { status: "inactive" };
-    }
+    return {
+        status: org.subscriptionStatus ?? "inactive",
+        currentPeriodEnd: org.currentPeriodEnd ?? undefined
+    };
 }

@@ -1,3 +1,5 @@
+// apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

@@ -1,31 +1,26 @@
-# Web App (Next.js)
+# Web App
 
-The main web application for Workers Hive / Pavn. It is a **Next.js 15+** application using the **App Router**.
+The main SaaS application for Antigravity, built with Next.js 16.
 
 ## Features
 
-- **Authentication**: Powered by @repo/auth (Better Auth).
-- **Database**: Connects via @repo/database (Drizzle).
-- **UI**: Uses @repo/ui components.
-- **Turbopack**: Fast local development.
+-   **Dashboard**: Shift management, user profiles, and organization settings.
+-   **Authentication**: Secure login/signup via `@repo/auth`.
+-   **Payments**: Stripe integration for subscriptions.
+-   **Maps**: Google Maps integration for location services.
 
-## Directory Structure
+## Getting Started
 
-- `app/api/auth`: API Route for Better Auth integration.
-- `app/(auth)`: Public authentication pages (Login, Signup).
-- `app/(dashboard)`: Protected application routes.
-- `proxy.ts`: Route protection logic.
+Run the development server:
 
-## Commands
+```bash
+npm run dev
+# or
+bun run dev
+```
 
-- `bun dev`: Start the development server (localhost:3000).
-- `bun run build`: Build the application for production.
-- `bun start`: Start the production server.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Environment Variables
+## Configuration
 
-Ensure your \`.env\` file in the root contains:
-
-- \`DATABASE_URL\`: Connection string for Neon Postgres.
-- \`BETTER_AUTH_SECRET\`: Secret for auth encryption.
-- \`NEXT_PUBLIC_APP_URL\`: Base URL (http://localhost:3000).
+Ensure all environment variables are set in `.env` (see `.env.example` if available). Key variables include database connection strings, Stripe keys, and auth secrets.

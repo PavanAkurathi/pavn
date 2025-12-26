@@ -1,35 +1,32 @@
 # @repo/database
 
-This package handles all database interactions for the monorepo, providing a type-safe ORM via Drizzle and a PostgreSQL connection via Neon (serverless).
+Shared database package providing the ORM client and schema definitions for the Antigravity SaaS platform. Connects to [Neon Postgres](https://neon.tech) using [Drizzle ORM](https://orm.drizzle.team/).
 
-## Tech Stack
+## Features
 
-- **Drizzle ORM**: TypeScript ORM.
-- **Neon**: Serverless PostgreSQL.
-- **PostgresJS**: Driver for connection.
+-   **Type-Safe Schema**: All database tables defined in TypeScript.
+-   **Serverless Driver**: Uses `@neondatabase/serverless` for efficient connection pooling.
+-   **Migration Tools**: Includes Drizzle Kit configuration for schema updates.
 
-## Key Files
+## Exports
 
-- \`src/schema.ts\`: Defines the database schema (tables, relations).
-  - **Identity**: \`user\`, \`session\`, \`verification\`.
-  - **Tenancy**: \`organization\`, \`location\`.
-  - **Access**: \`member\`, \`invitation\`.
-- \`src/db.ts\`: Initializes the database connection export.
-- \`drizzle.config.ts\`: Configuration for Drizzle Kit (migrations).
+-   `@repo/database`: Main entry point exporting the `db` instance.
+-   `@repo/database/schema`: Exports all table definitions (`user`, `session`, `organization`, etc.).
 
 ## Scripts
 
-- \`bun run generate\`: Generate SQL migration files from schema changes.
-- \`bun run migrate\`: Apply migrations to the production database.
-- \`bun run push\`: Push schema changes directly (prototyping only).
-- \`bun run studio\`: Open Drizzle Studio to view data.
+Run these from the root using `turbo` or inside the package directory:
+
+-   `npm run generate`: Generate SQL migration files.
+-   `npm run push`: Push schema changes directly to the database (prototyping).
+-   `npm run studio`: Open Drizzle Studio to browse data.
 
 ## Usage
 
-```typescript
+```ts
 import { db } from "@repo/database";
-import { schema } from "@repo/database/schema";
+import { user } from "@repo/database/schema";
+import { eq } from "drizzle-orm";
 
-// Example Query
-const users = await db.query.user.findMany();
+const users = await db.select().from(user).where(eq(user.email, "alice@example.com"));
 ```

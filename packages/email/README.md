@@ -1,27 +1,20 @@
 # @repo/email
 
-Transactional email service for Antigravity SaaS, built on [Resend](https://resend.com).
+Shared email service package for sending transactional emails in the Antigravity SaaS platform. Wraps the [Resend](https://resend.com) SDK.
 
 ## Features
-- **OTP Verification**: Templated emails for one-time passwords.
-- **Environment Aware**: Logs to console in development, sends real emails in production.
-- **Type-safe**: Built with TypeScript.
 
-## Setup
-
-Ensure your `.env` file contains the Resend API key:
-
-```bash
-RESEND_API_KEY=re_123...
-```
+-   **Resend Integration**: Simple API for sending emails.
+-   **React Templates**: Supports React components for email content (future implementation).
 
 ## Usage
 
-```typescript
+```ts
 import { sendOtp } from "@repo/email";
 
 await sendOtp("user@example.com", "123456");
 ```
 
-## Templates
-- `OtpEmail`: Verification code template.
+## Configuration
+
+Ensure the `RESEND_API_KEY` environment variable is set in your application.

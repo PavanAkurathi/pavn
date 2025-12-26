@@ -1,3 +1,5 @@
+//  apps/web/components/settings/settings-view.tsx
+
 "use client";
 
 import { useRouter } from "next/navigation";

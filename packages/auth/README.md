@@ -1,60 +1,44 @@
 # @repo/auth
 
-This package provides the authentication infrastructure using **Better Auth**. It abstracts the auth logic from the application layer, ensuring a centralized and secure implementation.
+Shared authentication package for the Antigravity SaaS monorepo. Built on top of [Better Auth](https://www.better-auth.com/) and integrated with [Drizzle ORM](https://orm.drizzle.team/).
 
 ## Features
 
-- **Email & Password Authentication**.
-- **Multi-Tenancy**: Built-in Organization and Member support.
-- **Strict Isolation**: Custom hooks enforce "1 User = 1 Organization" creation flow.
-- **Unified Client**: Exports a pre-configured \`authClient\` for React apps.
+-   **Better Auth**: Robust authentication logic.
+-   **Drizzle Adapter**: Persists sessions and users to Neon Postgres via `@repo/database`.
+-   **Email Integration**: Sends OTPs and magic links using `@repo/email`.
+-   **Client & Server**: Exports utilities for both server-side (`.`) and client-side (`./client`) usage.
 
-## Key Files
+## Installation
 
-- \`src/auth.ts\`: Server-side Better Auth configuration.
-  - Includes **Auto-Create Organization** hook on sign-up.
-- \`src/client.ts\`: Client-side library export (React hooks).
-  - Exports \`betterFetch\` for middleware.
+```bash
+npm install @repo/auth
+# or
+bun add @repo/auth
+```
 
 ## Usage
 
-### Server-Side (API Routes)
+### Server-Side
 
-```typescript
+```ts
 import { auth } from "@repo/auth";
-import { toNextJsHandler } from "better-auth/next-js";
+import { headers } from "next/headers";
 
-export const { GET, POST } = toNextJsHandler(auth);
+const session = await auth.api.getSession({
+    headers: await headers()
+});
 ```
 
-### Client-Side (React Components)
+### Client-Side
 
-```typescript
-"use client";
-import { authClient } from "@repo/auth/client";
+```ts
+import { createAuthClient } from "@repo/auth/client";
 
-function Login() {
-  const { data: session } = authClient.useSession();
-  
-  const signIn = async () => {
-    await authClient.signIn.email({ 
-      email: "...", 
-      password: "..." 
-    });
-  };
-}
+const authClient = createAuthClient();
+
+const { data, error } = await authClient.signIn.email({
+    email,
+    password
+});
 ```
-
-## Security Architecture
-
-### Data Collection & Privacy
-- **Identity**: Stores Name, Email, Phone, and optional Profile Image.
-- **Credentials**: Passwords are **hashed** and stored in the `account` table, never in the `user` table.
-- **Audit**: Captures IP Address and User Agent for session security.
-
-### The "Bouncer & Bridge" Model
-- **The Bridge (`@repo/auth`)**: Handles identity verification, session creation, and organization management.
-- **The Bouncer (`apps/web/proxy.ts`)**: Enforces access control at the edge.
-  - **Dashboard**: Protected by strict session validation.
-  - **Registration**: Geo-fenced to US/CA IP addresses.
-

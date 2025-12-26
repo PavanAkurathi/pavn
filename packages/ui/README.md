@@ -1,39 +1,30 @@
 # @repo/ui
 
-This package contains the shared UI components for the monorepo, built with **Radix UI** and **Tailwind CSS**. It follows the *shadcn/ui* pattern where components are accessible and customizable.
+Shared UI component library for the Antigravity SaaS platform. Built with [Radix UI](https://www.radix-ui.com/) and [Tailwind CSS](https://tailwindcss.com/).
 
-## Tech Stack
+## Components
 
-- **Radix UI**: Headless, accessible primitives.
-- **Tailwind CSS**: Styling.
-- **Lucide React**: Icons.
-- **Class Variance Authority (CVA)**: Variant management.
-
-## Project Structure
-
-- \`src/components/ui\`: proper atomic UI components (Button, Input, Card, etc.).
-- \`src/lib/utils.ts\`: shared utility functions (cn, clsx).
+Includes a comprehensive set of accessible components:
+-   Primitives: Buttons, Inputs, Dialogs, Popovers.
+-   Layout: Cards, Avalars, Separators.
+-   Data Display: Tables, Badges, Tooltips.
 
 ## Usage
 
-Import components directly from the package path:
+Import components directly into your application:
 
 ```tsx
 import { Button } from "@repo/ui/components/ui/button";
-import { Card } from "@repo/ui/components/ui/card";
 
-export default function MyComponent() {
-  return (
-    <Card>
-      <Button>Click me</Button>
-    </Card>
-  );
+export default function Page() {
+    return <Button>Click me</Button>;
 }
 ```
 
-## Adding Components
+## Styling
 
-Components are managed manually. To add a new shadcn/ui component:
-1. Run the shadcn CLI in a temp folder or manually copy the primitive code.
-2. Place it in \`src/components/ui\`.
-3. Ensure it exports correctly.
+This package exports a global stylesheet that should be imported in the root layout of your application.
+
+```tsx
+import "@repo/ui/globals.css";
+```

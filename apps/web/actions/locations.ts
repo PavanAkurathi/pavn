@@ -1,3 +1,5 @@
+// apps/web/actions/locations.ts
+
 "use server";
 
 import { db } from "@repo/database";

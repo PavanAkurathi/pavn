@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@repo/ui/components/ui/sonner";
+
+// 👇 Import your App CSS (which now includes the @source directive)
+// 👇 Import UI CSS (Optional, but good for completeness)
 import "@repo/ui/globals.css";
 
 const geistSans = localFont({
@@ -25,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <div className="flex flex-col min-h-screen bg-white">
+        <div className="flex flex-col min-h-screen bg-background">
           <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{
@@ -35,16 +38,7 @@ export default function RootLayout({
                   "@type": "Organization",
                   "name": "Workers Hive",
                   "url": "https://workershive.com",
-                  "logo": "https://workershive.com/logo.png",
-                  "sameAs": [
-                    "https://twitter.com/workershive",
-                    "https://linkedin.com/company/workershive"
-                  ],
-                  "contactPoint": {
-                    "@type": "ContactPoint",
-                    "telephone": "+1-555-000-0000",
-                    "contactType": "customer service"
-                  }
+                  "logo": "https://workershive.com/logo.png"
                 }
               ])
             }}
