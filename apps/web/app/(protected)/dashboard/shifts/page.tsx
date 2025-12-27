@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
-import { shiftService, AVAILABLE_LOCATIONS } from "@repo/shifts";
+import { shiftService, AVAILABLE_LOCATIONS } from "@repo/shifts-service";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 

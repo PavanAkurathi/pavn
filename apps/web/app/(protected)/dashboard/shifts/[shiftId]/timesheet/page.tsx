@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { shiftService } from "@repo/shifts";
+import { shiftService } from "@repo/shifts-service";
 import { ShiftTimesheetClient } from "./client";
 
 interface PageProps {

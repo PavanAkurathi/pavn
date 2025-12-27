@@ -5,7 +5,6 @@ import { Calendar, Loader2 } from "lucide-react";
 import type { Shift } from "@/lib/types";
 import {
     groupShiftsByDate,
-    filterUpcomingDates,
     formatShiftDateLabel,
 } from "@/lib/shifts/view-list";
 

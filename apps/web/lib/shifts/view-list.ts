@@ -49,15 +49,7 @@ export function groupShiftsByDate(shifts: Shift[]): Record<string, Shift[]> {
     return grouped;
 }
 
-export function filterUpcomingDates(dates: string[]): string[] {
-    const today = new Date().toISOString().split('T')[0] ?? '';
-    return dates.filter(date => date >= today);
-}
 
-export function filterPastDates(dates: string[]): string[] {
-    const today = new Date().toISOString().split('T')[0] ?? '';
-    return dates.filter(date => date < today);
-}
 
 export function formatShiftDateLabel(dateStr: string): string {
     const date = parseISO(dateStr);

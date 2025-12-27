@@ -14,7 +14,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@repo/auth": "workspace:*",
     "@repo/database": "workspace:*",
-    "@repo/shifts": "workspace:*",
+    "@repo/shifts-service": "workspace:*",
     "@repo/ui": "*",
     "@stripe/react-stripe-js": "^5.4.1",
     "@stripe/stripe-js": "^8.6.0",

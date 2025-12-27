@@ -4,7 +4,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { shiftService } from "@repo/shifts";
+import { shiftService } from "@repo/shifts-service";
 import { TimesheetWorker } from "@/lib/types";
 import { toast } from "sonner";
 

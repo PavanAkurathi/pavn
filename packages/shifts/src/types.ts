@@ -1,3 +1,6 @@
+
+// packages/shifts/src/types.ts
+
 export type ShiftStatus = 'open' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'approved';
 
 export interface Shift {
