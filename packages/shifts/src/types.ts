@@ -1,9 +1,9 @@
-export type ShiftStatus = 'open' | 'assigned' | 'completed' | 'cancelled' | 'approved';
+export type ShiftStatus = 'open' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'approved';
 
 export interface Shift {
     id: string;
     title: string;
-    locationId: string;
+    locationId?: string;
     locationName: string;
     locationAddress?: string;
     startTime: string; // ISO string
@@ -33,5 +33,5 @@ export interface TimesheetWorker {
     clockIn?: string; // ISO string
     clockOut?: string; // ISO string
     breakMinutes: number;
-    status: 'rostered' | 'new' | 'blocked';
+    status: 'rostered' | 'new' | 'blocked' | 'submitted';
 }

@@ -1,3 +1,5 @@
+// apps/web/components/shifts/shift-list.tsx 
+
 import { ShiftCard } from "./shift-card";
 import { Calendar, Loader2 } from "lucide-react";
 import type { Shift } from "@/lib/types";
@@ -11,19 +13,11 @@ interface ShiftListProps {
     shifts: Shift[];
     isLoading: boolean;
     onShiftClick?: (shift: Shift) => void;
+    isUrgentList?: boolean;
 }
 
-export function ShiftList({ shifts, isLoading, onShiftClick }: ShiftListProps) {
+export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: ShiftListProps) {
     const groupedShifts = groupShiftsByDate(shifts);
-    // Sort dates descending for past shifts/generic lists usually, but let's stick to ascending or check logic
-    // Actually, for "Needs Approval" & "Past", descending (newest first) is usually better.
-    // For "Upcoming", ascending (soonest first) is better.
-    // BUT the passed shifts are already sorted by the Service/Parent. 
-    // groupShiftsByDate loses order if object keys are iterated arbitrarily (though usually insertion order or numeric).
-    // Let's sort keys properly.
-
-    // Auto-detect sort direction? Or just default asc for now to match previous behavior?
-    // Let's stick to ascending for consistency across lists unless asked otherwise.
     const sortedDates = Object.keys(groupedShifts).sort();
 
     if (sortedDates.length === 0 && !isLoading) {
@@ -64,6 +58,8 @@ export function ShiftList({ shifts, isLoading, onShiftClick }: ShiftListProps) {
                                         key={shift.id}
                                         shift={shift}
                                         onClick={() => onShiftClick?.(shift)}
+                                        isUrgent={isUrgentList}
+                                        actionLabel={isUrgentList ? "Review Timesheet" : undefined}
                                     />
                                 ))}
                         </div>

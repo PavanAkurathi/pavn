@@ -1,3 +1,5 @@
+// apps/web/components/shifts/shift-card.tsx
+
 "use client";
 
 import { Card } from "@repo/ui/components/ui/card";
@@ -8,9 +10,11 @@ import { Shift } from "../../lib/types";
 interface ShiftCardProps {
     shift: Shift;
     onClick?: () => void;
+    isUrgent?: boolean;
+    actionLabel?: string;
 }
 
-export function ShiftCard({ shift, onClick }: ShiftCardProps) {
+export function ShiftCard({ shift, onClick, isUrgent, actionLabel = "View all Pros" }: ShiftCardProps) {
     const startTime = parseISO(shift.startTime);
     const endTime = parseISO(shift.endTime);
 
@@ -19,15 +23,9 @@ export function ShiftCard({ shift, onClick }: ShiftCardProps) {
     const percentFilled = totalCapacity > 0 ? (filledCount / totalCapacity) * 100 : 0;
     const remainingSlots = totalCapacity - filledCount;
 
-    // Design requires: "100% | 5 of 5 filled"
-    // If no capacity info, we might hide this or show placeholder?
-    // User asked to match screenshot. Screenshot has this.
-
-    const isPending = shift.status === 'completed';
-
     return (
         <Card
-            className={`cursor-pointer transition-all hover:shadow-sm ${isPending
+            className={`cursor-pointer transition-all hover:shadow-sm ${isUrgent
                 ? "border-l-4 border-l-red-500 bg-red-50/30 border-t-zinc-200 border-r-zinc-200 border-b-zinc-200 hover:bg-red-50/50"
                 : "border-zinc-200 hover:border-zinc-400"
                 }`}
@@ -41,9 +39,9 @@ export function ShiftCard({ shift, onClick }: ShiftCardProps) {
                         <h3 className="font-bold text-base text-zinc-900 leading-tight">
                             {shift.locationName}
                         </h3>
-                        {isPending && (
+                        {isUrgent && (
                             <span className="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full tracking-wide">
-                                PENDING REVIEW
+                                ACTION REQUIRED
                             </span>
                         )}
                     </div>
@@ -94,8 +92,8 @@ export function ShiftCard({ shift, onClick }: ShiftCardProps) {
                     </div>
 
                     {/* Link */}
-                    <span className={`text-sm font-medium hover:underline ${isPending ? "text-red-600" : "text-primary"}`}>
-                        {isPending ? "Review Timesheet" : "View all Pros"}
+                    <span className={`text-sm font-medium hover:underline ${isUrgent ? "text-red-600" : "text-primary"}`}>
+                        {actionLabel}
                     </span>
                 </div>
             </div>

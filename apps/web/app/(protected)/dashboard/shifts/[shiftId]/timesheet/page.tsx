@@ -1,5 +1,6 @@
-import { ShiftDetailView } from "@/components/shifts/shift-detail-view";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
+import { shiftService } from "@repo/shifts";
+import { ShiftTimesheetClient } from "./client";
 
 interface PageProps {
     params: {
@@ -7,15 +8,24 @@ interface PageProps {
     };
 }
 
-export default function ShiftTimesheetPage({ params }: PageProps) {
+export default async function ShiftTimesheetPage({ params }: PageProps) {
     if (!params.shiftId) {
         redirect("/dashboard/shifts");
     }
 
+    const [shift, timesheets] = await Promise.all([
+        shiftService.getShiftById(params.shiftId),
+        shiftService.getTimesheetsForShift(params.shiftId)
+    ]);
+
+    if (!shift) {
+        notFound();
+    }
+
     return (
-        <ShiftDetailView
-            shiftId={params.shiftId}
-            onBack={() => window.history.back()}
+        <ShiftTimesheetClient
+            shift={shift}
+            timesheets={timesheets}
         />
     );
 }

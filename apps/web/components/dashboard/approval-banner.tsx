@@ -16,7 +16,7 @@ export function ApprovalBanner({ count }: ApprovalBannerProps) {
 
     return (
         <Link
-            href="?view=needs_approval"
+            href="?view=past"
             className="block bg-red-50 border-b border-red-200 px-6 py-3 transition-colors hover:bg-red-100"
         >
             <div className="flex items-center gap-3">

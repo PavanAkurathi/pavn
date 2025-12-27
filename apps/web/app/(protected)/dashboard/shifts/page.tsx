@@ -1,3 +1,5 @@
+// apps/web/app/(protected)/dashboard/shifts/page.tsx
+
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -44,6 +46,7 @@ export default async function ShiftsPage(props: {
                 initialShifts={shifts}
                 availableLocations={AVAILABLE_LOCATIONS}
                 defaultTab={view}
+                pendingCount={pendingCount}
             />
         </div>
     );

@@ -1,3 +1,5 @@
+// apps/web/components/shifts/timesheet/shift-code-banner.tsx
+
 'use client';
 import { Hash, Info } from "lucide-react";
 

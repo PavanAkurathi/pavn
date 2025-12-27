@@ -1,3 +1,5 @@
+// apps/web/components/shifts/shifts-view.tsx   
+
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
@@ -19,9 +21,10 @@ interface ShiftsViewProps {
     initialShifts: Shift[];
     availableLocations: string[];
     defaultTab?: string;
+    pendingCount: number;
 }
 
-export function ShiftsView({ initialShifts, availableLocations, defaultTab = "upcoming" }: ShiftsViewProps) {
+export function ShiftsView({ initialShifts, availableLocations, defaultTab = "upcoming", pendingCount }: ShiftsViewProps) {
     const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
     const [filters, setFilters] = useState({
         location: LOCATIONS.ALL,
@@ -85,7 +88,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
             await shiftService.approveShift(shiftId);
             toast.success("Shift approved successfully");
             setSelectedShiftId(null); // Return to list view
-            router.refresh();
+            router.refresh(); // This will re-fetch data and move the shift to history
         } catch (error) {
             toast.error("Failed to approve shift");
         }
@@ -102,14 +105,26 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
         );
     }
 
+    const pendingShifts = filterNeedsApprovalShifts(filteredShifts)
+        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+    const historyShifts = filterHistoryShifts(filteredShifts)
+        .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
                 <Tabs value={defaultTab} className="w-full sm:w-auto" onValueChange={handleTabChange}>
-                    <TabsList className="grid w-full grid-cols-3 sm:w-[320px]">
+                    <TabsList className="grid w-full grid-cols-2 sm:w-[320px]">
                         <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                        <TabsTrigger value="needs_approval">Needs Approval</TabsTrigger>
-                        <TabsTrigger value="past">Past</TabsTrigger>
+                        <TabsTrigger value="past" className="relative">
+                            Past
+                            {pendingCount > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
+                                    {pendingCount}
+                                </span>
+                            )}
+                        </TabsTrigger>
                     </TabsList>
                 </Tabs>
 
@@ -136,28 +151,38 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                             </div>
                         </TabsContent>
 
-                        <TabsContent value="needs_approval" className="space-y-6 mt-0">
-                            <div className="space-y-4 max-w-4xl">
-                                <h2 className="text-xl font-bold flex items-center gap-2 text-amber-600">
-                                    Needs Approval
-                                </h2>
-                                <ShiftList
-                                    shifts={filterNeedsApprovalShifts(filteredShifts)}
-                                    isLoading={false}
-                                    onShiftClick={(s) => setSelectedShiftId(s.id)}
-                                />
-                            </div>
-                        </TabsContent>
+                        <TabsContent value="past" className="space-y-8 mt-0">
+                            {/* Section A: Action Required */}
+                            {pendingShifts.length > 0 && (
+                                <div className="space-y-4 max-w-4xl">
+                                    <h2 className="text-xl font-bold flex items-center gap-2 text-red-600 whitespace-nowrap">
+                                        Action Required
+                                        <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-red-100 px-2 text-xs font-semibold text-red-700">
+                                            {pendingShifts.length}
+                                        </span>
+                                    </h2>
+                                    <ShiftList
+                                        shifts={pendingShifts}
+                                        isLoading={false}
+                                        onShiftClick={(s) => setSelectedShiftId(s.id)}
+                                        isUrgentList={true}
+                                    />
+                                </div>
+                            )}
 
-                        <TabsContent value="past" className="space-y-6 mt-0">
-                            {/* History Section */}
+                            {/* Section B: History */}
                             <div className="space-y-4 max-w-4xl">
-                                <h2 className="text-xl font-bold text-foreground">Completed Shifts</h2>
+                                <h2 className="text-xl font-bold text-foreground">Shift History</h2>
                                 <ShiftList
-                                    shifts={filterHistoryShifts(filteredShifts)}
+                                    shifts={historyShifts}
                                     isLoading={false}
                                     onShiftClick={(s) => setSelectedShiftId(s.id)}
                                 />
+                                {historyShifts.length === 0 && !pendingShifts.length && (
+                                    <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
+                                        No past shifts found matching your filters.
+                                    </div>
+                                )}
                             </div>
                         </TabsContent>
                     </Tabs>

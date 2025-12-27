@@ -4,12 +4,10 @@ import { Shift } from '../types';
 export function filterActiveShifts(shifts: Shift[]): Shift[] {
     const now = new Date();
     // Active includes Open shifts
-    // OR Assigned shifts that have NOT yet passed the "2 hours post-shift" threshold
-    // (If they are just assigned but ended 10 mins ago, they technically might still be "active" or "pending clock out"
-    // but for this logic, let's say they stay in Upcoming/Active until they hit that 2-hour mark or are marked completed)
+    // OR Assigned/In-Progress shifts that have NOT yet passed the "2 hours post-shift" threshold
     return shifts.filter(shift => {
         if (shift.status === 'open') return true;
-        if (shift.status === 'assigned') {
+        if (shift.status === 'assigned' || shift.status === 'in-progress') {
             const twoHoursAfterEnd = addHours(parseISO(shift.endTime), 2);
             return now < twoHoursAfterEnd;
         }
@@ -23,8 +21,8 @@ export function filterNeedsApprovalShifts(shifts: Shift[]): Shift[] {
         // 1. Explicitly Completed (Clocked out / Marked done)
         if (shift.status === 'completed') return true;
 
-        // 2. Implied Completed (Assigned + >2 hours past end time)
-        if (shift.status === 'assigned') {
+        // 2. Implied Completed (Assigned/In-Progress + >2 hours past end time)
+        if (shift.status === 'assigned' || shift.status === 'in-progress') {
             const twoHoursAfterEnd = addHours(parseISO(shift.endTime), 2);
             return now >= twoHoursAfterEnd;
         }

@@ -16,19 +16,19 @@ export const shiftService = {
         // Helper: Is this shift explicitly needing approval?
         const isNeedsApproval = (s: Shift) => {
             if (s.status === 'completed') return true;
-            // "Implied" completed: Assigned but ended more than 2 hours ago
-            if (s.status === 'assigned' && new Date(s.endTime) < twoHoursAgo) return true;
+            // "Implied" completed: Assigned/In-Progress but ended more than 2 hours ago
+            if ((s.status === 'assigned' || s.status === 'in-progress') && new Date(s.endTime) < twoHoursAgo) return true;
             return false;
         };
 
         if (options?.view === 'upcoming') {
             // Include shifts that are effectively active
-            // Ends in future OR (Ends in past < 2h ago AND status is assigned)
+            // Ends in future OR (Ends in past < 2h ago AND status is assigned/in-progress)
             return MOCK_SHIFTS.filter(s => {
                 const endTime = new Date(s.endTime);
                 if (endTime > now) return true; // Future
-                // Recent past (within 2 hours) and still assigned
-                if (s.status === 'assigned' && endTime >= twoHoursAgo) return true;
+                // Recent past (within 2 hours) and still active
+                if ((s.status === 'assigned' || s.status === 'in-progress') && endTime >= twoHoursAgo) return true;
                 return false;
             }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
         }
@@ -39,11 +39,16 @@ export const shiftService = {
         }
 
         if (options?.view === 'past') {
-            // Strict History: Approved or Cancelled
-            // Exclude "Needs Approval" items even if they are in the past
+            // Unified Past View: Includes "Needs Approval" AND "History" (Approved/Cancelled)
+            // Anything that has ended > 2 hours ago, or marked completed/approved/cancelled
             return MOCK_SHIFTS.filter(s => {
-                if (isNeedsApproval(s)) return false; // Needs approval, not strictly "past history"
-                return new Date(s.endTime) < now && (s.status === 'approved' || s.status === 'cancelled');
+                // If it's explicitly completed, approved, or cancelled, it's in the past view
+                if (['completed', 'approved', 'cancelled'].includes(s.status)) return true;
+
+                // If it's assigned/in-progress but ended > 2 hours ago (implied past/pending)
+                if ((s.status === 'assigned' || s.status === 'in-progress') && new Date(s.endTime) < twoHoursAgo) return true;
+
+                return false;
             }).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
         }
 
@@ -53,8 +58,14 @@ export const shiftService = {
 
     getPendingShiftsCount: async (): Promise<number> => {
         await new Promise(resolve => setTimeout(resolve, 20));
-        // Zombie Shift Definition: Status is 'completed' (implies past end time usually, but status is key)
-        return MOCK_SHIFTS.filter(s => s.status === 'completed').length;
+        const now = new Date();
+        const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+
+        return MOCK_SHIFTS.filter(s => {
+            if (s.status === 'completed') return true;
+            if ((s.status === 'assigned' || s.status === 'in-progress') && new Date(s.endTime) < twoHoursAgo) return true;
+            return false;
+        }).length;
     },
 
     getShiftById: async (id: string): Promise<Shift | undefined> => {

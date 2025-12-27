@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import { Button } from "@repo/ui/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -16,23 +18,18 @@ interface ShiftDetailViewProps {
 }
 
 export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftDetailViewProps) {
-    // Initialize state by merging assigned workers with timesheet data
-    const [workers, setWorkers] = React.useState(() => {
-        // 1. Start with all assigned workers (the roster)
+    // Helper to merge data (extracted for reuse)
+    const getWorkersFromProps = React.useCallback(() => {
         const allWorkers = shift.assignedWorkers || [];
-
         return allWorkers.map((assigned) => {
-            // 2. Find if they have a timesheet entry
             const ts = timesheets.find(t => t.id === assigned.id);
-
             if (ts) {
-                // Return existing timesheet data
                 return {
                     id: ts.id,
                     name: ts.name,
                     avatar: assigned.avatarUrl || `https://github.com/shadcn.png`,
                     initials: ts.avatarInitials || assigned.initials,
-                    shiftDuration: "6 hrs", // Would calculate real duration
+                    shiftDuration: "6 hrs",
                     hourlyRate: `$${ts.hourlyRate}/hr`,
                     clockIn: ts.clockIn ? format(new Date(ts.clockIn), "hh:mm a") : "",
                     clockOut: ts.clockOut ? format(new Date(ts.clockOut), "hh:mm a") : "",
@@ -40,11 +37,9 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     rating: 0,
                 };
             }
-
-            // 3. Fallback for workers who haven't clocked in yet (Empty Timesheet Row)
             return {
                 id: assigned.id,
-                name: assigned.name || "Worker Name", // Use roster name
+                name: assigned.name || "Worker Name",
                 avatar: assigned.avatarUrl || `https://github.com/shadcn.png`,
                 initials: assigned.initials,
                 shiftDuration: "-",
@@ -55,13 +50,22 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 rating: 0,
             };
         });
-    });
+    }, [shift.assignedWorkers, timesheets]);
+
+    // Initialize state
+    const [workers, setWorkers] = React.useState(getWorkersFromProps);
+
+    // Sync state when upstream data arrives (Fixes async data missing bug)
+    React.useEffect(() => {
+        setWorkers(getWorkersFromProps());
+    }, [getWorkersFromProps]);
 
     const updateWorker = (id: string, field: string, value: any) => {
         setWorkers((prev) =>
             prev.map((w) => (w.id === id ? { ...w, [field]: value } : w))
         );
     };
+
 
     // Helper to calculate variants dynamically
     const getWorkerStatus = (worker: typeof workers[0]) => {
@@ -94,6 +98,11 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const totalCost = "~ $1,250.00";
 
     const isApproved = shift.status === 'approved';
+    const isCancelled = shift.status === 'cancelled';
+
+    // Dynamic Counts
+    const workerCount = workers.length;
+    const filledCount = workers.filter(w => !!w.clockIn && !!w.clockOut).length;
 
     return (
         <div className="flex flex-col space-y-6 pb-24">
@@ -105,13 +114,19 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </Button>
                     <div className="flex items-center gap-2">
                         <h2 className="text-2xl font-semibold tracking-tight">Timesheets</h2>
-                        {isApproved ? (
+                        {isApproved && (
                             <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
                                 Approved
                             </span>
-                        ) : (
+                        )}
+                        {isCancelled && (
+                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
+                                Cancelled
+                            </span>
+                        )}
+                        {!isApproved && !isCancelled && (
                             <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium text-black">
-                                3 of 3 filled
+                                {filledCount} of {workerCount} filled
                             </span>
                         )}
                     </div>
@@ -136,10 +151,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold tracking-tight">Timesheets</h2>
                     <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium text-black">
-                        3 of 3 filled
+                        {filledCount} of {workerCount} filled
                     </span>
                 </div>
-                {!isApproved && <Button variant="outline">Add Pros</Button>}
+                {!isApproved && !isCancelled && <Button variant="outline">Add Pros</Button>}
             </div>
 
             {/* Content Card */}
@@ -156,46 +171,54 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
                 {/* Rows */}
                 <div className="flex flex-col px-4">
-                    {workers.map((worker) => {
-                        const status = getWorkerStatus(worker);
-                        return (
-                            <TimesheetRow
-                                key={worker.id}
-                                workerName={worker.name}
-                                workerAvatar={worker.avatar}
-                                shiftDuration={worker.shiftDuration}
-                                hourlyRate={worker.hourlyRate}
-                                clockIn={worker.clockIn}
-                                clockOut={worker.clockOut}
-                                breakDuration={worker.breakDuration}
-                                rating={worker.rating}
-                                clockInVariant={status.clockInVariant}
-                                clockOutVariant={status.clockOutVariant}
-                                breakVariant={status.breakVariant}
-                                disabled={isApproved}
-                                onClockInChange={(val) => updateWorker(worker.id, "clockIn", val)}
-                                onClockOutChange={(val) => updateWorker(worker.id, "clockOut", val)}
-                                onBreakChange={(val) => updateWorker(worker.id, "breakDuration", val)}
-                                onRatingChange={(r) => updateWorker(worker.id, "rating", r)}
-                                onWriteUp={() => console.log("Write Up", worker.name)}
-                                onAddToRoster={() => console.log("Add", worker.name)}
-                                onReturn={() => console.log("Return", worker.name)}
-                                onBlock={() => console.log("Block", worker.name)}
-                            />
-                        );
-                    })}
+                    {workers.length === 0 ? (
+                        <div className="py-8 text-center text-muted-foreground">
+                            No workers assigned to this shift.
+                        </div>
+                    ) : (
+                        workers.map((worker) => {
+                            const status = getWorkerStatus(worker);
+                            return (
+                                <TimesheetRow
+                                    key={worker.id}
+                                    workerName={worker.name}
+                                    workerAvatar={worker.avatar}
+                                    shiftDuration={worker.shiftDuration}
+                                    hourlyRate={worker.hourlyRate}
+                                    clockIn={worker.clockIn}
+                                    clockOut={worker.clockOut}
+                                    breakDuration={worker.breakDuration}
+                                    rating={worker.rating}
+                                    clockInVariant={status.clockInVariant}
+                                    clockOutVariant={status.clockOutVariant}
+                                    breakVariant={status.breakVariant}
+                                    disabled={isApproved || isCancelled}
+                                    onClockInChange={(val) => updateWorker(worker.id, "clockIn", val)}
+                                    onClockOutChange={(val) => updateWorker(worker.id, "clockOut", val)}
+                                    onBreakChange={(val) => updateWorker(worker.id, "breakDuration", val)}
+                                    onRatingChange={(r) => updateWorker(worker.id, "rating", r)}
+                                    onWriteUp={() => console.log("Write Up", worker.name)}
+                                    onAddToRoster={() => console.log("Add", worker.name)}
+                                    onReturn={() => console.log("Return", worker.name)}
+                                    onBlock={() => console.log("Block", worker.name)}
+                                />
+                            );
+                        })
+                    )}
                 </div>
             </div>
 
-            <ShiftApprovalFooter
-                workerCount={3}
-                filledCount={3}
-                totalHours={totalHours}
-                totalCost={totalCost}
-                hasErrors={hasErrors}
-                isApproved={isApproved}
-                onApprove={() => onApprove?.()}
-            />
+            {!isCancelled && (
+                <ShiftApprovalFooter
+                    workerCount={workerCount}
+                    filledCount={filledCount}
+                    totalHours={totalHours}
+                    totalCost={totalCost}
+                    hasErrors={hasErrors}
+                    isApproved={isApproved}
+                    onApprove={() => onApprove?.()}
+                />
+            )}
         </div>
     );
 }
