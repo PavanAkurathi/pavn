@@ -17,6 +17,11 @@ const NAV_ITEMS = [
 export function NavHeader() {
     const pathname = usePathname();
 
+    // Distraction-free mode for creation flows
+    if (pathname.startsWith("/dashboard/schedule/create")) {
+        return null;
+    }
+
     return (
         <header className="sticky top-0 z-40 w-full border-b bg-white">
             <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
@@ -54,10 +59,12 @@ export function NavHeader() {
 
                 {/* Right: CTA & User */}
                 <div className="flex items-center gap-4">
-                    <Button className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white gap-2 font-medium" size="sm">
-                        <Plus className="w-4 h-4" />
-                        Schedule a shift
-                    </Button>
+                    <Link href="/dashboard/schedule/create">
+                        <Button className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white gap-2 font-medium" size="sm">
+                            <Plus className="w-4 h-4" />
+                            Create a schedule
+                        </Button>
+                    </Link>
 
                     <div className="h-6 w-px bg-slate-200 hidden sm:block" />
 

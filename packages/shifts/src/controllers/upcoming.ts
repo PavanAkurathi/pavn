@@ -1,21 +1,28 @@
 // packages/shifts/src/controllers/upcoming.ts
 
-import { db } from "../db/mock-db";
-import { Shift } from "../types";
+import { db } from "@repo/database";
+import { shift } from "@repo/database/schema";
+import { inArray, asc } from "drizzle-orm";
+import { mapShiftToDto } from "../utils/mapper";
 
-export const getUpcomingShifts = (): Response => {
-    const now = new Date();
+export const getUpcomingShifts = async (): Promise<Response> => {
+    // 1. Query DB
+    const results = await db.query.shift.findMany({
+        where: inArray(shift.status, ['published', 'assigned', 'in-progress']),
+        orderBy: [asc(shift.startTime)],
+        with: {
+            organization: true,
+            location: true,
+            assignments: {
+                with: {
+                    worker: true
+                }
+            }
+        }
+    });
 
-    // Active statuses
-    const activeStatuses = ['published', 'assigned', 'in-progress'];
+    // 2. Map to DTO
+    const dtos = results.map(mapShiftToDto);
 
-    const upcomingShifts = db.shifts
-        .filter(shift => activeStatuses.includes(shift.status))
-        // Filter out shifts that are "completed" or "cancelled" strictly
-        // (Though status check above handles it, explicit is good for future proofing)
-
-        // Sort: Start Time Ascending (Soonest first)
-        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-
-    return Response.json(upcomingShifts, { status: 200 });
+    return Response.json(dtos, { status: 200 });
 };

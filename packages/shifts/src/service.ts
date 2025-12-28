@@ -1,90 +1,101 @@
 // packages/shifts/src/service.ts
 
-import { MOCK_SHIFTS, MOCK_TIMESHEETS } from "./mock-data";
 import { Shift, TimesheetWorker } from "./types";
 
 export interface GetShiftsOptions {
     view?: 'upcoming' | 'past' | 'needs_approval';
 }
 
+const API_BASE = "http://localhost:4005";
+
 export const shiftService = {
     getShifts: async (options?: GetShiftsOptions): Promise<Shift[]> => {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Special Case: "Past" View needs merged data (Pending + History)
+        if (options?.view === 'past') {
+            try {
+                const [pendingRes, historyRes] = await Promise.all([
+                    fetch(`${API_BASE}/shifts/pending-approval`),
+                    fetch(`${API_BASE}/shifts/history`)
+                ]);
 
-        const now = new Date();
-        const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+                // Parse safely
+                const pendingData = pendingRes.ok ? await pendingRes.json() : [];
+                const historyData = historyRes.ok ? await historyRes.json() : [];
 
-        // Helper: Is this shift explicitly needing approval?
-        const isNeedsApproval = (s: Shift) => {
-            if (s.status === 'completed') return true;
-            // "Implied" completed: Assigned/In-Progress but ended more than 2 hours ago
-            if ((s.status === 'assigned' || s.status === 'in-progress') && new Date(s.endTime) < twoHoursAgo) return true;
-            return false;
-        };
+                // Return combined: Pending (Action Items) first, then History
+                return [...(pendingData as Shift[]), ...(historyData as Shift[])];
 
-        if (options?.view === 'upcoming') {
-            // Include shifts that are effectively active
-            // Ends in future OR (Ends in past < 2h ago AND status is assigned/in-progress)
-            return MOCK_SHIFTS.filter(s => {
-                const endTime = new Date(s.endTime);
-                if (endTime > now) return true; // Future
-                // Recent past (within 2 hours) and still active
-                if ((s.status === 'assigned' || s.status === 'in-progress') && endTime >= twoHoursAgo) return true;
-                return false;
-            }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+            } catch (error) {
+                console.error("Error fetching past shifts:", error);
+                return [];
+            }
         }
+
+        // Standard Single-Endpoint Views
+        let endpoint = `${API_BASE}/shifts/upcoming`;
 
         if (options?.view === 'needs_approval') {
-            return MOCK_SHIFTS.filter(isNeedsApproval)
-                .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+            endpoint = `${API_BASE}/shifts/pending-approval`;
         }
 
-        if (options?.view === 'past') {
-            // Unified Past View: Includes "Needs Approval" AND "History" (Approved/Cancelled)
-            // Anything that has ended > 2 hours ago, or marked completed/approved/cancelled
-            return MOCK_SHIFTS.filter(s => {
-                // If it's explicitly completed, approved, or cancelled, it's in the past view
-                if (['completed', 'approved', 'cancelled'].includes(s.status)) return true;
+        // Note: 'past' is handled above, so no else-if needed here for it, 
+        // but default fallback is upcoming if undefined.
 
-                // If it's assigned/in-progress but ended > 2 hours ago (implied past/pending)
-                if ((s.status === 'assigned' || s.status === 'in-progress') && new Date(s.endTime) < twoHoursAgo) return true;
-
-                return false;
-            }).sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+        try {
+            const response = await fetch(endpoint);
+            if (!response.ok) {
+                console.error(`Failed to fetch shifts from ${endpoint}: ${response.statusText}`);
+                return [];
+            }
+            const data = await response.json();
+            return data as Shift[];
+        } catch (error) {
+            console.error("Error fetching shifts:", error);
+            return [];
         }
-
-        // Default: Return all
-        return MOCK_SHIFTS;
     },
 
     getPendingShiftsCount: async (): Promise<number> => {
-        await new Promise(resolve => setTimeout(resolve, 20));
-        const now = new Date();
-        const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-
-        return MOCK_SHIFTS.filter(s => {
-            if (s.status === 'completed') return true;
-            if ((s.status === 'assigned' || s.status === 'in-progress') && new Date(s.endTime) < twoHoursAgo) return true;
-            return false;
-        }).length;
+        try {
+            const response = await fetch(`${API_BASE}/shifts/pending-approval`);
+            if (!response.ok) return 0;
+            const data = await response.json() as Shift[];
+            return data.length;
+        } catch (error) {
+            console.error("Error fetching pending count:", error);
+            return 0;
+        }
     },
 
     getShiftById: async (id: string): Promise<Shift | undefined> => {
-        await new Promise(resolve => setTimeout(resolve, 20));
-        return MOCK_SHIFTS.find(s => s.id === id);
+        try {
+            const response = await fetch(`${API_BASE}/shifts/${id}`);
+            if (!response.ok) return undefined;
+            return await response.json() as Shift;
+        } catch (error) {
+            console.error("Error fetching shift:", error);
+            return undefined;
+        }
     },
 
     getTimesheetsForShift: async (shiftId: string): Promise<TimesheetWorker[]> => {
-        await new Promise(resolve => setTimeout(resolve, 20));
-        return MOCK_TIMESHEETS[shiftId] || [];
+        try {
+            const response = await fetch(`${API_BASE}/shifts/${shiftId}/timesheets`);
+            if (!response.ok) return [];
+            return await response.json() as TimesheetWorker[];
+        } catch (error) {
+            console.error("Error fetching timesheets:", error);
+            return [];
+        }
     },
 
     approveShift: async (shiftId: string): Promise<void> => {
-        await new Promise(resolve => setTimeout(resolve, 50));
-        const shift = MOCK_SHIFTS.find(s => s.id === shiftId);
-        if (shift) {
-            shift.status = 'approved';
+        const res = await fetch(`${API_BASE}/shifts/${shiftId}/approve`, {
+            method: 'POST',
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to approve shift");
         }
     }
 };

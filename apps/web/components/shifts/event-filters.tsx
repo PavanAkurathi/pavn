@@ -24,7 +24,7 @@ interface FilterState {
 interface EventFiltersProps {
     filters: FilterState;
     setFilters: (updates: any) => void;
-    availableLocations: string[];
+    availableLocations: any[]; // Updated to accept object structure
 }
 
 export function EventFilters({ filters, setFilters, availableLocations }: EventFiltersProps) {
@@ -75,13 +75,17 @@ export function EventFilters({ filters, setFilters, availableLocations }: EventF
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value={LOCATIONS.ALL}>All Locations</SelectItem>
-                        {availableLocations.map((loc) => (
-                            <SelectItem key={loc} value={loc}>
-                                <span className="truncate block max-w-[200px]" title={loc}>
-                                    {(loc ?? '').split('–')[0]?.trim()}
-                                </span>
-                            </SelectItem>
-                        ))}
+                        {availableLocations.map((loc: any) => {
+                            const value = typeof loc === 'string' ? loc : loc.name;
+                            const label = typeof loc === 'string' ? loc : loc.name;
+                            return (
+                                <SelectItem key={value} value={value}>
+                                    <span className="truncate block max-w-[200px]" title={label}>
+                                        {label}
+                                    </span>
+                                </SelectItem>
+                            );
+                        })}
                     </SelectContent>
                 </Select>
 

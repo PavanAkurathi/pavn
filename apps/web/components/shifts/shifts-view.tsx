@@ -19,7 +19,7 @@ import type { Shift } from "@/lib/types";
 
 interface ShiftsViewProps {
     initialShifts: Shift[];
-    availableLocations: string[];
+    availableLocations: any[]; // Updated to accept object structure from packages/shifts
     defaultTab?: string;
     pendingCount: number;
 }

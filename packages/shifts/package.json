@@ -12,7 +12,9 @@
         "check-types": "tsc --noEmit"
     },
     "dependencies": {
-        "date-fns": "^4.1.0"
+        "date-fns": "^4.1.0",
+        "@repo/database": "workspace:*",
+        "drizzle-orm": "^0.31.2"
     },
     "devDependencies": {
         "@repo/eslint-config": "workspace:*",

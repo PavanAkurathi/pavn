@@ -1,6 +1,7 @@
 // packages/database/src/schema.ts
 
-import { pgTable, text, timestamp, boolean, index, json } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, json, integer, unique } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 // ============================================================================
 // 1. IDENTITY & AUTH (Using Account Table for better compatibility)
@@ -13,7 +14,6 @@ export const user = pgTable("user", {
     emailVerified: boolean("email_verified").notNull(),
     image: text("image"),
     phoneNumber: text("phone_number"),
-    // password: text("password"), // REMOVED: Stored in account table
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
 }, (table) => ({
@@ -129,3 +129,98 @@ export const invitation = pgTable("invitation", {
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
 });
+
+// ============================================================================
+// 4. SCHEDULING (Shifts & Assignments)
+// ============================================================================
+
+export const shift = pgTable("shift", {
+    id: text("id").primaryKey(),
+
+    // -- Tenancy --
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+
+    // Link to your existing Location table
+    locationId: text("location_id")
+        .references(() => location.id, { onDelete: "set null" }),
+
+    // -- Details --
+    title: text("title").notNull(), // e.g. "Event Security"
+    description: text("description"),
+
+    startTime: timestamp("start_time").notNull(),
+    endTime: timestamp("end_time").notNull(),
+
+    // -- Capacity --
+    capacityTotal: integer("capacity_total").notNull().default(1),
+
+    // -- Money (Stored in Cents) --
+    price: integer("price").notNull(), // $20.00 = 2000
+    currency: text("currency").default("USD").notNull(),
+
+    // -- State --
+    // Values: 'published', 'assigned', 'in-progress', 'completed', 'approved', 'cancelled'
+    status: text("status").notNull().default("published"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+    shiftOrgIdx: index("shift_org_idx").on(table.organizationId),
+    shiftStatusIdx: index("shift_status_idx").on(table.status),
+    shiftTimeIdx: index("shift_time_idx").on(table.startTime),
+}));
+
+export const shiftAssignment = pgTable("shift_assignment", {
+    id: text("id").primaryKey(),
+
+    // -- Relationships --
+    shiftId: text("shift_id")
+        .notNull()
+        .references(() => shift.id, { onDelete: "cascade" }),
+
+    workerId: text("user_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+
+    // -- Timesheet Data (The "Actuals") --
+    clockIn: timestamp("clock_in"),
+    clockOut: timestamp("clock_out"),
+    breakMinutes: integer("break_minutes").default(0),
+
+    // -- Worker Status --
+    // Values: 'active', 'no_show', 'removed'
+    status: text("status").notNull().default("active"),
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+    assignmentShiftIdx: index("assignment_shift_idx").on(table.shiftId),
+    assignmentWorkerIdx: index("assignment_worker_idx").on(table.workerId),
+    // Constraint: A worker cannot be assigned to the same shift twice
+    uniqueWorkerPerShift: unique("unique_worker_shift").on(table.shiftId, table.workerId)
+}));
+
+export const shiftRelations = relations(shift, ({ one, many }) => ({
+    organization: one(organization, {
+        fields: [shift.organizationId],
+        references: [organization.id],
+    }),
+    location: one(location, {
+        fields: [shift.locationId],
+        references: [location.id],
+    }),
+    assignments: many(shiftAssignment),
+}));
+
+export const shiftAssignmentRelations = relations(shiftAssignment, ({ one }) => ({
+    shift: one(shift, {
+        fields: [shiftAssignment.shiftId],
+        references: [shift.id],
+    }),
+    worker: one(user, {
+        fields: [shiftAssignment.workerId],
+        references: [user.id],
+    }),
+}));
