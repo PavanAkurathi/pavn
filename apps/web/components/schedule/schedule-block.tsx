@@ -38,6 +38,9 @@ import {
     DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu";
 import { TimePickerSelect, calculateDefaultEndTime } from "./time-picker-select";
+import { PositionSelectorDialog, PositionItem } from "./position-selector-dialog";
+import { PositionChips } from "./position-chips";
+import { useState } from "react";
 
 interface ScheduleBlockProps {
     index: number;
@@ -48,9 +51,10 @@ interface ScheduleBlockProps {
 
 export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: ScheduleBlockProps) {
     const { control, watch, setValue } = useFormContext();
+    const [isPositionDialogOpen, setIsPositionDialogOpen] = useState(false);
 
     // Nested Field Array for Positions
-    const { fields, append } = useFieldArray({
+    const { fields, append, remove } = useFieldArray({
         control,
         name: `schedules.${index}.positions`,
     });
@@ -68,6 +72,20 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
     }, [watchStartTime, index, setValue, watch]);
 
     const breakDuration = watch(`schedules.${index}.breakDuration`);
+
+    const handlePositionsSelect = (selectedItems: PositionItem[]) => {
+        // Append selected positions to the Field Array
+        selectedItems.forEach(item => {
+            append({
+                roleId: item.roleId,
+                roleName: item.roleName,
+                workerId: item.workerId,
+                workerName: item.workerName,
+                workerAvatar: item.workerAvatar,
+                workerInitials: item.workerInitials
+            });
+        });
+    };
 
     return (
         <Card>
@@ -229,26 +247,29 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
                 <div className="space-y-4">
                     <h3 className="text-sm font-semibold">Positions</h3>
 
-                    {fields.length === 0 && (
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full h-12 border-dashed border-2 text-blue-600 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-500"
-                            onClick={() => console.log("TODO: Open Add Position Modal")}
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add position
-                        </Button>
+                    {fields.length > 0 && (
+                        <div className="mb-4">
+                            <PositionChips fields={fields} onRemove={remove} />
+                        </div>
                     )}
 
-                    {fields.map((field, idx) => (
-                        <div key={field.id} className="p-4 border rounded-md">
-                            Position {idx + 1}
-                        </div>
-                    ))}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full h-12 border-dashed border-2 text-blue-600 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-500"
+                        onClick={() => setIsPositionDialogOpen(true)}
+                    >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add position
+                    </Button>
                 </div>
 
-            </CardContent>
-        </Card>
+                <PositionSelectorDialog
+                    isOpen={isPositionDialogOpen}
+                    onClose={() => setIsPositionDialogOpen(false)}
+                    onSelect={handlePositionsSelect}
+                />
+            </CardContent >
+        </Card >
     );
 }

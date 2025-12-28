@@ -23,10 +23,13 @@ import { ScheduleBlock } from "./schedule-block";
 
 // Schema Definitions
 const PositionSchema = z.object({
-    id: z.string(),
+    id: z.string().optional(), // Used for field array key usually auto-generated but good to have
     roleId: z.string(),
     roleName: z.string(),
-    workerIds: z.array(z.string().nullable()),
+    workerId: z.string().nullable(),
+    workerName: z.string().optional(),
+    workerAvatar: z.string().optional(),
+    workerInitials: z.string().optional(),
 });
 
 const ScheduleBlockSchema = z.object({
