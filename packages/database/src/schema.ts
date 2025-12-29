@@ -189,6 +189,10 @@ export const shiftAssignment = pgTable("shift_assignment", {
     clockOut: timestamp("clock_out"),
     breakMinutes: integer("break_minutes").default(0),
 
+    // -- Financial Snapshot --
+    hourlyRateSnapshot: integer("hourly_rate_snapshot"),
+    grossPayCents: integer("gross_pay_cents").default(0),
+
     // -- Worker Status --
     // Values: 'active', 'no_show', 'removed'
     status: text("status").notNull().default("active"),

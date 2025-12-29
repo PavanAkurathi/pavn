@@ -1,26 +1,42 @@
-"use client"
+"use client";
 
 import Link from "next/link";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
-import { Field, FieldGroup, FieldLabel, FieldDescription } from "@repo/ui/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@repo/ui/components/ui/field";
 import { Card } from "@repo/ui/components/ui/card";
 import { Spinner } from "@repo/ui/components/ui/spinner";
 import { toast } from "sonner";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { authClient } from "@repo/auth/client";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordPage() {
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
 
-    const onSubmit = async (e: React.FormEvent) => {
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setLoading(false);
-        toast.success("Reset link sent!", {
-            description: "Check your email for instructions to reset your password.",
+
+        const formData = new FormData(e.currentTarget);
+        const email = formData.get("email") as string;
+
+        await authClient.emailOtp.sendVerificationOtp({
+            email,
+            type: "forget-password",
+        }, {
+            onSuccess: () => {
+                toast.success("Code sent!", {
+                    description: "Check your email for the verification code.",
+                });
+                router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`);
+            },
+            onError: (ctx) => {
+                toast.error(ctx.error.message);
+                setLoading(false);
+            }
         });
     };
 
@@ -31,7 +47,7 @@ export default function ForgotPasswordPage() {
                     Reset your password
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                    Enter your email address and we'll send you a link to reset your password.
+                    Enter your email address and we'll send you a code to reset your password.
                 </p>
             </div>
 
@@ -58,7 +74,7 @@ export default function ForgotPasswordPage() {
                                     <Spinner className="mr-2 text-white" /> Sending...
                                 </>
                             ) : (
-                                "Send Reset Link"
+                                "Send Reset Code"
                             )}
                         </Button>
                     </FieldGroup>

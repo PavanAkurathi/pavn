@@ -37,19 +37,25 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu";
-import { TimePickerSelect, calculateDefaultEndTime } from "./time-picker-select";
+import { calculateDefaultEndTime } from "./time-picker-select";
+import { SmartTimePicker } from "../ui/smart-time-picker";
 import { PositionSelectorDialog, PositionItem } from "./position-selector-dialog";
 import { PositionChips } from "./position-chips";
 import { useState } from "react";
+
+// ... imports
+import { CrewMember, Role } from "@/hooks/use-crew-data";
 
 interface ScheduleBlockProps {
     index: number;
     onRemove: () => void;
     onDuplicate: () => void;
     canDelete: boolean;
+    roles: Role[];
+    crew: CrewMember[];
 }
 
-export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: ScheduleBlockProps) {
+export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, crew }: ScheduleBlockProps) {
     const { control, watch, setValue } = useFormContext();
     const [isPositionDialogOpen, setIsPositionDialogOpen] = useState(false);
 
@@ -132,7 +138,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
                         render={({ field }) => (
                             <FormItem>
                                 <FormControl>
-                                    <Input placeholder="Schedule name *" {...field} />
+                                    <Input placeholder="Schedule name *" {...field} className="rounded-full" />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -150,7 +156,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
                                             <Button
                                                 variant={"outline"}
                                                 className={cn(
-                                                    "w-full pl-3 text-left font-normal h-11",
+                                                    "w-full pl-3 text-left font-normal h-11 rounded-full",
                                                     !field.value && "text-muted-foreground"
                                                 )}
                                             >
@@ -188,7 +194,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
                         name={`schedules.${index}.startTime`}
                         render={({ field }) => (
                             <FormItem>
-                                <TimePickerSelect
+                                <SmartTimePicker
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="Start time"
@@ -203,7 +209,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
                         name={`schedules.${index}.endTime`}
                         render={({ field }) => (
                             <FormItem>
-                                <TimePickerSelect
+                                <SmartTimePicker
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="End time"
@@ -220,12 +226,12 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
                             <FormItem>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Total unpaid break" />
+                                        <SelectTrigger className="rounded-full">
+                                            <SelectValue placeholder="Break time" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="0">None</SelectItem>
+                                        <SelectItem value="0">Break time</SelectItem>
                                         <SelectItem value="15">15m</SelectItem>
                                         <SelectItem value="30">30m</SelectItem>
                                         <SelectItem value="45">45m</SelectItem>
@@ -268,6 +274,8 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete }: Sched
                     isOpen={isPositionDialogOpen}
                     onClose={() => setIsPositionDialogOpen(false)}
                     onSelect={handlePositionsSelect}
+                    roles={roles}
+                    crew={crew}
                 />
             </CardContent >
         </Card >

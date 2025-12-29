@@ -1,5 +1,3 @@
-// app/components/schedule/contact-picker.tsx
-
 import { useState } from "react";
 import { Check, User, Plus, Phone } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
@@ -19,21 +17,35 @@ import {
 } from "@repo/ui/components/ui/popover";
 import { ContactOption } from "@/hooks/use-schedule-data";
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar";
+import { Checkbox } from "@repo/ui/components/ui/checkbox";
 
 interface ContactPickerProps {
     contacts: ContactOption[];
-    value: string;
-    onValueChange: (value: string) => void;
+    value: string[];
+    onValueChange: (value: string[]) => void;
 }
 
-export function ContactPicker({ contacts, value, onValueChange }: ContactPickerProps) {
+export function ContactPicker({ contacts, value = [], onValueChange }: ContactPickerProps) {
     const [open, setOpen] = useState(false);
-    const selectedContact = contacts.find((c) => c.id === value);
+
+    // Derived state for display
+    const selectedContacts = contacts.filter((c) => value.includes(c.id));
+    const label = selectedContacts.length > 0
+        ? `${selectedContacts.length} Manager${selectedContacts.length === 1 ? '' : 's'} Selected`
+        : "Select onsite managers";
+
+    const handleToggle = (id: string) => {
+        if (value.includes(id)) {
+            onValueChange(value.filter(v => v !== id));
+        } else {
+            onValueChange([...value, id]);
+        }
+    };
 
     return (
         <div className="space-y-2">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Onsite Contact
+                Onsite Managers
             </label>
             <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
@@ -43,22 +55,26 @@ export function ContactPicker({ contacts, value, onValueChange }: ContactPickerP
                         aria-expanded={open}
                         className={cn(
                             "w-full justify-between h-auto py-3 text-left font-normal",
-                            !value && "text-muted-foreground"
+                            value.length === 0 && "text-muted-foreground"
                         )}
                     >
-                        {selectedContact ? (
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarFallback>{selectedContact.initials}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="font-medium text-foreground leading-none">{selectedContact.name}</span>
-                                    <span className="text-xs text-muted-foreground leading-none">{selectedContact.phone}</span>
+                        <div className="flex items-center gap-2">
+                            {selectedContacts.length > 0 ? (
+                                <div className="flex -space-x-2">
+                                    {selectedContacts.slice(0, 3).map((c) => (
+                                        <Avatar key={c.id} className="h-6 w-6 border-2 border-background">
+                                            <AvatarFallback className="text-[10px]">{c.initials}</AvatarFallback>
+                                        </Avatar>
+                                    ))}
+                                    {selectedContacts.length > 3 && (
+                                        <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] border-2 border-background">
+                                            +{selectedContacts.length - 3}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        ) : (
-                            "Select onsite contact"
-                        )}
+                            ) : null}
+                            <span>{label}</span>
+                        </div>
                         <User className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                 </PopoverTrigger>
@@ -68,33 +84,39 @@ export function ContactPicker({ contacts, value, onValueChange }: ContactPickerP
                         <CommandList>
                             <CommandEmpty>No contact found.</CommandEmpty>
                             <CommandGroup>
-                                {contacts.map((contact) => (
-                                    <CommandItem
-                                        key={contact.id}
-                                        value={contact.name}
-                                        onSelect={() => {
-                                            onValueChange(contact.id === value ? "" : contact.id);
-                                            setOpen(false);
-                                        }}
-                                        className="cursor-pointer"
-                                    >
-                                        <div className="flex items-center gap-3 w-full">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarFallback>{contact.initials}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex flex-col gap-0.5 flex-1">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="font-medium">{contact.name}</span>
-                                                    {value === contact.id && <Check className="h-4 w-4 text-primary" />}
+                                {contacts.map((contact) => {
+                                    const isSelected = value.includes(contact.id);
+                                    return (
+                                        <CommandItem
+                                            key={contact.id}
+                                            value={contact.name}
+                                            onSelect={() => handleToggle(contact.id)}
+                                            className="cursor-pointer"
+                                        >
+                                            <div className="flex items-center gap-3 w-full">
+                                                <div className={cn(
+                                                    "flex items-center justify-center h-4 w-4 rounded-sm border border-primary",
+                                                    isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                                                )}>
+                                                    <Check className={cn("h-3 w-3")} />
                                                 </div>
-                                                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                    <Phone className="h-3 w-3" />
-                                                    {contact.phone}
-                                                </span>
+
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback>{contact.initials}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col gap-0.5 flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="font-medium">{contact.name}</span>
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                                        <Phone className="h-3 w-3" />
+                                                        {contact.phone}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </CommandItem>
-                                ))}
+                                        </CommandItem>
+                                    );
+                                })}
                             </CommandGroup>
                         </CommandList>
                     </Command>

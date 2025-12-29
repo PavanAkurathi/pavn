@@ -97,5 +97,31 @@ export const shiftService = {
         if (!res.ok) {
             throw new Error("Failed to approve shift");
         }
+    },
+
+    createBulk: async (payload: any): Promise<void> => {
+        const res = await fetch(`${API_BASE}/shifts/bulk`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to create schedules");
+        }
+    },
+
+    publishSchedule: async (payload: any): Promise<void> => {
+        const res = await fetch(`${API_BASE}/schedules/publish`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            throw new Error("Failed to publish schedule");
+        }
     }
 };

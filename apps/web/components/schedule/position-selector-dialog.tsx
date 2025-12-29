@@ -13,8 +13,8 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Search, Plus, Check, AlertTriangle, User } from "lucide-react";
-import { useCrewData } from "@/hooks/use-crew-data";
 import { cn } from "@repo/ui/lib/utils";
+import { CrewMember, Role } from "@/hooks/use-crew-data";
 
 export interface PositionItem {
     roleId: string;
@@ -29,10 +29,17 @@ interface PositionSelectorDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (selections: PositionItem[]) => void;
+    roles: Role[];
+    crew: CrewMember[];
 }
 
-export function PositionSelectorDialog({ isOpen, onClose, onSelect }: PositionSelectorDialogProps) {
-    const { roles, crew } = useCrewData();
+export function PositionSelectorDialog({
+    isOpen,
+    onClose,
+    onSelect,
+    roles,
+    crew
+}: PositionSelectorDialogProps) {
     const [activeTab, setActiveTab] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedItems, setSelectedItems] = useState<PositionItem[]>([]);
@@ -123,7 +130,7 @@ export function PositionSelectorDialog({ isOpen, onClose, onSelect }: PositionSe
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search crew or roles..."
-                            className="pl-9"
+                            className="pl-9 rounded-full"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />

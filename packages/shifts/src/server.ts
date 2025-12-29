@@ -1,17 +1,20 @@
 // packages/shifts/src/server.ts
 
+
 import { getUpcomingShifts } from "./controllers/upcoming";
 import { getPendingShifts } from "./controllers/pending";
 import { getHistoryShifts } from "./controllers/history";
 import { approveShiftController } from "./controllers/approve";
 import { getShiftByIdController } from "./controllers/get-by-id";
 import { getShiftTimesheetsController } from "./controllers/get-timesheets";
+import { updateTimesheetController } from "./controllers/update-timesheet";
+import { publishScheduleController } from "./controllers/publish";
 
 const port = 4005; // Moved to 4005 to avoid collisions
 
 const CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS", // Added PATCH
     "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -35,6 +38,8 @@ Bun.serve({
         const approveMatch = url.pathname.match(/^\/shifts\/([^/]+)\/approve$/);
         // Handle GET /shifts/:id/timesheets
         const timesheetsMatch = url.pathname.match(/^\/shifts\/([^/]+)\/timesheets$/);
+        // Handle PATCH /shifts/:id/timesheet
+        const updateTimesheetMatch = url.pathname.match(/^\/shifts\/([^/]+)\/timesheet$/);
         // Handle GET /shifts/:id (Must be last specific ID match to avoid conflicts)
         const idMatch = url.pathname.match(/^\/shifts\/([^/]+)$/);
 
@@ -47,9 +52,17 @@ Bun.serve({
                 const shiftId = approveMatch[1];
                 response = await approveShiftController(shiftId);
             }
+
             else if (timesheetsMatch && timesheetsMatch[1] && req.method === "GET") {
                 const shiftId = timesheetsMatch[1];
                 response = await getShiftTimesheetsController(shiftId);
+            }
+            else if (updateTimesheetMatch && updateTimesheetMatch[1] && req.method === "PATCH") {
+                response = await updateTimesheetController(req);
+            }
+            // Handle Publish
+            else if (url.pathname === "/schedules/publish" && req.method === "POST") {
+                response = await publishScheduleController(req);
             }
             // API Routes
             else if (url.pathname === "/shifts/upcoming" && req.method === "GET") {

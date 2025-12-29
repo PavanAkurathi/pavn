@@ -1,5 +1,19 @@
 
-export const ROLES = [
+export interface Role {
+    id: string;
+    label: string;
+}
+
+export interface CrewMember {
+    id: string;
+    name: string;
+    avatar: string;
+    roles: string[];
+    hours: number;
+    initials: string;
+}
+
+export const ROLES: Role[] = [
     { id: "all", label: "All" },
     { id: "server", label: "Servers" },
     { id: "bartender", label: "Bartenders" },
@@ -7,7 +21,7 @@ export const ROLES = [
     { id: "host", label: "Host" },
 ];
 
-export const AVAILABLE_CREW = [
+export const AVAILABLE_CREW: CrewMember[] = [
     {
         id: "u1",
         name: "Mike Ross",
