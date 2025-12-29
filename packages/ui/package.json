@@ -6,6 +6,9 @@
     "dist",
     "src"
   ],
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     "./components/ui/*": "./src/components/ui/*.tsx",
