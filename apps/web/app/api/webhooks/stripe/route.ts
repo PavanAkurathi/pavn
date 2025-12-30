@@ -6,8 +6,9 @@ import { organization } from "@repo/database/schema";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock_key_for_build", {
     apiVersion: "2025-12-15.clover" as any,
+    typescript: true,
 });
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
