@@ -22,29 +22,33 @@ export default async function proxy(request: NextRequest) {
     }
 
     try {
-        const response = await fetch(
-            new URL("/api/auth/get-session", request.url).toString(),
-            {
-                headers: {
-                    cookie: request.headers.get("cookie") || "",
-                },
-            }
-        );
+        const sessionUrl = new URL("/api/auth/get-session", request.url).toString();
+        console.log("[Proxy] Fetching session from:", sessionUrl);
+
+        const response = await fetch(sessionUrl, {
+            headers: {
+                cookie: request.headers.get("cookie") || "",
+            },
+        });
 
         const session = await response.json();
+        console.log("[Proxy] Session check result:", session ? "Authenticated" : "No Session", session?.user?.email);
 
         if (!session) {
+            console.log("[Proxy] No session found, redirecting to login");
             return NextResponse.redirect(new URL("/auth/login", request.url));
         }
 
         // 2. Enforce Email Verification
         // If user is logged in but not verified, force them to verification page
         if (!session.user.emailVerified) {
+            console.log("[Proxy] Email not verified, redirecting to verify");
             return NextResponse.redirect(new URL("/auth/verify-email", request.url));
         }
 
         return NextResponse.next();
     } catch (error) {
+        console.error("[Proxy] Session check failed:", error);
         // Fallback protection: if fetch fails, assume unauthenticated
         return NextResponse.redirect(new URL("/auth/login", request.url));
     }
