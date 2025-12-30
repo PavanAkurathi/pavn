@@ -22,8 +22,17 @@ export default async function proxy(request: NextRequest) {
     }
 
     try {
-        const sessionUrl = new URL("/api/auth/get-session", request.url).toString();
-        console.log("[Proxy] Fetching session from:", sessionUrl);
+        const urlObject = new URL("/api/auth/get-session", request.url);
+
+        // FIX: If running on localhost (internal loopback), force HTTP to avoid SSL errors
+        // The container listens on HTTP, but the request might come in as HTTPS from the load balancer
+        if (urlObject.hostname === 'localhost' || urlObject.hostname === '127.0.0.1') {
+            urlObject.protocol = 'http:';
+        }
+
+        const sessionUrl = urlObject.toString();
+
+        // console.log("[Proxy] Fetching session from:", sessionUrl);
 
         const response = await fetch(sessionUrl, {
             headers: {
