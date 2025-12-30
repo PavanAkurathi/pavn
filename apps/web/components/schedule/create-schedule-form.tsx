@@ -17,6 +17,7 @@ import {
     FormItem,
     FormMessage,
 } from "@repo/ui/components/ui/form";
+import { authClient } from "@repo/auth/client";
 import { useLocations, useContacts, useOrganizationId } from "@/hooks/use-schedule-data";
 import { useCrewData } from "@/hooks/use-crew-data";
 import { LocationPicker } from "./location-picker";
@@ -70,7 +71,8 @@ export function CreateScheduleForm() {
     const { data: contacts } = useContacts();
     const activeOrganizationId = useOrganizationId();
     const { roles, crew } = useCrewData();
-    const currentUserId = "user_2qXN4k7y8Z5m3P9r1";
+    const { data: session } = authClient.useSession();
+    const currentUserId = session?.user?.id;
     const router = useRouter();
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);

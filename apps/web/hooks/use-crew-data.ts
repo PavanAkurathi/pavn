@@ -21,52 +21,39 @@ export const ROLES: Role[] = [
     { id: "host", label: "Host" },
 ];
 
-export const AVAILABLE_CREW: CrewMember[] = [
-    {
-        id: "u1",
-        name: "Mike Ross",
-        avatar: "https://github.com/shadcn.png",
-        roles: ["server", "bartender"],
-        hours: 38,
-        initials: "MR"
-    },
-    {
-        id: "u2",
-        name: "Sarah Jessica",
-        avatar: "",
-        roles: ["server"],
-        hours: 12,
-        initials: "SJ"
-    },
-    {
-        id: "u3",
-        name: "Jim Halpert",
-        avatar: "",
-        roles: ["kitchen", "cook"],
-        hours: 42,
-        initials: "JH"
-    },
-    {
-        id: "u4",
-        name: "Pam Beesly",
-        avatar: "",
-        roles: ["host"],
-        hours: 32,
-        initials: "PB"
-    },
-    {
-        id: "u5",
-        name: "Dwight Schrute",
-        avatar: "",
-        roles: ["all"],
-        hours: 50,
-        initials: "DS"
-    },
-];
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
+import { useOrganizationId } from "./use-schedule-data";
+
+// Define the shape of a Worker based on your DB Schema
+export interface CrewMember {
+    id: string; // The User ID (workerId)
+    name: string;
+    image?: string;
+    roles: string[]; // e.g. ["Server", "Bartender"]
+    weeklyHours: number; // Calculated by backend
+    // initials: string; // Optional: Backend needs to provide this or frontend computes it
+}
+
+
+const API_BASE = process.env.NEXT_PUBLIC_SHIFTS_API_URL || "http://localhost:4005"; // Shift Service
 
 export function useCrewData() {
+    // 1. Get the Context (Org ID)
+    const orgId = useOrganizationId();
+
+    // 2. SWR Fetch
+    // We need an endpoint in Shift Service to get schedulable crew
+    // GET /organizations/:id/crew
+    const shouldFetch = orgId ? `${API_BASE}/organizations/${orgId}/crew` : null;
+
+    const { data, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcher);
+
+    // 3. Return robust state
     return {
-        roles: ROLES,
-        crew: AVAILABLE_CREW
+        crew: data || [],
+        roles: ROLES, // If you have a separate roles endpoint, fetch it here too
+        isLoading,
+        isError: error
     };
 }

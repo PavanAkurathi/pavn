@@ -9,6 +9,7 @@ import { getShiftByIdController } from "./controllers/get-by-id";
 import { getShiftTimesheetsController } from "./controllers/get-timesheets";
 import { updateTimesheetController } from "./controllers/update-timesheet";
 import { publishScheduleController } from "./controllers/publish";
+import { getCrewController } from "./controllers/get-crew";
 
 const port = 4005; // Moved to 4005 to avoid collisions
 
@@ -40,6 +41,8 @@ Bun.serve({
         const timesheetsMatch = url.pathname.match(/^\/shifts\/([^/]+)\/timesheets$/);
         // Handle PATCH /shifts/:id/timesheet
         const updateTimesheetMatch = url.pathname.match(/^\/shifts\/([^/]+)\/timesheet$/);
+        // Handle GET /organizations/:id/crew
+        const crewMatch = url.pathname.match(/^\/organizations\/([^/]+)\/crew$/);
         // Handle GET /shifts/:id (Must be last specific ID match to avoid conflicts)
         const idMatch = url.pathname.match(/^\/shifts\/([^/]+)$/);
 
@@ -59,6 +62,9 @@ Bun.serve({
             }
             else if (updateTimesheetMatch && updateTimesheetMatch[1] && req.method === "PATCH") {
                 response = await updateTimesheetController(req);
+            }
+            else if (crewMatch && crewMatch[1] && req.method === "GET") {
+                response = await getCrewController(crewMatch[1]);
             }
             // Handle Publish
             else if (url.pathname === "/schedules/publish" && req.method === "POST") {

@@ -6,7 +6,7 @@ export interface GetShiftsOptions {
     view?: 'upcoming' | 'past' | 'needs_approval';
 }
 
-const API_BASE = "http://localhost:4005";
+const API_BASE = process.env.NEXT_PUBLIC_SHIFTS_API_URL || "http://localhost:4005";
 
 export const shiftService = {
     getShifts: async (options?: GetShiftsOptions): Promise<Shift[]> => {
