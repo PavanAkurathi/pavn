@@ -8,8 +8,8 @@ interface DbShift {
     organizationId: string;
     title: string;
     description: string | null;
-    locationId: string;
-    locationName: string | null;
+    locationId: string | null;
+    locationName?: string | null;
     startTime: Date;
     endTime: Date;
     price: number | null;
@@ -36,7 +36,7 @@ export const mapShiftToDto = (dbShift: DbShift): ApiShift => {
         id: dbShift.id,
         title: dbShift.title,
         locationName: dbShift.locationName || dbShift.location?.name || "Unknown Location", // Fallback if join is missing
-        locationId: dbShift.locationId,
+        locationId: dbShift.locationId || "unknown",
         locationAddress: dbShift.location?.address || undefined,
         // Convert Date objects to ISO Strings
         startTime: dbShift.startTime.toISOString(),

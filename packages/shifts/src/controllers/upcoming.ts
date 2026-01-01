@@ -7,6 +7,7 @@ import { mapShiftToDto } from "../utils/mapper";
 
 export const getUpcomingShifts = async (orgId: string): Promise<Response> => {
     // 1. Query DB
+    console.log(`[GET /upcoming] Fetching for Org: ${orgId}`);
     const results = await db.query.shift.findMany({
         where: and(
             eq(shift.organizationId, orgId),
@@ -25,6 +26,7 @@ export const getUpcomingShifts = async (orgId: string): Promise<Response> => {
     });
 
     // 2. Map to DTO
+    console.log(`[GET /upcoming] Found ${results.length} shifts.`);
     const dtos = results.map(mapShiftToDto);
 
     return Response.json(dtos, { status: 200 });
