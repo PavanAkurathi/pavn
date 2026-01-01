@@ -24,10 +24,12 @@ import { LocationPicker } from "./location-picker";
 import { ContactPicker } from "./contact-picker";
 import { ScheduleBlock } from "./schedule-block";
 import { ReviewScheduleDialog } from "./review-schedule-dialog";
-import { shiftService } from "@repo/shifts-service";
+import { publishSchedule } from "@/lib/api/shifts";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ExitDialog } from "./exit-dialog";
+import { AddLocationModal } from "../settings/add-location-modal";
+import { createLocation } from "@/actions/locations";
 
 // Schema Definitions
 const PositionSchema = z.object({
@@ -67,7 +69,7 @@ const DEFAULT_SCHEDULE_BLOCK = {
 
 export function CreateScheduleForm() {
     // 1. Hook Definitions
-    const { data: locations } = useLocations();
+    const { data: locations, mutate: mutateLocations } = useLocations();
     const { data: contacts } = useContacts();
     const activeOrganizationId = useOrganizationId();
     const { roles, crew } = useCrewData();
@@ -77,6 +79,7 @@ export function CreateScheduleForm() {
     const [isReviewOpen, setIsReviewOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
+    const [isAddLocationOpen, setIsAddLocationOpen] = useState(false);
 
     // 2. Form Setup
     const form = useForm<FormValues>({
@@ -94,7 +97,29 @@ export function CreateScheduleForm() {
     });
 
     // 3. Auto-select current user as contact
-    // 3. Auto-select current user as contact
+    // 4. Auto-select current user as contact
+    // 3. Load Draft on Mount
+    useEffect(() => {
+        const savedDraft = localStorage.getItem("schedule-layout-draft");
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                // Convert date strings back to Date objects
+                if (parsed.schedules) {
+                    parsed.schedules = parsed.schedules.map((s: any) => ({
+                        ...s,
+                        date: s.date ? new Date(s.date) : undefined
+                    }));
+                }
+                form.reset(parsed);
+                toast.success("Draft restored");
+            } catch (e) {
+                console.error("Failed to parse draft", e);
+            }
+        }
+    }, [form]);
+
+    // 4. Auto-select current user as contact
     useEffect(() => {
         if (contacts && currentUserId) {
             const currentManagers = form.getValues("managerIds");
@@ -112,6 +137,7 @@ export function CreateScheduleForm() {
         // Deep copy logic handled by getValues + insert
         insert(index + 1, {
             ...currentData,
+            ...currentData,
             // Keep date or clear it? Requirement says: "Keep the dates".
         });
     };
@@ -125,7 +151,16 @@ export function CreateScheduleForm() {
         if (isValid) {
             setIsReviewOpen(true);
         } else {
-            toast.error("Please fix validation errors before publishing.");
+            const errors = form.formState.errors;
+            // Extract top-level error keys for better feedback
+            const missingFields = Object.keys(errors).map(key => {
+                if (key === 'managerIds') return 'Onsite Manager';
+                if (key === 'locationId') return 'Location';
+                if (key === 'schedules') return 'Schedule Details';
+                return key;
+            }).join(", ");
+
+            toast.error(`Please check missing fields: ${missingFields}`);
         }
     };
 
@@ -160,7 +195,7 @@ export function CreateScheduleForm() {
                 }))
             };
 
-            await shiftService.publishSchedule(payload);
+            await publishSchedule(payload, activeOrganizationId);
             toast.success("Schedule published successfully!");
             router.push("/dashboard/shifts");
         } catch (error) {
@@ -222,6 +257,7 @@ export function CreateScheduleForm() {
                                                 locations={locations}
                                                 value={field.value}
                                                 onValueChange={field.onChange}
+                                                onAddLocation={() => setIsAddLocationOpen(true)}
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -310,6 +346,20 @@ export function CreateScheduleForm() {
                     onClose={() => setIsExitDialogOpen(false)}
                     onSave={handleSaveDraft}
                     onDiscard={handleDiscard}
+                />
+
+                <AddLocationModal
+                    open={isAddLocationOpen}
+                    onOpenChange={setIsAddLocationOpen}
+                    onSave={async (data) => {
+                        const res = await createLocation({ ...data, timezone: "UTC" });
+                        if (res.success) {
+                            toast.success("Location created successfully");
+                            mutateLocations(); // Refresh list
+                            return {};
+                        }
+                        return res;
+                    }}
                 />
             </Form>
         </div>

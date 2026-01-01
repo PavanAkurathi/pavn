@@ -31,7 +31,7 @@ export function ContactPicker({ contacts, value = [], onValueChange }: ContactPi
     // Derived state for display
     const selectedContacts = contacts.filter((c) => value.includes(c.id));
     const label = selectedContacts.length > 0
-        ? `${selectedContacts.length} Manager${selectedContacts.length === 1 ? '' : 's'} Selected`
+        ? selectedContacts.map(c => c.name).join(", ")
         : "Select onsite managers";
 
     const handleToggle = (id: string) => {

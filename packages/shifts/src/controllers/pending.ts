@@ -5,18 +5,21 @@ import { shift } from "@repo/database/schema";
 import { or, eq, and, inArray, lt, asc } from "drizzle-orm";
 import { mapShiftToDto } from "../utils/mapper";
 
-export const getPendingShifts = async (): Promise<Response> => {
+export const getPendingShifts = async (orgId: string): Promise<Response> => {
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
     const results = await db.query.shift.findMany({
-        where: or(
-            // Condition A: Explicitly Completed
-            eq(shift.status, 'completed'),
+        where: and(
+            eq(shift.organizationId, orgId),
+            or(
+                // Condition A: Explicitly Completed
+                eq(shift.status, 'completed'),
 
-            // Condition B: Ghost Shifts (Late)
-            and(
-                inArray(shift.status, ['assigned', 'in-progress']),
-                lt(shift.endTime, twoHoursAgo)
+                // Condition B: Ghost Shifts (Late)
+                and(
+                    inArray(shift.status, ['assigned', 'in-progress']),
+                    lt(shift.endTime, twoHoursAgo)
+                )
             )
         ),
         orderBy: [asc(shift.startTime)], // Oldest first

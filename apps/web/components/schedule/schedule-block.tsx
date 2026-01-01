@@ -58,6 +58,7 @@ interface ScheduleBlockProps {
 export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, crew }: ScheduleBlockProps) {
     const { control, watch, setValue } = useFormContext();
     const [isPositionDialogOpen, setIsPositionDialogOpen] = useState(false);
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     // Nested Field Array for Positions
     const { fields, append, remove } = useFieldArray({
@@ -150,7 +151,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                         name={`schedules.${index}.date`}
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
-                                <Popover>
+                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                     <PopoverTrigger asChild>
                                         <FormControl>
                                             <Button
@@ -163,22 +164,44 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                 {field.value ? (
                                                     format(field.value, "PPP")
                                                 ) : (
-                                                    <span>Select date(s)</span>
+                                                    <span>Select date</span>
                                                 )}
                                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                             </Button>
                                         </FormControl>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            mode="single"
-                                            selected={field.value}
-                                            onSelect={field.onChange}
-                                            disabled={(date) =>
-                                                date < new Date(new Date().setHours(0, 0, 0, 0))
-                                            }
-                                            initialFocus
-                                        />
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] p-0 rounded-xl overflow-hidden shadow-lg border-0" align="start" sideOffset={8} collisionPadding={16}>
+                                        <div className="p-4 bg-white">
+                                            <Calendar
+                                                mode="single"
+                                                selected={field.value}
+                                                onSelect={(date) => {
+                                                    field.onChange(date);
+                                                    // Do not auto-close to allow user to confirm or see selection
+                                                }}
+                                                disabled={(date) =>
+                                                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                                                }
+                                                initialFocus
+                                                // Enable Year Navigation
+                                                fromYear={new Date().getFullYear()}
+                                                toYear={new Date().getFullYear() + 2}
+                                                captionLayout="dropdown"
+                                                className="border rounded-md"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-white border-t border-zinc-100">
+                                            <span className="text-sm font-medium text-zinc-900">
+                                                {field.value ? "1 day selected" : "0 days selected"}
+                                            </span>
+                                            <Button
+                                                size="sm"
+                                                className="h-9 px-6 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-none rounded-lg"
+                                                onClick={() => setIsCalendarOpen(false)}
+                                            >
+                                                Done
+                                            </Button>
+                                        </div>
                                     </PopoverContent>
                                 </Popover>
                                 <FormMessage />

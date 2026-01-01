@@ -3,12 +3,12 @@ import { getUpcomingShifts } from "../src/controllers/upcoming";
 
 describe("GET /shifts/upcoming", () => {
     test("returns 200 OK", async () => {
-        const response = await getUpcomingShifts();
+        const response = await getUpcomingShifts("test_org");
         expect(response.status).toBe(200);
     });
 
     test("returns only active shifts (not completed/cancelled)", async () => {
-        const response = await getUpcomingShifts();
+        const response = await getUpcomingShifts("test_org");
         const shifts = await response.json() as any[];
 
         // Check that we got some shifts
@@ -22,7 +22,7 @@ describe("GET /shifts/upcoming", () => {
     });
 
     test("sorts by startTime ascending", async () => {
-        const response = await getUpcomingShifts();
+        const response = await getUpcomingShifts("test_org");
         const shifts = await response.json() as any[];
 
         for (let i = 0; i < shifts.length - 1; i++) {

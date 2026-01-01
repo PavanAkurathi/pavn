@@ -1,27 +1,45 @@
+// packages/shifts/src/controllers/update-timesheet.ts
+
 
 import { db } from "@repo/database";
-import { shiftAssignment } from "@repo/database/schema";
+import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 
-interface UpdateTimesheetPayload {
-    shiftId: string;
-    workerId: string;
-    action: "update_time" | "mark_no_show";
-    data?: {
-        clockIn?: string;
-        clockOut?: string;
-        breakMinutes?: number;
-    };
-}
+import { z } from "zod";
 
-export const updateTimesheetController = async (req: Request): Promise<Response> => {
+const TimesheetSchema = z.object({
+    shiftId: z.string(),
+    workerId: z.string(),
+    action: z.enum(["update_time", "mark_no_show"]),
+    data: z.object({
+        clockIn: z.string().optional(),
+        clockOut: z.string().optional(),
+        breakMinutes: z.number().optional()
+    }).optional()
+});
+
+export const updateTimesheetController = async (req: Request, orgId: string): Promise<Response> => {
     try {
-        const body = (await req.json()) as UpdateTimesheetPayload;
-        const { shiftId, workerId, action, data } = body;
+        const body = await req.json();
+        const parseResult = TimesheetSchema.safeParse(body);
 
-        // Validation
-        if (!shiftId || !workerId || !action) {
-            return new Response("Missing required fields", { status: 400 });
+        if (!parseResult.success) {
+            return Response.json({
+                error: "Validation Failed",
+                details: parseResult.error.flatten()
+            }, { status: 400 });
+        }
+
+        const { shiftId, workerId, action, data } = parseResult.data;
+
+        // Verify Shift Ownership
+        const validShift = await db.query.shift.findFirst({
+            where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
+            columns: { id: true }
+        });
+
+        if (!validShift) {
+            return Response.json({ error: "Shift not found or access denied" }, { status: 403 });
         }
 
         if (action === 'mark_no_show') {
@@ -50,19 +68,16 @@ export const updateTimesheetController = async (req: Request): Promise<Response>
                     eq(shiftAssignment.workerId, workerId)
                 ));
         } else {
-            return new Response("Invalid action", { status: 400 });
+            return Response.json({ error: "Invalid action" }, { status: 400 });
         }
 
         return Response.json({ success: true }, { status: 200 });
 
     } catch (error) {
         console.error("Update Timesheet Error:", error);
-        return new Response(JSON.stringify({
+        return Response.json({
             error: "Failed to update timesheet",
             details: error instanceof Error ? error.message : String(error)
-        }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" }
-        });
+        }, { status: 500 });
     }
 };

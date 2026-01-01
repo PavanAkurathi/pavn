@@ -1,56 +1,64 @@
-// packages/shifts/src/controllers/publish.ts
-
-
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
 import { addMinutes } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
+import { newId } from "../utils/ids";
 
-interface PublishSchedulePayload {
-    locationId: string;
-    contactId?: string; // Optional if not used yet
-    organizationId: string;
-    timezone: string; // Required
-    schedules: Array<{
-        startTime: string; // "09:00"
-        endTime: string;   // "17:00"
-        dates: string[];   // ["2025-12-30"]
-        scheduleName: string;
-        positions: Array<{
-            roleName: string;
-            price?: number;
-            workerIds: (string | null)[];
-        }>;
-    }>;
-}
+import { z } from "zod";
 
-export const publishScheduleController = async (req: Request): Promise<Response> => {
+const PublishSchema = z.object({
+    locationId: z.string(),
+    contactId: z.string().optional(),
+    organizationId: z.string(),
+    timezone: z.string(),
+    schedules: z.array(z.object({
+        startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:MM)"),
+        endTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:MM)"),
+        dates: z.array(z.string()).max(31, "Cannot publish more than 31 days at once"),
+        scheduleName: z.string(),
+        positions: z.array(z.object({
+            roleName: z.string(),
+            price: z.number().optional(),
+            workerIds: z.array(z.string().nullable()).max(50, "Cannot exceed 50 positions per role")
+        }))
+    }))
+});
+
+export const publishScheduleController = async (req: Request, headerOrgId: string): Promise<Response> => {
     try {
-        const body = (await req.json()) as PublishSchedulePayload;
-        const { locationId, organizationId, timezone, schedules } = body;
+        const body = await req.json();
+        const parseResult = PublishSchema.safeParse(body);
 
-        // Validation
-        if (!timezone) {
-            return new Response("Timezone required", { status: 400 });
-        }
-        if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
-            return new Response("Invalid payload", { status: 400 });
+        if (!parseResult.success) {
+            return Response.json({
+                error: "Validation Failed",
+                details: parseResult.error.flatten()
+            }, { status: 400 });
         }
 
-        // 1. Prepare Data in Memory (Batch Strategy to avoid Neon HTTP Transaction issues)
+        const { locationId, contactId, organizationId, timezone, schedules } = parseResult.data;
+
+        // Security Check: Header vs Body
+        if (organizationId && organizationId !== headerOrgId) {
+            return Response.json({ error: "Organization mismatch" }, { status: 403 });
+        }
+        // Force use of header-derived orgId
+        const activeOrgId = headerOrgId;
+
+        // 1. Prepare Data in Memory (Batch Strategy)
         const shiftsToInsert: typeof shift.$inferInsert[] = [];
         const assignmentsToInsert: typeof shiftAssignment.$inferInsert[] = [];
 
         // LOOP A: Iterate through Schedule Blocks
         for (const block of schedules) {
 
+            // GROUPING: Generate a Layout Intent ID for this block ("Batch Context")
+            const scheduleIntentId = newId('int');
+
             // LOOP B: Iterate through Dates
             for (const dateStr of block.dates) {
 
                 // TIMEZONE FIX: Convert Local Wall Time -> UTC Timestamp
-                // Date string comes in as ISO (e.g., "2025-01-01T00:00:00.000Z") from frontend date picker or just "YYYY-MM-DD"
-                // fromZonedTime handles "YYYY-MM-DDTHH:mm:ss" well.
-                // We assume dateStr is "YYYY-MM-DD" or similar.
                 const datePart = (dateStr.includes("T") ? dateStr.split("T")[0] : dateStr) || "";
 
                 const startDateTime = combineDateTimeTz(datePart, block.startTime, timezone);
@@ -66,14 +74,16 @@ export const publishScheduleController = async (req: Request): Promise<Response>
 
                     // LOOP D: Iterate through Worker Slots
                     for (const workerId of position.workerIds) {
-                        const shiftId = crypto.randomUUID();
+                        // SMART ID: Use 'shf' prefix
+                        const shiftId = newId('shf');
                         // Handle null workerId (Open Spot)
                         const initialStatus = workerId ? 'assigned' : 'published';
 
                         shiftsToInsert.push({
                             id: shiftId,
-                            organizationId: organizationId || "org_default",
+                            organizationId: activeOrgId, // Use secure orgId
                             locationId,
+                            contactId, // Persist Onsite Manager
                             title: position.roleName,
                             description: block.scheduleName,
                             startTime: startDateTime,
@@ -81,11 +91,14 @@ export const publishScheduleController = async (req: Request): Promise<Response>
                             price: position.price || 0,
                             capacityTotal: 1,
                             status: initialStatus,
+                            // PERSIST GROUPING
+                            scheduleGroupId: scheduleIntentId
                         });
 
                         if (workerId) {
                             assignmentsToInsert.push({
-                                id: crypto.randomUUID(),
+                                // SMART ID: Use 'asg' prefix
+                                id: newId('asg'),
                                 shiftId: shiftId,
                                 workerId: workerId,
                                 status: 'active'
@@ -96,14 +109,16 @@ export const publishScheduleController = async (req: Request): Promise<Response>
             }
         }
 
-        // 2. Execute Batch Inserts
-        if (shiftsToInsert.length > 0) {
-            await db.insert(shift).values(shiftsToInsert);
-        }
+        // 2. Execute Batch Inserts (Atomic Transaction)
+        await db.transaction(async (tx) => {
+            if (shiftsToInsert.length > 0) {
+                await tx.insert(shift).values(shiftsToInsert);
+            }
 
-        if (assignmentsToInsert.length > 0) {
-            await db.insert(shiftAssignment).values(assignmentsToInsert);
-        }
+            if (assignmentsToInsert.length > 0) {
+                await tx.insert(shiftAssignment).values(assignmentsToInsert);
+            }
+        });
 
         return Response.json({
             success: true,
@@ -113,13 +128,10 @@ export const publishScheduleController = async (req: Request): Promise<Response>
 
     } catch (error) {
         console.error("Publish Error:", error);
-        return new Response(JSON.stringify({
+        return Response.json({
             error: "Failed to publish schedule",
             details: error instanceof Error ? error.message : String(error)
-        }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" }
-        });
+        }, { status: 500 });
     }
 };
 

@@ -44,19 +44,18 @@ export async function GET(
                 and(
                     eq(member.organizationId, orgId),
                     // Filtering logic:
-                    or(eq(member.role, 'admin'), eq(member.role, 'manager'))
+                    // Temporary debug: Disable filter to see ALL members
+                    // or(eq(member.role, 'owner'), eq(member.role, 'admin'), eq(member.role, 'manager'))
                 )
             );
+
+        console.log(`[DEBUG] Found ${members.length} members for org ${orgId}`);
 
         // Transform to ContactOption format
         // { id, userId, name, phone, initials, role }
         const contacts = members.map(m => ({
-            id: m.id, // Member ID (which serves as Contact ID usually) OR userId? 
-            // Form uses `contactId` which maps to `managerIds` entries. 
-            // In `create-schedule-form`, `managerIds` are used as `contactId`. 
-            // Usually `contactId` refers to a Member ID or User ID. 
-            // Given the previous mock data: id: "c-1", userId: "..."
-            // I will use Member ID as `id`.
+            id: m.userId, // Use User ID for Contact ID to satisfy Shift FK (shifts.contact_id -> user.id)
+            memberId: m.id, // Keep reference just in case
             userId: m.userId,
             name: m.user.name,
             phone: m.user.phone || "",

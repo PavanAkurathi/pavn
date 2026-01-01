@@ -1,7 +1,7 @@
 
 // packages/shifts/src/types.ts
 
-export type ShiftStatus = 'open' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'approved';
+export type ShiftStatus = 'draft' | 'published' | 'open' | 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'approved';
 
 export interface Shift {
     id: string;

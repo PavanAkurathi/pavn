@@ -24,9 +24,10 @@ interface LocationPickerProps {
     locations: LocationOption[];
     value: string;
     onValueChange: (value: string) => void;
+    onAddLocation?: () => void;
 }
 
-export function LocationPicker({ locations, value, onValueChange }: LocationPickerProps) {
+export function LocationPicker({ locations, value, onValueChange, onAddLocation }: LocationPickerProps) {
     const [open, setOpen] = useState(false);
     const selectedLocation = locations.find((loc) => loc.id === value);
 
@@ -86,7 +87,10 @@ export function LocationPicker({ locations, value, onValueChange }: LocationPick
                             <CommandSeparator />
                             <CommandGroup>
                                 <CommandItem
-                                    onSelect={() => console.log("TODO: Add Modal")}
+                                    onSelect={() => {
+                                        onAddLocation?.();
+                                        setOpen(false);
+                                    }}
                                     className="cursor-pointer text-primary"
                                 >
                                     <Plus className="mr-2 h-4 w-4" />

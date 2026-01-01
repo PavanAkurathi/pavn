@@ -2,13 +2,13 @@
 
 import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { mapShiftToDto } from "../utils/mapper";
 
-export const getShiftByIdController = async (id: string): Promise<Response> => {
+export const getShiftByIdController = async (id: string, orgId: string): Promise<Response> => {
     // 1. Query DB for single shift
     const result = await db.query.shift.findFirst({
-        where: eq(shift.id, id),
+        where: and(eq(shift.id, id), eq(shift.organizationId, orgId)),
         with: {
             organization: true,
             location: true,
@@ -21,10 +21,7 @@ export const getShiftByIdController = async (id: string): Promise<Response> => {
     });
 
     if (!result) {
-        return new Response(JSON.stringify({ error: "Shift not found" }), {
-            status: 404,
-            headers: { "Content-Type": "application/json" }
-        });
+        return Response.json({ error: "Shift not found" }, { status: 404 });
     }
 
     // 2. Map to DTO

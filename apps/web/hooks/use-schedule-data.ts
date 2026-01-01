@@ -10,7 +10,8 @@ export interface LocationOption {
 }
 
 export interface ContactOption {
-    id: string; // This is the Member ID
+    id: string; // This is the User ID now (to match DB FK)
+    memberId?: string; // Original Member ID
     userId: string; // Linked user account
     name: string;
     phone: string;
@@ -22,13 +23,15 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function useOrganizationId() {
     const session = authClient.useSession();
-    return session.data?.session.activeOrganizationId;
+    const { data: orgs } = authClient.useListOrganizations();
+
+    return session.data?.session.activeOrganizationId || orgs?.[0]?.id;
 }
 
 export function useLocations() {
     const orgId = useOrganizationId();
 
-    const { data, error, isLoading } = useSWR<LocationOption[]>(
+    const { data, error, isLoading, mutate } = useSWR<LocationOption[]>(
         orgId ? `/api/organizations/${orgId}/locations` : null,
         fetcher
     );
@@ -36,7 +39,8 @@ export function useLocations() {
     return {
         data: data || [],
         isLoading,
-        error
+        error,
+        mutate
     };
 }
 

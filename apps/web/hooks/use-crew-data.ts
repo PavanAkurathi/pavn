@@ -26,14 +26,7 @@ import { fetcher } from "@/lib/fetcher";
 import { useOrganizationId } from "./use-schedule-data";
 
 // Define the shape of a Worker based on your DB Schema
-export interface CrewMember {
-    id: string; // The User ID (workerId)
-    name: string;
-    image?: string;
-    roles: string[]; // e.g. ["Server", "Bartender"]
-    weeklyHours: number; // Calculated by backend
-    // initials: string; // Optional: Backend needs to provide this or frontend computes it
-}
+// Duplicate interface removed
 
 
 const API_BASE = process.env.NEXT_PUBLIC_SHIFTS_API_URL || "http://localhost:4005"; // Shift Service

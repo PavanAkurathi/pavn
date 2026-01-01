@@ -5,7 +5,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
-import { shiftService, AVAILABLE_LOCATIONS } from "@repo/shifts-service";
+import { AVAILABLE_LOCATIONS } from "@repo/shifts-service";
+import { getShifts, getPendingShiftsCount } from "@/lib/api/shifts";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -25,9 +26,13 @@ export default async function ShiftsPage(props: {
     }
 
     // Fetch Data from "Backend" Service
+    // TODO: reliable way to get active org id from session or header
+    // Casting to any to avoid type error if activeOrganizationId is not in core types yet
+    const orgId = (session as any).activeOrganizationId || (session.user as any).activeOrganizationId || "org_default";
+
     const [shifts, pendingCount] = await Promise.all([
-        shiftService.getShifts({ view }),
-        shiftService.getPendingShiftsCount()
+        getShifts({ view, orgId }),
+        getPendingShiftsCount(orgId)
     ]);
 
     return (

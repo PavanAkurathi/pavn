@@ -1,6 +1,6 @@
 // Re-export types
 export * from "./types";
-export * from "./service";
+// export * from "./service";
 
 export const AVAILABLE_LOCATIONS = [
     { id: "loc-1", name: "Main Office" },

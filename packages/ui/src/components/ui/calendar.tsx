@@ -27,8 +27,15 @@ function Calendar({
         month: cn("space-y-4 w-full", defaultClassNames.month),
         // 'caption' -> 'month_caption' or components override? 
         // Using 'month_caption' for container of caption
-        month_caption: cn("flex justify-center pt-1 relative items-center", defaultClassNames.month_caption),
-        caption_label: cn("text-sm font-medium", defaultClassNames.caption_label),
+        // 'caption' -> 'month_caption'
+        // Create a distinct header bar with light background
+        month_caption: cn("flex justify-center pt-2 pb-2 relative items-center bg-primary/5 mb-2 border-b border-primary/10", defaultClassNames.month_caption),
+
+        caption_label: cn(
+          "text-sm font-medium",
+          props.captionLayout ? "hidden" : "", // Hide label if using dropdowns to avoid duplication
+          defaultClassNames.caption_label
+        ),
         nav: cn("space-x-1 flex items-center", defaultClassNames.nav),
         // 'nav_button' -> 'button_previous' / 'button_next' (there isn't a shared nav_button key in default types usually)
         button_previous: cn(
@@ -55,7 +62,7 @@ function Calendar({
         // We will try to rely on 'day' button styling to fill space.
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 w-full p-0 font-normal aria-selected:opacity-100 aspect-square",
+          "h-11 w-full p-0 font-normal aria-selected:opacity-100 aspect-square",
           defaultClassNames.day
         ),
         // 'day_range_end' -> 'range_end'

@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { shiftService } from "@repo/shifts-service";
+import { getShiftById, getShiftTimesheets } from "@/lib/api/shifts";
 import { ShiftTimesheetClient } from "./client";
 
 interface PageProps {
@@ -14,8 +14,8 @@ export default async function ShiftTimesheetPage({ params }: PageProps) {
     }
 
     const [shift, timesheets] = await Promise.all([
-        shiftService.getShiftById(params.shiftId),
-        shiftService.getTimesheetsForShift(params.shiftId)
+        getShiftById(params.shiftId),
+        getShiftTimesheets(params.shiftId)
     ]);
 
     if (!shift) {

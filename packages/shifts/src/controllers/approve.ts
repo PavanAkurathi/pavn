@@ -2,15 +2,15 @@
 
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { differenceInMinutes } from "date-fns";
 import { mapShiftToDto } from "../utils/mapper";
 
-export const approveShiftController = async (shiftId: string): Promise<Response> => {
+export const approveShiftController = async (shiftId: string, orgId: string): Promise<Response> => {
     try {
-        // 1. Fetch Data
+        // 1. Fetch Data with Tenant Check
         const shiftRecord = await db.query.shift.findFirst({
-            where: eq(shift.id, shiftId),
+            where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
             with: {
                 assignments: true,
                 organization: true,
@@ -18,8 +18,8 @@ export const approveShiftController = async (shiftId: string): Promise<Response>
             }
         });
 
-        if (!shiftRecord) return new Response("Shift not found", { status: 404 });
-        if (shiftRecord.status === 'approved') return new Response("Already approved", { status: 400 });
+        if (!shiftRecord) return Response.json({ error: "Shift not found" }, { status: 404 });
+        if (shiftRecord.status === 'approved') return Response.json({ error: "Already approved" }, { status: 400 });
 
         // 2. Audit Assignments
         const dirtyAssignments: string[] = [];
@@ -73,45 +73,46 @@ export const approveShiftController = async (shiftId: string): Promise<Response>
 
         // 3. Block if Dirty
         if (dirtyAssignments.length > 0) {
-            return new Response(JSON.stringify({
+            return Response.json({
                 error: "Cannot approve: Workers missing clock-out times.",
                 workerIds: dirtyAssignments
-            }), {
-                status: 409,
-                headers: { "Content-Type": "application/json" }
-            });
+            }, { status: 409 });
         }
 
-        // 4. Commit Changes
-        // NOTE: Avoiding db.transaction due to potential Neon HTTP driver limitations.
-        // Using Promise.all for performance, though strict atomicity is compromised.
+        // 4. Commit Changes (Atomic Transaction)
+        // 4. Commit Changes (Atomic Transaction)
+        await db.transaction(async (tx) => {
+            // Update Assignments
+            for (const u of updates) {
+                await tx.update(shiftAssignment)
+                    .set({
+                        status: u.status,
+                        grossPayCents: u.grossPayCents,
+                        hourlyRateSnapshot: u.hourlyRateSnapshot
+                    })
+                    .where(eq(shiftAssignment.id, u.id));
+            }
 
-        // Update Assignments
-        await Promise.all(updates.map(u =>
-            db.update(shiftAssignment)
-                .set({
-                    status: u.status,
-                    grossPayCents: u.grossPayCents,
-                    hourlyRateSnapshot: u.hourlyRateSnapshot
-                })
-                .where(eq(shiftAssignment.id, u.id))
-        ));
+            // Update Shift Status with Optimistic Locking
+            const result = await tx.update(shift)
+                .set({ status: 'approved' })
+                .where(and(
+                    eq(shift.id, shiftId),
+                    eq(shift.status, 'assigned') // Guard: Must be in 'assigned' state
+                ));
 
-        // Update Shift Status
-        await db.update(shift)
-            .set({ status: 'approved' })
-            .where(eq(shift.id, shiftId));
+            if (result.rowCount === 0) {
+                throw new Error("Race condition: Shift was modified or approved by another request.");
+            }
+        });
 
         return Response.json({ success: true }, { status: 200 });
 
     } catch (error) {
         console.error("Approve/Audit Error:", error);
-        return new Response(JSON.stringify({
+        return Response.json({
             error: "Failed to approve shift",
             details: error instanceof Error ? error.message : String(error)
-        }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" }
-        });
+        }, { status: 500 });
     }
 };

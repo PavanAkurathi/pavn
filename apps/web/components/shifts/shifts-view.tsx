@@ -4,7 +4,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-import { shiftService } from "@repo/shifts-service";
+import { approveShift, getShiftTimesheets } from "@/lib/api/shifts";
 import { TimesheetWorker } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -25,7 +25,12 @@ interface ShiftsViewProps {
 }
 
 export function ShiftsView({ initialShifts, availableLocations, defaultTab = "upcoming", pendingCount }: ShiftsViewProps) {
-    const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Derive selection from URL
+    const selectedShiftId = searchParams.get("shiftId");
+
     const [filters, setFilters] = useState({
         location: LOCATIONS.ALL,
         status: SHIFT_STATUS.ALL,
@@ -33,9 +38,6 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
         startDate: null as string | null,
         endDate: null as string | null,
     });
-
-    const router = useRouter();
-    const searchParams = useSearchParams();
 
     // -- DETAIL VIEW DATA FETCHING --
     // Find the full shift object from our initial data
@@ -45,7 +47,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
     useEffect(() => {
         if (selectedShiftId) {
             // In a real app, this might be a server action or separate API call
-            shiftService.getTimesheetsForShift(selectedShiftId).then(setTimesheets);
+            getShiftTimesheets(selectedShiftId).then(setTimesheets);
         } else {
             setTimesheets([]);
         }
@@ -65,7 +67,9 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
         }
 
         // 3. Date Range
-        if (filters.startDate && filters.endDate) {
+        // Only apply date range filtering in List View.
+        // Calendar View manages its own date scope and should receive all loaded shifts.
+        if (filters.view === VIEW_MODES.LIST && filters.startDate && filters.endDate) {
             const shiftStart = new Date(shift.startTime).getTime();
             const start = new Date(filters.startDate).getTime();
             // Add one day to end date to make it inclusive for the UI selection
@@ -83,11 +87,21 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
         setFilters((prev) => ({ ...prev, ...updates }));
     };
 
+    const updateShiftId = (id: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (id) {
+            params.set("shiftId", id);
+        } else {
+            params.delete("shiftId");
+        }
+        router.push(`?${params.toString()}`);
+    };
+
     const handleApproveShift = async (shiftId: string) => {
         try {
-            await shiftService.approveShift(shiftId);
+            await approveShift(shiftId);
             toast.success("Shift approved successfully");
-            setSelectedShiftId(null); // Return to list view
+            updateShiftId(null); // Return to list view
             router.refresh(); // This will re-fetch data and move the shift to history
         } catch (error) {
             toast.error("Failed to approve shift");
@@ -99,7 +113,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
             <ShiftDetailView
                 shift={selectedShift}
                 timesheets={timesheets}
-                onBack={() => setSelectedShiftId(null)}
+                onBack={() => updateShiftId(null)}
                 onApprove={() => handleApproveShift(selectedShift.id)}
             />
         );
@@ -146,7 +160,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                                 <ShiftList
                                     shifts={filterActiveShifts(filteredShifts)}
                                     isLoading={false}
-                                    onShiftClick={(s) => setSelectedShiftId(s.id)}
+                                    onShiftClick={(s) => updateShiftId(s.id)}
                                 />
                             </div>
                         </TabsContent>
@@ -164,7 +178,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                                     <ShiftList
                                         shifts={pendingShifts}
                                         isLoading={false}
-                                        onShiftClick={(s) => setSelectedShiftId(s.id)}
+                                        onShiftClick={(s) => updateShiftId(s.id)}
                                         isUrgentList={true}
                                     />
                                 </div>
@@ -176,7 +190,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                                 <ShiftList
                                     shifts={historyShifts}
                                     isLoading={false}
-                                    onShiftClick={(s) => setSelectedShiftId(s.id)}
+                                    onShiftClick={(s) => updateShiftId(s.id)}
                                 />
                                 {historyShifts.length === 0 && !pendingShifts.length && (
                                     <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">

@@ -7,7 +7,7 @@ describe("GET /shifts/history", () => {
     // Real integration tests require DB seeding.
 
     test("returns history shifts response", async () => {
-        const response = await getHistoryShifts();
+        const response = await getHistoryShifts("test_org");
         expect(response.status).toBe(200);
         // Unable to verify content without seeding
     });

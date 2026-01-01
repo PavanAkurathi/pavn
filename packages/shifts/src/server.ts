@@ -1,6 +1,7 @@
 // packages/shifts/src/server.ts
 
-
+import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { getUpcomingShifts } from "./controllers/upcoming";
 import { getPendingShifts } from "./controllers/pending";
 import { getHistoryShifts } from "./controllers/history";
@@ -11,99 +12,100 @@ import { updateTimesheetController } from "./controllers/update-timesheet";
 import { publishScheduleController } from "./controllers/publish";
 import { getCrewController } from "./controllers/get-crew";
 
-const port = 4005; // Moved to 4005 to avoid collisions
+const app = new Hono<{
+    Variables: {
+        orgId: string;
+    };
+}>();
 
-const CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS", // Added PATCH
-    "Access-Control-Allow-Headers": "Content-Type",
-};
+// CORS Middleware - Handled by Gateway
+// app.use("*", cors(...));
 
+// Tenant Isolation Middleware
+app.use("*", async (c, next) => {
+    if (c.req.path === "/health") {
+        await next();
+        return;
+    }
+
+    const orgId = c.req.header("x-org-id");
+    if (!orgId) {
+        return c.json({ error: "Missing Tenant Context" }, 401);
+    }
+
+    c.set("orgId", orgId);
+    await next();
+});
+
+// Health Check
+app.get("/health", (c) => c.text("OK"));
+
+// Organization Routes
+app.get("/organizations/:orgId/crew", async (c) => {
+    const orgId = c.req.param("orgId");
+    // Validate that param matches header? 
+    // Ideally yes, but for now header is source of truth for DB queries usually.
+    // The previous getCrewController used the param as orgId.
+    // We should enforce that the header orgId matches the param orgId or just use header.
+    // The user requirement says "filter ALL database queries by them [x-org-id]".
+    // So we should use c.get('orgId').
+    const headerOrgId = c.get('orgId');
+    if (orgId !== headerOrgId) {
+        return c.json({ error: "Organization mismatch" }, 403);
+    }
+    return await getCrewController(headerOrgId);
+});
+
+// Schedule Routes
+app.post("/schedules/publish", async (c) => {
+    const orgId = c.get('orgId');
+    // publishScheduleController needs to be updated to take orgId
+    return await publishScheduleController(c.req.raw, orgId);
+});
+
+// Shift Routes
+app.get("/shifts/upcoming", async (c) => {
+    const orgId = c.get('orgId');
+    return await getUpcomingShifts(orgId);
+});
+
+app.get("/shifts/pending-approval", async (c) => {
+    const orgId = c.get('orgId');
+    return await getPendingShifts(orgId);
+});
+
+app.get("/shifts/history", async (c) => {
+    const orgId = c.get('orgId');
+    return await getHistoryShifts(orgId);
+});
+
+app.get("/shifts/:id", async (c) => {
+    const id = c.req.param("id");
+    const orgId = c.get('orgId');
+    return await getShiftByIdController(id, orgId);
+});
+
+app.post("/shifts/:id/approve", async (c) => {
+    const id = c.req.param("id");
+    const orgId = c.get('orgId');
+    return await approveShiftController(id, orgId);
+});
+
+app.get("/shifts/:id/timesheets", async (c) => {
+    const id = c.req.param("id");
+    const orgId = c.get('orgId');
+    return await getShiftTimesheetsController(id, orgId);
+});
+
+app.patch("/shifts/:shiftId/timesheet", async (c) => {
+    const orgId = c.get('orgId');
+    return await updateTimesheetController(c.req.raw, orgId);
+});
+
+const port = process.env.PORT || 4005;
 console.log(`🦊 Service is running at http://localhost:${port}`);
 
-Bun.serve({
+export default {
     port,
-    async fetch(req) {
-        const url = new URL(req.url);
-
-        // 1. Handle CORS Preflight (Browser Security Check)
-        if (req.method === "OPTIONS") {
-            return new Response(null, {
-                headers: CORS_HEADERS
-            });
-        }
-
-        let response: Response;
-
-        // Handle POST /shifts/:id/approve
-        const approveMatch = url.pathname.match(/^\/shifts\/([^/]+)\/approve$/);
-        // Handle GET /shifts/:id/timesheets
-        const timesheetsMatch = url.pathname.match(/^\/shifts\/([^/]+)\/timesheets$/);
-        // Handle PATCH /shifts/:id/timesheet
-        const updateTimesheetMatch = url.pathname.match(/^\/shifts\/([^/]+)\/timesheet$/);
-        // Handle GET /organizations/:id/crew
-        const crewMatch = url.pathname.match(/^\/organizations\/([^/]+)\/crew$/);
-        // Handle GET /shifts/:id (Must be last specific ID match to avoid conflicts)
-        const idMatch = url.pathname.match(/^\/shifts\/([^/]+)$/);
-
-        try {
-            // Health Check
-            if (url.pathname === "/health") {
-                response = new Response("OK", { status: 200 });
-            }
-            else if (approveMatch && approveMatch[1] && req.method === "POST") {
-                const shiftId = approveMatch[1];
-                response = await approveShiftController(shiftId);
-            }
-
-            else if (timesheetsMatch && timesheetsMatch[1] && req.method === "GET") {
-                const shiftId = timesheetsMatch[1];
-                response = await getShiftTimesheetsController(shiftId);
-            }
-            else if (updateTimesheetMatch && updateTimesheetMatch[1] && req.method === "PATCH") {
-                response = await updateTimesheetController(req);
-            }
-            else if (crewMatch && crewMatch[1] && req.method === "GET") {
-                response = await getCrewController(crewMatch[1]);
-            }
-            // Handle Publish
-            else if (url.pathname === "/schedules/publish" && req.method === "POST") {
-                response = await publishScheduleController(req);
-            }
-            // API Routes
-            else if (url.pathname === "/shifts/upcoming" && req.method === "GET") {
-                response = await getUpcomingShifts();
-            }
-            else if (url.pathname === "/shifts/pending-approval" && req.method === "GET") {
-                response = await getPendingShifts();
-            }
-            else if (url.pathname === "/shifts/history" && req.method === "GET") {
-                response = await getHistoryShifts();
-            }
-            // Generic ID route must be checked AFTER specific static routes like /upcoming
-            else if (idMatch && idMatch[1] && req.method === "GET") {
-                const shiftId = idMatch[1];
-                // Exclude static paths if regex matched them by mistake (e.g. if I handled upcoming with regex)
-                // But here static paths are handled by explicit checks above, so this else-if is safe
-                // provided "upcoming" doesn't match the regex or is handled first. 
-                // "upcoming" matches ([^/]+) but we handled keys like "upcoming" explicitly above.
-                // Wait! /shifts/upcoming matches /shifts/([^/]+).
-                // So we MUST ensure this `else if` comes AFTER the static route checks.
-                response = await getShiftByIdController(shiftId);
-            }
-            else {
-                response = new Response("Not Found", { status: 404 });
-            }
-        } catch (error) {
-            console.error(error);
-            response = new Response("Internal Server Error", { status: 500 });
-        }
-
-        // 3. Attach CORS headers to the actual data response
-        for (const [key, value] of Object.entries(CORS_HEADERS)) {
-            response.headers.set(key, value);
-        }
-
-        return response;
-    },
-});
+    fetch: app.fetch,
+};

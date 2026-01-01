@@ -146,6 +146,10 @@ export const shift = pgTable("shift", {
     locationId: text("location_id")
         .references(() => location.id, { onDelete: "set null" }),
 
+    // Onsite Point of Contact (Manager)
+    contactId: text("contact_id")
+        .references(() => user.id, { onDelete: "set null" }),
+
     // -- Details --
     title: text("title").notNull(), // e.g. "Event Security"
     description: text("description"),
@@ -163,6 +167,9 @@ export const shift = pgTable("shift", {
     // -- State --
     // Values: 'published', 'assigned', 'in-progress', 'completed', 'approved', 'cancelled'
     status: text("status").notNull().default("published"),
+
+    // -- Grouping --
+    scheduleGroupId: text("schedule_group_id"), // "int_..." for batched operations
 
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),

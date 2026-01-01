@@ -54,7 +54,7 @@ export function SmartTimePicker({ value, onChange, placeholder = "Select time", 
             <SelectTrigger className={cn("w-full h-11 rounded-full", className)}>
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
-            <SelectContent className="h-[200px]">
+            <SelectContent className="h-[200px]" position="popper">
                 {TIME_OPTIONS.map((time) => {
                     const timeValue = format(time, "HH:mm");
                     return (

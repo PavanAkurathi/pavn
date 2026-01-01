@@ -211,3 +211,30 @@
 .pac-container {
   z-index: 99999 !important;
 }
+
+/* Calendar / React Day Picker Customization */
+.rdp-vhidden {
+  @apply hidden;
+}
+
+.rdp-dropdown_year,
+.rdp-dropdown_month {
+  @apply bg-transparent border-none text-sm font-medium hover:bg-accent hover:text-accent-foreground rounded-md px-2 py-1 cursor-pointer outline-none;
+}
+
+.rdp-caption_dropdowns {
+  @apply flex gap-2 justify-center items-center;
+}
+
+.rdp-head_row {
+  @apply flex;
+}
+
+.rdp-head_cell {
+  @apply text-muted-foreground rounded-md font-normal text-[0.8rem];
+}
+
+/* Ensure no background on header to match "Clean" look */
+.rdp-caption {
+  @apply bg-transparent m-0 relative;
+}

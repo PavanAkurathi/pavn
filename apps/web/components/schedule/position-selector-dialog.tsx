@@ -186,7 +186,7 @@ export function PositionSelectorDialog({
                     {/* 2. Crew Rows */}
                     {filteredCrew.map(worker => {
                         const isOvertime = worker.hours > 40;
-                        const selected = isSelected(worker.id, activeTab === "all" ? (worker.roles[0] || "server") : activeTab);
+                        const selected = isSelected(worker.id, activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab);
 
                         return (
                             <div key={worker.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
@@ -201,7 +201,7 @@ export function PositionSelectorDialog({
                                             {/* Show Primary Role if 'All' is active, otherwise implicit */}
                                             {activeTab === "all" && (
                                                 <Badge variant="secondary" className="text-xs h-5 px-1.5 font-normal">
-                                                    {worker.roles[0]}
+                                                    {(worker.roles || [])[0] || "server"}
                                                 </Badge>
                                             )}
                                             <span className={cn(isOvertime && "text-red-600 font-medium flex items-center")}>
@@ -216,8 +216,8 @@ export function PositionSelectorDialog({
                                     variant={selected ? "default" : "outline"}
                                     className={cn(selected && "bg-green-600 hover:bg-green-700")}
                                     onClick={() => toggleSelection({
-                                        roleId: activeTab === "all" ? (worker.roles[0] || "server") : activeTab,
-                                        roleName: getRoleName(activeTab === "all" ? (worker.roles[0] || "server") : activeTab),
+                                        roleId: activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab,
+                                        roleName: getRoleName(activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab),
                                         workerId: worker.id,
                                         workerName: worker.name,
                                         workerAvatar: worker.avatar,
