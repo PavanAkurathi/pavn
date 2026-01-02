@@ -17,6 +17,12 @@ import {
     FormItem,
     FormMessage,
 } from "@repo/ui/components/ui/form";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@repo/ui/components/ui/tooltip";
 import { authClient } from "@repo/auth/client";
 import { useLocations, useContacts, useOrganizationId } from "@/hooks/use-schedule-data";
 import { useCrewData } from "@/hooks/use-crew-data";
@@ -24,7 +30,7 @@ import { LocationPicker } from "./location-picker";
 import { ContactPicker } from "./contact-picker";
 import { ScheduleBlock } from "./schedule-block";
 import { ReviewScheduleDialog } from "./review-schedule-dialog";
-import { publishSchedule } from "@/lib/api/shifts";
+import { publishSchedule, deleteDrafts } from "@/lib/api/shifts";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ExitDialog } from "./exit-dialog";
@@ -48,7 +54,7 @@ const ScheduleBlockSchema = z.object({
     startTime: z.string().min(1, "Required"),
     endTime: z.string().min(1, "Required"),
     breakDuration: z.string(),
-    positions: z.array(PositionSchema),
+    positions: z.array(PositionSchema).min(1, "At least one position is required"),
 });
 
 const formSchema = z.object({
@@ -57,7 +63,11 @@ const formSchema = z.object({
     schedules: z.array(ScheduleBlockSchema).min(1, "At least one schedule is required"),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+export type FormValues = z.infer<typeof formSchema>;
+
+interface CreateScheduleFormProps {
+    initialData?: FormValues;
+}
 
 const DEFAULT_SCHEDULE_BLOCK = {
     scheduleName: "",
@@ -67,7 +77,7 @@ const DEFAULT_SCHEDULE_BLOCK = {
     positions: [],
 };
 
-export function CreateScheduleForm() {
+export function CreateScheduleForm({ initialData }: CreateScheduleFormProps) {
     // 1. Hook Definitions
     const { data: locations, mutate: mutateLocations } = useLocations();
     const { data: contacts } = useContacts();
@@ -84,7 +94,7 @@ export function CreateScheduleForm() {
     // 2. Form Setup
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
+        defaultValues: initialData || {
             locationId: "",
             managerIds: [],
             schedules: [{ ...DEFAULT_SCHEDULE_BLOCK, date: undefined } as any],
@@ -101,7 +111,7 @@ export function CreateScheduleForm() {
     // 3. Load Draft on Mount
     useEffect(() => {
         const savedDraft = localStorage.getItem("schedule-layout-draft");
-        if (savedDraft) {
+        if (savedDraft && !initialData) {
             try {
                 const parsed = JSON.parse(savedDraft);
                 // Convert date strings back to Date objects
@@ -164,7 +174,7 @@ export function CreateScheduleForm() {
         }
     };
 
-    const handlePublish = async () => {
+    const handlePublish = async (status: 'published' | 'draft') => {
         setIsSubmitting(true);
         try {
             const data = form.getValues();
@@ -178,25 +188,47 @@ export function CreateScheduleForm() {
                 return;
             }
 
+            // Transform for Backend (Group by Role & HH:MM format)
+            const apiSchedules = data.schedules.map(schedule => {
+                const roleGroups: { [roleName: string]: (string | null)[] } = {};
+
+                schedule.positions.forEach(pos => {
+                    if (!roleGroups[pos.roleName]) {
+                        roleGroups[pos.roleName] = [];
+                    }
+                    roleGroups[pos.roleName]!.push(pos.workerId || null);
+                });
+
+                const formattedPositions = Object.entries(roleGroups).map(([roleName, workerIds]) => ({
+                    roleName,
+                    workerIds,
+                    price: 0
+                }));
+
+                return {
+                    scheduleName: schedule.scheduleName,
+                    startTime: schedule.startTime,
+                    endTime: schedule.endTime,
+                    dates: [format(schedule.date, "yyyy-MM-dd")],
+                    positions: formattedPositions
+                };
+            });
+
             const payload = {
                 locationId: data.locationId,
                 organizationId: activeOrganizationId,
                 contactId: data.managerIds[0],
                 timezone: clientTimezone,
-                schedules: data.schedules.map(s => ({
-                    startTime: s.startTime,
-                    endTime: s.endTime,
-                    dates: [format(s.date, "yyyy-MM-dd")],
-                    scheduleName: s.scheduleName,
-                    positions: s.positions.map(p => ({
-                        roleName: p.roleName,
-                        workerIds: [p.workerId || null]
-                    }))
-                }))
+                status,
+                schedules: apiSchedules
             };
 
-            await publishSchedule(payload, activeOrganizationId);
-            toast.success("Schedule published successfully!");
+            await publishSchedule(payload);
+            toast.success(status === 'published' ? "Schedule published successfully!" : "Draft saved successfully!");
+
+            // Clear draft if published or saved remotely
+            localStorage.removeItem("schedule-layout-draft");
+
             router.push("/dashboard/shifts");
         } catch (error) {
             console.error("Publish error:", error);
@@ -219,9 +251,16 @@ export function CreateScheduleForm() {
         router.push("/dashboard/shifts");
     };
 
-    const handleDiscard = () => {
-        localStorage.removeItem("schedule-layout-draft");
-        router.push("/dashboard/shifts");
+    const handleDiscard = async () => {
+        try {
+            await deleteDrafts();
+            localStorage.removeItem("schedule-layout-draft");
+            router.push("/dashboard/shifts");
+            toast.success("Draft discarded");
+        } catch (error) {
+            console.error("Failed to discard draft:", error);
+            toast.error("Failed to discard draft");
+        }
     };
 
     // Load draft checks? (Optional enhancement: Load on mount)
@@ -237,9 +276,27 @@ export function CreateScheduleForm() {
                         Set up a new shift schedule for your team and location.
                     </p>
                 </div>
-                <Button variant="ghost" size="icon" onClick={handleExit} className="h-10 w-10 rounded-full">
-                    <X className="h-6 w-6" />
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        onClick={handleReview}
+                        disabled={isSubmitting || !fields.some((field, index) => form.getValues(`schedules.${index}.positions`)?.length > 0)}
+                    >
+                        Review & Publish
+                    </Button>
+                    <div className="w-px h-8 bg-border mx-2" />
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleExit} className="h-10 w-10 rounded-full">
+                                    <X className="h-6 w-6" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Save & Exit</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
             </div>
 
             <Form {...form}>
@@ -319,25 +376,13 @@ export function CreateScheduleForm() {
                     </Button>
                 </div>
 
-                {/* Sticky Footer for Review */}
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t z-10 flex justify-end gap-4 md:pl-72">
-                    <div className="w-full max-w-5xl mx-auto flex justify-end">
-                        <Button
-                            type="button"
-                            size="lg"
-                            onClick={handleReview}
-                            className="w-full md:w-auto min-w-[200px]"
-                        >
-                            Review & Publish
-                        </Button>
-                    </div>
-                </div>
+                {/* Sticky Footer for Review - REMOVED per user request */}
 
                 <ReviewScheduleDialog
                     isOpen={isReviewOpen}
                     onClose={() => setIsReviewOpen(false)}
                     data={form.getValues()}
-                    onConfirm={handlePublish}
+                    onConfirm={() => handlePublish('published')}
                     isSubmitting={isSubmitting}
                 />
 

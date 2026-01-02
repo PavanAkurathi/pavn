@@ -4,6 +4,7 @@ import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { TimesheetWorker } from "../types";
+import { getInitials } from "../utils/formatting";
 
 export const getShiftTimesheetsController = async (shiftId: string, orgId: string): Promise<Response> => {
     // 1. Verify Shift Ownership
@@ -28,17 +29,11 @@ export const getShiftTimesheetsController = async (shiftId: string, orgId: strin
         // Fallback name if worker relation is missing (deleted user?)
         const workerName = a.worker ? a.worker.name : "Unknown Worker";
 
-        // Extract initials
-        const parts = workerName.trim().split(/\s+/);
-        const initials = parts.length > 0
-            ? ((parts[0]?.[0] || "") + (parts.length > 1 ? (parts[parts.length - 1]?.[0] || "") : "")).toUpperCase()
-            : "??";
-
         return {
             id: a.id,
             name: workerName,
             avatarUrl: a.worker?.image || undefined,
-            avatarInitials: initials,
+            avatarInitials: getInitials(workerName),
             role: "Worker", // Not in schema yet
             hourlyRate: 0,  // Not in schema yet
             clockIn: a.clockIn ? a.clockIn.toISOString() : undefined,

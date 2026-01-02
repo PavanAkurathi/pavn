@@ -177,7 +177,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                 selected={field.value}
                                                 onSelect={(date) => {
                                                     field.onChange(date);
-                                                    // Do not auto-close to allow user to confirm or see selection
+                                                    setIsCalendarOpen(false); // Auto-close on select
                                                 }}
                                                 disabled={(date) =>
                                                     date < new Date(new Date().setHours(0, 0, 0, 0))
@@ -190,18 +190,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                 className="border rounded-md"
                                             />
                                         </div>
-                                        <div className="flex items-center justify-between p-4 bg-white border-t border-zinc-100">
-                                            <span className="text-sm font-medium text-zinc-900">
-                                                {field.value ? "1 day selected" : "0 days selected"}
-                                            </span>
-                                            <Button
-                                                size="sm"
-                                                className="h-9 px-6 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-none rounded-lg"
-                                                onClick={() => setIsCalendarOpen(false)}
-                                            >
-                                                Done
-                                            </Button>
-                                        </div>
+                                        {/* Footer removed for smoother UX (Auto-close) */}
                                     </PopoverContent>
                                 </Popover>
                                 <FormMessage />

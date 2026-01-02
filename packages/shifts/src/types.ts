@@ -5,10 +5,12 @@ export type ShiftStatus = 'draft' | 'published' | 'open' | 'assigned' | 'in-prog
 
 export interface Shift {
     id: string;
-    title: string;
+    title: string;          // Role Name
+    description?: string;   // Schedule Name (for drafts)
     locationId?: string;
     locationName: string;
     locationAddress?: string;
+    contactId?: string | null;  // For re-hydrating drafts
     startTime: string; // ISO string
     endTime: string;   // ISO string
     status: ShiftStatus;

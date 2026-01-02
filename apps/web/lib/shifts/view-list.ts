@@ -3,10 +3,10 @@ import { Shift } from '../types';
 
 export function filterActiveShifts(shifts: Shift[]): Shift[] {
     const now = new Date();
-    // Active includes Open shifts
+    // Active includes Published (Open) shifts
     // OR Assigned/In-Progress shifts that have NOT yet passed the "2 hours post-shift" threshold
     return shifts.filter(shift => {
-        if (shift.status === 'open') return true;
+        if (shift.status === 'published' || shift.status === 'open') return true;
         if (shift.status === 'assigned' || shift.status === 'in-progress') {
             const twoHoursAfterEnd = addHours(parseISO(shift.endTime), 2);
             return now < twoHoursAfterEnd;

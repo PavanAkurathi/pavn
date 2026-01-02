@@ -59,9 +59,14 @@ export function FeatureTabs() {
                                     </li>
                                 </ul>
                             </div>
-                            {/* Placeholder for UI Screenshot */}
-                            <div className="aspect-video bg-slate-50 rounded-2xl border border-slate-200 shadow-xl flex items-center justify-center text-slate-300">
-                                Schedule UI Mockup
+                            {/* Schedule UI Mockup */}
+                            <div className="relative aspect-4/3 rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-white group">
+                                <Image
+                                    src="/images/mockups/schedule-composite.png"
+                                    alt="Shift Scheduler UI"
+                                    fill
+                                    className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
+                                />
                             </div>
                         </div>
                     </TabsContent>

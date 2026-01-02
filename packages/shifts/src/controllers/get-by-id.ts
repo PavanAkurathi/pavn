@@ -25,6 +25,8 @@ export const getShiftByIdController = async (id: string, orgId: string): Promise
     }
 
     // 2. Map to DTO
+    // 2. Map to DTO
+    if (!result) return Response.json({ error: "Shift not found" }, { status: 404 });
     const dto = mapShiftToDto(result);
 
     return Response.json(dto, { status: 200 });

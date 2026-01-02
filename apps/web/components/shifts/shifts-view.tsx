@@ -101,7 +101,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
         try {
             await approveShift(shiftId);
             toast.success("Shift approved successfully");
-            updateShiftId(null); // Return to list view
+            updateShiftId(null); // Waiting for file view
             router.refresh(); // This will re-fetch data and move the shift to history
         } catch (error) {
             toast.error("Failed to approve shift");
@@ -139,6 +139,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                                 </span>
                             )}
                         </TabsTrigger>
+                        <TabsTrigger value="draft" className="hidden">Drafts</TabsTrigger>
                     </TabsList>
                 </Tabs>
 
@@ -195,6 +196,22 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                                 {historyShifts.length === 0 && !pendingShifts.length && (
                                     <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
                                         No past shifts found matching your filters.
+                                    </div>
+                                )}
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="draft" className="space-y-6 mt-0">
+                            <div className="space-y-4 max-w-4xl">
+                                <h2 className="text-xl font-bold text-yellow-700">Draft Shifts</h2>
+                                <ShiftList
+                                    shifts={filteredShifts}
+                                    isLoading={false}
+                                    onShiftClick={(s) => updateShiftId(s.id)}
+                                />
+                                {filteredShifts.length === 0 && (
+                                    <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
+                                        No draft shifts found.
                                     </div>
                                 )}
                             </div>

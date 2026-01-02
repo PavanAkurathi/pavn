@@ -1,6 +1,7 @@
 import { db } from "@repo/database";
 import { member, user } from "@repo/database/schema";
 import { eq, notInArray, and } from "drizzle-orm";
+import { getInitials } from "../utils/formatting";
 
 export const getCrewController = async (orgId: string): Promise<Response> => {
     // Join Member -> User to get names/avatars
@@ -24,7 +25,7 @@ export const getCrewController = async (orgId: string): Promise<Response> => {
         name: worker.name,
         avatar: worker.image, // Map DB 'image' to Frontend 'avatar'
         roles: [worker.role], // Transform single role string to array
-        initials: worker.name.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase(),
+        initials: getInitials(worker.name),
         hours: 0 // Mock 0 hours for now
     }));
 

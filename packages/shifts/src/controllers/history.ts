@@ -9,7 +9,8 @@ export const getHistoryShifts = async (orgId: string): Promise<Response> => {
     const results = await db.query.shift.findMany({
         where: and(
             eq(shift.organizationId, orgId),
-            inArray(shift.status, ['approved', 'cancelled'])
+            // Include 'assigned' and 'completed' so they can be shown as "Action Required" in the Past view
+            inArray(shift.status, ['approved', 'cancelled', 'completed', 'assigned'])
         ),
         orderBy: [desc(shift.startTime)], // Newest First
         limit: 50, // Strict limit for now

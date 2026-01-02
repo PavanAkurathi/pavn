@@ -2,7 +2,7 @@
 
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { differenceInMinutes } from "date-fns";
 import { mapShiftToDto } from "../utils/mapper";
 
@@ -98,7 +98,7 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
                 .set({ status: 'approved' })
                 .where(and(
                     eq(shift.id, shiftId),
-                    eq(shift.status, 'assigned') // Guard: Must be in 'assigned' state
+                    inArray(shift.status, ['assigned', 'completed']) // Guard: Must be in 'assigned' or 'completed' state
                 ));
 
             if (result.rowCount === 0) {

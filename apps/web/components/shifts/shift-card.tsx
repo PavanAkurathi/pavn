@@ -44,6 +44,11 @@ export function ShiftCard({ shift, onClick, isUrgent, actionLabel = "View all Pr
                                 ACTION REQUIRED
                             </span>
                         )}
+                        {shift.status === 'draft' && (
+                            <span className="text-[10px] font-bold text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full tracking-wide">
+                                DRAFT
+                            </span>
+                        )}
                     </div>
 
                     <div className="space-y-1 pt-1">

@@ -11,6 +11,8 @@ import { getShiftTimesheetsController } from "./controllers/get-timesheets";
 import { updateTimesheetController } from "./controllers/update-timesheet";
 import { publishScheduleController } from "./controllers/publish";
 import { getCrewController } from "./controllers/get-crew";
+import { getDraftShifts } from "./controllers/drafts";
+import { deleteDraftsController } from "./controllers/delete-drafts";
 
 const app = new Hono<{
     Variables: {
@@ -77,6 +79,16 @@ app.get("/shifts/pending-approval", async (c) => {
 app.get("/shifts/history", async (c) => {
     const orgId = c.get('orgId');
     return await getHistoryShifts(orgId);
+});
+
+app.get("/shifts/drafts", async (c) => {
+    const orgId = c.get('orgId');
+    return await getDraftShifts(orgId);
+});
+
+app.delete("/shifts/drafts", async (c) => {
+    const orgId = c.get('orgId');
+    return await deleteDraftsController(orgId);
 });
 
 app.get("/shifts/:id", async (c) => {

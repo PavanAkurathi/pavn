@@ -5,8 +5,9 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
+import { DraftBanner } from "@/components/dashboard/draft-banner";
 import { AVAILABLE_LOCATIONS } from "@repo/shifts-service";
-import { getShifts, getPendingShiftsCount } from "@/lib/api/shifts";
+import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -27,17 +28,39 @@ export default async function ShiftsPage(props: {
 
     // Fetch Data from "Backend" Service
     // TODO: reliable way to get active org id from session or header
-    // Casting to any to avoid type error if activeOrganizationId is not in core types yet
-    const orgId = (session as any).activeOrganizationId || (session.user as any).activeOrganizationId || "org_default";
+    // Fix: Access activeOrganizationId from correct path (session.session.activeOrganizationId)
+    const sessionData = session as any;
+    let activeOrgId = sessionData.session?.activeOrganizationId || sessionData.activeOrganizationId;
 
-    const [shifts, pendingCount] = await Promise.all([
+    // FALLBACK: If authentication has no active Org, fetch the first one from DB
+    if (!activeOrgId) {
+        const { db } = await import("@repo/database");
+        const { member } = await import("@repo/database/schema");
+        const { eq } = await import("drizzle-orm");
+
+        const firstMembership = await db.query.member.findFirst({
+            where: eq(member.userId, session.user.id)
+        });
+
+        if (firstMembership) {
+            activeOrgId = firstMembership.organizationId;
+        } else {
+            activeOrgId = "org_default";
+        }
+    }
+
+    const orgId = activeOrgId;
+
+    const [shifts, pendingCount, draftCount] = await Promise.all([
         getShifts({ view, orgId }),
-        getPendingShiftsCount(orgId)
+        getPendingShiftsCount(orgId),
+        getDraftShiftsCount(orgId)
     ]);
 
     return (
         <div className="space-y-6">
             <ApprovalBanner count={pendingCount} />
+            <DraftBanner count={draftCount} />
 
             <div className="flex items-center justify-between">
                 <div>

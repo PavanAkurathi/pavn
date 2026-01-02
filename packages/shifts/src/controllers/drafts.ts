@@ -1,18 +1,16 @@
-// packages/shifts/src/controllers/upcoming.ts
-
 import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
-import { inArray, asc, and, eq } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { mapShiftToDto } from "../utils/mapper";
 
-export const getUpcomingShifts = async (orgId: string): Promise<Response> => {
-    // 1. Query DB
+export const getDraftShifts = async (orgId: string): Promise<Response> => {
+    // 1. Query DB for drafts
     const results = await db.query.shift.findMany({
         where: and(
             eq(shift.organizationId, orgId),
-            inArray(shift.status, ['published', 'assigned', 'in-progress'])
+            eq(shift.status, 'draft')
         ),
-        orderBy: [asc(shift.startTime)],
+        orderBy: [desc(shift.startTime)], // Newest drafts first
         with: {
             organization: true,
             location: true,
@@ -25,7 +23,6 @@ export const getUpcomingShifts = async (orgId: string): Promise<Response> => {
     });
 
     // 2. Map to DTO
-    // Drizzle typing is now matched in mapShiftToDto
     const dtos = results.map(mapShiftToDto);
 
     return Response.json(dtos, { status: 200 });

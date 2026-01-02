@@ -11,7 +11,26 @@ const getSecureOrgId = async (providedOrgId?: string) => {
     // But for Client->Server calls, we MUST verify.
     // Simpler approach: Always derive from session if possible, or fallback.
     const session = await auth.api.getSession({ headers: await headers() });
-    return (session as any)?.activeOrganizationId || (session?.user as any)?.activeOrganizationId || providedOrgId || "org_default";
+    const sessionData = session as any;
+    let activeOrgId = sessionData?.session?.activeOrganizationId || sessionData?.activeOrganizationId;
+
+    // FALLBACK: If session has no Active Org, query DB for first membership
+    if (!activeOrgId && sessionData?.user?.id) {
+        try {
+            const { db } = await import("@repo/database");
+            const { member } = await import("@repo/database/schema");
+            const { eq } = await import("drizzle-orm");
+
+            const firstMember = await db.query.member.findFirst({
+                where: eq(member.userId, sessionData.user.id)
+            });
+            if (firstMember) activeOrgId = firstMember.organizationId;
+        } catch (e) {
+            console.error("Failed to auto-resolve orgId in API utils", e);
+        }
+    }
+
+    return activeOrgId || providedOrgId || "org_default";
 };
 
 export const getShifts = async ({ view, orgId }: { view: string; orgId?: string }) => {
@@ -27,6 +46,9 @@ export const getShifts = async ({ view, orgId }: { view: string; orgId?: string 
             break;
         case "needs_approval":
             endpoint = "/shifts/pending-approval";
+            break;
+        case "draft":
+            endpoint = "/shifts/drafts";
             break;
         default:
             endpoint = "/shifts/upcoming";
@@ -63,6 +85,37 @@ export const getPendingShiftsCount = async (orgId?: string) => {
     if (!res.ok) return 0;
     const shifts = await res.json() as any[];
     return shifts.length;
+};
+
+export const getDraftShiftsCount = async (orgId?: string) => {
+    const activeOrgId = await getSecureOrgId(orgId);
+    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
+        headers: {
+            "x-org-id": activeOrgId,
+            "Content-Type": "application/json",
+            "Cookie": (await headers()).get("cookie") || "",
+        },
+        cache: "no-store",
+    });
+
+    if (!res.ok) return 0;
+    const shifts = await res.json() as any[];
+    return shifts.length;
+};
+
+export const deleteDrafts = async (orgId?: string) => {
+    const activeOrgId = await getSecureOrgId(orgId);
+    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
+        method: "DELETE",
+        headers: {
+            "x-org-id": activeOrgId,
+            "Content-Type": "application/json",
+            "Cookie": (await headers()).get("cookie") || "",
+        },
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
 };
 
 export const publishSchedule = async (payload: any, orgId?: string) => {

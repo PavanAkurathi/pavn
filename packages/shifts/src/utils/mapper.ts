@@ -1,47 +1,37 @@
-// packages/shifts/src/utils/mapper.ts
 import { Shift as ApiShift } from "../types";
-// Import Drizzle types (or infer them if exported from schema)
-// For now, defining a local interface that matches the query result structure
-// Ideally, this should come from `typeof db.query.shift.findFirst` result type.
-interface DbShift {
-    id: string;
-    organizationId: string;
-    title: string;
-    description: string | null;
-    locationId: string | null;
-    locationName?: string | null;
-    startTime: Date;
-    endTime: Date;
-    price: number | null;
-    capacityTotal: number;
-    status: "draft" | "published" | "assigned" | "completed" | "approved" | "cancelled";
-    location?: {
-        name: string;
-        address: string | null;
-    } | null;
-    assignments?: Array<{
-        workerId: string;
-        worker?: {
-            name: string;
-            image: string | null;
-        } | null;
-    }>;
+import { getInitials } from "./formatting";
+import { shift, location, user, shiftAssignment } from "@repo/database/schema";
+import { InferSelectModel } from "drizzle-orm";
+
+// 1. Base Shift Type
+type BaseShift = InferSelectModel<typeof shift>;
+
+// 2. Relations (matches the `with: { ... }` in controllers)
+interface ShiftWithRelations extends BaseShift {
+    location: InferSelectModel<typeof location> | null;
+    assignments: Array<
+        InferSelectModel<typeof shiftAssignment> & {
+            worker: InferSelectModel<typeof user> | null;
+        }
+    >;
 }
 
-export const mapShiftToDto = (dbShift: DbShift): ApiShift => {
+export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
     // Calculate capacity based on assignments count
     const filled = dbShift.assignments ? dbShift.assignments.length : 0;
 
     return {
         id: dbShift.id,
         title: dbShift.title,
-        locationName: dbShift.locationName || dbShift.location?.name || "Unknown Location", // Fallback if join is missing
+        description: dbShift.description || undefined,
+        locationName: dbShift.location?.name || "Unknown Location", // Fallback if join is missing
         locationId: dbShift.locationId || "unknown",
         locationAddress: dbShift.location?.address || undefined,
+        contactId: dbShift.contactId,
         // Convert Date objects to ISO Strings
         startTime: dbShift.startTime.toISOString(),
         endTime: dbShift.endTime.toISOString(),
-        status: dbShift.status,
+        status: dbShift.status as ApiShift['status'],
         price: dbShift.price || 0, // Ensure number
         capacity: {
             filled: filled,
@@ -51,7 +41,7 @@ export const mapShiftToDto = (dbShift: DbShift): ApiShift => {
         assignedWorkers: dbShift.assignments?.map((a) => ({
             id: a.workerId,
             name: a.worker?.name ?? "Unknown",
-            initials: a.worker?.name ? a.worker.name.substring(0, 2).toUpperCase() : "??",
+            initials: getInitials(a.worker?.name),
             avatarUrl: a.worker?.image || undefined
         })) || []
     };

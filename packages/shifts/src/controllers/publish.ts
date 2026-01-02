@@ -10,7 +10,15 @@ const PublishSchema = z.object({
     locationId: z.string(),
     contactId: z.string().optional(),
     organizationId: z.string(),
-    timezone: z.string(),
+    timezone: z.string().refine((val) => {
+        try {
+            Intl.DateTimeFormat(undefined, { timeZone: val });
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }, { message: "Invalid Timezone ID" }),
+    status: z.enum(['draft', 'published']).optional().default('published'),
     schedules: z.array(z.object({
         startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:MM)"),
         endTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (HH:MM)"),
@@ -36,7 +44,9 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
             }, { status: 400 });
         }
 
-        const { locationId, contactId, organizationId, timezone, schedules } = parseResult.data;
+        const { locationId, contactId, organizationId, timezone, status, schedules } = parseResult.data;
+
+        console.log("DEBUG: publishScheduleController received:", { status, schedulesCount: schedules.length, activeOrgId: headerOrgId });
 
         // Security Check: Header vs Body
         if (organizationId && organizationId !== headerOrgId) {
@@ -77,7 +87,8 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
                         // SMART ID: Use 'shf' prefix
                         const shiftId = newId('shf');
                         // Handle null workerId (Open Spot)
-                        const initialStatus = workerId ? 'assigned' : 'published';
+                        // Logic: If draft, always draft. If not draft, check workerId.
+                        const initialStatus = status === 'draft' ? 'draft' : (workerId ? 'assigned' : 'published');
 
                         shiftsToInsert.push({
                             id: shiftId,
