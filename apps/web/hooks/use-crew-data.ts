@@ -40,7 +40,25 @@ export function useCrewData() {
     // GET /organizations/:id/crew
     const shouldFetch = orgId ? `${API_BASE}/organizations/${orgId}/crew` : null;
 
-    const { data, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcher);
+    // Custom fetcher with headers
+    const fetcherWithHeaders = async (url: string) => {
+        const res = await fetch(url, {
+            headers: {
+                'x-org-id': orgId || ''
+            }
+        });
+        if (!res.ok) {
+            const error = new Error('An error occurred while fetching the data.');
+            (error as any).info = await res.json();
+            (error as any).status = res.status;
+            throw error;
+        }
+        return res.json();
+    };
+
+    const { data, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcherWithHeaders);
+
+    console.log("DEBUG: useCrewData", { shouldFetch, dataLength: data?.length, error, isLoading });
 
     // 3. Return robust state
     return {

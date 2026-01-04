@@ -1,8 +1,8 @@
-import { Button } from "@repo/ui/components/ui/button";
+import { Button } from "./button";
 import Link from "next/link";
 import { Construction } from "lucide-react";
 
-export default function ConstructionPage({ title }: { title: string }) {
+export function ConstructionPage({ title }: { title: string }) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center px-4">
             <div className="p-4 bg-slate-100 rounded-full">

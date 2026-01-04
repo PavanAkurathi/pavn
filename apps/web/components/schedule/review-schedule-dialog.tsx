@@ -18,7 +18,7 @@ import { useMemo } from "react";
 interface PositionItem {
     roleId: string;
     roleName: string;
-    workerId: string | null;
+    workerId?: string | null;
 }
 
 interface ScheduleBlock {

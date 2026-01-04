@@ -9,7 +9,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-} from "@repo/ui/components/ui/alert-dialog";
+} from "./alert-dialog";
 
 interface ExitDialogProps {
     isOpen: boolean;

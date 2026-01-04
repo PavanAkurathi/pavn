@@ -78,6 +78,16 @@
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: #182540;
   --sidebar-ring: #D92B3A;
+
+  /* 
+    5. ROLE COLORS (Pale/Calm Palette - No Blue)
+  */
+  --role-server: #fdba74;    /* Pale Orange/Peach */
+  --role-bartender: #d8b4fe; /* Pale Lavender */
+  --role-kitchen: #fda4af;   /* Pale Rose (Replaces Blue) */
+  --role-host: #6ee7b7;      /* Pale Mint/Emerald */
+  --role-support: #fde047;   /* Pale Sand/Yellow */
+  --role-default: #cbd5e1;   /* Pale Slate/Grey */
 }
 
 /* 
@@ -126,6 +136,14 @@
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: #182540;
   --sidebar-ring: #D92B3A;
+
+  /* Dark Mode Roles (Slightly deeper but still distinct) */
+  --role-server: #fb923c;
+  --role-bartender: #c084fc;
+  --role-kitchen: #fb7185;
+  --role-host: #34d399;
+  --role-support: #facc15;
+  --role-default: #94a3b8;
 }
 
 /* 
@@ -171,6 +189,14 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Semantic Role Colors */
+  --color-role-server: var(--role-server);
+  --color-role-bartender: var(--role-bartender);
+  --color-role-kitchen: var(--role-kitchen);
+  --color-role-host: var(--role-host);
+  --color-role-support: var(--role-support);
+  --color-role-default: var(--role-default);
 
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;

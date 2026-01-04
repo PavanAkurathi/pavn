@@ -41,7 +41,7 @@ export function FeatureTabs() {
                     <TabsContent value="scheduling" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="grid md:grid-cols-2 gap-12 items-center">
                             <div className="space-y-6">
-                                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700">
                                     <Calendar className="w-6 h-6" />
                                 </div>
                                 <h3 className="text-2xl font-bold text-slate-900">Drag, Drop, Done.</h3>

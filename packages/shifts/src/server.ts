@@ -20,8 +20,18 @@ const app = new Hono<{
     };
 }>();
 
-// CORS Middleware - Handled by Gateway
-// app.use("*", cors(...));
+// CORS Middleware
+app.use(
+    "*",
+    cors({
+        origin: ["http://localhost:3000", "http://localhost:3001"],
+        allowHeaders: ["x-org-id", "Content-Type", "Authorization"],
+        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"],
+        exposeHeaders: ["Content-Length"],
+        maxAge: 600,
+        credentials: true,
+    })
+);
 
 // Tenant Isolation Middleware
 app.use("*", async (c, next) => {

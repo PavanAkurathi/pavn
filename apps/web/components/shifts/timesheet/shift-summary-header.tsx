@@ -33,7 +33,7 @@ export function ShiftSummaryHeader({
                     <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
                     <div className="text-muted-foreground">{role} - {rate}</div>
                 </div>
-                <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                <Button variant="outline" className="text-zinc-700 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900">
                     Book again
                 </Button>
             </div>

@@ -24,14 +24,14 @@ export function ComparisonTable() {
                         </div>
 
                         {/* Middle Header (Workers Hive) */}
-                        <div className="col-span-3 p-8 border-b border-white/10 bg-slate-800/50 flex flex-col items-center justify-center relative">
-                            <div className="absolute top-0 w-full h-1 bg-linear-to-r from-red-600 to-red-500"></div>
+                        <div className="col-span-3 p-8 border-b border-white/10 bg-zinc-800/50 flex flex-col items-center justify-center relative">
+                            <div className="absolute top-0 w-full h-1 bg-linear-to-r from-red-600 to-red-500"></div> {/* Brand gradient kept for logo/brand identity */}
                             <div className="flex items-center gap-2 font-bold text-xl mb-1">
                                 {/* Simple Logo Icon */}
                                 <div className="w-6 h-6 bg-white text-black rounded flex items-center justify-center text-xs font-black">W</div>
                                 Workers Hive
                             </div>
-                            <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">The Modern OS</span>
+                            <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">The Modern OS</span>
                         </div>
 
                         {/* Right Header (Competitors) */}
@@ -144,21 +144,21 @@ function Row({ title, description, hive, competitor, isText = false, last = fals
 
 function StatusIcon({ status, isCompetitor = false }: { status: boolean, isCompetitor?: boolean }) {
     if (status) {
-        // Green Check (Badge Style)
+        // Green Check (Badge Style) - Using Role-Host (Emerald equivalent)
         return (
             <div className="relative flex items-center justify-center w-10 h-10">
-                <div className="absolute inset-0 bg-teal-500 rounded-full opacity-20 animate-pulse"></div>
-                <div className="relative w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center shadow-lg shadow-teal-500/30">
-                    <Check className="w-5 h-5 text-white stroke-3" />
+                <div className="absolute inset-0 bg-role-host/20 rounded-full animate-pulse"></div>
+                <div className="relative w-8 h-8 bg-role-host rounded-full flex items-center justify-center shadow-lg shadow-role-host/30">
+                    <Check className="w-5 h-5 text-zinc-900 stroke-3" />
                 </div>
             </div>
         );
     }
 
-    // Red X (Circle Style)
+    // Red X (Circle Style) - Using Destructive
     return (
-        <div className="w-8 h-8 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center">
-            <X className="w-4 h-4 text-red-500" />
+        <div className="w-8 h-8 bg-destructive/10 border border-destructive/20 rounded-full flex items-center justify-center">
+            <X className="w-4 h-4 text-destructive" />
         </div>
     );
 }

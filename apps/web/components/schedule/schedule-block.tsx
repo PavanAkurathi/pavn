@@ -37,8 +37,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu";
-import { calculateDefaultEndTime } from "./time-picker-select";
-import { SmartTimePicker } from "../ui/smart-time-picker";
+import { IntervalTimePicker, calculateDefaultEndTime } from "@repo/ui/components/ui/time-picker";
 import { PositionSelectorDialog, PositionItem } from "./position-selector-dialog";
 import { PositionChips } from "./position-chips";
 import { useState } from "react";
@@ -206,7 +205,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                         name={`schedules.${index}.startTime`}
                         render={({ field }) => (
                             <FormItem>
-                                <SmartTimePicker
+                                <IntervalTimePicker
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="Start time"
@@ -221,7 +220,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                         name={`schedules.${index}.endTime`}
                         render={({ field }) => (
                             <FormItem>
-                                <SmartTimePicker
+                                <IntervalTimePicker
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="End time"
@@ -274,7 +273,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     <Button
                         type="button"
                         variant="outline"
-                        className="w-full h-12 border-dashed border-2 text-blue-600 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-500"
+                        className="w-full h-12 border-dashed border-2 text-zinc-500 bg-zinc-50/50 hover:bg-zinc-100 hover:border-zinc-400 hover:text-zinc-900"
                         onClick={() => setIsPositionDialogOpen(true)}
                     >
                         <Plus className="mr-2 h-4 w-4" />

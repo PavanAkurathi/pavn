@@ -26,7 +26,7 @@ export function ROICalculator() {
                     <div className="space-y-8">
                         <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
                             Do the math. <br />
-                            <span className="text-red-600">Stop paying the "Headcount Tax".</span>
+                            <span className="text-destructive">Stop paying the "Headcount Tax".</span>
                         </h2>
                         <p className="text-zinc-400 text-lg leading-relaxed">
                             Other platforms punish you for growing. They charge $4–$6 for every new busser or barback you hire. We charge a flat $20. Period.
@@ -46,12 +46,12 @@ export function ROICalculator() {
                                     step={1}
                                     className={cn(
                                         "cursor-pointer py-4",
-                                        // Force the filled track to be RED
-                                        "[&_.bg-primary]:bg-red-600",
+                                        // Force the filled track to be DESTRUCTIVE
+                                        "[&_.bg-primary]:bg-destructive",
                                         // Force the empty track to be Dark Grey (visible on black)
                                         "[&_.bg-secondary]:bg-zinc-700",
                                         // Force the handle (thumb) to be White with Red border
-                                        "[&_span[role=slider]]:bg-white [&_span[role=slider]]:border-red-600 [&_span[role=slider]]:h-6 [&_span[role=slider]]:w-6"
+                                        "[&_span[role=slider]]:bg-white [&_span[role=slider]]:border-destructive [&_span[role=slider]]:h-6 [&_span[role=slider]]:w-6"
                                     )}
                                 />
                             </div>
@@ -77,7 +77,7 @@ export function ROICalculator() {
                                     <div className="text-sm font-medium text-zinc-400 mb-1">Legacy Software Cost</div>
                                     <div className="text-xs text-zinc-500">Avg. $6/user/month</div>
                                 </div>
-                                <div className="text-3xl font-bold text-zinc-600 line-through decoration-red-500/50 decoration-2">
+                                <div className="text-3xl font-bold text-zinc-600 line-through decoration-destructive/50 decoration-2">
                                     ${competitorCost}<span className="text-sm font-normal text-zinc-600">/mo</span>
                                 </div>
                             </div>
@@ -94,8 +94,8 @@ export function ROICalculator() {
                             </div>
 
                             {/* Savings Highlight */}
-                            <div className="bg-red-950/30 rounded-xl p-8 text-center border border-red-900/50 shadow-[0_0_40px_-10px_rgba(220,38,38,0.2)]">
-                                <p className="text-xs font-bold text-red-400 uppercase tracking-widest mb-2">Total Annual Savings</p>
+                            <div className="bg-destructive/10 rounded-xl p-8 text-center border border-destructive/20 shadow-[0_0_40px_-10px_rgba(220,38,38,0.2)]">
+                                <p className="text-xs font-bold text-destructive uppercase tracking-widest mb-2">Total Annual Savings</p>
                                 <div className="text-5xl md:text-6xl font-extrabold text-white tracking-tight">
                                     ${yearlySavings.toLocaleString()}
                                 </div>

@@ -19,7 +19,7 @@ import { CrewMember, Role } from "@/hooks/use-crew-data";
 export interface PositionItem {
     roleId: string;
     roleName: string;
-    workerId: string | null;
+    workerId?: string | null;
     workerName?: string;
     workerAvatar?: string;
     workerInitials?: string;
@@ -55,17 +55,7 @@ export function PositionSelectorDialog({
 
     // Handle Adding/Removing from buffer
     const toggleSelection = (item: PositionItem) => {
-        // Since we can add multiple "Open Shifts" or multiple "Crew", we just append to the list
-        // Requirement: "The 'Add' button toggles to 'Added'". 
-        // Note: For unique crew members, we might want to toggle. For "Open Shift", we always add.
-        // Let's implement simple append for now, but UI feedback requires checking if in array.
-        // Wait, for unique workers, usually you select once per slot. 
-        // But the requirement says "Bulk Adding". 
-        // If I click "Add" on "Mike Ross", he is added. If I click again, do I add him twice? Probably not for the same block.
-        // Let's assume toggle for crew, always add for "Open Shift"? 
-        // Requirement: "The 'Add' button toggles to 'Added' (Green variant)."
-
-        // For CREW: Toggle
+        // Since "Open Shifts" are removed, we only toggle named crew.
         if (item.workerId) {
             const exists = selectedItems.find(i => i.workerId === item.workerId && i.roleId === item.roleId);
             if (exists) {
@@ -73,19 +63,11 @@ export function PositionSelectorDialog({
             } else {
                 setSelectedItems(prev => [...prev, item]);
             }
-        } else {
-            // For OPEN SHIFTS: We can add multiple. But the "Toggle" UI implies a state. 
-            // To support multiple "Open Shifts", maybe we allow clicking it multiple times and it adds to the count? 
-            // Or simpler: Just add one "Open Shift" entry per click, and show "Added x2" if needed?
-            // Let's stick to simple: "Open Shift" adds one entry. 
-            setSelectedItems(prev => [...prev, item]);
         }
     };
 
     const isSelected = (workerId: string | null, roleId: string) => {
-        if (!workerId) return false; // Open shifts don't show "selected" state persistence in this simple model, or maybe they do?
-        // Actually, for Open Shifts, usually you just click "Add" and it sends it. 
-        // But the requirement says "Click 'Done' to close". So we need a buffer.
+        if (!workerId) return false;
         return selectedItems.some(i => i.workerId === workerId && i.roleId === roleId);
     };
 
@@ -96,30 +78,6 @@ export function PositionSelectorDialog({
         setSelectedItems([]); // Clear buffer
         onClose();
     };
-
-    const handleOpenShiftClick = () => {
-        // Add an open shift for the current active tab (or default to 'server' if 'all'?)
-        // If 'All' is selected, we probably shouldn't show "Open Shift" unless we force a role picker.
-        // Let's assume if 'All', we show Open Shifts for ALL roles? Or just hide it? 
-        // Better UX: Show "Open Position" card that forces role selection? 
-        // Simplified: If 'All' is active, disable "Open Shift" row or default to something?
-        // Let's filter "Open Shift" row based on activeTab. 
-
-        // If activeTab is 'all', we can't easily add an "Open Shift" without knowing the role.
-        // So maybe we only show the "Open Shift" row when a specific role tab is active.
-
-        if (activeTab !== "all") {
-            const newItem: PositionItem = {
-                roleId: activeTab,
-                roleName: getRoleName(activeTab),
-                workerId: null
-            };
-            setSelectedItems(prev => [...prev, newItem]);
-        }
-    };
-
-    // Count open shifts in buffer for the current tab
-    const openShiftsCount = selectedItems.filter(i => i.workerId === null && i.roleId === activeTab).length;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -159,29 +117,6 @@ export function PositionSelectorDialog({
 
                 {/* List Content */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                    {/* 1. Open Shift Row (Only if specific role selected) */}
-                    {activeTab !== "all" && (
-                        <div className="flex items-center justify-between p-3 border rounded-lg border-dashed hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center space-x-3">
-                                <div className="h-10 w-10 rounded-full border-2 border-dashed flex items-center justify-center text-muted-foreground">
-                                    <User className="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <p className="font-semibold">Open {getRoleName(activeTab)} Shift</p>
-                                    <p className="text-sm text-muted-foreground">Unassigned position</p>
-                                </div>
-                            </div>
-                            <Button
-                                size="sm"
-                                variant={openShiftsCount > 0 ? "default" : "outline"}
-                                className={cn(openShiftsCount > 0 && "bg-green-600 hover:bg-green-700")}
-                                onClick={handleOpenShiftClick}
-                            >
-                                {openShiftsCount > 0 ? `Added (${openShiftsCount})` : "Add"}
-                                {openShiftsCount > 0 ? <Check className="ml-2 h-4 w-4" /> : <Plus className="ml-2 h-4 w-4" />}
-                            </Button>
-                        </div>
-                    )}
 
                     {/* 2. Crew Rows */}
                     {filteredCrew.map(worker => {

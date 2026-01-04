@@ -51,7 +51,33 @@ export function groupShiftsByDate(shifts: Shift[]): Record<string, Shift[]> {
 
 
 
+
 export function formatShiftDateLabel(dateStr: string): string {
     const date = parseISO(dateStr);
     return format(date, 'EEEE, MMMM d, yyyy'); // e.g. "Tuesday, October 25, 2022"
+}
+
+/**
+ * Groups shifts that are at the same time and location.
+ * Returns an array of arrays, where each inner array represents a "card" (single or grouped).
+ */
+export function groupConcurrentShifts(shifts: Shift[]): Shift[][] {
+    const groups: Record<string, Shift[]> = {};
+    const result: Shift[][] = [];
+
+    shifts.forEach(shift => {
+        // Key: startTime + endTime + locationName (or ID if available)
+        // Using common attributes that define a "Event"
+        const key = `${shift.startTime}-${shift.endTime}-${shift.locationName}`;
+
+        if (!groups[key]) {
+            groups[key] = [];
+            // We maintain order by pushing to result array immediately
+            // But we store reference in map to push subsequent items
+            result.push(groups[key]);
+        }
+        groups[key].push(shift);
+    });
+
+    return result;
 }

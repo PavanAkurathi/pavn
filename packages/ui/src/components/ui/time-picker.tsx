@@ -7,7 +7,32 @@ import {
     PopoverTrigger,
 } from "./popover";
 import { ScrollArea, ScrollBar } from "./scroll-area";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "./select";
 import { cn } from "../../lib/utils";
+import { format, parse, addMinutes, startOfDay } from "date-fns";
+
+// Helper to auto-calculate end time (+6 hours)
+export const calculateDefaultEndTime = (startTime: string): string | undefined => {
+    try {
+        const startDate = parse(startTime, "HH:mm", new Date());
+        const endDate = addMinutes(startDate, 6 * 60);
+        return format(endDate, "HH:mm");
+    } catch {
+        return undefined;
+    }
+};
+
+// Also export helper parse/format utilities if needed, but keeping it minimal for now.
+export const parseTime = (timeStr: string) => parse(timeStr, "HH:mm", new Date());
+
+
+// --- Original TimePicker (Scroll Wheel) ---
 
 interface TimePickerProps {
     value?: string; // "05:00 PM"
@@ -112,5 +137,58 @@ export function TimePicker({ value, onChange, className, disabled, placeholder =
                 </div>
             </PopoverContent>
         </Popover>
+    );
+}
+
+// --- Interval TimePicker (Dropdown 15m) ---
+
+interface IntervalTimePickerProps {
+    value?: string; // "HH:mm" 24h format
+    onChange?: (value: string) => void;
+    placeholder?: string;
+    className?: string;
+}
+
+// Generate time options in 15-minute intervals
+const generateTimeOptions = () => {
+    const times: Date[] = [];
+    let current = startOfDay(new Date());
+    const end = addMinutes(startOfDay(new Date()), 24 * 60);
+
+    while (current < end) {
+        times.push(current);
+        current = addMinutes(current, 15);
+    }
+    return times;
+};
+
+const TIME_OPTIONS = generateTimeOptions();
+
+export function IntervalTimePicker({ value, onChange, placeholder = "Select time", className }: IntervalTimePickerProps) {
+
+    // Helper to format display label
+    const formatLabel = (date: Date) => format(date, "h:mm a");
+
+    // Standard Select "onChange" provides the value (string) directly
+    const handleValueChange = (val: string) => {
+        onChange?.(val);
+    };
+
+    return (
+        <Select value={value} onValueChange={handleValueChange}>
+            <SelectTrigger className={cn("w-full h-11 rounded-full", className)}>
+                <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent className="h-[200px]" position="popper">
+                {TIME_OPTIONS.map((time) => {
+                    const timeValue = format(time, "HH:mm");
+                    return (
+                        <SelectItem key={timeValue} value={timeValue}>
+                            {formatLabel(time)}
+                        </SelectItem>
+                    );
+                })}
+            </SelectContent>
+        </Select>
     );
 }

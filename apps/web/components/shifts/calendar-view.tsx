@@ -96,8 +96,8 @@ export function CalendarView({ shifts, isLoading }: CalendarViewProps) {
                                                         <TooltipTrigger asChild>
                                                             <div className={cn(
                                                                 "h-2 w-2 rounded-full",
-                                                                shift.status === 'open' ? 'bg-emerald-500' :
-                                                                    shift.status === 'cancelled' ? 'bg-red-500' : 'bg-zinc-400'
+                                                                shift.status === 'open' ? 'bg-role-host' :
+                                                                    shift.status === 'cancelled' ? 'bg-destructive' : 'bg-muted-foreground'
                                                             )} />
                                                         </TooltipTrigger>
                                                         <TooltipContent side="top" className="bg-zinc-900 text-white border-0 text-xs py-1.5 px-3">
@@ -133,7 +133,7 @@ export function CalendarView({ shifts, isLoading }: CalendarViewProps) {
                     <div className="space-y-4 py-4">
                         {selectedShifts.length > 0 ? (
                             selectedShifts.map(shift => (
-                                <ShiftCard key={shift.id} shift={shift} />
+                                <ShiftCard key={shift.id} shifts={[shift]} />
                             ))
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">
