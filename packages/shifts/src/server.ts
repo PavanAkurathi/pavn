@@ -24,7 +24,12 @@ const app = new Hono<{
 app.use(
     "*",
     cors({
-        origin: ["http://localhost:3000", "http://localhost:3001"],
+        origin: [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "https://muttonbiryani.up.railway.app",
+            "https://shift-serf.up.railway.app",
+        ],
         allowHeaders: ["x-org-id", "Content-Type", "Authorization"],
         allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"],
         exposeHeaders: ["Content-Length"],

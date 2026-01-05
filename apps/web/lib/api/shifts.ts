@@ -34,73 +34,88 @@ const getSecureOrgId = async (providedOrgId?: string) => {
 };
 
 export const getShifts = async ({ view, orgId }: { view: string; orgId?: string }) => {
-    const activeOrgId = await getSecureOrgId(orgId);
+    try {
+        const activeOrgId = await getSecureOrgId(orgId);
 
-    let endpoint = "";
-    switch (view) {
-        case "upcoming":
-            endpoint = "/shifts/upcoming";
-            break;
-        case "past":
-            endpoint = "/shifts/history";
-            break;
-        case "needs_approval":
-            endpoint = "/shifts/pending-approval";
-            break;
-        case "draft":
-            endpoint = "/shifts/drafts";
-            break;
-        default:
-            endpoint = "/shifts/upcoming";
-    }
+        let endpoint = "";
+        switch (view) {
+            case "upcoming":
+                endpoint = "/shifts/upcoming";
+                break;
+            case "past":
+                endpoint = "/shifts/history";
+                break;
+            case "needs_approval":
+                endpoint = "/shifts/pending-approval";
+                break;
+            case "draft":
+                endpoint = "/shifts/drafts";
+                break;
+            default:
+                endpoint = "/shifts/upcoming";
+        }
 
-    const res = await fetch(`${SHIFT_SERVICE_URL}${endpoint}`, {
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        cache: "no-store",
-    });
+        const res = await fetch(`${SHIFT_SERVICE_URL}${endpoint}`, {
+            headers: {
+                "x-org-id": activeOrgId,
+                "Content-Type": "application/json",
+                "Cookie": (await headers()).get("cookie") || "",
+            },
+            cache: "no-store",
+        });
 
-    if (!res.ok) {
-        console.error(`Failed to fetch shifts: ${res.status} ${res.statusText}`);
+        if (!res.ok) {
+            console.error(`Failed to fetch shifts: ${res.status} ${res.statusText}`);
+            return [];
+        }
+
+        return res.json();
+    } catch (error) {
+        console.error("Error fetching shifts:", error);
         return [];
     }
-
-    return res.json();
 };
 
 export const getPendingShiftsCount = async (orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/pending-approval`, {
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        cache: "no-store",
-    });
+    try {
+        const activeOrgId = await getSecureOrgId(orgId);
+        const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/pending-approval`, {
+            headers: {
+                "x-org-id": activeOrgId,
+                "Content-Type": "application/json",
+                "Cookie": (await headers()).get("cookie") || "",
+            },
+            cache: "no-store",
+        });
 
-    if (!res.ok) return 0;
-    const shifts = await res.json() as any[];
-    return shifts.length;
+        if (!res.ok) return 0;
+        const shifts = await res.json() as any[];
+        return shifts.length;
+    } catch (error) {
+        console.error("Error fetching pending count:", error);
+        return 0;
+    }
 };
 
 export const getDraftShiftsCount = async (orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        cache: "no-store",
-    });
+    try {
+        const activeOrgId = await getSecureOrgId(orgId);
+        const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
+            headers: {
+                "x-org-id": activeOrgId,
+                "Content-Type": "application/json",
+                "Cookie": (await headers()).get("cookie") || "",
+            },
+            cache: "no-store",
+        });
 
-    if (!res.ok) return 0;
-    const shifts = await res.json() as any[];
-    return shifts.length;
+        if (!res.ok) return 0;
+        const shifts = await res.json() as any[];
+        return shifts.length;
+    } catch (error) {
+        console.error("Error fetching draft count:", error);
+        return 0;
+    }
 };
 
 export const deleteDrafts = async (orgId?: string) => {
