@@ -56,8 +56,8 @@ export function HistoryList({ shifts, isLoading, onShiftClick }: HistoryListProp
                                 .map((shift) => (
                                     <ShiftCard
                                         key={shift.id}
-                                        shift={shift}
-                                        onClick={() => onShiftClick?.(shift)}
+                                        shifts={[shift]}
+                                        onClick={(s) => onShiftClick?.(s)}
                                     // For history, we might want to show status clearly
                                     />
                                 ))}
