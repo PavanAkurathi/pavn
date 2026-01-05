@@ -47,25 +47,26 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
                             {formatShiftDateLabel(date)}
                         </h3>
                         <div className="space-y-3">
-                            {Object.entries(groupConcurrentShifts(groupedShifts[date] || []))
-                                .map(([key, group], index) => (
-                                    // groupConcurrentShifts returns Shift[][], so 'group' is Shift[]
-                                    // Wait, groupConcurrentShifts returns Shift[][] (array of arrays)
-                                    // So I shouldn't use Object.entries on it directly if it was just returning array.
-                                    // Let's correct usage below
-                                    null
-                                ))}
+
                             {groupConcurrentShifts(groupedShifts[date] || [])
-                                .sort((a, b) => new Date(a[0].startTime).getTime() - new Date(b[0].startTime).getTime())
-                                .map((group) => (
-                                    <ShiftCard
-                                        key={group[0].id} // Use first shift ID as key
-                                        shifts={group}
-                                        onClick={(s) => onShiftClick?.(s)}
-                                        isUrgent={isUrgentList}
-                                        actionLabel={isUrgentList ? "Review Timesheet" : undefined}
-                                    />
-                                ))}
+                                .sort((a, b) => {
+                                    const timeA = new Date(a[0]?.startTime ?? 0).getTime();
+                                    const timeB = new Date(b[0]?.startTime ?? 0).getTime();
+                                    return timeA - timeB;
+                                })
+                                .map((group) => {
+                                    const firstShift = group[0];
+                                    if (!firstShift) return null;
+                                    return (
+                                        <ShiftCard
+                                            key={firstShift.id}
+                                            shifts={group}
+                                            onClick={(s) => onShiftClick?.(s)}
+                                            isUrgent={isUrgentList}
+                                            actionLabel={isUrgentList ? "Review Timesheet" : undefined}
+                                        />
+                                    );
+                                })}
                         </div>
                     </div>
                 ))

@@ -5,7 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@repo/ui/lib/utils";
 import { Button } from "@repo/ui/components/ui/button";
-import { Plus } from "lucide-react";
+import { authClient } from "@repo/auth/client";
+import { Plus, Building2 } from "lucide-react";
 import { NavUser } from "./nav-user";
 
 const NAV_ITEMS = [
@@ -14,8 +15,18 @@ const NAV_ITEMS = [
     { label: "Reports", href: "/reports" },
 ];
 
-export function NavHeader() {
+interface NavHeaderProps {
+    activeOrg?: {
+        id: string;
+        name: string;
+        logo?: string | null;
+    } | null;
+}
+
+export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
     const pathname = usePathname();
+    const { data: clientOrg } = authClient.useActiveOrganization();
+    const activeOrg = clientOrg || serverOrg;
 
     // Distraction-free mode for creation flows
     if (pathname.startsWith("/dashboard/schedule/create")) {
@@ -27,12 +38,25 @@ export function NavHeader() {
             <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
                 {/* Left: Logo & Nav */}
                 <div className="flex items-center gap-8">
-                    {/* Logo */}
-                    <Link href="/dashboard/shifts" className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-lg">
-                            W
+                    {/* Logo (Business Identity) */}
+                    <Link href="/dashboard/shifts" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                        <div className="h-9 w-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden shadow-sm">
+                            {activeOrg?.logo ? (
+                                <img src={activeOrg.logo} alt={activeOrg.name} className="h-full w-full object-cover" />
+                            ) : (
+                                activeOrg ? <Building2 className="h-5 w-5" /> : "W"
+                            )}
                         </div>
-                        <span className="font-bold text-lg tracking-tight hidden sm:block">Workers Hive</span>
+                        <div className="flex flex-col justify-center">
+                            <span className="font-bold text-sm tracking-tight text-slate-900 leading-none mb-0.5">
+                                {activeOrg?.name || "Workers Hive"}
+                            </span>
+                            {activeOrg && (
+                                <span className="text-[10px] font-medium text-slate-500 leading-none uppercase tracking-wider">
+                                    Workers Hive
+                                </span>
+                            )}
+                        </div>
                     </Link>
 
                     {/* Desktop Navigation */}
