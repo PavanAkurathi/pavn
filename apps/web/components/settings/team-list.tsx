@@ -7,6 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Plus, MoreVertical, Mail } from "lucide-react";
+import Link from "next/link";
+import { AddMemberDialog } from "@/components/settings/team/add-member-dialog";
+import { Upload } from "lucide-react";
 import { format } from "date-fns";
 
 interface TeamListProps {
@@ -17,6 +20,8 @@ interface TeamListProps {
         name: string;
         email: string;
         image?: string | null;
+        hourlyRate?: number | null;
+        jobTitle?: string | null;
     }>;
 }
 
@@ -30,10 +35,9 @@ export function TeamList({ members }: TeamListProps) {
                         Manage who has access to this organization.
                     </CardDescription>
                 </div>
-                <Button size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Invite Member
-                </Button>
+                <div className="flex gap-2">
+                    {/* Admin Invite Dialog could go here in future */}
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
@@ -45,31 +49,22 @@ export function TeamList({ members }: TeamListProps) {
                                     <AvatarFallback>{member.name.charAt(0).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <p className="font-medium text-sm">{member.name}</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-medium text-sm">{member.name}</p>
+                                        <Badge variant={member.role === "owner" ? "default" : "secondary"} className="text-[10px] px-1 py-0 h-4 capitalize">
+                                            {member.role}
+                                        </Badge>
+                                    </div>
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                                         <Mail className="h-3 w-3" />
                                         {member.email}
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-4">
-                                <div className="text-right hidden sm:block">
-                                    <Badge
-                                        variant="outline"
-                                        className={`capitalize mb-1 ${(member.role === "admin" || member.role === "owner")
-                                            ? "border-[#D95829]/20 bg-[#D95829]/10 text-[#D95829] hover:bg-[#D95829]/20 hover:text-[#D95829]"
-                                            : "border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-50 hover:text-slate-700"}`}
-                                    >
-                                        {member.role === "owner" ? "admin" : member.role}
-                                    </Badge>
-                                    <p className="text-[10px] text-muted-foreground">
-                                        Joined {format(new Date(member.joinedAt), "MMM d, yyyy")}
-                                    </p>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
-                                    <span className="sr-only">Menu</span>
-                                </Button>
+                            <div className="text-right">
+                                <p className="text-[10px] text-muted-foreground">
+                                    Joined {format(new Date(member.joinedAt), "MMM d, yyyy")}
+                                </p>
                             </div>
                         </div>
                     ))}

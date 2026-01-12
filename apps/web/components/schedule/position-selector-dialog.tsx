@@ -12,7 +12,7 @@ import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
-import { Search, Plus, Check, AlertTriangle, User } from "lucide-react";
+import { Search, Plus, Check, AlertTriangle } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { CrewMember, Role } from "@/hooks/use-crew-data";
 
@@ -116,61 +116,91 @@ export function PositionSelectorDialog({
                 </div>
 
                 {/* List Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-6">
+                    <div className="divide-y border rounded-md">
+                        {filteredCrew.map(worker => {
+                            const isOvertime = worker.hours > 40;
+                            const currentRoleId = activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab;
+                            const selected = isSelected(worker.id, currentRoleId);
 
-                    {/* 2. Crew Rows */}
-                    {filteredCrew.map(worker => {
-                        const isOvertime = worker.hours > 40;
-                        const selected = isSelected(worker.id, activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab);
-
-                        return (
-                            <div key={worker.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                                <div className="flex items-center space-x-3">
-                                    <Avatar>
-                                        <AvatarImage src={worker.avatar} />
-                                        <AvatarFallback>{worker.initials}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-semibold">{worker.name}</p>
-                                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                                            {/* Show Primary Role if 'All' is active, otherwise implicit */}
-                                            {activeTab === "all" && (
-                                                <Badge variant="secondary" className="text-xs h-5 px-1.5 font-normal">
-                                                    {(worker.roles || [])[0] || "server"}
-                                                </Badge>
-                                            )}
-                                            <span className={cn(isOvertime && "text-red-600 font-medium flex items-center")}>
-                                                {worker.hours} hrs
-                                                {isOvertime && <AlertTriangle className="ml-1 h-3 w-3" />}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <Button
-                                    size="sm"
-                                    variant={selected ? "default" : "outline"}
-                                    className={cn(selected && "bg-green-600 hover:bg-green-700")}
+                            return (
+                                <div
+                                    key={worker.id}
+                                    className="grid grid-cols-[1fr_auto_auto] items-center gap-4 p-3 hover:bg-slate-50 transition-colors cursor-pointer group bg-white"
                                     onClick={() => toggleSelection({
-                                        roleId: activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab,
-                                        roleName: getRoleName(activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab),
+                                        roleId: currentRoleId,
+                                        roleName: getRoleName(currentRoleId),
                                         workerId: worker.id,
                                         workerName: worker.name,
                                         workerAvatar: worker.avatar,
                                         workerInitials: worker.initials
                                     })}
                                 >
-                                    {selected ? "Added" : "Add"}
-                                    {selected ? <Check className="ml-2 h-4 w-4" /> : <Plus className="ml-2 h-4 w-4" />}
-                                </Button>
-                            </div>
-                        );
-                    })}
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <Avatar className="h-9 w-9 shrink-0">
+                                            <AvatarImage src={worker.avatar} />
+                                            <AvatarFallback className="text-xs">{worker.initials}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0 truncate">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="font-medium text-sm text-slate-900 leading-none truncate">{worker.name}</p>
+                                            </div>
+                                            {/* Since CrewMember doesn't expose joinedAt or email directly in the interface yet 
+                                                (based on previous read), we'll keep it simple or use hours if relevant.
+                                                Ideally we'd fetch more data, but this matches available types. */}
+                                        </div>
+                                    </div>
 
-                    {filteredCrew.length === 0 && activeTab !== "all" && (
-                        <div className="text-center py-8 text-muted-foreground">
-                            No active crew found for {getRoleName(activeTab)}.
-                        </div>
-                    )}
+                                    <div className="text-right hidden sm:block whitespace-nowrap px-4">
+                                        <span className={cn("text-xs font-medium", isOvertime ? "text-red-600 flex items-center gap-1" : "text-muted-foreground")}>
+                                            {worker.hours} hrs
+                                            {isOvertime && <AlertTriangle className="h-3 w-3" />}
+                                        </span>
+                                    </div>
+
+                                    <div className="shrink-0">
+                                        <Button
+                                            size="sm"
+                                            variant={selected ? "default" : "outline"}
+                                            className={cn(selected && "bg-green-600 hover:bg-green-700 w-[90px]")}
+                                            onClick={(e) => {
+                                                e.stopPropagation(); // Avoid double toggle if row click handles it
+                                                toggleSelection({
+                                                    roleId: currentRoleId,
+                                                    roleName: getRoleName(currentRoleId),
+                                                    workerId: worker.id,
+                                                    workerName: worker.name,
+                                                    workerAvatar: worker.avatar,
+                                                    workerInitials: worker.initials
+                                                });
+                                            }}
+                                        >
+                                            {selected ? (
+                                                <>
+                                                    Added <Check className="ml-2 h-3 w-3" />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Add <Plus className="ml-2 h-3 w-3" />
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {filteredCrew.length === 0 && activeTab !== "all" && (
+                            <div className="text-center py-8 text-muted-foreground">
+                                No active crew found for {getRoleName(activeTab)}.
+                            </div>
+                        )}
+                        {filteredCrew.length === 0 && activeTab === "all" && (
+                            <div className="text-center py-8 text-muted-foreground">
+                                No crew members found.
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <DialogFooter className="p-6 border-t">

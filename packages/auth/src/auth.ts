@@ -2,11 +2,13 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { organization, emailOTP } from "better-auth/plugins";
+import { organization, emailOTP, phoneNumber } from "better-auth/plugins";
+import { expo } from "@better-auth/expo";
 import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nanoid } from "nanoid";
 import { sendOtp } from "@repo/email";
+import { sendOTP } from "./providers/sms";
 
 export const auth = betterAuth({
     appName: "Antigravity SaaS",
@@ -15,7 +17,12 @@ export const auth = betterAuth({
     // Crucial for Next.js 15+ / Server Actions environment
     trustedOrigins: [
         "http://localhost:3000",
-        "http://127.0.0.1:3000"
+        "http://127.0.0.1:3000",
+        // Expo Deep Linking Schema
+        "exp://",
+        "myapp://",
+        // Development support
+        "exp://**"
     ],
 
     database: drizzleAdapter(db, {
@@ -86,6 +93,7 @@ export const auth = betterAuth({
     },
 
     plugins: [
+        expo(),
         organization({
             allowUserToCreateOrganization: true,
         }),
@@ -108,6 +116,11 @@ export const auth = betterAuth({
                 }
             },
             sendVerificationOnSignUp: true,
+        }),
+        phoneNumber({
+            sendOTP: async ({ phoneNumber, code }) => {
+                await sendOTP(phoneNumber, code);
+            },
         }),
     ],
 });

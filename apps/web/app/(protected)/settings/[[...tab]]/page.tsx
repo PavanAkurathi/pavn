@@ -12,7 +12,7 @@ import {
     account as accountSchema,
     user as userSchema
 } from "@repo/database/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, or } from "drizzle-orm";
 import { SettingsView } from "@/components/settings/settings-view";
 import { getSubscriptionDetails, getInvoiceHistory } from "@/actions/billing";
 
@@ -80,7 +80,10 @@ export default async function SettingsPage(props: { params: Promise<{ tab?: stri
         })
             .from(memberSchema)
             .leftJoin(userSchema, eq(memberSchema.userId, userSchema.id))
-            .where(eq(memberSchema.organizationId, activeOrgId));
+            .where(and(
+                eq(memberSchema.organizationId, activeOrgId),
+                or(eq(memberSchema.role, "admin"), eq(memberSchema.role, "owner"))
+            ));
 
         members = teamResult
             .filter(r => r.user !== null)

@@ -41,14 +41,14 @@ CREATE TABLE IF NOT EXISTS "shift_assignment" (
 	CONSTRAINT "unique_worker_shift" UNIQUE("shift_id","user_id")
 );
 --> statement-breakpoint
-ALTER TABLE "location" ADD COLUMN "zip" text;--> statement-breakpoint
-ALTER TABLE "location" ADD COLUMN "parking" text DEFAULT 'free';--> statement-breakpoint
-ALTER TABLE "location" ADD COLUMN "specifics" json;--> statement-breakpoint
-ALTER TABLE "location" ADD COLUMN "instructions" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "stripe_customer_id" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "stripe_subscription_id" text;--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "subscription_status" text DEFAULT 'inactive';--> statement-breakpoint
-ALTER TABLE "organization" ADD COLUMN "current_period_end" timestamp;--> statement-breakpoint
+ALTER TABLE "location" ADD COLUMN IF NOT EXISTS "zip" text;--> statement-breakpoint
+ALTER TABLE "location" ADD COLUMN IF NOT EXISTS "parking" text DEFAULT 'free';--> statement-breakpoint
+ALTER TABLE "location" ADD COLUMN IF NOT EXISTS "specifics" json;--> statement-breakpoint
+ALTER TABLE "location" ADD COLUMN IF NOT EXISTS "instructions" text;--> statement-breakpoint
+ALTER TABLE "organization" ADD COLUMN IF NOT EXISTS "stripe_customer_id" text;--> statement-breakpoint
+ALTER TABLE "organization" ADD COLUMN IF NOT EXISTS "stripe_subscription_id" text;--> statement-breakpoint
+ALTER TABLE "organization" ADD COLUMN IF NOT EXISTS "subscription_status" text DEFAULT 'inactive';--> statement-breakpoint
+ALTER TABLE "organization" ADD COLUMN IF NOT EXISTS "current_period_end" timestamp;--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "account" ADD CONSTRAINT "account_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION

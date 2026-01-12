@@ -14,10 +14,40 @@ export const user = pgTable("user", {
     emailVerified: boolean("email_verified").notNull(),
     image: text("image"),
     phoneNumber: text("phone_number"),
+
+    // Profile Extensions
+    emergencyContact: json("emergency_contact").$type<{
+        name: string;
+        phone: string;
+        relation: string;
+    }>(),
+    address: json("address").$type<{
+        street: string;
+        city: string;
+        state: string;
+        zip: string;
+    }>(),
+
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
 }, (table) => ({
     userEmailIdx: index("user_email_idx").on(table.email)
+}));
+
+export const certification = pgTable("certification", {
+    id: text("id").primaryKey(),
+    workerId: text("worker_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // e.g., "ServSafe Alcohol"
+    issuer: text("issuer"), // e.g., "National Restaurant Association"
+    expiresAt: timestamp("expires_at"),
+    status: text("status").default("valid"), // 'valid', 'expired'
+    imageUrl: text("image_url"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+    certWorkerIdx: index("cert_worker_idx").on(table.workerId)
 }));
 
 export const account = pgTable("account", {
@@ -61,6 +91,12 @@ export const verification = pgTable("verification", {
     updatedAt: timestamp("updated_at"),
 });
 
+export const userRelations = relations(user, ({ many }) => ({
+    certifications: many(certification),
+    // specific relations to shifts/assignments can be added here if needed, 
+    // but often handled via the other side (shiftAssignment.worker)
+}));
+
 // ============================================================================
 // 2. TENANCY (Organization & Location)
 // ============================================================================
@@ -91,6 +127,14 @@ export const location = pgTable("location", {
     parking: text("parking").default("free"),
     specifics: json("specifics").$type<string[]>(),
     instructions: text("instructions"),
+
+    // -- Geofence --
+    latitude: text("latitude"),
+    longitude: text("longitude"),
+    geofenceRadiusMeters: integer("geofence_radius_meters").default(100),
+    geocodedAt: timestamp("geocoded_at"),
+    geocodeSource: text("geocode_source"), // 'google' | 'manual' | 'mapbox'
+
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
 }, (table) => ({
@@ -110,6 +154,8 @@ export const member = pgTable("member", {
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
     role: text("role").notNull(), // "admin" | "member" (Text is safer than Enum for libraries)
+    hourlyRate: integer("hourly_rate"), // Stored in cents, nullable
+    jobTitle: text("job_title"), // e.g. "Security Guard", nullable
     createdAt: timestamp("created_at").notNull(),
 }, (table) => ({
     memberOrgIdx: index("member_org_idx").on(table.organizationId),
@@ -200,6 +246,32 @@ export const shiftAssignment = pgTable("shift_assignment", {
     hourlyRateSnapshot: integer("hourly_rate_snapshot"),
     grossPayCents: integer("gross_pay_cents").default(0),
 
+    // -- Clock In Verification --
+    clockInLatitude: text("clock_in_latitude"),
+    clockInLongitude: text("clock_in_longitude"),
+    clockInVerified: boolean("clock_in_verified").default(false),
+    clockInMethod: text("clock_in_method"), // 'geofence' | 'manual_override'
+
+    // -- Clock Out Verification --
+    clockOutLatitude: text("clock_out_latitude"),
+    clockOutLongitude: text("clock_out_longitude"),
+    clockOutVerified: boolean("clock_out_verified").default(false),
+    clockOutMethod: text("clock_out_method"), // 'geofence' | 'manual_override' | 'left_geofence' | 'auto_flagged'
+
+    // -- Review Workflow --
+    needsReview: boolean("needs_review").default(false),
+    reviewReason: text("review_reason"), // 'left_geofence' | 'no_clockout' | 'disputed' | 'late_arrival'
+
+    // -- Last Known Position (for flagged shifts) --
+    lastKnownLatitude: text("last_known_latitude"),
+    lastKnownLongitude: text("last_known_longitude"),
+    lastKnownAt: timestamp("last_known_at"),
+
+    // -- Manager Audit Trail --
+    adjustedBy: text("adjusted_by").references(() => user.id),
+    adjustedAt: timestamp("adjusted_at"),
+    adjustmentNotes: text("adjustment_notes"),
+
     // -- Worker Status --
     // Values: 'active', 'no_show', 'removed'
     status: text("status").notNull().default("active"),
@@ -233,5 +305,136 @@ export const shiftAssignmentRelations = relations(shiftAssignment, ({ one }) => 
     worker: one(user, {
         fields: [shiftAssignment.workerId],
         references: [user.id],
+    }),
+}));
+
+// ============================================================================
+// 5. GEOFENCE & TRACKING
+// ============================================================================
+
+export const workerLocation = pgTable("worker_location", {
+    id: text("id").primaryKey(),
+
+    // Relationships
+    workerId: text("worker_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    shiftId: text("shift_id")
+        .references(() => shift.id, { onDelete: "cascade" }), // nullable for pre-shift tracking
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+
+    // GPS Data
+    latitude: text("latitude").notNull(),
+    longitude: text("longitude").notNull(),
+    accuracyMeters: integer("accuracy_meters"), // GPS accuracy from device
+
+    // Computed on insert
+    venueLatitude: text("venue_latitude"), // Snapshot of venue coords
+    venueLongitude: text("venue_longitude"),
+    distanceToVenueMeters: integer("distance_to_venue_meters"),
+    isOnSite: boolean("is_on_site").default(false),
+
+    // Event type
+    eventType: text("event_type"), // 'ping' | 'arrival' | 'departure' | 'clock_in' | 'clock_out'
+
+    // Timestamps
+    recordedAt: timestamp("recorded_at").notNull().defaultNow(),
+    deviceTimestamp: timestamp("device_timestamp"), // Time from device (may differ from server)
+}, (table) => ({
+    workerLocationWorkerIdx: index("worker_location_worker_idx").on(table.workerId),
+    workerLocationShiftIdx: index("worker_location_shift_idx").on(table.shiftId),
+    workerLocationTimeIdx: index("worker_location_time_idx").on(table.recordedAt),
+    workerLocationOrgIdx: index("worker_location_org_idx").on(table.organizationId),
+}));
+
+export const workerLocationRelations = relations(workerLocation, ({ one }) => ({
+    worker: one(user, {
+        fields: [workerLocation.workerId],
+        references: [user.id],
+    }),
+    shift: one(shift, {
+        fields: [workerLocation.shiftId],
+        references: [shift.id],
+    }),
+    organization: one(organization, {
+        fields: [workerLocation.organizationId],
+        references: [organization.id],
+    }),
+}));
+
+export const certificationRelations = relations(certification, ({ one }) => ({
+    worker: one(user, {
+        fields: [certification.workerId],
+        references: [user.id],
+    }),
+}));
+
+export const timeCorrectionRequest = pgTable("time_correction_request", {
+    id: text("id").primaryKey(),
+
+    // What's being corrected
+    shiftAssignmentId: text("shift_assignment_id")
+        .notNull()
+        .references(() => shiftAssignment.id, { onDelete: "cascade" }),
+
+    // Who's requesting
+    workerId: text("worker_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+
+    // Requested changes (all optional - only filled if requesting change)
+    requestedClockIn: timestamp("requested_clock_in"),
+    requestedClockOut: timestamp("requested_clock_out"),
+    requestedBreakMinutes: integer("requested_break_minutes"),
+
+    // Original values (snapshot for comparison)
+    originalClockIn: timestamp("original_clock_in"),
+    originalClockOut: timestamp("original_clock_out"),
+    originalBreakMinutes: integer("original_break_minutes"),
+
+    // Request details
+    reason: text("reason").notNull(), // Worker's explanation
+
+    // Status workflow
+    status: text("status").notNull().default("pending"), // 'pending' | 'approved' | 'rejected'
+
+    // Manager review
+    reviewedBy: text("reviewed_by")
+        .references(() => user.id),
+    reviewedAt: timestamp("reviewed_at"),
+    reviewNotes: text("review_notes"), // Manager's notes on decision
+
+    // Timestamps
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+    correctionAssignmentIdx: index("correction_assignment_idx").on(table.shiftAssignmentId),
+    correctionWorkerIdx: index("correction_worker_idx").on(table.workerId),
+    correctionStatusIdx: index("correction_status_idx").on(table.status),
+    correctionOrgIdx: index("correction_org_idx").on(table.organizationId),
+}));
+
+export const timeCorrectionRequestRelations = relations(timeCorrectionRequest, ({ one }) => ({
+    shiftAssignment: one(shiftAssignment, {
+        fields: [timeCorrectionRequest.shiftAssignmentId],
+        references: [shiftAssignment.id],
+    }),
+    worker: one(user, {
+        fields: [timeCorrectionRequest.workerId],
+        references: [user.id],
+    }),
+    reviewer: one(user, {
+        fields: [timeCorrectionRequest.reviewedBy],
+        references: [user.id],
+    }),
+    organization: one(organization, {
+        fields: [timeCorrectionRequest.organizationId],
+        references: [organization.id],
     }),
 }));

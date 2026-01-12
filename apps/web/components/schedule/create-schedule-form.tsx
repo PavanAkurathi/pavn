@@ -63,10 +63,13 @@ const formSchema = z.object({
     schedules: z.array(ScheduleBlockSchema).min(1, "At least one schedule is required"),
 });
 
+import { CrewMember } from "@/hooks/use-crew-data";
+
 export type FormValues = z.infer<typeof formSchema>;
 
 interface CreateScheduleFormProps {
     initialData?: FormValues;
+    prefetchedCrew?: CrewMember[];
 }
 
 const DEFAULT_SCHEDULE_BLOCK = {
@@ -77,12 +80,15 @@ const DEFAULT_SCHEDULE_BLOCK = {
     positions: [],
 };
 
-export function CreateScheduleForm({ initialData }: CreateScheduleFormProps) {
+export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateScheduleFormProps) {
     // 1. Hook Definitions
     const { data: locations, mutate: mutateLocations } = useLocations();
     const { data: contacts } = useContacts();
     const activeOrganizationId = useOrganizationId();
-    const { roles, crew } = useCrewData();
+    // Use prefetched crew if available, otherwise fallback to hook (though hook might fail as seen)
+    const { roles, crew: hookCrew } = useCrewData();
+    const crew = prefetchedCrew && prefetchedCrew.length > 0 ? prefetchedCrew : hookCrew;
+
     const { data: session } = authClient.useSession();
     const currentUserId = session?.user?.id;
     const router = useRouter();

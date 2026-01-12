@@ -1,0 +1,22 @@
+{
+    "name": "@repo/dub",
+    "version": "0.0.0",
+    "private": true,
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "lint": "eslint . --max-warnings 0",
+        "check-types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "dub": "^0.69.0"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@repo/eslint-config": "workspace:*",
+        "@types/node": "^20.11.24",
+        "eslint": "^8.57.0",
+        "typescript": "^5.3.3"
+    }
+}
