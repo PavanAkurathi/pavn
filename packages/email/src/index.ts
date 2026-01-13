@@ -2,16 +2,18 @@ import { Resend } from 'resend';
 import { OtpEmail } from './templates/otp';
 
 // Initialize Resend with API Key from environment
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const FROM_EMAIL = "onboarding@resend.dev"; // Default for testing, change to your domain in prod
 
 export const sendOtp = async (email: string, otp: string) => {
-    if (!process.env.RESEND_API_KEY) {
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
         console.warn("[Email] RESEND_API_KEY is missing. Logging OTP instead.");
         console.log(`[Email] To: ${email}, OTP: ${otp}`);
         return;
     }
+
+    const resend = new Resend(apiKey);
 
     try {
         const { data, error } = await resend.emails.send({
