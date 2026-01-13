@@ -6,12 +6,20 @@ import { organization } from "@repo/database/schema";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_mock_key_for_build", {
-    apiVersion: "2025-12-15.clover" as any,
-    typescript: true,
-});
+const getStripe = () => {
+    const apiKey = process.env.STRIPE_SECRET_KEY || "sk_test_mock_key_for_build";
+    if (!apiKey) {
+        // This should theoretically be unreachable due to the fallback above, 
+        // but ensures the type checker and runtime are happy.
+        throw new Error("Stripe API Key is missing");
+    }
+    return new Stripe(apiKey, {
+        apiVersion: "2025-12-15.clover" as any, // @ts-ignore - Beta version
+        typescript: true,
+    });
+};
 
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(req: Request) {
     const body = await req.text();
@@ -26,6 +34,8 @@ export async function POST(req: Request) {
             console.error("Webhook Error: Missing signature or endpoint secret");
             return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
         }
+
+        const stripe = getStripe();
         event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
     } catch (err: any) {
         console.error(`Webhook Signature Error: ${err.message}`);
