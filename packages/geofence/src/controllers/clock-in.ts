@@ -99,42 +99,45 @@ export async function clockInController(
         const scheduledStart = new Date(shiftRecord.startTime);
         const clockInResult = applyClockInRules(now, scheduledStart);
 
-        // 5. Update assignment
-        await db.update(shiftAssignment)
-            .set({
-                clockIn: clockInResult.recordedTime,
-                clockInLatitude: latitude,
-                clockInLongitude: longitude,
-                clockInVerified: true,
-                clockInMethod: 'geofence',
-                updatedAt: now,
-            })
-            .where(eq(shiftAssignment.id, assignment.id));
+        // 5. Transaction: Update assignment, shift (if needed), and log location
+        await db.transaction(async (tx) => {
+            // A. Update Assignment
+            await tx.update(shiftAssignment)
+                .set({
+                    clockIn: clockInResult.recordedTime,
+                    clockInLatitude: latitude,
+                    clockInLongitude: longitude,
+                    clockInVerified: true,
+                    clockInMethod: 'geofence',
+                    updatedAt: now,
+                })
+                .where(eq(shiftAssignment.id, assignment.id));
 
-        // 6. Update shift status if needed
-        if (shiftRecord.status === 'assigned') {
-            await db.update(shift)
-                .set({ status: 'in-progress', updatedAt: now })
-                .where(eq(shift.id, shiftId));
-        }
+            // B. Update Shift Status (if needed)
+            if (shiftRecord.status === 'assigned') {
+                await tx.update(shift)
+                    .set({ status: 'in-progress', updatedAt: now })
+                    .where(eq(shift.id, shiftId));
+            }
 
-        // 7. Store location record
-        await db.insert(workerLocation).values({
-            id: nanoid(),
-            workerId,
-            shiftId,
-            organizationId: orgId,
-            latitude,
-            longitude,
-            accuracyMeters: accuracyMeters || null,
-            venueLatitude: venueLocation.latitude,
-            venueLongitude: venueLocation.longitude,
-            distanceToVenueMeters: distanceMeters,
-            isOnSite: true,
-            eventType: 'clock_in',
-            recordedAt: now,
-            // Provide default for device timestamp since we don't assume client provides it for clock in explicitly in D3 requirements
-            deviceTimestamp: now,
+            // C. Store Location Record
+            await tx.insert(workerLocation).values({
+                id: nanoid(),
+                workerId,
+                shiftId,
+                organizationId: orgId,
+                latitude,
+                longitude,
+                accuracyMeters: accuracyMeters || null,
+                venueLatitude: venueLocation.latitude,
+                venueLongitude: venueLocation.longitude,
+                distanceToVenueMeters: distanceMeters,
+                isOnSite: true,
+                eventType: 'clock_in',
+                recordedAt: now,
+                // Provide default for device timestamp since we don't assume client provides it for clock in explicitly in D3 requirements
+                deviceTimestamp: now,
+            });
         });
 
         // 8. Return success

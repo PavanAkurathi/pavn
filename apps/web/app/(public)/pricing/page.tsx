@@ -43,7 +43,6 @@ export default function PricingPage() {
                             <PricingFeature text="Drag & Drop Scheduling" />
                             <PricingFeature text="Payroll Exports (CSV)" />
                             <PricingFeature text="Mobile App for Workers" />
-                            <PricingFeature text="Marketplace Access (Beta)" />
                         </ul>
 
                         <Link href="/auth/signup">

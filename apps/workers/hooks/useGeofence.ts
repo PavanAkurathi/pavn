@@ -2,7 +2,8 @@ import { useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import { LocationService } from '../services/location';
 
-const GEOFENCE_API_URL = "http://localhost:4006";
+const GEOFENCE_API_URL = process.env.EXPO_PUBLIC_GEOFENCE_API_URL || "http://localhost:4006";
+
 
 export function useGeofence() {
     const [loading, setLoading] = useState(false);

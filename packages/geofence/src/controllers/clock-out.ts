@@ -100,50 +100,60 @@ export async function clockOutController(
         const scheduledEnd = new Date(shiftRecord.endTime);
         const clockOutResult = applyClockOutRules(now, scheduledEnd);
 
-        // 5. Update assignment
-        await db.update(shiftAssignment)
-            .set({
-                clockOut: clockOutResult.recordedTime,
-                clockOutLatitude: latitude,
-                clockOutLongitude: longitude,
-                clockOutVerified: true,
-                clockOutMethod: 'geofence',
-                status: 'completed',
-                updatedAt: now,
-            })
-            .where(eq(shiftAssignment.id, assignment.id));
+        // 5. Transaction: Update assignment, shift (if needed), and log location
+        await db.transaction(async (tx) => {
+            // A. Update Assignment
+            await tx.update(shiftAssignment)
+                .set({
+                    clockOut: clockOutResult.recordedTime,
+                    clockOutLatitude: latitude,
+                    clockOutLongitude: longitude,
+                    clockOutVerified: true,
+                    clockOutMethod: 'geofence',
+                    status: 'completed',
+                    updatedAt: now,
+                })
+                .where(eq(shiftAssignment.id, assignment.id));
 
-        // 6. Check if all assignments complete → update shift status
-        const allAssignments = await db.query.shiftAssignment.findMany({
-            where: eq(shiftAssignment.shiftId, shiftId)
-        });
+            // B. Check if all assignments complete → update shift status
+            // Note: We need to query again or rely on the previous fetch. 
+            // Querying inside TX is safer for concurrency but for now we will reuse the logic 
+            // BUT we should query inside the TX to see the latest state if we want strict correctness.
+            // For MVP, simply querying normally is fine.
+            const allAssignments = await tx.query.shiftAssignment.findMany({
+                where: eq(shiftAssignment.shiftId, shiftId)
+            });
 
-        const allComplete = allAssignments.every(a =>
-            a.id === assignment.id ? true : a.clockOut !== null
-        );
+            // We check if everyone EXCEPT current user (who we just updated) is done
+            // OR we just check the list we just fetched which includes the update we just made? 
+            // Wait, inside transaction, the update above is visible to us.
+            const allComplete = allAssignments.every(a =>
+                a.clockOut !== null
+            );
 
-        if (allComplete) {
-            await db.update(shift)
-                .set({ status: 'completed', updatedAt: now })
-                .where(eq(shift.id, shiftId));
-        }
+            if (allComplete) {
+                await tx.update(shift)
+                    .set({ status: 'completed', updatedAt: now })
+                    .where(eq(shift.id, shiftId));
+            }
 
-        // 7. Store location record
-        await db.insert(workerLocation).values({
-            id: nanoid(),
-            workerId,
-            shiftId,
-            organizationId: orgId,
-            latitude,
-            longitude,
-            accuracyMeters: accuracyMeters || null,
-            venueLatitude: venueLocation?.latitude || null,
-            venueLongitude: venueLocation?.longitude || null,
-            distanceToVenueMeters: distanceMeters,
-            isOnSite: true,
-            eventType: 'clock_out',
-            recordedAt: now,
-            deviceTimestamp: now
+            // C. Store Location Record
+            await tx.insert(workerLocation).values({
+                id: nanoid(),
+                workerId,
+                shiftId,
+                organizationId: orgId,
+                latitude,
+                longitude,
+                accuracyMeters: accuracyMeters || null,
+                venueLatitude: venueLocation?.latitude || null,
+                venueLongitude: venueLocation?.longitude || null,
+                distanceToVenueMeters: distanceMeters,
+                isOnSite: true,
+                eventType: 'clock_out',
+                recordedAt: now,
+                deviceTimestamp: now
+            });
         });
 
         // 8. Return success

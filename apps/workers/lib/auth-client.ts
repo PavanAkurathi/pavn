@@ -10,7 +10,8 @@ import Constants from "expo-constants";
 //    : "http://localhost:4005";
 
 // Sticking to localhost for Simulator for now, user can change for real device
-const BASE_URL = "http://localhost:4005";
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:4005";
+
 
 export const authClient = createAuthClient({
     baseURL: BASE_URL,

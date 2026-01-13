@@ -176,6 +176,28 @@ export const invitation = pgTable("invitation", {
         .references(() => user.id, { onDelete: "cascade" }),
 });
 
+export const memberRelations = relations(member, ({ one }) => ({
+    organization: one(organization, {
+        fields: [member.organizationId],
+        references: [organization.id],
+    }),
+    user: one(user, {
+        fields: [member.userId],
+        references: [user.id],
+    }),
+}));
+
+export const invitationRelations = relations(invitation, ({ one }) => ({
+    organization: one(organization, {
+        fields: [invitation.organizationId],
+        references: [organization.id],
+    }),
+    inviter: one(user, {
+        fields: [invitation.inviterId],
+        references: [user.id],
+    }),
+}));
+
 // ============================================================================
 // 4. SCHEDULING (Shifts & Assignments)
 // ============================================================================
@@ -437,4 +459,11 @@ export const timeCorrectionRequestRelations = relations(timeCorrectionRequest, (
         fields: [timeCorrectionRequest.organizationId],
         references: [organization.id],
     }),
+}));
+
+export const organizationRelations = relations(organization, ({ many }) => ({
+    members: many(member),
+    shifts: many(shift),
+    locations: many(location),
+    invitations: many(invitation),
 }));

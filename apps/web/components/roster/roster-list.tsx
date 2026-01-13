@@ -4,19 +4,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { MoreVertical, Mail, Upload, Trash2 } from "lucide-react";
+import { MoreVertical, Mail, Upload, Trash2, Send } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { AddWorkerDialog } from "./add-worker-dialog";
 import { WorkerDetailsSheet, WorkerDetails } from "./worker-details-sheet";
 import { useState } from "react";
-import { removeMember } from "../../actions/team";
+import { resendInvite, deleteMemberAction } from "../../actions/invites";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator
 } from "@repo/ui/components/ui/dropdown-menu";
 
 interface RosterListProps {
@@ -25,16 +27,28 @@ interface RosterListProps {
 
 export function RosterList({ workers }: RosterListProps) {
     const [selectedWorker, setSelectedWorker] = useState<WorkerDetails | null>(null);
+    const router = useRouter();
+
+    const handleResend = async (e: React.MouseEvent, memberId: string) => {
+        e.stopPropagation();
+        toast.promise(resendInvite(memberId), {
+            loading: "Resending invite...",
+            success: "Invite sent successfully!",
+            error: "Failed to resend invite"
+        });
+    };
 
     const handleDelete = async (e: React.MouseEvent, memberId: string) => {
         e.stopPropagation();
         if (confirm("Are you sure you want to remove this worker from your roster?")) {
-            try {
-                await removeMember(memberId);
-                toast.success("Worker removed successfully");
-            } catch (error) {
-                toast.error("Failed to remove worker");
-            }
+            toast.promise(deleteMemberAction(memberId), {
+                loading: "Removing worker...",
+                success: () => {
+                    router.refresh();
+                    return "Worker removed successfully";
+                },
+                error: "Failed to remove worker"
+            });
         }
     };
 
@@ -58,15 +72,15 @@ export function RosterList({ workers }: RosterListProps) {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="divide-y border rounded-md">
+                <div className="space-y-3">
                     {workers.map((worker) => (
                         <div
                             key={worker.id}
-                            className="grid grid-cols-[1fr_auto_auto] items-center gap-4 p-3 hover:bg-slate-50 transition-colors cursor-pointer group bg-white"
+                            className="grid grid-cols-[1fr_auto_auto] items-center gap-4 p-4 border rounded-xl hover:shadow-md transition-all cursor-pointer group bg-white"
                             onClick={() => setSelectedWorker(worker)}
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                <Avatar className="h-9 w-9 shrink-0">
+                                <Avatar className="h-10 w-10 shrink-0">
                                     <AvatarImage src={worker.image || ""} />
                                     <AvatarFallback className="text-xs">{worker.name.charAt(0).toUpperCase()}</AvatarFallback>
                                 </Avatar>
@@ -74,12 +88,12 @@ export function RosterList({ workers }: RosterListProps) {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         <p className="font-medium text-sm text-slate-900 leading-none truncate">{worker.name}</p>
                                         {worker.jobTitle && (
-                                            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 font-normal shrink-0">
+                                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-auto font-normal shrink-0 rounded-full">
                                                 {worker.jobTitle}
                                             </Badge>
                                         )}
                                         {worker.status === "invited" && (
-                                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 text-amber-600 bg-amber-50 shrink-0">
+                                            <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-auto text-amber-600 bg-amber-50 shrink-0 rounded-full">
                                                 Invited
                                             </Badge>
                                         )}
@@ -92,7 +106,10 @@ export function RosterList({ workers }: RosterListProps) {
 
                             <div className="text-right hidden sm:block whitespace-nowrap px-4">
                                 <p className="text-[10px] text-muted-foreground">
-                                    Joined {format(new Date(worker.joinedAt), "MMM d, yyyy")}
+                                    {worker.status === 'invited'
+                                        ? `Invited ${format(new Date(worker.joinedAt), "MMM d")}`
+                                        : `Joined ${format(new Date(worker.joinedAt), "MMM d, yyyy")}`
+                                    }
                                 </p>
                             </div>
 
@@ -111,6 +128,13 @@ export function RosterList({ workers }: RosterListProps) {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuItem
+                                            onClick={(e) => handleResend(e, worker.id)}
+                                        >
+                                            <Send className="mr-2 h-4 w-4" />
+                                            Resend Invite
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
                                             className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
                                             onClick={(e) => handleDelete(e, worker.id)}
                                         >
@@ -123,7 +147,7 @@ export function RosterList({ workers }: RosterListProps) {
                         </div>
                     ))}
                     {workers.length === 0 && (
-                        <div className="text-center py-12 text-muted-foreground">
+                        <div className="text-center py-12 text-muted-foreground border rounded-xl border-dashed">
                             <p>No workers found.</p>
                             <p className="text-sm">Add a worker or import a CSV to get started.</p>
                         </div>

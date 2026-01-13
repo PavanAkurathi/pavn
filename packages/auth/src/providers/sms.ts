@@ -37,6 +37,8 @@ let twilioClient: any = null;
 const getTwilioClient = () => {
     if (twilioClient) return twilioClient;
 
+    if (process.env.MOCK_SMS === "true") return null;
+
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
 
@@ -74,10 +76,13 @@ export const sendSMS = async (to: string, body: string): Promise<void> => {
             return;
         }
 
+        const validFrom = normalizePhoneNumber(from);
+        const validTo = normalizePhoneNumber(to);
+
         await client.messages.create({
             body,
-            from,
-            to,
+            from: validFrom,
+            to: validTo,
         });
 
     } catch (error) {
@@ -86,10 +91,8 @@ export const sendSMS = async (to: string, body: string): Promise<void> => {
 
         // In production, we might want to re-throw or handle differently
         // but for now, we catch to prevent crashing the auth flow
-        if (process.env.NODE_ENV === "production") {
-            // Re-throw in production so the caller knows it failed
-            throw error;
-        }
+        // Always re-throw so the caller knows it failed
+        throw error;
     }
 };
 

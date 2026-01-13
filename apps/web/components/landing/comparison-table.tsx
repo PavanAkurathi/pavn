@@ -75,13 +75,6 @@ export function ComparisonTable() {
                             competitor={false}
                         />
 
-                        {/* --- ROW 5: MARKETPLACE --- */}
-                        <Row
-                            title="Marketplace Access"
-                            description="Need extra hands? Tap into the Workers Hive network to fill shifts instantly (Beta)."
-                            hive={true}
-                            competitor={false}
-                        />
 
                         {/* --- ROW 6: SUPPORT --- */}
                         <Row

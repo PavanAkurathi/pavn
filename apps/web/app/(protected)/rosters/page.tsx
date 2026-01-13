@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { db } from "@repo/database";
 import { member, user, organization, certification } from "@repo/database/schema";
 import { eq, and, ne, inArray } from "drizzle-orm";
-import { RosterList } from "../../../components/roster/roster-list";
+import { RosterTable } from "../../../components/roster/roster-table";
 
 export default async function RostersPage() {
     const sessionResponse = await auth.api.getSession({
@@ -101,7 +101,7 @@ export default async function RostersPage() {
         }));
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-5xl">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Roster</h2>
@@ -109,7 +109,7 @@ export default async function RostersPage() {
                 </div>
             </div>
 
-            <RosterList workers={workers} />
+            <RosterTable data={workers} />
         </div>
     );
 }

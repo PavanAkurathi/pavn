@@ -47,7 +47,7 @@ export function SettingsView({
     };
 
     return (
-        <div className="space-y-6 block pb-16">
+        <div className="space-y-6 block pb-16 max-w-5xl">
             <div className="space-y-0.5">
                 <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
                 <p className="text-muted-foreground">Manage your account and workspace.</p>
@@ -72,7 +72,7 @@ export function SettingsView({
                     </TabsList>
                 </aside>
 
-                <div className="flex-1 lg:max-w-3xl">
+                <div className="flex-1">
                     <TabsContent value="profile" className="mt-0 space-y-6">
                         <ProfileForm user={user} />
                     </TabsContent>

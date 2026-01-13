@@ -14,8 +14,8 @@ import { ComparisonTable } from '@/components/landing/comparison-table';
 import { FAQ } from '@/components/landing/faq';
 
 export const metadata: Metadata = {
-  title: 'Workers Hive | The $20/mo Hospitality OS',
-  description: 'Unlimited staff scheduling, time tracking, and roster management for one flat monthly rate.',
+  title: 'Workers Hive | Smart Staff Scheduling',
+  description: 'The easiest way to schedule your hospitality team. Build rosters, publish shifts, and track time in minutes.',
 };
 
 export default function LandingPage() {
@@ -31,30 +31,30 @@ export default function LandingPage() {
             <div className="lg:w-1/2 space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background border border-border shadow-sm text-sm font-bold tracking-wide text-foreground">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive/50 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-600"></span>
                 </span>
-                FLAT RATE: $20/MONTH
+                LIVE FOR PHASE 1
               </div>
 
               <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-foreground">
-                Manage your team.<br />
-                <span className="text-destructive">Not your bill.</span>
+                Scheduling made <br />
+                <span className="text-destructive">effortless.</span>
               </h1>
 
               <p className="text-xl text-muted-foreground max-w-lg leading-relaxed font-medium">
-                The only scheduling platform with <strong>Unlimited Staff</strong>. Stop deleting employees just to save money on software fees.
+                Stop wrestling with spreadsheets. Build rosters, publish shifts, and track time in minutes. The modern tool for modern venues.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link href="/auth/signup" className="w-full sm:w-auto">
                   <button className="h-14 px-8 w-full rounded-xl bg-primary text-primary-foreground font-bold text-lg hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-xl shadow-black/10">
-                    Start Free Trial <ArrowRight className="w-5 h-5" />
+                    Get Started Free <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>
                 <Link href="/demo" className="w-full sm:w-auto">
                   <button className="h-14 px-8 w-full rounded-xl border border-input bg-background text-foreground font-bold text-lg hover:bg-secondary/50 transition-all">
-                    View Demo
+                    How it Works
                   </button>
                 </Link>
               </div>

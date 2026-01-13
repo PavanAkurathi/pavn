@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@repo/auth";
+import { auth, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { member, user, organization, invitation, certification } from "@repo/database/schema";
@@ -139,8 +139,16 @@ export async function addMember(input: AddMemberInput) {
         console.log(`[Mock] Sending email invite to ${email}`);
     }
     if (invites.sms && phoneNumber) {
-        // TODO: Send SMS Invite via Twilio
-        console.log(`[Mock] Sending SMS invite to ${phoneNumber}`);
+        try {
+            // In a real app, this link would be dynamic or point to the app store
+            const downloadLink = "exp://pavn.link/invite";
+            const message = `You've been invited to join ${activeOrgId}'s team on Pavn! Download the app to get started: ${downloadLink}`;
+            await sendSMS(phoneNumber, message);
+            console.log(`[Team] Sent SMS invite to ${phoneNumber}`);
+        } catch (error) {
+            console.error(`[Team] Failed to send SMS invite to ${phoneNumber}:`, error);
+            // We don't throw here to avoid failing the whole member addition just because SMS failed
+        }
     }
 
     revalidatePath("/settings/team");

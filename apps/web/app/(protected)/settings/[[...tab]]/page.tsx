@@ -75,15 +75,15 @@ export default async function SettingsPage(props: { params: Promise<{ tab?: stri
                 id: userSchema.id,
                 name: userSchema.name,
                 email: userSchema.email,
-                image: userSchema.image
+                image: userSchema.image,
+                emailVerified: userSchema.emailVerified
             }
         })
             .from(memberSchema)
             .leftJoin(userSchema, eq(memberSchema.userId, userSchema.id))
-            .where(and(
-                eq(memberSchema.organizationId, activeOrgId),
-                or(eq(memberSchema.role, "admin"), eq(memberSchema.role, "owner"))
-            ));
+            .where(
+                eq(memberSchema.organizationId, activeOrgId)
+            );
 
         members = teamResult
             .filter(r => r.user !== null)
@@ -93,7 +93,8 @@ export default async function SettingsPage(props: { params: Promise<{ tab?: stri
                 joinedAt: r.joinedAt,
                 name: r.user!.name,
                 email: r.user!.email,
-                image: r.user!.image
+                image: r.user!.image,
+                status: (r.user!.emailVerified ? "active" : "invited") as "active" | "invited"
             }));
     }
 

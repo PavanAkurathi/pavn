@@ -3,9 +3,11 @@
 import * as React from "react";
 import { Button } from "@repo/ui/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { TimesheetRow } from "./timesheet/timesheet-row";
+
 import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalFooter } from "./timesheet/shift-approval-footer";
+import { TimesheetTable } from "./timesheet/timesheet-table";
+import { AddWorkerDialog } from "./add-worker-dialog";
 
 import { Shift, TimesheetWorker } from "@/lib/types";
 import { format } from "date-fns";
@@ -54,6 +56,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
     // Initialize state
     const [workers, setWorkers] = React.useState(getWorkersFromProps);
+    const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
 
     // Sync state when upstream data arrives (Fixes async data missing bug)
     React.useEffect(() => {
@@ -66,9 +69,32 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         );
     };
 
+    const handleAddWorkers = (newWorkerIds: string[]) => {
+        // In a real app, you'd call an API here (e.g., POST /shifts/:id/assign)
+        // For now, we update local state optimistically.
+        // We create placeholder entries so the UI updates immediately.
+
+        const newWorkers = newWorkerIds.map(id => ({
+            id,
+            name: "New Worker (Refreshing...)", // Accessing name would require looking up in crew list
+            avatar: `https://github.com/shadcn.png`,
+            initials: "NW",
+            shiftDuration: "-",
+            hourlyRate: "$0/hr",
+            clockIn: "",
+            clockOut: "",
+            breakDuration: "0 min",
+            rating: 0,
+        }));
+
+        setWorkers(prev => [...prev, ...newWorkers]);
+        // Ideally trigger a re-fetch or router.refresh() here 
+        // router.refresh(); 
+    };
+
 
     // Helper to calculate variants dynamically
-    const getWorkerStatus = (worker: typeof workers[0]) => {
+    const getWorkerStatus = (worker: { clockIn?: string; clockOut?: string; breakDuration?: string }) => {
         let clockInVariant: "default" | "destructive" | "warning" = "default";
         let clockOutVariant: "default" | "destructive" | "warning" = "default";
         let breakVariant: "default" | "destructive" | "warning" = "default";
@@ -154,59 +180,21 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         {filledCount} of {workerCount} filled
                     </span>
                 </div>
-                {!isApproved && !isCancelled && <Button variant="outline">Add Pros</Button>}
+                {!isApproved && !isCancelled && (
+                    <Button variant="outline" onClick={() => setIsAddWorkerOpen(true)}>
+                        Add Pros
+                    </Button>
+                )}
             </div>
 
-            {/* Content Card */}
-            <div className="rounded-lg border border-border bg-card shadow-sm">
-                {/* Table Header (Desktop) */}
-                <div className="hidden border-b border-border bg-muted/30 px-4 py-3 text-xs font-medium text-muted-foreground md:flex">
-                    <div className="w-[250px] pl-2">Name</div>
-                    <div className="w-[150px] text-center">Clock-in</div>
-                    <div className="w-[150px] text-center">Clock-out</div>
-                    <div className="w-[150px] text-center">Total unpaid break</div>
-                    <div className="w-[120px] text-center">Rating</div>
-                    <div className="w-[100px] text-center">Write Up</div>
-                </div>
-
-                {/* Rows */}
-                <div className="flex flex-col px-4">
-                    {workers.length === 0 ? (
-                        <div className="py-8 text-center text-muted-foreground">
-                            No workers assigned to this shift.
-                        </div>
-                    ) : (
-                        workers.map((worker) => {
-                            const status = getWorkerStatus(worker);
-                            return (
-                                <TimesheetRow
-                                    key={worker.id}
-                                    workerName={worker.name}
-                                    workerAvatar={worker.avatar}
-                                    shiftDuration={worker.shiftDuration}
-                                    hourlyRate={worker.hourlyRate}
-                                    clockIn={worker.clockIn}
-                                    clockOut={worker.clockOut}
-                                    breakDuration={worker.breakDuration}
-                                    rating={worker.rating}
-                                    clockInVariant={status.clockInVariant}
-                                    clockOutVariant={status.clockOutVariant}
-                                    breakVariant={status.breakVariant}
-                                    disabled={isApproved || isCancelled}
-                                    onClockInChange={(val) => updateWorker(worker.id, "clockIn", val)}
-                                    onClockOutChange={(val) => updateWorker(worker.id, "clockOut", val)}
-                                    onBreakChange={(val) => updateWorker(worker.id, "breakDuration", val)}
-                                    onRatingChange={(r) => updateWorker(worker.id, "rating", r)}
-                                    onWriteUp={() => console.log("Write Up", worker.name)}
-                                    onAddToRoster={() => console.log("Add", worker.name)}
-                                    onReturn={() => console.log("Return", worker.name)}
-                                    onBlock={() => console.log("Block", worker.name)}
-                                />
-                            );
-                        })
-                    )}
-                </div>
-            </div>
+            {/* Content Card - Powered by TanStack Table */}
+            <TimesheetTable
+                data={workers}
+                onUpdateWorker={updateWorker}
+                isApproved={isApproved}
+                isCancelled={isCancelled}
+                getWorkerStatus={getWorkerStatus}
+            />
 
             {!isCancelled && (
                 <ShiftApprovalFooter
@@ -219,6 +207,13 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     onApprove={() => onApprove?.()}
                 />
             )}
+
+            <AddWorkerDialog
+                isOpen={isAddWorkerOpen}
+                onClose={() => setIsAddWorkerOpen(false)}
+                onConfirm={handleAddWorkers}
+                existingWorkerIds={workers.map(w => w.id)}
+            />
         </div>
     );
 }
