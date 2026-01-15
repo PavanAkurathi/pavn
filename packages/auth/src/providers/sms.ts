@@ -60,10 +60,26 @@ export const sendSMS = async (to: string, body: string): Promise<void> => {
         const client = getTwilioClient();
 
         if (!client) {
-            console.log("----------------------------------------");
+            console.log("\n🛑 ----------------------------------------");
             console.log(" [SMS MOCK] To:", to);
             console.log(" [SMS MOCK] Body:", body);
-            console.log("----------------------------------------");
+            console.log("---------------------------------------- 🛑\n");
+
+            // Helper for dev: write to file
+            if (process.env.NODE_ENV !== "production") {
+                const fs = require('fs');
+                try {
+                    const otpMatch = body.match(/code is: (\d+)/);
+                    if (otpMatch && otpMatch[1]) {
+                        // Write to TMP for absolute certainty
+                        fs.writeFileSync('/tmp/pavn-otp.txt', otpMatch[1]);
+                        // Also try project root
+                        fs.writeFileSync('latest-otp.txt', otpMatch[1]);
+                    }
+                } catch (e) {
+                    console.error("Failed to write OTP file:", e);
+                }
+            }
             return;
         }
 
@@ -76,7 +92,7 @@ export const sendSMS = async (to: string, body: string): Promise<void> => {
             return;
         }
 
-        const validFrom = normalizePhoneNumber(from);
+        const validFrom = normalizePhoneNumber(from as string);
         const validTo = normalizePhoneNumber(to);
 
         await client.messages.create({

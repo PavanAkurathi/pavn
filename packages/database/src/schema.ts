@@ -1,6 +1,6 @@
 // packages/database/src/schema.ts
 
-import { pgTable, text, timestamp, boolean, index, json, integer, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ============================================================================
@@ -129,9 +129,9 @@ export const location = pgTable("location", {
     instructions: text("instructions"),
 
     // -- Geofence --
-    latitude: text("latitude"),
-    longitude: text("longitude"),
-    geofenceRadiusMeters: integer("geofence_radius_meters").default(100),
+    latitude: decimal("latitude", { precision: 10, scale: 8 }),
+    longitude: decimal("longitude", { precision: 11, scale: 8 }),
+    geofenceRadius: integer("geofence_radius").default(100),
     geocodedAt: timestamp("geocoded_at"),
     geocodeSource: text("geocode_source"), // 'google' | 'manual' | 'mapbox'
 

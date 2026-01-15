@@ -14,6 +14,10 @@ import { publishScheduleController } from "./controllers/publish";
 import { getCrewController } from "./controllers/get-crew";
 import { getDraftShifts } from "./controllers/drafts";
 import { deleteDraftsController } from "./controllers/delete-drafts";
+import { getWorkerShiftsController } from "./controllers/worker-shifts";
+import { createLocationController } from "./controllers/create-location";
+import { createAdjustmentRequestController } from "./controllers/create-adjustment";
+import { getPendingAdjustmentsController, reviewAdjustmentController } from "./controllers/review-adjustments";
 
 const app = new Hono<{
     Variables: {
@@ -90,6 +94,12 @@ app.use("*", async (c, next) => {
 // Health Check
 app.get("/health", (c) => c.text("OK"));
 
+// Location Routes
+app.post("/locations", async (c) => {
+    const orgId = c.get('orgId');
+    return await createLocationController(c.req.raw, orgId);
+});
+
 // Organization Routes
 app.get("/organizations/:orgId/crew", async (c) => {
     const orgId = c.req.param("orgId");
@@ -111,6 +121,42 @@ app.post("/schedules/publish", async (c) => {
     const orgId = c.get('orgId');
     // publishScheduleController needs to be updated to take orgId
     return await publishScheduleController(c.req.raw, orgId);
+});
+
+// Worker Shift Routes (WH-001)
+app.get("/worker/shifts", async (c) => {
+    const user = c.get("user");
+    const orgId = c.get("orgId");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const status = (c.req.query("status") as 'upcoming' | 'history' | 'all') || 'upcoming';
+    const limit = parseInt(c.req.query("limit") || "20");
+    const offset = parseInt(c.req.query("offset") || "0");
+
+    return await getWorkerShiftsController(user.id, orgId, { status, limit, offset });
+});
+
+app.post("/worker/adjustments", async (c) => {
+    const user = c.get("user");
+    const orgId = c.get("orgId");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    return await createAdjustmentRequestController(c.req.raw, user.id, orgId);
+});
+
+app.get("/adjustments/pending", async (c) => {
+    const orgId = c.get('orgId');
+    // Ensure user is manager/admin? Middleware currently only checks valid session + org context.
+    // In V2 we might want strict role checks. For now, matching existing pattern.
+    return await getPendingAdjustmentsController(orgId);
+});
+
+app.post("/adjustments/review", async (c) => {
+    const user = c.get("user");
+    const orgId = c.get('orgId');
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    return await reviewAdjustmentController(c.req.raw, user.id, orgId);
 });
 
 // Shift Routes

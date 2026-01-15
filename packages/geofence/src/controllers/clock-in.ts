@@ -83,7 +83,7 @@ export async function clockInController(
         }
 
         const distanceMeters = calculateDistance(workerLat, workerLng, venueLat, venueLng);
-        const radius = venueLocation.geofenceRadiusMeters || 100;
+        const radius = venueLocation.geofenceRadius || 100;
 
         if (distanceMeters > radius) {
             return Response.json({
@@ -95,8 +95,23 @@ export async function clockInController(
         }
 
         // 4. Apply time rules
+
+        // 4. Time Validation
         const now = new Date();
         const scheduledStart = new Date(shiftRecord.startTime);
+
+        const EARLY_BUFFER_MINUTES = 15;
+        const earliestClockIn = new Date(scheduledStart.getTime() - EARLY_BUFFER_MINUTES * 60 * 1000);
+
+        if (now < earliestClockIn) {
+            return Response.json({
+                error: `Cannot clock in more than ${EARLY_BUFFER_MINUTES} minutes before shift`,
+                code: "TOO_EARLY",
+                shiftStart: scheduledStart.toISOString(),
+                earliestClockIn: earliestClockIn.toISOString()
+            }, { status: 400 });
+        }
+
         const clockInResult = applyClockInRules(now, scheduledStart);
 
         // 5. Transaction: Update assignment, shift (if needed), and log location

@@ -1,102 +1,158 @@
-import Constants from 'expo-constants';
+import { CONFIG } from './config';
 import * as SecureStore from 'expo-secure-store';
 import { authClient } from './auth-client';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:4005";
+// Interfaces
+export interface WorkerShift {
+    id: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    status: string;
+    location: {
+        id: string;
+        name: string;
+        address?: string;
+        latitude?: number;
+        longitude?: number;
+        geofenceRadius?: number;
+    };
+    organization: {
+        id: string;
+        name: string;
+    };
+    pay: {
+        estimatedPay?: number;
+        hourlyRate: number;
+    };
+    timesheet: {
+        clockIn?: string;
+        clockOut?: string;
+    }
+}
 
-async function getAuthHeaders() {
+export interface ClockInRequest {
+    shiftId: string;
+    latitude: string;
+    longitude: string;
+    accuracyMeters?: number;
+}
+
+export interface CreateAdjustmentRequest {
+    shiftAssignmentId: string;
+    reason: string;
+    requestedClockIn?: string;
+    requestedClockOut?: string;
+    requestedBreakMinutes?: number;
+}
+
+interface AuthHeaders {
+    [key: string]: string;
+}
+
+// Helper for headers
+async function getAuthHeaders(): Promise<AuthHeaders> {
     const token = await SecureStore.getItemAsync("better-auth.session_token");
-
-    // Get session to find active Org ID
     const session = await authClient.getSession();
     const activeOrgId = session.data?.session?.activeOrganizationId;
 
-    // Fallback: If no active org, try to find the first membership
-    // In a real scenario, we might want to prompt the user to select an org if they have multiple
-    // but for this MVP fix, we'll try to be smart.
-    let targetOrgId = activeOrgId;
-
-    if (!targetOrgId) {
-        // We can't easily fetch memberships here without a working API, 
-        // so we rely on what's in the session or fail gracefully.
-        // If better-auth stores memberships in the session object, we could use that.
-        // For now, we'll assume the user must have an active org set.
-    }
-
-    if (!targetOrgId) {
-        // As a last ditch effort for the MVP "blocker fix", we maintain the hardcoded one 
-        // ONLY if we absolutely cant find one, but we log a loud warning.
-        // OR better: we throw an error so the UI handles it.
-        // For now, let's just return what we have, the backend might reject it.
+    if (!activeOrgId) {
         console.warn("[API] No active organization ID found in session.");
     }
 
     return {
-        'x-org-id': targetOrgId || "", // specific backend middleware might handle empty string
+        'x-org-id': activeOrgId || "",
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
 }
 
+// API Routes
 export const api = {
     shifts: {
-        getUpcoming: async () => {
-            const session = await authClient.getSession();
-            const workerId = session.data?.user?.id;
-
-            if (!workerId) throw new Error("Not authenticated");
-
+        list: async (status: 'upcoming' | 'history' | 'all' = 'upcoming', limit = 20, offset = 0): Promise<WorkerShift[]> => {
             const headers = await getAuthHeaders();
+            const url = `${CONFIG.SHIFTS_API_URL}/worker/shifts?status=${status}&limit=${limit}&offset=${offset}`;
 
-            // Check if we actually have an org id before making the call
-            if (!headers['x-org-id']) {
-                throw new Error("No active organization found. Please contact support.");
-            }
-
-            // Ideally: GET /shifts/upcoming?workerId=...
-            // For MVP Fix #3 (efficient fetching), we add the query param if the backend supports it.
-            // If backend doesn't support it yet, we just fix the tenancy part now.
-            const response = await fetch(`${API_BASE_URL}/shifts/upcoming`, {
-                headers
-            });
+            const response = await fetch(url, { headers });
 
             if (!response.ok) {
-                const error = await response.text();
-                throw new Error(error || "Failed to fetch shifts");
+                throw new Error(await response.text() || "Failed to fetch shifts");
             }
 
-            const allShifts = await response.json();
-
-            // Client-side filter still needed until Backend supports query param
-            return allShifts.filter((s: any) =>
-                s.assignments?.some((a: any) => a.workerId === workerId)
-            );
+            const data = await response.json();
+            return data.shifts;
         },
 
-        clockIn: async (shiftId: string, timestamp: string) => {
-            const session = await authClient.getSession();
-            const workerId = session.data?.user?.id;
-
-            if (!workerId) throw new Error("Not authenticated");
-
+        getById: async (id: string): Promise<WorkerShift> => {
             const headers = await getAuthHeaders();
-            const response = await fetch(`${API_BASE_URL}/shifts/${shiftId}/timesheet`, {
-                method: 'PATCH',
+            const response = await fetch(`${CONFIG.SHIFTS_API_URL}/shifts/${id}`, { headers });
+            if (!response.ok) throw new Error(await response.text());
+            return await response.json();
+        }
+    },
+
+    geofence: {
+        clockIn: async (data: ClockInRequest) => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${CONFIG.GEOFENCE_API_URL}/clock-in`, {
+                method: 'POST',
                 headers,
-                body: JSON.stringify({
-                    action: 'update_time',
-                    workerId: workerId,
-                    data: {
-                        clockIn: timestamp
-                    }
-                })
+                body: JSON.stringify(data)
             });
 
             if (!response.ok) {
-                const error = await response.text();
-                throw new Error(error || "Failed to clock in");
+                // Try to parse JSON error
+                try {
+                    const errJson = await response.json();
+                    throw new Error(errJson.error || "Clock-in failed");
+                } catch (e) {
+                    if (e instanceof Error && e.message !== "Clock-in failed") throw e;
+                    throw new Error(await response.text() || "Clock-in failed");
+                }
             }
+            return await response.json();
+        },
 
+        clockOut: async (data: ClockInRequest) => { // Reusing request type as data shape is similar
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${CONFIG.GEOFENCE_API_URL}/clock-out`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                try {
+                    const errJson = await response.json();
+                    throw new Error(errJson.error || "Clock-out failed");
+                } catch (e) {
+                    if (e instanceof Error && e.message !== "Clock-out failed") throw e;
+                    throw new Error(await response.text() || "Clock-out failed");
+                }
+            }
+            return await response.json();
+        }
+    },
+
+    adjustments: {
+        create: async (data: CreateAdjustmentRequest) => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${CONFIG.SHIFTS_API_URL}/worker/adjustments`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                try {
+                    const errJson = await response.json();
+                    throw new Error(errJson.error || "Failed to submit adjustment");
+                } catch (e) {
+                    if (e instanceof Error && e.message !== "Failed to submit adjustment") throw e;
+                    throw new Error(await response.text() || "Failed to submit adjustment");
+                }
+            }
             return await response.json();
         }
     }

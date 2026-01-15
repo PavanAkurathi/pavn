@@ -8,10 +8,11 @@ import {
     Platform,
     StyleSheet,
     ActivityIndicator,
-    Alert,
 } from "react-native";
+import Toast from 'react-native-toast-message';
 import { useRouter } from "expo-router";
 import { authClient } from "../../lib/auth-client";
+import { validate, phoneSchema, otpSchema } from "../../lib/validation";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
@@ -22,58 +23,106 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false);
 
     const handleSendOtp = async () => {
-        if (!phoneNumber) {
-            Alert.alert("Error", "Please enter your phone number");
+        // Validation & Formatting
+        const result = phoneSchema.safeParse(phoneNumber);
+        if (!result.success) {
+            Toast.show({
+                type: 'error',
+                text1: 'Invalid Phone Number',
+                text2: result.error.errors[0].message
+            });
             return;
         }
+
+        const formattedPhone = result.data; // e.g., +1781...
         setLoading(true);
+        console.log(`[Login] Sending OTP to: ${formattedPhone}`);
+
         try {
             // Send OTP
             const res = await (authClient as any).phoneNumber.sendOtp({
-                phoneNumber,
+                phoneNumber: formattedPhone,
             });
 
             if (res?.error) {
-                Alert.alert("Error", res.error.message);
+                console.error("[Login] Send OTP Error:", res.error);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Failed to send code',
+                    text2: res.error.message
+                });
                 return;
             }
 
+            console.log("[Login] OTP Sent successfully");
             setStep('otp');
-            Alert.alert("Code Sent", "Please check your messages.");
+            Toast.show({
+                type: 'success',
+                text1: 'Code Sent',
+                text2: 'Please check your messages.'
+            });
 
         } catch (err: any) {
-            console.error(err);
-            Alert.alert("Error", err.message || "Failed to send code");
+            console.error("[Login] Send Exception:", err);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: err.message || "Failed to send code"
+            });
         } finally {
             setLoading(false);
         }
     };
 
     const handleVerify = async () => {
-        if (!otp) {
-            Alert.alert("Error", "Please enter the verification code");
+        // Validation
+        const phoneResult = phoneSchema.safeParse(phoneNumber);
+        const otpError = validate(otpSchema, otp);
+
+        if (!phoneResult.success || otpError) {
+            Toast.show({
+                type: 'error',
+                text1: 'Validation Error',
+                text2: !phoneResult.success
+                    ? phoneResult.error.errors[0].message
+                    : (otpError || "Invalid input")
+            });
             return;
         }
+
+        const formattedPhone = phoneResult.data;
         setLoading(true);
+        console.log(`[Login] Verifying OTP: ${otp} for ${formattedPhone}`);
+
         try {
             // Verify OTP & Login
             // Using verify to establish session
             const res = await (authClient as any).phoneNumber.verify({
-                phoneNumber,
+                phoneNumber: formattedPhone,
                 code: otp
             });
 
             if (res?.error) {
-                Alert.alert("Error", res.error.message);
+                console.error("[Login] Verify Error:", res.error);
+                Toast.show({
+                    type: 'error',
+                    text1: 'Verification Failed',
+                    text2: res.error.message
+                });
                 return;
             }
 
             // Success
+            console.log("[Login] Verification Success! Redirecting...");
             router.replace("/(tabs)");
 
         } catch (err: any) {
-            console.error(err);
-            Alert.alert("Error", err.message || "Verification failed");
+            console.error("[Login] Verify Exception:", err);
+            Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: err.message || "Verification failed"
+            });
         } finally {
             setLoading(false);
         }

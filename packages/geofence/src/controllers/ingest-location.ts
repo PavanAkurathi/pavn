@@ -95,7 +95,7 @@ export async function ingestLocationController(
 
             if (workerLat && workerLng && venueLat && venueLng) {
                 distanceMeters = calculateDistance(workerLat, workerLng, venueLat, venueLng);
-                const radius = venueLocation.geofenceRadiusMeters || 100;
+                const radius = venueLocation.geofenceRadius || 100;
                 isOnSite = distanceMeters <= radius;
             }
         }

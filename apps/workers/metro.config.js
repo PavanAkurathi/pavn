@@ -1,8 +1,8 @@
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 
 // Expo SDK 54+ handles monorepo support automatically (including Bun).
-// We rely on the default config now that dependencies are fixed.
-const config = getDefaultConfig(__dirname);
+// Sentry wrapper includes getDefaultConfig internally + sourcemap support.
+const config = getSentryExpoConfig(__dirname);
 
 config.resolver.unstable_enablePackageExports = true;
 
