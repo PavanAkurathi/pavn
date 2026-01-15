@@ -12,6 +12,7 @@ import { sendOTP } from "./providers/sms";
 
 export const auth = betterAuth({
     appName: "Antigravity SaaS",
+    secret: process.env.BETTER_AUTH_SECRET || "default_dev_secret_do_not_use_in_prod",
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
     // Crucial for Next.js 15+ / Server Actions environment
