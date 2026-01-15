@@ -12,7 +12,14 @@ import { sendOTP } from "./providers/sms";
 
 export const auth = betterAuth({
     appName: "Antigravity SaaS",
-    secret: process.env.BETTER_AUTH_SECRET || "default_dev_secret_do_not_use_in_prod",
+    secret: (() => {
+        if (process.env.BETTER_AUTH_SECRET) return process.env.BETTER_AUTH_SECRET;
+        if (process.env.NODE_ENV === "development") {
+            console.warn("⚠️ USING INSECURE DEFAULT SECRET FOR DEV ⚠️");
+            return "default_dev_secret_do_not_use_in_prod";
+        }
+        throw new Error("❌ BETTER_AUTH_SECRET is missing in production!");
+    })(),
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
     // Crucial for Next.js 15+ / Server Actions environment

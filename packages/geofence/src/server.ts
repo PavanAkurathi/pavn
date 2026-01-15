@@ -3,6 +3,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { auth } from "@repo/auth";
+import { db } from "@repo/database";
+import { member } from "@repo/database/schema";
+import { eq, and } from "drizzle-orm";
 
 const app = new Hono<{
     Variables: {
@@ -43,10 +46,20 @@ app.use("*", async (c, next) => {
 
         const orgId = c.req.header("x-org-id");
         if (!orgId) {
-            // For now, allow missing orgId to pass through if we want to handle it in controllers, 
-            // but strict multi-tenancy usually requires it.
-            // As per instructions, we return 401/400.
             return c.json({ error: "Missing Tenant Context" }, 401);
+        }
+
+        // Strict Membership Check
+        const memberRecord = await db.query.member.findFirst({
+            where: and(
+                eq(member.organizationId, orgId),
+                eq(member.userId, session.user.id)
+            ),
+            columns: { id: true }
+        });
+
+        if (!memberRecord) {
+            return c.json({ error: "Access Denied: Not a member of this organization" }, 403);
         }
 
         c.set("orgId", orgId);

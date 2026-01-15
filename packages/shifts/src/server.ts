@@ -3,6 +3,9 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { auth } from "@repo/auth"; // Import shared auth
+import { db } from "@repo/database";
+import { member } from "@repo/database/schema";
+import { eq, and } from "drizzle-orm";
 import { getUpcomingShifts } from "./controllers/upcoming";
 import { getPendingShifts } from "./controllers/pending";
 import { getHistoryShifts } from "./controllers/history";
@@ -79,13 +82,18 @@ app.use("*", async (c, next) => {
     }
 
     // 3. Verify Membership (The "Worker belongs to Org" check)
-    // We can allow "admins" or "members".
-    // ideally utilize auth.api.listOrganizations() or check DB. 
-    // optimization: The session might contain activeOrganizationId if we set it.
+    // Strict membership check via DB query
+    const memberRecord = await db.query.member.findFirst({
+        where: and(
+            eq(member.organizationId, orgId),
+            eq(member.userId, session.user.id)
+        ),
+        columns: { id: true, role: true }
+    });
 
-    // For now, we trust the valid session + x-org-id presence 
-    // BUT strictly we should check if user is in org.
-    // TODO: Add strict membership check via DB query if critical security need.
+    if (!memberRecord) {
+        return c.json({ error: "Access Denied: Not a member of this organization" }, 403);
+    }
 
     c.set("orgId", orgId);
     await next();

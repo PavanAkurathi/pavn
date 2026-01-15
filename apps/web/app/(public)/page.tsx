@@ -117,21 +117,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* --- SOCIAL PROOF --- */}
-      <section className="py-10 border-b border-border bg-secondary/20">
-        <div className="container mx-auto px-6 text-center">
-          <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-6">
-            Trusted by modern venues
-          </p>
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500 font-bold text-xl text-foreground">
-            <span>TheCapitalGrille</span>
-            <span>LegalSeaFoods</span>
-            <span>LONGWOOD</span>
-            <span>Davios</span>
-            <span>Tatte</span>
-          </div>
-        </div>
-      </section>
 
       {/* --- 1. ROI CALCULATOR (Dark Mode, Fixed Slider) --- */}
       <ROICalculator />
