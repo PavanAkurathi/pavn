@@ -3,8 +3,11 @@ import * as TaskManager from 'expo-task-manager';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
+import { CONFIG } from '../lib/config';
+
 const LOCATION_TASK_NAME = 'background-location-task';
-const GEOFENCE_API_URL = "http://localhost:4006"; // Geofence Service Port
+// const GEOFENCE_API_URL = "http://localhost:4006"; // Replaced by CONFIG
+
 
 // Define the background task in the global scope
 TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }: any) => {
@@ -31,7 +34,7 @@ async function sendLocationToBackend(location: Location.LocationObject) {
         // The backend `ingest-location` uses headers to identify key/user.
         // But `ingest-location` controller expects standard Bearer token auth.
 
-        await fetch(`${GEOFENCE_API_URL}/location`, {
+        await fetch(`${CONFIG.GEOFENCE_API_URL}/location`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

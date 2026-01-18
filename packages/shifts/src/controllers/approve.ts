@@ -5,6 +5,9 @@ import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { differenceInMinutes } from "date-fns";
 import { mapShiftToDto } from "../utils/mapper";
+import { validateShiftTransition } from "@repo/config";
+import { enforceBreakRules } from "@repo/geofence";
+import { logAudit } from "@repo/database";
 
 export const approveShiftController = async (shiftId: string, orgId: string): Promise<Response> => {
     try {
@@ -21,6 +24,17 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
         if (!shiftRecord) return Response.json({ error: "Shift not found" }, { status: 404 });
         if (shiftRecord.status === 'approved') return Response.json({ error: "Already approved" }, { status: 400 });
 
+        // Validate Transition (WH-009)
+        if (shiftRecord.status !== 'completed') {
+            try {
+                validateShiftTransition(shiftRecord.status, 'approved');
+            } catch (e) {
+                // If checking strict state, 'assigned' -> 'approved' is INVALID. 
+                // We return error forcing manager to complete it first (or we fix state machine).
+                return Response.json({ error: "Shift must be completed before approval" }, { status: 400 });
+            }
+        }
+
         // 2. Audit Assignments
         const dirtyAssignments: string[] = [];
         const updates: {
@@ -28,6 +42,8 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
             status: "no_show" | "completed";
             grossPayCents: number;
             hourlyRateSnapshot: number | null;
+            breakMinutes: number;
+            adjustmentNotes: string | null;
         }[] = [];
 
         for (const assign of shiftRecord.assignments) {
@@ -37,7 +53,9 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
                     id: assign.id,
                     status: 'no_show',
                     grossPayCents: 0,
-                    hourlyRateSnapshot: null
+                    hourlyRateSnapshot: null,
+                    breakMinutes: 0,
+                    adjustmentNotes: null
                 });
                 continue;
             }
@@ -53,8 +71,15 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
                 // differenceInMinutes returns signed integer, Ensure positive and valid range
                 const totalMinutes = differenceInMinutes(assign.clockOut, assign.clockIn);
 
-                // Subtract break minutes if they exist
-                const billableMinutes = Math.max(0, totalMinutes - (assign.breakMinutes || 0));
+                // Apply break enforcement
+                const breakEnforcement = enforceBreakRules(
+                    assign.clockIn,
+                    assign.clockOut,
+                    assign.breakMinutes || 0
+                );
+
+                // Subtract break minutes if they exist (or enforced)
+                const billableMinutes = Math.max(0, totalMinutes - breakEnforcement.breakMinutes);
 
                 const hours = billableMinutes / 60;
 
@@ -66,7 +91,9 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
                     id: assign.id,
                     status: 'completed',
                     grossPayCents: pay,
-                    hourlyRateSnapshot: rate
+                    hourlyRateSnapshot: rate,
+                    breakMinutes: breakEnforcement.breakMinutes,
+                    adjustmentNotes: breakEnforcement.wasEnforced ? breakEnforcement.reason || null : null
                 });
             }
         }
@@ -88,7 +115,9 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
                     .set({
                         status: u.status,
                         grossPayCents: u.grossPayCents,
-                        hourlyRateSnapshot: u.hourlyRateSnapshot
+                        hourlyRateSnapshot: u.hourlyRateSnapshot,
+                        breakMinutes: u.breakMinutes,
+                        adjustmentNotes: u.adjustmentNotes
                     })
                     .where(eq(shiftAssignment.id, u.id));
             }
@@ -104,6 +133,18 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
             if (result.rowCount === 0) {
                 throw new Error("Race condition: Shift was modified or approved by another request.");
             }
+
+            // Log Audit
+            await logAudit({
+                action: 'shift.approved',
+                entityType: 'shift',
+                entityId: shiftId,
+                organizationId: orgId,
+                metadata: {
+                    approvedAssignmentsCount: updates.length,
+                    totalPayCents: updates.reduce((acc, u) => acc + u.grossPayCents, 0)
+                }
+            });
         });
 
         return Response.json({ success: true }, { status: 200 });

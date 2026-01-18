@@ -28,18 +28,20 @@ export const createLocationController = async (req: Request, orgId: string): Pro
         const finalRadius = geofenceRadiusMeters || geofenceRadius; // Prefer old if sent, though schema handles default
 
         // Geocode the address
-        const coords = await geocodeAddress(address);
+        const geocodeResult = await geocodeAddress(address);
 
-        if (!coords) {
+        if (!geocodeResult.success) {
             return Response.json({
-                error: "Could not verify address. Please check the address and try again.",
-                code: "GEOCODING_FAILED"
+                error: geocodeResult.error || "Could not verify address. Please check and try again.",
+                code: geocodeResult.code || "GEOCODING_FAILED"
             }, { status: 400 });
         }
 
+        const coords = geocodeResult.data;
+
         // Warn if low confidence
         if (coords.confidence === 'low') {
-            console.warn(`Low confidence geocoding for "${address}"`);
+            console.warn(`[GEOCODE] Low confidence for "${address}"`);
         }
 
         // Create location
@@ -55,8 +57,8 @@ export const createLocationController = async (req: Request, orgId: string): Pro
             name,
             slug,
             address: coords.formattedAddress, // Use normalized address
-            latitude: coords.latitude.toString(),
-            longitude: coords.longitude.toString(),
+            latitude: coords.latitude,
+            longitude: coords.longitude,
             geofenceRadius: finalRadius,
             geocodedAt: new Date(),
             createdAt: new Date(),

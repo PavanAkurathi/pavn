@@ -19,7 +19,7 @@ import { getDraftShifts } from "./controllers/drafts";
 import { deleteDraftsController } from "./controllers/delete-drafts";
 import { getWorkerShiftsController } from "./controllers/worker-shifts";
 import { createLocationController } from "./controllers/create-location";
-import { createAdjustmentRequestController } from "./controllers/create-adjustment";
+import { requestCorrectionController } from "@repo/geofence";
 import { getPendingAdjustmentsController, reviewAdjustmentController } from "./controllers/review-adjustments";
 
 const app = new Hono<{
@@ -31,23 +31,14 @@ const app = new Hono<{
 }>();
 
 // CORS Middleware
+import { corsConfig } from "@repo/config";
+
+// ...
+
+// CORS Middleware
 app.use(
     "*",
-    cors({
-        origin: [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "https://muttonbiryani.up.railway.app",
-            "https://shift-serf.up.railway.app",
-            // Allow all Expo dev tunnels (or specific ones if known)
-            "exp://",
-        ],
-        allowHeaders: ["x-org-id", "Content-Type", "Authorization"],
-        allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"],
-        exposeHeaders: ["Content-Length"],
-        maxAge: 600,
-        credentials: true,
-    })
+    cors(corsConfig)
 );
 
 // Mount Auth Handler
@@ -149,7 +140,7 @@ app.post("/worker/adjustments", async (c) => {
     const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    return await createAdjustmentRequestController(c.req.raw, user.id, orgId);
+    return await requestCorrectionController(c.req.raw, user.id, orgId);
 });
 
 app.get("/adjustments/pending", async (c) => {

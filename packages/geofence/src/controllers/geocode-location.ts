@@ -132,8 +132,10 @@ export async function geocodeAllLocationsController(orgId: string): Promise<Resp
                 });
             }
 
-            // Rate limit
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Rate limit (provider-specific)
+            const provider = process.env.GEOCODING_PROVIDER || 'nominatim';
+            const delayMs = provider === 'google' ? 100 : 1100;
+            await new Promise(resolve => setTimeout(resolve, delayMs));
         }
 
         return Response.json(results);

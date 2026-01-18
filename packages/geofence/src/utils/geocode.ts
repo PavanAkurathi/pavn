@@ -97,7 +97,7 @@ async function geocodeWithNominatim(address: string): Promise<GeocodeResponse> {
             `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
             {
                 headers: {
-                    'User-Agent': 'WorkersHive/1.0'
+                    'User-Agent': 'WorkersHive/1.0 (contact@workershive.com)'
                 }
             }
         );
@@ -129,10 +129,12 @@ async function geocodeWithNominatim(address: string): Promise<GeocodeResponse> {
 // Batch geocode for importing multiple locations
 export async function geocodeAddresses(addresses: string[]): Promise<Map<string, GeocodeResponse>> {
     const results = new Map<string, GeocodeResponse>();
+    const provider = process.env.GEOCODING_PROVIDER || 'nominatim';
+    const delayMs = provider === 'google' ? 100 : 1100; // Nominatim needs 1+ sec
 
     for (const address of addresses) {
         results.set(address, await geocodeAddress(address));
-        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
+        await new Promise(resolve => setTimeout(resolve, delayMs));
     }
 
     return results;

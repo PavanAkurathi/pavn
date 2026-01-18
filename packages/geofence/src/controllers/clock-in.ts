@@ -5,8 +5,9 @@ import { shiftAssignment, shift, workerLocation } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { calculateDistance, parseCoordinate } from "../utils/distance";
+import { calculateDistance } from "../utils/distance";
 import { applyClockInRules } from "../utils/time-rules";
+import { validateShiftTransition } from "@repo/config";
 
 const ClockInSchema = z.object({
     shiftId: z.string(),
@@ -73,10 +74,10 @@ export async function clockInController(
             }, { status: 400 });
         }
 
-        const workerLat = parseCoordinate(latitude);
-        const workerLng = parseCoordinate(longitude);
-        const venueLat = parseCoordinate(venueLocation.latitude);
-        const venueLng = parseCoordinate(venueLocation.longitude);
+        const workerLat = Number(latitude);
+        const workerLng = Number(longitude);
+        const venueLat = Number(venueLocation.latitude);
+        const venueLng = Number(venueLocation.longitude);
 
         if (!workerLat || !workerLng || !venueLat || !venueLng) {
             return Response.json({ error: "Invalid coordinates" }, { status: 400 });
@@ -128,8 +129,13 @@ export async function clockInController(
                 })
                 .where(eq(shiftAssignment.id, assignment.id));
 
+
+
+            // ...
+
             // B. Update Shift Status (if needed)
             if (shiftRecord.status === 'assigned') {
+                validateShiftTransition(shiftRecord.status, 'in-progress');
                 await tx.update(shift)
                     .set({ status: 'in-progress', updatedAt: now })
                     .where(eq(shift.id, shiftId));

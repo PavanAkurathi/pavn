@@ -2,11 +2,13 @@
 
 import { db } from "@repo/database";
 import { shiftAssignment, shift, workerLocation } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { calculateDistance, parseCoordinate } from "../utils/distance";
+import { logAudit } from "@repo/database";
+import { calculateDistance } from "../utils/distance";
 import { applyClockOutRules } from "../utils/time-rules";
+import { validateShiftTransition } from "@repo/config";
 
 const ClockOutSchema = z.object({
     shiftId: z.string(),
@@ -74,10 +76,10 @@ export async function clockOutController(
         let distanceMeters = 0;
 
         if (venueLocation?.latitude && venueLocation?.longitude) {
-            const workerLat = parseCoordinate(latitude);
-            const workerLng = parseCoordinate(longitude);
-            const venueLat = parseCoordinate(venueLocation.latitude);
-            const venueLng = parseCoordinate(venueLocation.longitude);
+            const workerLat = Number(latitude);
+            const workerLng = Number(longitude);
+            const venueLat = Number(venueLocation.latitude);
+            const venueLng = Number(venueLocation.longitude);
 
             if (workerLat && workerLng && venueLat && venueLng) {
                 distanceMeters = calculateDistance(workerLat, workerLng, venueLat, venueLng);
@@ -103,7 +105,8 @@ export async function clockOutController(
         // 5. Transaction: Update assignment, shift (if needed), and log location
         await db.transaction(async (tx) => {
             // A. Update Assignment
-            await tx.update(shiftAssignment)
+            // A. Update Assignment with Optimistic Locking
+            const updatedArgs = await tx.update(shiftAssignment)
                 .set({
                     clockOut: clockOutResult.recordedTime,
                     clockOutLatitude: latitude,
@@ -113,7 +116,15 @@ export async function clockOutController(
                     status: 'completed',
                     updatedAt: now,
                 })
-                .where(eq(shiftAssignment.id, assignment.id));
+                .where(and(
+                    eq(shiftAssignment.id, assignment.id),
+                    isNull(shiftAssignment.clockOut) // GUARD: Only update if not already clocked out
+                ))
+                .returning({ id: shiftAssignment.id });
+
+            if (updatedArgs.length === 0) {
+                throw new Error("Already clocked out (Race Condition)");
+            }
 
             // B. Check if all assignments complete → update shift status
             // Note: We need to query again or rely on the previous fetch. 
@@ -132,9 +143,14 @@ export async function clockOutController(
             );
 
             if (allComplete) {
-                await tx.update(shift)
-                    .set({ status: 'completed', updatedAt: now })
-                    .where(eq(shift.id, shiftId));
+                try {
+                    validateShiftTransition(shiftRecord.status, 'completed');
+                    await tx.update(shift)
+                        .set({ status: 'completed', updatedAt: now })
+                        .where(eq(shift.id, shiftId));
+                } catch (e) {
+                    console.warn("Invalid key transition ignored:", e);
+                }
             }
 
             // C. Store Location Record
@@ -153,6 +169,21 @@ export async function clockOutController(
                 eventType: 'clock_out',
                 recordedAt: now,
                 deviceTimestamp: now
+            });
+
+            // Log Audit
+            await logAudit({
+                action: 'shift_assignment.clock_out',
+                entityType: 'shift_assignment',
+                entityId: assignment.id,
+                actorId: workerId,
+                organizationId: orgId,
+                metadata: {
+                    latitude,
+                    longitude,
+                    method: 'geofence',
+                    distanceMeters
+                }
             });
         });
 

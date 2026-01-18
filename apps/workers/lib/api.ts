@@ -84,6 +84,14 @@ export const api = {
             return data.shifts;
         },
 
+        getUpcoming: async () => {
+            return api.shifts.list('upcoming');
+        },
+
+        getHistory: async () => {
+            return api.shifts.list('history');
+        },
+
         getById: async (id: string): Promise<WorkerShift> => {
             const headers = await getAuthHeaders();
             const response = await fetch(`${CONFIG.SHIFTS_API_URL}/shifts/${id}`, { headers });

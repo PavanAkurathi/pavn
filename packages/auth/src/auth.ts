@@ -8,7 +8,7 @@ import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nanoid } from "nanoid";
 import { sendOtp } from "@repo/email";
-import { sendOTP } from "./providers/sms";
+import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
 export const auth = betterAuth({
     appName: "Antigravity SaaS",
@@ -59,6 +59,16 @@ export const auth = betterAuth({
     databaseHooks: {
         user: {
             create: {
+                before: async (user) => {
+                    if (user.phoneNumber) {
+                        const phone = user.phoneNumber as string;
+                        if (!isValidPhoneNumber(phone)) {
+                            throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
+                        }
+                        user.phoneNumber = normalizePhoneNumber(phone);
+                    }
+                    return { data: user };
+                },
                 after: async (user, ctx) => {
                     if (ctx?.body?.companyName) {
                         const companyName = ctx.body.companyName as string;
@@ -89,6 +99,18 @@ export const auth = betterAuth({
                             console.error("[HOOK] Failed to create organization:", e);
                         }
                     }
+                }
+            },
+            update: {
+                before: async (user) => {
+                    if (user.phoneNumber) {
+                        const phone = user.phoneNumber as string;
+                        if (!isValidPhoneNumber(phone)) {
+                            throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
+                        }
+                        user.phoneNumber = normalizePhoneNumber(phone);
+                    }
+                    return { data: user };
                 }
             }
         }

@@ -1,0 +1,1 @@
+ALTER TABLE "shift" DROP COLUMN IF EXISTS "currency";

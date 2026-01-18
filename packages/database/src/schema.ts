@@ -1,7 +1,7 @@
 // packages/database/src/schema.ts
 
 import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ============================================================================
 // 1. IDENTITY & AUTH (Using Account Table for better compatibility)
@@ -159,7 +159,8 @@ export const member = pgTable("member", {
     createdAt: timestamp("created_at").notNull(),
 }, (table) => ({
     memberOrgIdx: index("member_org_idx").on(table.organizationId),
-    memberUserIdx: index("member_user_idx").on(table.userId)
+    memberUserIdx: index("member_user_idx").on(table.userId),
+    memberOrgUserUnique: unique("member_org_user_unique").on(table.organizationId, table.userId)
 }));
 
 export const invitation = pgTable("invitation", {
@@ -230,7 +231,7 @@ export const shift = pgTable("shift", {
 
     // -- Money (Stored in Cents) --
     price: integer("price").notNull(), // $20.00 = 2000
-    currency: text("currency").default("USD").notNull(),
+
 
     // -- State --
     // Values: 'published', 'assigned', 'in-progress', 'completed', 'approved', 'cancelled'
@@ -245,6 +246,10 @@ export const shift = pgTable("shift", {
     shiftOrgIdx: index("shift_org_idx").on(table.organizationId),
     shiftStatusIdx: index("shift_status_idx").on(table.status),
     shiftTimeIdx: index("shift_time_idx").on(table.startTime),
+    // New Indexes (WH-006)
+    shiftOrgStatusIdx: index("shift_org_status_idx").on(table.organizationId, table.status),
+    shiftOrgTimeIdx: index("shift_org_time_idx").on(table.organizationId, table.startTime),
+    shiftStatusTimeIdx: index("shift_status_time_idx").on(table.status, table.startTime).where(sql`status IN ('published', 'assigned', 'in-progress')`),
 }));
 
 export const shiftAssignment = pgTable("shift_assignment", {
@@ -255,7 +260,7 @@ export const shiftAssignment = pgTable("shift_assignment", {
         .notNull()
         .references(() => shift.id, { onDelete: "cascade" }),
 
-    workerId: text("user_id")
+    workerId: text("worker_id")
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
 
@@ -269,14 +274,14 @@ export const shiftAssignment = pgTable("shift_assignment", {
     grossPayCents: integer("gross_pay_cents").default(0),
 
     // -- Clock In Verification --
-    clockInLatitude: text("clock_in_latitude"),
-    clockInLongitude: text("clock_in_longitude"),
+    clockInLatitude: decimal("clock_in_latitude", { precision: 10, scale: 8 }),
+    clockInLongitude: decimal("clock_in_longitude", { precision: 11, scale: 8 }),
     clockInVerified: boolean("clock_in_verified").default(false),
     clockInMethod: text("clock_in_method"), // 'geofence' | 'manual_override'
 
     // -- Clock Out Verification --
-    clockOutLatitude: text("clock_out_latitude"),
-    clockOutLongitude: text("clock_out_longitude"),
+    clockOutLatitude: decimal("clock_out_latitude", { precision: 10, scale: 8 }),
+    clockOutLongitude: decimal("clock_out_longitude", { precision: 11, scale: 8 }),
     clockOutVerified: boolean("clock_out_verified").default(false),
     clockOutMethod: text("clock_out_method"), // 'geofence' | 'manual_override' | 'left_geofence' | 'auto_flagged'
 
@@ -285,8 +290,8 @@ export const shiftAssignment = pgTable("shift_assignment", {
     reviewReason: text("review_reason"), // 'left_geofence' | 'no_clockout' | 'disputed' | 'late_arrival'
 
     // -- Last Known Position (for flagged shifts) --
-    lastKnownLatitude: text("last_known_latitude"),
-    lastKnownLongitude: text("last_known_longitude"),
+    lastKnownLatitude: decimal("last_known_latitude", { precision: 10, scale: 8 }),
+    lastKnownLongitude: decimal("last_known_longitude", { precision: 11, scale: 8 }),
     lastKnownAt: timestamp("last_known_at"),
 
     // -- Manager Audit Trail --
@@ -303,6 +308,7 @@ export const shiftAssignment = pgTable("shift_assignment", {
 }, (table) => ({
     assignmentShiftIdx: index("assignment_shift_idx").on(table.shiftId),
     assignmentWorkerIdx: index("assignment_worker_idx").on(table.workerId),
+    assignmentStatusIdx: index("assignment_status_idx").on(table.status),
     // Constraint: A worker cannot be assigned to the same shift twice
     uniqueWorkerPerShift: unique("unique_worker_shift").on(table.shiftId, table.workerId)
 }));
@@ -348,13 +354,13 @@ export const workerLocation = pgTable("worker_location", {
         .references(() => organization.id, { onDelete: "cascade" }),
 
     // GPS Data
-    latitude: text("latitude").notNull(),
-    longitude: text("longitude").notNull(),
+    latitude: decimal("latitude", { precision: 10, scale: 8 }).notNull(),
+    longitude: decimal("longitude", { precision: 11, scale: 8 }).notNull(),
     accuracyMeters: integer("accuracy_meters"), // GPS accuracy from device
 
     // Computed on insert
-    venueLatitude: text("venue_latitude"), // Snapshot of venue coords
-    venueLongitude: text("venue_longitude"),
+    venueLatitude: decimal("venue_latitude", { precision: 10, scale: 8 }), // Snapshot of venue coords
+    venueLongitude: decimal("venue_longitude", { precision: 11, scale: 8 }),
     distanceToVenueMeters: integer("distance_to_venue_meters"),
     isOnSite: boolean("is_on_site").default(false),
 
@@ -463,7 +469,38 @@ export const timeCorrectionRequestRelations = relations(timeCorrectionRequest, (
 
 export const organizationRelations = relations(organization, ({ many }) => ({
     members: many(member),
-    shifts: many(shift),
     locations: many(location),
     invitations: many(invitation),
+}));
+
+// ============================================================================
+// 6. AUDIT LOGGING
+// ============================================================================
+
+export const auditLog = pgTable("audit_log", {
+    id: text("id").primaryKey(),
+    action: text("action").notNull(), // e.g., 'shift.approved', 'assignment.clock_out'
+    entityType: text("entity_type").notNull(), // e.g., 'shift', 'shift_assignment'
+    entityId: text("entity_id").notNull(),
+    actorId: text("actor_id"), // User who performed the action (nullable for system actions)
+    organizationId: text("organization_id").notNull(),
+    metadata: json("metadata"), // JSON blob for extra details (e.g. diffs, reasons)
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => ({
+    auditOrgIdx: index("audit_org_idx").on(table.organizationId),
+    auditEntityIdx: index("audit_entity_idx").on(table.entityType, table.entityId),
+    auditActorIdx: index("audit_actor_idx").on(table.actorId),
+    auditActionIdx: index("audit_action_idx").on(table.action),
+    auditTimeIdx: index("audit_time_idx").on(table.createdAt),
+}));
+
+export const auditLogRelations = relations(auditLog, ({ one }) => ({
+    actor: one(user, {
+        fields: [auditLog.actorId],
+        references: [user.id],
+    }),
+    organization: one(organization, {
+        fields: [auditLog.organizationId],
+        references: [organization.id],
+    }),
 }));

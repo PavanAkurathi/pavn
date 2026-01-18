@@ -16,17 +16,12 @@ const app = new Hono<{
 }>();
 
 // CORS
-app.use("*", cors({
-    origin: [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "exp://",
-        "myapp://" // Add deep link schema
-    ],
-    allowHeaders: ["x-org-id", "Content-Type", "Authorization"],
-    allowMethods: ["POST", "GET", "OPTIONS", "PUT", "DELETE", "PATCH"],
-    credentials: true,
-}));
+import { corsConfig } from "@repo/config";
+
+// ...
+
+// CORS
+app.use("*", cors(corsConfig));
 
 // Auth Middleware (same pattern as shifts package)
 app.use("*", async (c, next) => {

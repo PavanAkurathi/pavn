@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { OtpEmail } from './templates/otp';
 
 // Initialize Resend with API Key from environment
-const FROM_EMAIL = "onboarding@resend.dev"; // Default for testing, change to your domain in prod
+const FROM_EMAIL = process.env.EMAIL_FROM || "onboarding@resend.dev"; // Use EMAIL_FROM env var or fallback to default
 
 export const sendOtp = async (email: string, otp: string) => {
     const apiKey = process.env.RESEND_API_KEY;

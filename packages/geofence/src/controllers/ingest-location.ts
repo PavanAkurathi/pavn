@@ -5,8 +5,8 @@ import { workerLocation, shiftAssignment, shift, member } from "@repo/database/s
 import { eq, and, inArray, desc } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { calculateDistance, parseCoordinate } from "../utils/distance";
-// import { sendArrivalNotification } from "./notifications"; // TODO: implement
+import { calculateDistance } from "../utils/distance";
+import { sendSMS } from "@repo/auth";
 
 const LocationPingSchema = z.object({
     latitude: z.string(),
@@ -39,7 +39,10 @@ export async function ingestLocationController(
             where: and(
                 eq(member.userId, workerId),
                 eq(member.organizationId, orgId)
-            )
+            ),
+            with: {
+                user: true
+            }
         });
 
         if (!membership) {
@@ -88,10 +91,10 @@ export async function ingestLocationController(
         let eventType = 'ping';
 
         if (venueLocation?.latitude && venueLocation?.longitude) {
-            const workerLat = parseCoordinate(latitude);
-            const workerLng = parseCoordinate(longitude);
-            const venueLat = parseCoordinate(venueLocation.latitude);
-            const venueLng = parseCoordinate(venueLocation.longitude);
+            const workerLat = Number(latitude);
+            const workerLng = Number(longitude);
+            const venueLat = Number(venueLocation.latitude);
+            const venueLng = Number(venueLocation.longitude);
 
             if (workerLat && workerLng && venueLat && venueLng) {
                 distanceMeters = calculateDistance(workerLat, workerLng, venueLat, venueLng);
@@ -116,6 +119,13 @@ export async function ingestLocationController(
                 // TODO: Trigger push notification + SMS
                 // await sendArrivalNotification(workerId, relevantShift!);
                 console.log(`[GEOFENCE] Worker ${workerId} arrived at ${venueLocation?.name}`);
+
+                if (membership.user.phoneNumber) {
+                    const message = `Hi ${membership.user.name}, you have arrived at ${venueLocation?.name}. Please remember to clock in using the app.`;
+                    sendSMS(membership.user.phoneNumber, message).catch(err => {
+                        console.error("[GEOFENCE] Failed to send arrival SMS:", err);
+                    });
+                }
             }
         }
 
@@ -145,6 +155,15 @@ export async function ingestLocationController(
                     .where(eq(shiftAssignment.id, relevantAssignment.id));
 
                 console.log(`[GEOFENCE] Worker ${workerId} left geofence without clocking out!`);
+
+                // Send Notification (WH-013)
+                if (membership.user.phoneNumber) {
+                    const message = `Hi ${membership.user.name}, we detected you left the venue. You have been flagged for review. Please clock out or contact your manager.`;
+                    // Fire and forget (don't block response)
+                    sendSMS(membership.user.phoneNumber, message).catch(err => {
+                        console.error("[GEOFENCE] Failed to send departure SMS:", err);
+                    });
+                }
             }
         }
 

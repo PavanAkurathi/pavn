@@ -7,10 +7,14 @@
             "ESNext",
             "DOM"
         ],
-        "target": "ESNext"
+        "target": "ESNext",
+        "types": [
+            "bun-types"
+        ]
     },
     "include": [
-        "src"
+        "src",
+        "tests"
     ],
     "exclude": [
         "node_modules",
