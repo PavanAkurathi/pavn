@@ -1,34 +1,11 @@
+import { validatePhoneNumber, formatPhoneNumber } from "@repo/utils";
+
 export const isValidPhoneNumber = (phone: string): boolean => {
-    // Basic regex for supported countries
-    // USA/Canada: +1 followed by 10 digits
-    // Australia: +61 followed by 9 digits
-    const usaCanadaRegex = /^\+1\d{10}$/;
-    const australiaRegex = /^\+61\d{9}$/;
-    return usaCanadaRegex.test(phone) || australiaRegex.test(phone);
+    return validatePhoneNumber(phone, 'US');
 };
 
 export const normalizePhoneNumber = (phone: string): string => {
-    // Remove spaces, dashes, and parentheses
-    let cleaned = phone.replace(/[\s\-\(\)]/g, "");
-
-    // If it starts with '1' and is 11 digits, add '+'
-    if (cleaned.length === 11 && cleaned.startsWith("1")) {
-        return `+${cleaned}`;
-    }
-
-    // If it starts with '61' and is 11 digits (e.g. 614...), add '+'
-    if (cleaned.length === 11 && cleaned.startsWith("61")) {
-        return `+${cleaned}`;
-    }
-
-    // If it is 10 digits (USA local), add '+1'
-    if (cleaned.length === 10) {
-        return `+1${cleaned}`;
-    }
-
-    // If it's already in E.164 format (starts with +), just return cleaned
-    // Note: This assumes the user typed the +
-    return cleaned;
+    return formatPhoneNumber(phone, 'US');
 };
 
 

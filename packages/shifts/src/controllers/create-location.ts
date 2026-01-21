@@ -1,9 +1,13 @@
 
 import { db } from "@repo/database";
 import { location } from "@repo/database/schema";
+import { sql } from "drizzle-orm";
 import { geocodeAddress } from "../services/geocoding";
 import { z } from "zod";
 import { nanoid } from "nanoid";
+import { AppError } from "@repo/observability";
+
+import { newId } from "../utils/ids";
 
 const CreateLocationSchema = z.object({
     name: z.string().min(1).max(200),
@@ -13,75 +17,65 @@ const CreateLocationSchema = z.object({
 });
 
 export const createLocationController = async (req: Request, orgId: string): Promise<Response> => {
-    try {
-        const body = await req.json();
-        const parsed = CreateLocationSchema.safeParse(body);
+    const body = await req.json();
+    const parsed = CreateLocationSchema.safeParse(body);
 
-        if (!parsed.success) {
-            return Response.json({
-                error: "Validation failed",
-                details: parsed.error.flatten()
-            }, { status: 400 });
-        }
+    if (!parsed.success) {
+        throw new AppError("Validation failed", "VALIDATION_ERROR", 400, parsed.error.flatten());
+    }
 
-        const { name, address, geofenceRadius, geofenceRadiusMeters } = parsed.data;
-        const finalRadius = geofenceRadiusMeters || geofenceRadius; // Prefer old if sent, though schema handles default
+    const { name, address, geofenceRadius, geofenceRadiusMeters } = parsed.data;
+    const finalRadius = geofenceRadiusMeters || geofenceRadius; // Prefer old if sent, though schema handles default
 
-        // Geocode the address
-        const geocodeResult = await geocodeAddress(address);
+    // Geocode the address
+    const geocodeResult = await geocodeAddress(address);
 
-        if (!geocodeResult.success) {
-            return Response.json({
-                error: geocodeResult.error || "Could not verify address. Please check and try again.",
-                code: geocodeResult.code || "GEOCODING_FAILED"
-            }, { status: 400 });
-        }
+    if (!geocodeResult.success) {
+        throw new AppError(
+            geocodeResult.error || "Could not verify address. Please check and try again.",
+            geocodeResult.code || "GEOCODING_FAILED",
+            400
+        );
+    }
 
-        const coords = geocodeResult.data;
+    const coords = geocodeResult.data;
 
-        // Warn if low confidence
-        if (coords.confidence === 'low') {
-            console.warn(`[GEOCODE] Low confidence for "${address}"`);
-        }
+    // Warn if low confidence
+    if (coords.confidence === 'low') {
+        console.warn(`[GEOCODE] Low confidence for "${address}"`);
+    }
 
-        // Create location
-        const locationId = nanoid();
+    // Create location
+    const locationId = newId('loc');
 
-        // Generate slug from name
-        const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const slug = `${baseSlug}-${nanoid(4)}`;
+    // Generate slug from name
+    const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const slug = `${baseSlug}-${nanoid(4)}`;
 
-        await db.insert(location).values({
+    await db.insert(location).values({
+        id: locationId,
+        organizationId: orgId,
+        name,
+        slug,
+        address: coords.formattedAddress, // Use normalized address
+        position: sql`ST_GeogFromText(${`POINT(${coords.longitude} ${coords.latitude})`})`,
+        geofenceRadius: finalRadius,
+        geocodedAt: new Date(),
+        geocodeSource: coords.source,
+        createdAt: new Date(),
+        updatedAt: new Date()
+    });
+
+    return Response.json({
+        success: true,
+        location: {
             id: locationId,
-            organizationId: orgId,
             name,
-            slug,
-            address: coords.formattedAddress, // Use normalized address
+            address: coords.formattedAddress,
             latitude: coords.latitude,
             longitude: coords.longitude,
             geofenceRadius: finalRadius,
-            geocodedAt: new Date(),
-            createdAt: new Date(),
-            updatedAt: new Date()
-        });
-
-        return Response.json({
-            success: true,
-            location: {
-                id: locationId,
-                name,
-                address: coords.formattedAddress,
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-                geofenceRadius: finalRadius,
-                confidence: coords.confidence
-            }
-        }, { status: 201 });
-
-    } catch (error) {
-        console.error("Create location error:", error);
-        return Response.json({
-            error: "Failed to create location"
-        }, { status: 500 });
-    }
+            confidence: coords.confidence
+        }
+    }, { status: 201 });
 };

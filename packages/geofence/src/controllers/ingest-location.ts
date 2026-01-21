@@ -1,11 +1,10 @@
 // packages/geofence/src/controllers/ingest-location.ts
 
 import { db } from "@repo/database";
-import { workerLocation, shiftAssignment, shift, member } from "@repo/database/schema";
-import { eq, and, inArray, desc } from "drizzle-orm";
+import { workerLocation, shiftAssignment, shift, member, location } from "@repo/database/schema";
+import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { calculateDistance } from "../utils/distance";
 import { sendSMS } from "@repo/auth";
 
 const LocationPingSchema = z.object({
@@ -71,7 +70,8 @@ export async function ingestLocationController(
         // Filter by time window
         let relevantShift = null;
         let relevantAssignment = null;
-        let venueLocation = null;
+        let venueLocationId = null;
+        let venueName = null;
 
         if (activeAssignment?.shift) {
             const shiftStart = new Date(activeAssignment.shift.startTime);
@@ -81,25 +81,32 @@ export async function ingestLocationController(
             if (shiftStart <= windowEnd && shiftEnd >= windowStart) {
                 relevantShift = activeAssignment.shift;
                 relevantAssignment = activeAssignment;
-                venueLocation = activeAssignment.shift.location;
+                venueLocationId = activeAssignment.shift.locationId;
+                venueName = activeAssignment.shift.location?.name;
             }
         }
 
-        // 4. Calculate distance to venue (if we have a relevant shift)
+        // 4. Calculate distance to venue (if we have a relevant shift) using PostGIS
         let distanceMeters: number | null = null;
         let isOnSite = false;
         let eventType = 'ping';
+        let radius = 100;
 
-        if (venueLocation?.latitude && venueLocation?.longitude) {
-            const workerLat = Number(latitude);
-            const workerLng = Number(longitude);
-            const venueLat = Number(venueLocation.latitude);
-            const venueLng = Number(venueLocation.longitude);
+        const point = `POINT(${longitude} ${latitude})`;
 
-            if (workerLat && workerLng && venueLat && venueLng) {
-                distanceMeters = calculateDistance(workerLat, workerLng, venueLat, venueLng);
-                const radius = venueLocation.geofenceRadius || 100;
-                isOnSite = distanceMeters <= radius;
+        if (venueLocationId) {
+            const [geoResult] = await db.select({
+                isWithin: sql<boolean>`ST_DWithin(${location.position}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+                distance: sql<number>`ST_Distance(${location.position}, ST_GeogFromText(${point}))`,
+                radius: location.geofenceRadius
+            })
+                .from(location)
+                .where(eq(location.id, venueLocationId));
+
+            if (geoResult) {
+                distanceMeters = Math.round(geoResult.distance || 0);
+                radius = geoResult.radius || 100;
+                isOnSite = !!geoResult.isWithin;
             }
         }
 
@@ -118,10 +125,10 @@ export async function ingestLocationController(
                 eventType = 'arrival';
                 // TODO: Trigger push notification + SMS
                 // await sendArrivalNotification(workerId, relevantShift!);
-                console.log(`[GEOFENCE] Worker ${workerId} arrived at ${venueLocation?.name}`);
+                console.log(`[GEOFENCE] Worker ${workerId} arrived at ${venueName}`);
 
                 if (membership.user.phoneNumber) {
-                    const message = `Hi ${membership.user.name}, you have arrived at ${venueLocation?.name}. Please remember to clock in using the app.`;
+                    const message = `Hi ${membership.user.name}, you have arrived at ${venueName}. Please remember to clock in using the app.`;
                     sendSMS(membership.user.phoneNumber, message).catch(err => {
                         console.error("[GEOFENCE] Failed to send arrival SMS:", err);
                     });
@@ -140,29 +147,31 @@ export async function ingestLocationController(
             }) : null;
 
             if (previousPing?.isOnSite) {
-                eventType = 'departure';
+                // Prevent Spam: Only alert if not already flagged
+                if (relevantAssignment.reviewReason !== 'left_geofence') {
+                    eventType = 'departure';
 
-                // Flag the assignment for review
-                await db.update(shiftAssignment)
-                    .set({
-                        needsReview: true,
-                        reviewReason: 'left_geofence',
-                        lastKnownLatitude: latitude,
-                        lastKnownLongitude: longitude,
-                        lastKnownAt: now,
-                        updatedAt: now,
-                    })
-                    .where(eq(shiftAssignment.id, relevantAssignment.id));
+                    // Flag the assignment for review
+                    await db.update(shiftAssignment)
+                        .set({
+                            needsReview: true,
+                            reviewReason: 'left_geofence',
+                            lastKnownPosition: sql`ST_GeogFromText(${point})`,
+                            lastKnownAt: now,
+                            updatedAt: now,
+                        })
+                        .where(eq(shiftAssignment.id, relevantAssignment.id));
 
-                console.log(`[GEOFENCE] Worker ${workerId} left geofence without clocking out!`);
+                    console.log(`[GEOFENCE] Worker ${workerId} left geofence without clocking out!`);
 
-                // Send Notification (WH-013)
-                if (membership.user.phoneNumber) {
-                    const message = `Hi ${membership.user.name}, we detected you left the venue. You have been flagged for review. Please clock out or contact your manager.`;
-                    // Fire and forget (don't block response)
-                    sendSMS(membership.user.phoneNumber, message).catch(err => {
-                        console.error("[GEOFENCE] Failed to send departure SMS:", err);
-                    });
+                    // Send Notification (WH-013)
+                    if (membership.user.phoneNumber) {
+                        const message = `Hi ${membership.user.name}, we detected you left the venue. You have been flagged for review. Please clock out or contact your manager.`;
+                        // Fire and forget (don't block response)
+                        sendSMS(membership.user.phoneNumber, message).catch(err => {
+                            console.error("[GEOFENCE] Failed to send departure SMS:", err);
+                        });
+                    }
                 }
             }
         }
@@ -173,11 +182,9 @@ export async function ingestLocationController(
             workerId,
             shiftId: relevantShift?.id || null, // Allow null if no relevant shift but we tracked it
             organizationId: orgId,
-            latitude,
-            longitude,
+            position: sql`ST_GeogFromText(${point})`,
             accuracyMeters: accuracyMeters || null,
-            venueLatitude: venueLocation?.latitude || null,
-            venueLongitude: venueLocation?.longitude || null,
+            venuePosition: venueLocationId ? sql`(SELECT position FROM ${location} WHERE ${location.id} = ${venueLocationId})` : null,
             distanceToVenueMeters: distanceMeters,
             isOnSite,
             eventType,

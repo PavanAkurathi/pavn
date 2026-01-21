@@ -19,8 +19,8 @@ import { getDraftShifts } from "./controllers/drafts";
 import { deleteDraftsController } from "./controllers/delete-drafts";
 import { getWorkerShiftsController } from "./controllers/worker-shifts";
 import { createLocationController } from "./controllers/create-location";
-import { requestCorrectionController } from "@repo/geofence";
-import { getPendingAdjustmentsController, reviewAdjustmentController } from "./controllers/review-adjustments";
+import { requestCorrectionController, getPendingCorrectionsController, reviewCorrectionController } from "@repo/geofence";
+import { exportTimesheetsController } from "./controllers/export-timesheets";
 
 const app = new Hono<{
     Variables: {
@@ -40,6 +40,14 @@ app.use(
     "*",
     cors(corsConfig)
 );
+
+// WH-113: Request Tracing
+import { requestId, errorHandler, timeout } from "@repo/observability";
+app.use("*", requestId());
+app.use("*", timeout(30000));
+
+// WH-112: Global Error Handler
+app.onError((err, c) => errorHandler(err, c));
 
 // Mount Auth Handler
 app.on(["POST", "GET"], "/api/auth/*", (c) => {
@@ -112,7 +120,14 @@ app.get("/organizations/:orgId/crew", async (c) => {
     if (orgId !== headerOrgId) {
         return c.json({ error: "Organization mismatch" }, 403);
     }
-    return await getCrewController(headerOrgId);
+
+    // WH-116: Crew Search & Pagination
+    const search = c.req.query("search");
+    const limit = parseInt(c.req.query("limit") || "50", 10);
+    const offset = parseInt(c.req.query("offset") || "0", 10);
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+
+    return await getCrewController(headerOrgId, { search, limit: safeLimit, offset });
 });
 
 // Schedule Routes
@@ -147,7 +162,7 @@ app.get("/adjustments/pending", async (c) => {
     const orgId = c.get('orgId');
     // Ensure user is manager/admin? Middleware currently only checks valid session + org context.
     // In V2 we might want strict role checks. For now, matching existing pattern.
-    return await getPendingAdjustmentsController(orgId);
+    return await getPendingCorrectionsController(orgId);
 });
 
 app.post("/adjustments/review", async (c) => {
@@ -155,7 +170,7 @@ app.post("/adjustments/review", async (c) => {
     const orgId = c.get('orgId');
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    return await reviewAdjustmentController(c.req.raw, user.id, orgId);
+    return await reviewCorrectionController(c.req.raw, user.id, orgId);
 });
 
 // Shift Routes
@@ -169,9 +184,19 @@ app.get("/shifts/pending-approval", async (c) => {
     return await getPendingShifts(orgId);
 });
 
+// WH-115: History Pagination
 app.get("/shifts/history", async (c) => {
     const orgId = c.get('orgId');
-    return await getHistoryShifts(orgId);
+
+    // Parse pagination
+    const limit = parseInt(c.req.query("limit") || "50", 10);
+    const offset = parseInt(c.req.query("offset") || "0", 10);
+
+    // Validate sensible limits
+    const safeLimit = Math.min(Math.max(limit, 1), 100); // 1-100
+    const safeOffset = Math.max(offset, 0);
+
+    return await getHistoryShifts(orgId, { limit: safeLimit, offset: safeOffset });
 });
 
 app.get("/shifts/drafts", async (c) => {
@@ -205,6 +230,18 @@ app.get("/shifts/:id/timesheets", async (c) => {
 app.patch("/shifts/:shiftId/timesheet", async (c) => {
     const orgId = c.get('orgId');
     return await updateTimesheetController(c.req.raw, orgId);
+});
+
+app.get("/timesheets/export", async (c) => {
+    const orgId = c.get('orgId');
+    const start = c.req.query("start");
+    const end = c.req.query("end");
+
+    if (!start || !end) {
+        return c.json({ error: "Missing start or end date query params" }, 400);
+    }
+
+    return await exportTimesheetsController(orgId, start, end);
 });
 
 const port = process.env.PORT || 4005;

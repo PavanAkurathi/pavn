@@ -1,5 +1,41 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { getWorkerShiftsController } from "../src/controllers/worker-shifts";
+
+// --- Mocks ---
+
+class MockAppError extends Error {
+    constructor(public message: string, public code: string, public statusCode: number, public details?: any) {
+        super(message);
+        this.name = 'AppError';
+    }
+}
+
+mock.module("@repo/observability", () => ({
+    AppError: MockAppError
+}));
+
+const mockFindMany = mock(() => Promise.resolve([]));
+
+// Self-referencing builder to handle chaining and specific returns
+const mockBuilder: any = {
+    select: mock(() => mockBuilder),
+    from: mock(() => mockBuilder),
+    leftJoin: mock(() => mockBuilder),
+    innerJoin: mock(() => mockBuilder),
+    where: mock(() => mockBuilder),
+    orderBy: mock(() => mockBuilder),
+    limit: mock(() => mockBuilder),
+    offset: mockFindMany
+};
+
+mock.module("@repo/database", () => ({
+    db: mockBuilder,
+    shift: {},
+    shiftAssignment: {},
+    location: {},
+    organization: {}
+}));
+
 
 describe("GET /worker/shifts", () => {
     // Assuming we have some data in the local DB. 

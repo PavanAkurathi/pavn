@@ -1,18 +1,11 @@
 import { z } from 'zod';
-
-// E.164 Regex: + followed by 1-15 digits
-const e164Regex = /^\+[1-9]\d{1,14}$/;
+import { validatePhoneNumber, formatPhoneNumber } from '@repo/utils';
 
 export const phoneSchema = z.string()
-    .transform(val => val.replace(/[^\d+]/g, '')) // Strip ( ) - space
-    .transform(val => {
-        if (val.length === 10) return `+1${val}`; // Assume US/Canada if 10 digits
-        if (val.length === 11 && val.startsWith('1')) return `+${val}`; // Handle 1-prefix without +
-        return val;
+    .refine((val) => validatePhoneNumber(val, 'US'), {
+        message: "Invalid phone number. Please enter a valid 10-digit number."
     })
-    .refine((val) => e164Regex.test(val), {
-        message: "Invalid phone number. Try entering 10 digits (e.g. 5551234567)."
-    });
+    .transform((val) => formatPhoneNumber(val, 'US'));
 
 export const otpSchema = z.string()
     .length(6, "OTP must be exactly 6 digits")

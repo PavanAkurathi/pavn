@@ -1,11 +1,10 @@
 // packages/geofence/src/controllers/clock-in.ts
 
 import { db } from "@repo/database";
-import { shiftAssignment, shift, workerLocation } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { shift, shiftAssignment, workerLocation, organization, location } from "@repo/database/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { calculateDistance } from "../utils/distance";
 import { applyClockInRules } from "../utils/time-rules";
 import { validateShiftTransition } from "@repo/config";
 
@@ -35,7 +34,7 @@ export async function clockInController(
 
         const { shiftId, latitude, longitude, accuracyMeters } = parseResult.data;
 
-        // 2. Fetch shift with location and assignment
+        // 2. Fetch shift details
         const shiftRecord = await db.query.shift.findFirst({
             where: and(
                 eq(shift.id, shiftId),
@@ -65,28 +64,37 @@ export async function clockInController(
             }, { status: 400 });
         }
 
-        // 3. Verify geofence
-        const venueLocation = shiftRecord.location;
-        if (!venueLocation?.latitude || !venueLocation?.longitude) {
+        // 3. Verify geofence using PostGIS
+        if (!shiftRecord.locationId) {
             return Response.json({
                 error: "Venue location not configured",
                 code: "VENUE_NOT_GEOCODED"
             }, { status: 400 });
         }
 
-        const workerLat = Number(latitude);
-        const workerLng = Number(longitude);
-        const venueLat = Number(venueLocation.latitude);
-        const venueLng = Number(venueLocation.longitude);
+        const point = `POINT(${longitude} ${latitude})`;
 
-        if (!workerLat || !workerLng || !venueLat || !venueLng) {
-            return Response.json({ error: "Invalid coordinates" }, { status: 400 });
+        // Use SQL to check distance against the venue location
+        // We query the location table directly to get the distance
+        const [geoResult] = await db.select({
+            isWithin: sql<boolean>`ST_DWithin(${location.position}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+            distance: sql<number>`ST_Distance(${location.position}, ST_GeogFromText(${point}))`,
+            radius: location.geofenceRadius
+        })
+            .from(location)
+            .where(eq(location.id, shiftRecord.locationId));
+
+        if (!geoResult) {
+            return Response.json({
+                error: "Venue location not found",
+                code: "VENUE_NOT_FOUND"
+            }, { status: 404 });
         }
 
-        const distanceMeters = calculateDistance(workerLat, workerLng, venueLat, venueLng);
-        const radius = venueLocation.geofenceRadius || 100;
+        const distanceMeters = Math.round(geoResult.distance || 0);
+        const radius = geoResult.radius || 100;
 
-        if (distanceMeters > radius) {
+        if (!geoResult.isWithin) {
             return Response.json({
                 error: "You must be at the venue to clock in",
                 code: "OUTSIDE_GEOFENCE",
@@ -95,13 +103,17 @@ export async function clockInController(
             }, { status: 400 });
         }
 
-        // 4. Apply time rules
-
         // 4. Time Validation
         const now = new Date();
         const scheduledStart = new Date(shiftRecord.startTime);
 
-        const EARLY_BUFFER_MINUTES = 15;
+        // Fetch org config for buffer
+        const orgConfig = await db.query.organization.findFirst({
+            where: eq(organization.id, orgId),
+            columns: { earlyClockInBufferMinutes: true }
+        });
+
+        const EARLY_BUFFER_MINUTES = orgConfig?.earlyClockInBufferMinutes || 60;
         const earliestClockIn = new Date(scheduledStart.getTime() - EARLY_BUFFER_MINUTES * 60 * 1000);
 
         if (now < earliestClockIn) {
@@ -121,17 +133,12 @@ export async function clockInController(
             await tx.update(shiftAssignment)
                 .set({
                     clockIn: clockInResult.recordedTime,
-                    clockInLatitude: latitude,
-                    clockInLongitude: longitude,
+                    clockInPosition: sql`ST_GeogFromText(${point})`,
                     clockInVerified: true,
                     clockInMethod: 'geofence',
                     updatedAt: now,
                 })
                 .where(eq(shiftAssignment.id, assignment.id));
-
-
-
-            // ...
 
             // B. Update Shift Status (if needed)
             if (shiftRecord.status === 'assigned') {
@@ -147,16 +154,13 @@ export async function clockInController(
                 workerId,
                 shiftId,
                 organizationId: orgId,
-                latitude,
-                longitude,
+                position: sql`ST_GeogFromText(${point})`,
                 accuracyMeters: accuracyMeters || null,
-                venueLatitude: venueLocation.latitude,
-                venueLongitude: venueLocation.longitude,
+                venuePosition: sql`(SELECT position FROM ${location} WHERE ${location.id} = ${shiftRecord.locationId})`,
                 distanceToVenueMeters: distanceMeters,
                 isOnSite: true,
                 eventType: 'clock_in',
                 recordedAt: now,
-                // Provide default for device timestamp since we don't assume client provides it for clock in explicitly in D3 requirements
                 deviceTimestamp: now,
             });
         });

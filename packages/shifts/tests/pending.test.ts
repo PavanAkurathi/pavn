@@ -1,5 +1,21 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, mock } from "bun:test";
 import { getPendingShifts } from "../src/controllers/pending";
+
+// --- Mocks ---
+const mockFindMany = mock(() => Promise.resolve([]));
+
+mock.module("@repo/database", () => ({
+    db: {
+        query: {
+            shift: {
+                findMany: mockFindMany
+            }
+        }
+    },
+    shift: { status: 'status', organizationId: 'orgId', startTime: new Date(), endTime: new Date() },
+    shiftAssignment: {}
+}));
+
 import { Shift } from "../src/types";
 
 describe("GET /shifts/pending-approval", () => {

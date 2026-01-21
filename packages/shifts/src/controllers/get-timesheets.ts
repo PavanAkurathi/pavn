@@ -5,6 +5,7 @@ import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { TimesheetWorker } from "../types";
 import { getInitials } from "../utils/formatting";
+import { AppError } from "@repo/observability";
 
 export const getShiftTimesheetsController = async (shiftId: string, orgId: string): Promise<Response> => {
     // 1. Verify Shift Ownership
@@ -14,7 +15,9 @@ export const getShiftTimesheetsController = async (shiftId: string, orgId: strin
     });
 
     if (!validShift) {
-        return Response.json({ error: "Shift not found" }, { status: 404 });
+        if (!validShift) {
+            throw new AppError("Shift not found", "SHIFT_NOT_FOUND", 404);
+        }
     }
 
     // 2. Query DB with inference
@@ -47,17 +50,20 @@ export const getShiftTimesheetsController = async (shiftId: string, orgId: strin
 };
 
 function mapAssignmentStatus(status: string): TimesheetWorker['status'] {
-    // Validate against known UI types: 'rostered' | 'new' | 'blocked' | 'submitted'
-    // Schema has 'active', 'completed', 'no_show'.
+    // Validate against known UI types: 'rostered' | 'new' | 'blocked' | 'submitted' | 'approved'
     // Mapping:
-    // active -> rostered (or new if implies unacknowledged)
-    // completed -> submitted
-    // no_show -> blocked (or separate status if UI supported)
-
     switch (status) {
-        case 'active': return 'rostered';
-        case 'completed': return 'submitted';
-        case 'no_show': return 'blocked';
-        default: return 'rostered';
+        case 'active':
+        case 'assigned':
+            return 'rostered';
+        case 'completed':
+            return 'submitted';
+        case 'approved':
+            return 'approved';
+        case 'cancelled':
+        case 'no_show':
+            return 'blocked';
+        default:
+            return 'rostered';
     }
 }

@@ -1,7 +1,14 @@
 // packages/database/src/schema.ts
 
-import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
+
+// PostGIS Geometry Type Helper
+const geography = customType<{ data: string }>({
+    dataType() {
+        return "geography(POINT, 4326)";
+    },
+});
 
 // ============================================================================
 // 1. IDENTITY & AUTH (Using Account Table for better compatibility)
@@ -112,6 +119,9 @@ export const organization = pgTable("organization", {
     stripeSubscriptionId: text("stripe_subscription_id"),
     subscriptionStatus: text("subscription_status").default("inactive"),
     currentPeriodEnd: timestamp("current_period_end"),
+
+    // Configuration
+    earlyClockInBufferMinutes: integer("early_clock_in_buffer_minutes").notNull().default(60),
 });
 
 export const location = pgTable("location", {
@@ -129,8 +139,7 @@ export const location = pgTable("location", {
     instructions: text("instructions"),
 
     // -- Geofence --
-    latitude: decimal("latitude", { precision: 10, scale: 8 }),
-    longitude: decimal("longitude", { precision: 11, scale: 8 }),
+    position: geography("position"),
     geofenceRadius: integer("geofence_radius").default(100),
     geocodedAt: timestamp("geocoded_at"),
     geocodeSource: text("geocode_source"), // 'google' | 'manual' | 'mapbox'
@@ -274,14 +283,12 @@ export const shiftAssignment = pgTable("shift_assignment", {
     grossPayCents: integer("gross_pay_cents").default(0),
 
     // -- Clock In Verification --
-    clockInLatitude: decimal("clock_in_latitude", { precision: 10, scale: 8 }),
-    clockInLongitude: decimal("clock_in_longitude", { precision: 11, scale: 8 }),
+    clockInPosition: geography("clock_in_position"),
     clockInVerified: boolean("clock_in_verified").default(false),
     clockInMethod: text("clock_in_method"), // 'geofence' | 'manual_override'
 
     // -- Clock Out Verification --
-    clockOutLatitude: decimal("clock_out_latitude", { precision: 10, scale: 8 }),
-    clockOutLongitude: decimal("clock_out_longitude", { precision: 11, scale: 8 }),
+    clockOutPosition: geography("clock_out_position"),
     clockOutVerified: boolean("clock_out_verified").default(false),
     clockOutMethod: text("clock_out_method"), // 'geofence' | 'manual_override' | 'left_geofence' | 'auto_flagged'
 
@@ -290,8 +297,7 @@ export const shiftAssignment = pgTable("shift_assignment", {
     reviewReason: text("review_reason"), // 'left_geofence' | 'no_clockout' | 'disputed' | 'late_arrival'
 
     // -- Last Known Position (for flagged shifts) --
-    lastKnownLatitude: decimal("last_known_latitude", { precision: 10, scale: 8 }),
-    lastKnownLongitude: decimal("last_known_longitude", { precision: 11, scale: 8 }),
+    lastKnownPosition: geography("last_known_position"),
     lastKnownAt: timestamp("last_known_at"),
 
     // -- Manager Audit Trail --
@@ -354,13 +360,11 @@ export const workerLocation = pgTable("worker_location", {
         .references(() => organization.id, { onDelete: "cascade" }),
 
     // GPS Data
-    latitude: decimal("latitude", { precision: 10, scale: 8 }).notNull(),
-    longitude: decimal("longitude", { precision: 11, scale: 8 }).notNull(),
+    position: geography("position").notNull(),
     accuracyMeters: integer("accuracy_meters"), // GPS accuracy from device
 
     // Computed on insert
-    venueLatitude: decimal("venue_latitude", { precision: 10, scale: 8 }), // Snapshot of venue coords
-    venueLongitude: decimal("venue_longitude", { precision: 11, scale: 8 }),
+    venuePosition: geography("venue_position"), // Snapshot of venue coords
     distanceToVenueMeters: integer("distance_to_venue_meters"),
     isOnSite: boolean("is_on_site").default(false),
 
@@ -479,12 +483,31 @@ export const organizationRelations = relations(organization, ({ many }) => ({
 
 export const auditLog = pgTable("audit_log", {
     id: text("id").primaryKey(),
-    action: text("action").notNull(), // e.g., 'shift.approved', 'assignment.clock_out'
-    entityType: text("entity_type").notNull(), // e.g., 'shift', 'shift_assignment'
+
+    // Context
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+
+    // What
+    entityType: text("entity_type").notNull(),
     entityId: text("entity_id").notNull(),
-    actorId: text("actor_id"), // User who performed the action (nullable for system actions)
-    organizationId: text("organization_id").notNull(),
-    metadata: json("metadata"), // JSON blob for extra details (e.g. diffs, reasons)
+    action: text("action").notNull(),
+
+    // Who
+    actorId: text("actor_id"), // User who performed the action
+    userName: text("user_name"), // Snapshot
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+
+    // Diff
+    changes: json("changes").$type<{
+        before: Record<string, any>;
+        after: Record<string, any>;
+    }>(),
+
+    metadata: json("metadata").$type<Record<string, any>>(),
+
     createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (table) => ({
     auditOrgIdx: index("audit_org_idx").on(table.organizationId),

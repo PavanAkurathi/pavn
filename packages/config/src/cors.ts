@@ -5,6 +5,10 @@ export const getAllowedOrigins = (): string[] => {
     return [
         ...origins,
         `${expoScheme}://`,
+        'http://localhost:3000',
+        'http://localhost:8081', // Expo Web
+        'http://localhost:19000', // Expo Go (Legacy)
+        'http://localhost:19006', // Expo Web (Legacy)
     ].filter(Boolean);
 };
 
@@ -16,3 +20,4 @@ export const corsConfig = {
     maxAge: 600,
     credentials: true,
 };
+

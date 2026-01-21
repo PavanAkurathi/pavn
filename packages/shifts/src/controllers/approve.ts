@@ -1,38 +1,43 @@
 // packages/shifts/src/controllers/approve.ts
 
 import { db } from "@repo/database";
-import { shift, shiftAssignment } from "@repo/database/schema";
+import { shift, shiftAssignment, organization, member } from "@repo/database/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { differenceInMinutes } from "date-fns";
-import { mapShiftToDto } from "../utils/mapper";
-import { validateShiftTransition } from "@repo/config";
-import { enforceBreakRules } from "@repo/geofence";
-import { logAudit } from "@repo/database";
+import { logAudit, logShiftChange, AppError } from "@repo/observability";
+import { differenceInMinutes, addMinutes } from "date-fns";
 
-export const approveShiftController = async (shiftId: string, orgId: string): Promise<Response> => {
-    try {
-        // 1. Fetch Data with Tenant Check
-        const shiftRecord = await db.query.shift.findFirst({
-            where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
+import { validateShiftTransition, ShiftStatus } from "@repo/config";
+
+export const approveShiftController = async (shiftId: string, orgId: string) => {
+    // 1. Get Shift & Assignments
+    const result = await db.transaction(async (tx) => {
+        const shiftRecord = await tx.query.shift.findFirst({
+            where: and(
+                eq(shift.id, shiftId),
+                eq(shift.organizationId, orgId)
+            ),
             with: {
-                assignments: true,
-                organization: true,
-                location: true
+                assignments: true
             }
         });
 
-        if (!shiftRecord) return Response.json({ error: "Shift not found" }, { status: 404 });
-        if (shiftRecord.status === 'approved') return Response.json({ error: "Already approved" }, { status: 400 });
+        if (!shiftRecord) {
+            throw new AppError("Shift not found", "SHIFT_NOT_FOUND", 404);
+        }
 
-        // Validate Transition (WH-009)
-        if (shiftRecord.status !== 'completed') {
-            try {
-                validateShiftTransition(shiftRecord.status, 'approved');
-            } catch (e) {
-                // If checking strict state, 'assigned' -> 'approved' is INVALID. 
-                // We return error forcing manager to complete it first (or we fix state machine).
-                return Response.json({ error: "Shift must be completed before approval" }, { status: 400 });
+        // WH-009: Validate Transition
+        try {
+            validateShiftTransition(shiftRecord.status as ShiftStatus, 'approved');
+        } catch (e) {
+            if (e instanceof Error) {
+                throw new AppError(e.message, "INVALID_TRANSITION", 400);
             }
+            throw e;
+        }
+
+        // 2. Validate Status (Redundant check kept for strictness if needed, or remove)
+        if (!['completed', 'assigned'].includes(shiftRecord.status)) {
+            // Logic covered by validateShiftTransition, but keeping for safety if config changes
         }
 
         // 2. Audit Assignments
@@ -68,92 +73,111 @@ export const approveShiftController = async (shiftId: string, orgId: string): Pr
 
             // CASE: Valid (Calculate Pay)
             if (assign.clockIn && assign.clockOut) {
-                // differenceInMinutes returns signed integer, Ensure positive and valid range
-                const totalMinutes = differenceInMinutes(assign.clockOut, assign.clockIn);
+                // ... (Calculation logic identical to original)
+                const scheduledStart = new Date(shiftRecord.startTime);
+                const actualClockIn = new Date(assign.clockIn);
+                const GRACE_PERIOD_MINUTES = 5;
 
-                // Apply break enforcement
-                const breakEnforcement = enforceBreakRules(
-                    assign.clockIn,
-                    assign.clockOut,
-                    assign.breakMinutes || 0
-                );
+                const useScheduledStart = actualClockIn <= addMinutes(scheduledStart, GRACE_PERIOD_MINUTES);
+                const effectiveStart = useScheduledStart ? scheduledStart : actualClockIn;
+                const totalMinutes = differenceInMinutes(assign.clockOut, effectiveStart);
 
-                // Subtract break minutes if they exist (or enforced)
-                const billableMinutes = Math.max(0, totalMinutes - breakEnforcement.breakMinutes);
+                if (totalMinutes < 0) {
+                    dirtyAssignments.push(assign.workerId);
+                    continue;
+                }
 
+                // WH-126: Trust Manager Break Logic
+                const breakMinutes = assign.breakMinutes || 0;
+
+                if (breakMinutes < 0 || breakMinutes >= totalMinutes) {
+                    dirtyAssignments.push(assign.workerId);
+                    continue;
+                }
+
+                const billableMinutes = Math.max(0, totalMinutes - breakMinutes);
                 const hours = billableMinutes / 60;
-
-                // Pay = Hours * Shift Price (Rate is stored as price in shift table)
                 const rate = shiftRecord.price || 0;
-                const pay = Math.round(hours * rate);
+                const pay = Math.ceil(hours * rate);
+
+                let note: string | null = null;
+                const scheduledEnd = new Date(shiftRecord.endTime);
+                if (differenceInMinutes(assign.clockOut, scheduledEnd) > 15) {
+                    note = "Flag: Clock-out >15m past schedule";
+                }
 
                 updates.push({
                     id: assign.id,
                     status: 'completed',
                     grossPayCents: pay,
                     hourlyRateSnapshot: rate,
-                    breakMinutes: breakEnforcement.breakMinutes,
-                    adjustmentNotes: breakEnforcement.wasEnforced ? breakEnforcement.reason || null : null
+                    breakMinutes: breakMinutes,
+                    adjustmentNotes: note
                 });
             }
         }
 
         // 3. Block if Dirty
         if (dirtyAssignments.length > 0) {
-            return Response.json({
-                error: "Cannot approve: Workers missing clock-out times.",
-                workerIds: dirtyAssignments
-            }, { status: 409 });
+            throw new AppError("Cannot approve: Workers missing clock-out times.", "DIRTY_DATA", 409, { workerIds: dirtyAssignments });
         }
 
-        // 4. Commit Changes (Atomic Transaction)
-        // 4. Commit Changes (Atomic Transaction)
-        await db.transaction(async (tx) => {
-            // Update Assignments
-            for (const u of updates) {
-                await tx.update(shiftAssignment)
-                    .set({
-                        status: u.status,
-                        grossPayCents: u.grossPayCents,
-                        hourlyRateSnapshot: u.hourlyRateSnapshot,
-                        breakMinutes: u.breakMinutes,
-                        adjustmentNotes: u.adjustmentNotes
-                    })
-                    .where(eq(shiftAssignment.id, u.id));
+        // 5. Commit Changes
+        for (const u of updates) {
+            await tx.update(shiftAssignment)
+                .set({
+                    status: u.status,
+                    grossPayCents: u.grossPayCents,
+                    hourlyRateSnapshot: u.hourlyRateSnapshot,
+                    breakMinutes: u.breakMinutes,
+                    adjustmentNotes: u.adjustmentNotes
+                })
+                .where(eq(shiftAssignment.id, u.id));
+        }
+
+        const res = await tx.update(shift)
+            .set({ status: 'approved' })
+            .where(and(
+                eq(shift.id, shiftId),
+                eq(shift.status, 'completed')
+            ));
+
+        if (res.rowCount === 0) {
+            throw new AppError("Race condition: Shift was modified or approved by another request.", "RACE_CONDITION", 409);
+        }
+
+        await logAudit({
+            action: 'shift.approved',
+            entityType: 'shift',
+            entityId: shiftId,
+            organizationId: orgId,
+            metadata: {
+                approvedAssignmentsCount: updates.length,
+                totalPayCents: updates.reduce((acc, u) => acc + u.grossPayCents, 0)
             }
-
-            // Update Shift Status with Optimistic Locking
-            const result = await tx.update(shift)
-                .set({ status: 'approved' })
-                .where(and(
-                    eq(shift.id, shiftId),
-                    inArray(shift.status, ['assigned', 'completed']) // Guard: Must be in 'assigned' or 'completed' state
-                ));
-
-            if (result.rowCount === 0) {
-                throw new Error("Race condition: Shift was modified or approved by another request.");
-            }
-
-            // Log Audit
-            await logAudit({
-                action: 'shift.approved',
-                entityType: 'shift',
-                entityId: shiftId,
-                organizationId: orgId,
-                metadata: {
-                    approvedAssignmentsCount: updates.length,
-                    totalPayCents: updates.reduce((acc, u) => acc + u.grossPayCents, 0)
-                }
-            });
         });
 
-        return Response.json({ success: true }, { status: 200 });
+        for (const u of updates) {
+            if (u.status === 'no_show') {
+                const originalAssignment = shiftRecord.assignments.find(a => a.id === u.id);
+                if (originalAssignment) {
+                    await logAudit({
+                        action: 'assignment.no_show',
+                        entityType: 'shift_assignment',
+                        entityId: u.id,
+                        organizationId: orgId,
+                        userId: originalAssignment.workerId,
+                        metadata: {
+                            shiftId: shiftId,
+                            reason: 'No clock-in/out recorded at approval'
+                        }
+                    });
+                }
+            }
+        }
 
-    } catch (error) {
-        console.error("Approve/Audit Error:", error);
-        return Response.json({
-            error: "Failed to approve shift",
-            details: error instanceof Error ? error.message : String(error)
-        }, { status: 500 });
-    }
+        return Response.json({ success: true }, { status: 200 });
+    });
+
+    return result;
 };

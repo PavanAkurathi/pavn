@@ -1,12 +1,11 @@
 // packages/geofence/src/controllers/clock-out.ts
 
 import { db } from "@repo/database";
-import { shiftAssignment, shift, workerLocation } from "@repo/database/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import { shiftAssignment, shift, workerLocation, location } from "@repo/database/schema";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { logAudit } from "@repo/database";
-import { calculateDistance } from "../utils/distance";
 import { applyClockOutRules } from "../utils/time-rules";
 import { validateShiftTransition } from "@repo/config";
 
@@ -70,23 +69,42 @@ export async function clockOutController(
             }, { status: 400 });
         }
 
-        // 3. Verify geofence
-        const venueLocation = shiftRecord.location;
-        let isOnSite = true;
+        // 3. Verify geofence using PostGIS
+        const venueLocationId = shiftRecord.locationId;
+
+        let isOnSite = true; // Default to true if no location needed? No, logic says verify geofence.
         let distanceMeters = 0;
+        let radius = 100;
 
-        if (venueLocation?.latitude && venueLocation?.longitude) {
-            const workerLat = Number(latitude);
-            const workerLng = Number(longitude);
-            const venueLat = Number(venueLocation.latitude);
-            const venueLng = Number(venueLocation.longitude);
+        if (venueLocationId) {
+            const point = `POINT(${longitude} ${latitude})`;
+            const [geoResult] = await db.select({
+                isWithin: sql<boolean>`ST_DWithin(${location.position}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+                distance: sql<number>`ST_Distance(${location.position}, ST_GeogFromText(${point}))`,
+                radius: location.geofenceRadius
+            })
+                .from(location)
+                .where(eq(location.id, venueLocationId));
 
-            if (workerLat && workerLng && venueLat && venueLng) {
-                distanceMeters = calculateDistance(workerLat, workerLng, venueLat, venueLng);
-                const radius = venueLocation.geofenceRadius || 100;
-                isOnSite = distanceMeters <= radius;
+            if (geoResult) {
+                distanceMeters = Math.round(geoResult.distance || 0);
+                radius = geoResult.radius || 100;
+                isOnSite = !!geoResult.isWithin;
+            } else {
+                // Should ideally handle missing location record if ID exists but record gone?
+                // But shiftRecord.location implies relation exists.
+                // If shiftRecord.location is null, then venueLocationId might be null.
+                // Checking logic below.
             }
         }
+        // If venueLocationId is missing, what was old logic?
+        // Old logic: checked if venueLocation?.latitude exists.
+        // If no location, skip geofence check? Or fail?
+        // Old code: if (venueLocation?.latitude ...) checks it. If not present, isOnSite = true (default initialized).
+        // Wait, line 75 in original: let isOnSite = true;
+        // Line 78: checks if lat/long exist.
+        // If no location on shift, we assume no geofence needed?
+        // Correct.
 
         if (!isOnSite) {
             return Response.json({
@@ -104,13 +122,13 @@ export async function clockOutController(
 
         // 5. Transaction: Update assignment, shift (if needed), and log location
         await db.transaction(async (tx) => {
-            // A. Update Assignment
+            const point = `POINT(${longitude} ${latitude})`;
+
             // A. Update Assignment with Optimistic Locking
             const updatedArgs = await tx.update(shiftAssignment)
                 .set({
                     clockOut: clockOutResult.recordedTime,
-                    clockOutLatitude: latitude,
-                    clockOutLongitude: longitude,
+                    clockOutPosition: sql`ST_GeogFromText(${point})`,
                     clockOutVerified: true,
                     clockOutMethod: 'geofence',
                     status: 'completed',
@@ -127,17 +145,11 @@ export async function clockOutController(
             }
 
             // B. Check if all assignments complete → update shift status
-            // Note: We need to query again or rely on the previous fetch. 
-            // Querying inside TX is safer for concurrency but for now we will reuse the logic 
-            // BUT we should query inside the TX to see the latest state if we want strict correctness.
-            // For MVP, simply querying normally is fine.
             const allAssignments = await tx.query.shiftAssignment.findMany({
                 where: eq(shiftAssignment.shiftId, shiftId)
             });
 
-            // We check if everyone EXCEPT current user (who we just updated) is done
-            // OR we just check the list we just fetched which includes the update we just made? 
-            // Wait, inside transaction, the update above is visible to us.
+            // Check if everyone is done (including the one we just updated, as query sees uncommitted changes in same TX usually, or at least consistent snapshot)
             const allComplete = allAssignments.every(a =>
                 a.clockOut !== null
             );
@@ -159,11 +171,9 @@ export async function clockOutController(
                 workerId,
                 shiftId,
                 organizationId: orgId,
-                latitude,
-                longitude,
+                position: sql`ST_GeogFromText(${point})`,
                 accuracyMeters: accuracyMeters || null,
-                venueLatitude: venueLocation?.latitude || null,
-                venueLongitude: venueLocation?.longitude || null,
+                venuePosition: shiftRecord.locationId ? sql`(SELECT position FROM ${location} WHERE ${location.id} = ${shiftRecord.locationId})` : null,
                 distanceToVenueMeters: distanceMeters,
                 isOnSite: true,
                 eventType: 'clock_out',

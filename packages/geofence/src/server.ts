@@ -23,6 +23,14 @@ import { corsConfig } from "@repo/config";
 // CORS
 app.use("*", cors(corsConfig));
 
+// WH-113: Request Tracing
+import { requestId, errorHandler, timeout } from "@repo/observability";
+app.use("*", requestId());
+app.use("*", timeout(30000));
+
+// WH-112: Global Error Handler
+app.onError((err, c) => errorHandler(err, c));
+
 // Auth Middleware (same pattern as shifts package)
 app.use("*", async (c, next) => {
     if (c.req.path === "/health") {

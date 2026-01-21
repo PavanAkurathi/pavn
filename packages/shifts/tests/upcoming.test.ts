@@ -1,5 +1,24 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test, mock } from "bun:test";
 import { getUpcomingShifts } from "../src/controllers/upcoming";
+
+// --- Mocks ---
+const mockFindMany = mock(() => Promise.resolve([
+    { id: "s1", status: "published", startTime: new Date(), endTime: new Date(), organizationId: "test_org" },
+    { id: "s2", status: "assigned", startTime: new Date(), endTime: new Date(), organizationId: "test_org" }
+]));
+
+mock.module("@repo/database", () => ({
+    db: {
+        query: {
+            shift: {
+                findMany: mockFindMany
+            }
+        }
+    },
+    shift: { status: 'status', organizationId: 'orgId', startTime: new Date(), endTime: new Date() },
+    shiftAssignment: {}
+}));
+
 
 describe("GET /shifts/upcoming", () => {
     test("returns 200 OK", async () => {

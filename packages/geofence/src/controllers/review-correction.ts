@@ -2,8 +2,33 @@
 
 import { db } from "@repo/database";
 import { timeCorrectionRequest, shiftAssignment, member } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { z } from "zod";
+
+export async function getPendingCorrectionsController(orgId: string): Promise<Response> {
+    try {
+        const pending = await db.query.timeCorrectionRequest.findMany({
+            where: and(
+                eq(timeCorrectionRequest.organizationId, orgId),
+                eq(timeCorrectionRequest.status, 'pending')
+            ),
+            with: {
+                worker: true,
+                shiftAssignment: {
+                    with: {
+                        shift: true
+                    }
+                }
+            },
+            orderBy: [desc(timeCorrectionRequest.createdAt)]
+        });
+
+        return Response.json({ requests: pending });
+    } catch (error) {
+        console.error("Get pending adjustments error:", error);
+        return Response.json({ error: "Failed to fetch pending adjustments" }, { status: 500 });
+    }
+}
 
 const ReviewCorrectionSchema = z.object({
     requestId: z.string(),

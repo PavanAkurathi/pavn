@@ -49,7 +49,7 @@ async function geocodeWithGoogle(address: string): Promise<GeocodeResponse> {
         const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodedAddress}&key=${apiKey}`;
 
         const response = await fetch(url);
-        const data = await response.json();
+        const data = await response.json() as any;
 
         if (data.status === "ZERO_RESULTS") {
             return { success: false, error: "Address not found", code: "NO_RESULTS" };
@@ -85,57 +85,68 @@ async function geocodeWithGoogle(address: string): Promise<GeocodeResponse> {
     }
 }
 
+// Global throttling queue for Nominatim to respect 1 req/sec limit
+let nominatimQueue = Promise.resolve();
+
 async function geocodeWithNominatim(address: string): Promise<GeocodeResponse> {
     if (!address || address.trim().length < 5) {
         return { success: false, error: "Address too short", code: "INVALID_ADDRESS" };
     }
 
-    try {
-        const encoded = encodeURIComponent(address);
-        // User-Agent is required by Nominatim
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
-            {
-                headers: {
-                    'User-Agent': 'WorkersHive/1.0 (contact@workershive.com)'
+    // Queue the request
+    const result = await new Promise<GeocodeResponse>((resolve) => {
+        nominatimQueue = nominatimQueue.then(async () => {
+            try {
+                // Ensure 1.1s delay between requests
+                await new Promise(r => setTimeout(r, 1100));
+
+                const encoded = encodeURIComponent(address);
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
+                    {
+                        headers: {
+                            'User-Agent': 'WorkersHive/1.0 (contact@workershive.com)'
+                        }
+                    }
+                );
+
+                const results = await response.json() as any;
+
+                if (!results || results.length === 0) {
+                    resolve({ success: false, error: "Address not found", code: "NO_RESULTS" });
+                    return;
                 }
+
+                const result = results[0];
+                resolve({
+                    success: true,
+                    data: {
+                        latitude: result.lat,
+                        longitude: result.lon,
+                        formattedAddress: result.display_name,
+                        confidence: result.importance > 0.5 ? 'high' : 'medium',
+                        source: 'nominatim'
+                    }
+                });
+            } catch (error) {
+                console.error('Nominatim geocoding failed:', error);
+                resolve({ success: false, error: "Geocoding request failed", code: "API_ERROR" });
             }
-        );
+        });
+    });
 
-        const results = await response.json();
-
-        if (!results || results.length === 0) {
-            return { success: false, error: "Address not found", code: "NO_RESULTS" };
-        }
-
-        const result = results[0];
-
-        return {
-            success: true,
-            data: {
-                latitude: result.lat,
-                longitude: result.lon,
-                formattedAddress: result.display_name,
-                confidence: result.importance > 0.5 ? 'high' : 'medium',
-                source: 'nominatim'
-            }
-        };
-    } catch (error) {
-        console.error('Nominatim geocoding failed:', error);
-        return { success: false, error: "Geocoding request failed", code: "API_ERROR" };
-    }
+    return result;
 }
 
 // Batch geocode for importing multiple locations
 export async function geocodeAddresses(addresses: string[]): Promise<Map<string, GeocodeResponse>> {
     const results = new Map<string, GeocodeResponse>();
-    const provider = process.env.GEOCODING_PROVIDER || 'nominatim';
-    const delayMs = provider === 'google' ? 100 : 1100; // Nominatim needs 1+ sec
-
-    for (const address of addresses) {
-        results.set(address, await geocodeAddress(address));
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-    }
-
+    // Parallel calls are now safe because geocodeAddress handles throttling internally
+    await Promise.all(
+        addresses.map(async (address) => {
+            const res = await geocodeAddress(address);
+            results.set(address, res);
+        })
+    );
     return results;
 }

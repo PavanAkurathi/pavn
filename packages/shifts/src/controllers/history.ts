@@ -5,7 +5,8 @@ import { shift } from "@repo/database/schema";
 import { inArray, desc, and, eq } from "drizzle-orm";
 import { mapShiftToDto } from "../utils/mapper";
 
-export const getHistoryShifts = async (orgId: string): Promise<Response> => {
+export const getHistoryShifts = async (orgId: string, pagination: { limit: number, offset: number }): Promise<Response> => {
+    const { limit, offset } = pagination;
     const results = await db.query.shift.findMany({
         where: and(
             eq(shift.organizationId, orgId),
@@ -13,7 +14,8 @@ export const getHistoryShifts = async (orgId: string): Promise<Response> => {
             inArray(shift.status, ['approved', 'cancelled', 'completed', 'assigned'])
         ),
         orderBy: [desc(shift.startTime)], // Newest First
-        limit: 50, // Strict limit for now
+        limit: limit,
+        offset: offset,
         with: {
             organization: true,
             location: true,

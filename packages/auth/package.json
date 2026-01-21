@@ -16,7 +16,8 @@
         "dotenv": "^16.0.0",
         "drizzle-orm": "^0.31.2",
         "nanoid": "^5.0.0",
-        "twilio": "^5.11.2"
+        "twilio": "^5.11.2",
+        "@repo/utils": "workspace:*"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",

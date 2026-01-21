@@ -1,6 +1,6 @@
 import { db } from "@repo/database";
-import { shift, shiftAssignment, location } from "@repo/database/schema";
-import { eq, and, inArray, gte, lte, asc, desc } from "drizzle-orm";
+import { shift, shiftAssignment, location, organization } from "@repo/database/schema";
+import { eq, and, inArray, gte, lte, asc, desc, sql } from "drizzle-orm";
 
 interface WorkerShiftFilters {
     status: 'upcoming' | 'history' | 'all';
@@ -17,74 +17,70 @@ export const getWorkerShiftsController = async (
     // Default status 'upcoming', limit 20
     const { status = 'upcoming', limit = 20, offset = 0 } = filters;
 
-    // Query assignments first (worker-centric approach)
-    // We fetch assignments for the worker, then join shifts
-    const assignments = await db.query.shiftAssignment.findMany({
-        where: eq(shiftAssignment.workerId, workerId),
-        with: {
-            shift: {
-                with: {
-                    location: true,
-                    organization: true
-                }
-            }
-        },
-        // We can't easily limit/offset here if we need to filter by shift status AFTER join 
-        // unless we trust the DB query ability to filter nested. 
-        // Drizzle query API filters are on the root table (shiftAssignment). 
-        // We can filter shiftAssignment directly? No, status is on Shift mostly.
-        // However, for 'upcoming', we want shifts in future.
-        // Ideally we fetch a bit more and filter in memory if strict DB filtering is hard with relations.
-        // Or we use `findMany` with limits but might over-fetch or under-fetch effective items.
-        // Ticket logic: "Query assignments first... limit: limit, offset: offset". 
-        // This implies pagination happens on assignments.
-        limit: limit * 2, // Fetch extra to account for filtering
-        offset: offset
-    });
+    // WH-105 Fix: Use db.select() with innerJoin to ensure filtering happens BEFORE pagination
+    // This prevents "gaps" where mixed statuses in the DB cause pages to appear empty or incomplete.
 
-    // Filter and transform
-    let results = assignments
-        .filter(a => {
-            if (!a.shift) return false;
-            if (a.shift.organizationId !== orgId) return false; // Tenant check
+    const conditions = [
+        eq(shiftAssignment.workerId, workerId),
+        eq(shift.organizationId, orgId)
+    ];
 
-            // Apply status filter
-            if (status === 'upcoming') {
-                const validStatuses = ['published', 'assigned', 'in-progress'];
-                if (!validStatuses.includes(a.shift.status)) return false;
-                // Include if shift hasn't ended yet (with 2hr buffer for late clock-outs)
-                const bufferTime = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-                if (new Date(a.shift.endTime) < bufferTime) return false;
-            } else if (status === 'history') {
-                const historyStatuses = ['completed', 'approved', 'cancelled'];
-                // Also include past 'assigned' shifts that might be missed? 
-                // Or strictly follow ticket: completed, approved, cancelled.
-                if (!historyStatuses.includes(a.shift.status)) return false;
-            }
-            return true;
+    if (status === 'upcoming') {
+        conditions.push(inArray(shift.status, ['published', 'assigned', 'in-progress']));
+        // Include if shift hasn't ended yet (with 2hr buffer for late clock-outs)
+        const bufferTime = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+        conditions.push(gte(shift.endTime, bufferTime));
+    } else if (status === 'history') {
+        conditions.push(inArray(shift.status, ['completed', 'approved', 'cancelled']));
+    }
+
+    const query = db
+        .select({
+            assignment: shiftAssignment,
+            shift: shift,
+            location: {
+                ...location,
+                latitude: sql<number>`ST_Y(${location.position}::geometry)`.mapWith(Number),
+                longitude: sql<number>`ST_X(${location.position}::geometry)`.mapWith(Number)
+            },
+            organization: organization
         })
-        .map(a => mapWorkerShiftDto(a));
+        .from(shiftAssignment)
+        .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+        .leftJoin(location, eq(shift.locationId, location.id))
+        .innerJoin(organization, eq(shift.organizationId, organization.id))
+        .where(and(...conditions));
 
-    // Sort results
-    results.sort((a, b) => {
-        const dateA = new Date(a.startTime).getTime();
-        const dateB = new Date(b.startTime).getTime();
-        return status === 'upcoming' ? dateA - dateB : dateB - dateA;
+    // Sort order
+    if (status === 'upcoming') {
+        query.orderBy(asc(shift.startTime));
+    } else {
+        query.orderBy(desc(shift.startTime));
+    }
+
+    // Apply pagination at DB level
+    const rows = await query.limit(limit).offset(offset);
+
+    // Transform results
+    const results = rows.map(row => {
+        // Reconstruct the nested object structure expected by the mapper
+        const composite = {
+            ...row.assignment,
+            shift: {
+                ...row.shift,
+                location: row.location,
+                organization: row.organization
+            }
+        };
+        return mapWorkerShiftDto(composite);
     });
-
-    // Since we filtered in memory, pagination might be off if we just took 'limit' items from DB.
-    // Real implementation should ideally filter at DB level or handle pagination better.
-    // For now, adhering to ticket logic but slicing the result to limit requested.
-    // The ticket logic was logically slightly flawed for strict pagination but acceptable for MVP.
-    // We'll return the slice.
-    const paginatedResults = results.slice(0, limit);
 
     return Response.json({
-        shifts: paginatedResults,
+        shifts: results,
         pagination: {
             limit,
             offset,
-            hasMore: results.length > limit // Rough estimate
+            hasMore: results.length === limit // Simple heuristic
         }
     }, { status: 200 });
 };

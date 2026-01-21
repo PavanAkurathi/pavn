@@ -1,24 +1,29 @@
 import { db } from "@repo/database";
 import { member, user } from "@repo/database/schema";
-import { eq, notInArray, and } from "drizzle-orm";
+import { eq, notInArray, and, ilike } from "drizzle-orm";
 import { getInitials } from "../utils/formatting";
 
-export const getCrewController = async (orgId: string): Promise<Response> => {
+export const getCrewController = async (orgId: string, options: { search?: string, limit?: number, offset?: number } = {}): Promise<Response> => {
+    const { search, limit = 50, offset = 0 } = options;
+
+    const whereClause = and(
+        eq(member.organizationId, orgId),
+        notInArray(member.role, ['admin', 'owner', 'manager']),
+        search ? ilike(user.name, `%${search}%`) : undefined
+    );
+
     // Join Member -> User to get names/avatars
     const crew = await db.select({
         id: user.id,
         name: user.name,
         image: user.image,
-        role: member.role // or however you store "Bartender" vs "Server" tags
+        role: member.role
     })
         .from(member)
         .innerJoin(user, eq(member.userId, user.id))
-        .where(
-            and(
-                eq(member.organizationId, orgId),
-                notInArray(member.role, ['admin', 'owner', 'manager'])
-            )
-        );
+        .where(whereClause)
+        .limit(limit)
+        .offset(offset);
 
     const formattedCrew = crew.map(worker => ({
         id: worker.id,
