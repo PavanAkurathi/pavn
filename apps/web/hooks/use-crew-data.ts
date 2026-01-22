@@ -45,7 +45,8 @@ export function useCrewData() {
         const res = await fetch(url, {
             headers: {
                 'x-org-id': orgId || ''
-            }
+            },
+            credentials: 'include'
         });
         if (!res.ok) {
             const error = new Error('An error occurred while fetching the data.');
@@ -58,7 +59,7 @@ export function useCrewData() {
 
     const { data, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcherWithHeaders);
 
-    console.log("DEBUG: useCrewData", { shouldFetch, dataLength: data?.length, error, isLoading });
+
 
     // 3. Return robust state
     return {

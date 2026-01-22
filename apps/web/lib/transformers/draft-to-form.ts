@@ -98,7 +98,7 @@ export function transformDraftsToForm(drafts: Shift[]): FormValues | undefined {
 
             schedules.push({
                 scheduleName: scheduleName,
-                date: new Date(dateStr + "T00:00:00"),
+                dates: [new Date(dateStr + "T00:00:00")],
                 startTime: startTimeStr,
                 endTime: endTimeStr,
                 breakDuration: "0",

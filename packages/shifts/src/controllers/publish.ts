@@ -1,11 +1,10 @@
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, lt, gt, inArray } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
 import { AppError } from "@repo/observability";
 import { newId } from "../utils/ids";
-import { findOverlappingAssignment } from "../services/overlap";
 import { expandRecurringDates, RecurrenceConfig } from "../utils/recurrence";
 
 import { z } from "zod";
@@ -114,20 +113,30 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
     const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' });
     const todayStr = formatter.format(new Date()); // "2025-01-21"
 
-    const invalidPastDates: string[] = [];
-    for (const block of schedules) {
-        // WH-130: Recurrence Expansion
-        // We expand dates here primarily for VALIDATION?
-        // Actually, we should validate the *expanded* dates too?
-        // Or should we only validate the explicitly provided start dates?
-        // Ideally, if a recurrence generates a past date, it should probably be skipped or errored.
-        // Let's expand first.
+    // --- Optimization: Pre-pass to collect workers and date range for Batch Overlap Check ---
+    const allWorkerIds = new Set<string>();
+    let minDateStr = "";
+    let maxDateStr = "";
 
+    const invalidPastDates: string[] = [];
+
+    // Pre-pass loop
+    for (const block of schedules) {
         const effectiveDates = expandRecurringDates(block.dates, recurrence as RecurrenceConfig);
 
         for (const dateStr of effectiveDates) {
+            // Track Min/Max Dates
+            if (!minDateStr || dateStr < minDateStr) minDateStr = dateStr;
+            if (!maxDateStr || dateStr > maxDateStr) maxDateStr = dateStr;
+
             if (dateStr < todayStr) {
                 invalidPastDates.push(dateStr);
+            }
+        }
+
+        for (const position of block.positions) {
+            for (const wid of position.workerIds) {
+                if (wid) allWorkerIds.add(wid);
             }
         }
     }
@@ -141,6 +150,40 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
         );
     }
 
+    // Fetch Existing Assignments in Batch
+    const overlapMap = new Map<string, Array<{ startTime: Date; endTime: Date; title: string }>>();
+
+    if (allWorkerIds.size > 0 && minDateStr && maxDateStr) {
+        const uniqueWorkerIds = Array.from(allWorkerIds);
+
+        // Conservative Buffer: search from start of first day to end of last day + 48h to cover overnight/timezones
+        const searchStart = combineDateTimeTz(minDateStr, "00:00", timezone);
+        const searchEnd = addDays(combineDateTimeTz(maxDateStr, "23:59", timezone), 2);
+
+        const existing = await db.select({
+            workerId: shiftAssignment.workerId,
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            title: shift.title
+        })
+            .from(shiftAssignment)
+            .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+            .where(and(
+                inArray(shiftAssignment.workerId, uniqueWorkerIds),
+                inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress', 'completed', 'approved']),
+                lt(shift.startTime, searchEnd),
+                gt(shift.endTime, searchStart)
+            ));
+
+        // Group by Worker
+        for (const record of existing) {
+            if (!record.workerId) continue;
+            const list = overlapMap.get(record.workerId) || [];
+            list.push({ startTime: record.startTime, endTime: record.endTime, title: record.title });
+            overlapMap.set(record.workerId, list);
+        }
+    }
+
     // 1. Prepare Data in Memory (Batch Strategy)
     const shiftsToInsert: typeof shift.$inferInsert[] = [];
     const assignmentsToInsert: typeof shiftAssignment.$inferInsert[] = [];
@@ -149,9 +192,6 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
     for (const block of schedules) {
 
         // GROUPING: Generate a Layout Intent ID for this block ("Batch Context")
-        // WH-110: Use idempotencyKey if provided (shared across blocks? No, usually idempotency key represents the whole request)
-        // If we use idempotencyKey as scheduleGroupId, all blocks in this request get same ID.
-        // That matches our "Batch" concept.
         const scheduleIntentId = idempotencyKey || newId('int');
 
         // WH-130: Expand Dates
@@ -185,8 +225,6 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
                 const capacityTotal = workerIds.length;
 
                 // Determine Shift Status
-                // If any worker is assigned, shift is 'published' or 'assigned'.
-                // If no workers (all null), it's still 'published' (open slots) unless whole thing is draft.
                 const initialStatus = status === 'draft' ? 'draft' : 'published';
 
                 shiftsToInsert.push({
@@ -208,12 +246,13 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
                     // Handle null workerId (Open Spot)
                     if (workerId) {
                         // WH-119: Concurrent Shift Prevention
-                        // 1. Check DB for overlap
-                        const dbConflict = await findOverlappingAssignment({
-                            workerId,
-                            startTime: startDateTime,
-                            endTime: endDateTime
-                        });
+
+                        // 1. Check Pre-fetched Existing Overlaps
+                        const existingForWorker = overlapMap.get(workerId) || [];
+                        // Overlap Logic: (StartA < EndB) and (EndA > StartB)
+                        const dbConflict = existingForWorker.find(existing =>
+                            existing.startTime < endDateTime && existing.endTime > startDateTime
+                        );
 
                         if (dbConflict) {
                             throw new AppError(
@@ -223,7 +262,7 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
                             );
                         }
 
-                        // 2. Check In-Memory Batch for overlap
+                        // 2. Check In-Memory Batch for overlap (Current Request)
                         // We iterate existing assignments.
                         for (const existingAssign of assignmentsToInsert) {
                             if (existingAssign.workerId === workerId) {

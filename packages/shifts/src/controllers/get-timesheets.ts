@@ -61,9 +61,11 @@ function mapAssignmentStatus(status: string): TimesheetWorker['status'] {
         case 'approved':
             return 'approved';
         case 'cancelled':
+            return 'cancelled';
         case 'no_show':
-            return 'blocked';
+            return 'no-show';
         default:
+            console.warn(`[TIMESHEET] Unknown assignment status: "${status}"`);
             return 'rostered';
     }
 }

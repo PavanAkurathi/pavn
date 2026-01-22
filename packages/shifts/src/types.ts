@@ -38,5 +38,5 @@ export interface TimesheetWorker {
     clockIn?: string; // ISO string
     clockOut?: string; // ISO string
     breakMinutes: number;
-    status: 'rostered' | 'new' | 'blocked' | 'submitted' | 'approved';
+    status: 'rostered' | 'new' | 'blocked' | 'submitted' | 'approved' | 'no-show' | 'cancelled';
 }

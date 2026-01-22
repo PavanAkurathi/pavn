@@ -1,5 +1,6 @@
 // Re-export types
-export * from "./types";
+// Re-export types
+export type { Shift, ShiftStatus, TimesheetWorker } from "./types";
 // export * from "./service";
 
 export const AVAILABLE_LOCATIONS = [

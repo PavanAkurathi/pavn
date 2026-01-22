@@ -3,7 +3,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { approveShift, getShiftTimesheets } from "@/lib/api/shifts";
 import { TimesheetWorker } from "@/lib/types";
 import { toast } from "sonner";
@@ -60,28 +60,31 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
     };
 
     // Basic client-side filtering (ideally this happens on server or via API)
-    const filteredShifts = initialShifts.filter((shift) => {
-        // 1. Location
-        if (filters.location !== LOCATIONS.ALL && shift.locationName !== filters.location) {
-            return false;
-        }
-
-        // 3. Date Range
-        // Only apply date range filtering in List View.
-        // Calendar View manages its own date scope and should receive all loaded shifts.
-        if (filters.view === VIEW_MODES.LIST && filters.startDate && filters.endDate) {
-            const shiftStart = new Date(shift.startTime).getTime();
-            const start = new Date(filters.startDate).getTime();
-            // Add one day to end date to make it inclusive for the UI selection
-            const end = new Date(filters.endDate).getTime() + 86400000;
-
-            if (shiftStart < start || shiftStart >= end) {
+    // Basic client-side filtering (ideally this happens on server or via API)
+    const filteredShifts = useMemo(() => {
+        return initialShifts.filter((shift) => {
+            // 1. Location
+            if (filters.location !== LOCATIONS.ALL && shift.locationName !== filters.location) {
                 return false;
             }
-        }
 
-        return true;
-    });
+            // 3. Date Range
+            // Only apply date range filtering in List View.
+            // Calendar View manages its own date scope and should receive all loaded shifts.
+            if (filters.view === VIEW_MODES.LIST && filters.startDate && filters.endDate) {
+                const shiftStart = new Date(shift.startTime).getTime();
+                const start = new Date(filters.startDate).getTime();
+                // Add one day to end date to make it inclusive for the UI selection
+                const end = new Date(filters.endDate).getTime() + 86400000;
+
+                if (shiftStart < start || shiftStart >= end) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    }, [initialShifts, filters.location, filters.view, filters.startDate, filters.endDate]);
 
     const handleFilterUpdate = (updates: Partial<typeof filters>) => {
         setFilters((prev) => ({ ...prev, ...updates }));

@@ -4,7 +4,7 @@ import { location } from "@repo/database/schema";
 import { sql } from "drizzle-orm";
 import { geocodeAddress } from "../services/geocoding";
 import { z } from "zod";
-import { nanoid } from "nanoid";
+
 import { AppError } from "@repo/observability";
 
 import { newId } from "../utils/ids";
@@ -50,7 +50,7 @@ export const createLocationController = async (req: Request, orgId: string): Pro
 
     // Generate slug from name
     const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    const slug = `${baseSlug}-${nanoid(4)}`;
+    const slug = `${baseSlug}-${locationId.slice(-6)}`;
 
     await db.insert(location).values({
         id: locationId,

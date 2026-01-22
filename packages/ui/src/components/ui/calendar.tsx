@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker, getDefaultClassNames } from "react-day-picker"
 
 import { cn } from "../../lib/utils"
-import { buttonVariants } from "./button"
+
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -37,15 +37,12 @@ function Calendar({
           defaultClassNames.caption_label
         ),
         nav: cn("space-x-1 flex items-center", defaultClassNames.nav),
-        // 'nav_button' -> 'button_previous' / 'button_next' (there isn't a shared nav_button key in default types usually)
         button_previous: cn(
-          buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1",
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1 flex items-center justify-center border border-input rounded-md hover:bg-accent hover:text-accent-foreground",
           defaultClassNames.button_previous
         ),
         button_next: cn(
-          buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1",
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1 flex items-center justify-center border border-input rounded-md hover:bg-accent hover:text-accent-foreground",
           defaultClassNames.button_next
         ),
         // 'table' not supported in ClassNames? It relies on default.
@@ -60,16 +57,16 @@ function Calendar({
         week: cn("flex w-full mt-2", defaultClassNames.week),
         // 'cell' not supported? Styles usually go on 'day'. 
         // We will try to rely on 'day' button styling to fill space.
+        // 'day' -> Base day cell style
         day: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-11 w-full p-0 font-normal aria-selected:opacity-100 aspect-square",
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100 rounded-full flex items-center justify-center hover:bg-muted transition-colors",
           defaultClassNames.day
         ),
         // 'day_range_end' -> 'range_end'
         range_end: cn("day-range-end", defaultClassNames.range_end),
         // 'day_selected' -> 'selected'
         selected: cn(
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-full",
           defaultClassNames.selected
         ),
         // 'day_today' -> 'today'

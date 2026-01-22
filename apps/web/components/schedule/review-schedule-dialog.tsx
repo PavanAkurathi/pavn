@@ -14,27 +14,8 @@ import { AlertTriangle, CalendarDays, Users, DollarSign, Loader2 } from "lucide-
 import { format } from "date-fns";
 import { useMemo } from "react";
 
-// Reuse types from form (or define interface matching form values)
-interface PositionItem {
-    roleId: string;
-    roleName: string;
-    workerId?: string | null;
-}
-
-interface ScheduleBlock {
-    scheduleName: string;
-    date: Date;
-    startTime: string;
-    endTime: string;
-    breakDuration: string;
-    positions: PositionItem[];
-}
-
-interface FormValues {
-    locationId: string;
-    managerIds: string[];
-    schedules: ScheduleBlock[];
-}
+// Reuse types from form
+import { FormValues } from "./create-schedule-form";
 
 interface ReviewScheduleDialogProps {
     isOpen: boolean;
@@ -55,31 +36,47 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
         let estimatedCost = 0;
 
         data.schedules.forEach(schedule => {
-            if (schedule.date) {
-                uniqueDates.add(format(schedule.date, "yyyy-MM-dd"));
+            // Determine effective dates
+            let effectiveDates: Date[] = [];
+
+            if (schedule.dates && schedule.dates.length > 0) {
+                effectiveDates = schedule.dates;
+            } else if (schedule.startDate && schedule.endDate && schedule.daysOfWeek) {
+                // Expand Pattern
+                let current = new Date(schedule.startDate);
+                const end = new Date(schedule.endDate);
+                while (current <= end) {
+                    if (schedule.daysOfWeek.includes(current.getDay())) {
+                        effectiveDates.push(new Date(current));
+                    }
+                    current.setDate(current.getDate() + 1);
+                }
             }
 
-            const positionCount = schedule.positions.length;
-            totalShifts += positionCount;
+            effectiveDates.forEach(d => uniqueDates.add(format(d, "yyyy-MM-dd")));
 
-            // Cost Calculation (Mock: $20/hr * duration)
-            // Parse duration from start/end times
-            // This is rough estimate logic for now
+            const positionCount = schedule.positions.length;
+            const shiftCountForBlock = positionCount * effectiveDates.length;
+
+            totalShifts += shiftCountForBlock;
+
+            // Cost Calculation (Mock: $20/hr * duration * shifts)
             const startH = parseInt(schedule.startTime.split(':')[0] || "0");
             const endH = parseInt(schedule.endTime.split(':')[0] || "0");
             const breakM = parseInt(schedule.breakDuration || "0");
 
             let durationHours = (endH - startH);
-            if (durationHours < 0) durationHours += 24; // Overnight check (simple)
+            if (durationHours < 0) durationHours += 24;
             durationHours -= (breakM / 60);
 
             if (durationHours > 0) {
-                estimatedCost += (durationHours * 20 * positionCount);
+                estimatedCost += (durationHours * 20 * shiftCountForBlock);
             }
 
+            // Positions * Occurrences
             schedule.positions.forEach(pos => {
-                if (pos.workerId) totalAssigned++;
-                else totalOpen++;
+                if (pos.workerId) totalAssigned += effectiveDates.length;
+                else totalOpen += effectiveDates.length;
             });
         });
 

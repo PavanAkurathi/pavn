@@ -54,7 +54,7 @@ export function ContactPicker({ contacts, value = [], onValueChange }: ContactPi
                         role="combobox"
                         aria-expanded={open}
                         className={cn(
-                            "w-full justify-between h-auto py-3 text-left font-normal",
+                            "w-full justify-between h-auto min-h-16 py-3 text-left font-normal",
                             value.length === 0 && "text-muted-foreground"
                         )}
                     >

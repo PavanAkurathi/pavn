@@ -5,7 +5,7 @@
 import { useEffect } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, MoreHorizontal, Copy, Trash, HelpCircle } from "lucide-react";
+import { CalendarIcon, Plus, MoreHorizontal, Copy, Trash, HelpCircle, X } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
@@ -52,12 +52,22 @@ interface ScheduleBlockProps {
     canDelete: boolean;
     roles: Role[];
     crew: CrewMember[];
+    isRecurring: boolean;
 }
 
-export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, crew }: ScheduleBlockProps) {
+const WEEKDAYS = [
+    { label: "Sun", value: 0 },
+    { label: "Mon", value: 1 },
+    { label: "Tue", value: 2 },
+    { label: "Wed", value: 3 },
+    { label: "Thu", value: 4 },
+    { label: "Fri", value: 5 },
+    { label: "Sat", value: 6 },
+];
+
+export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, crew, isRecurring }: ScheduleBlockProps) {
     const { control, watch, setValue } = useFormContext();
     const [isPositionDialogOpen, setIsPositionDialogOpen] = useState(false);
-    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
     // Nested Field Array for Positions
     const { fields, append, remove } = useFieldArray({
@@ -78,6 +88,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
     }, [watchStartTime, index, setValue, watch]);
 
     const breakDuration = watch(`schedules.${index}.breakDuration`);
+    const watchedDates = watch(`schedules.${index}.dates`); // For Standard Mode
 
     const handlePositionsSelect = (selectedItems: PositionItem[]) => {
         // Append selected positions to the Field Array
@@ -96,107 +107,199 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <CardTitle className="text-xl font-bold">Build your schedule</CardTitle>
-                <div className="flex items-center space-x-2">
-                    <Label htmlFor={`recurring-${index}`} className="text-sm font-normal text-muted-foreground">Recurring schedule</Label>
-                    <Switch id={`recurring-${index}`} disabled />
+                <div className="space-y-1">
+                    <CardTitle className="text-xl font-semibold">Date & Times</CardTitle>
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                {/* Section 1: Name & Date & Actions */}
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold">Date & Times</span>
 
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <span className="sr-only">Open menu</span>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={onDuplicate}>
-                                    <Copy className="mr-2 h-4 w-4" />
-                                    Duplicate
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={onRemove}
-                                    disabled={!canDelete}
-                                    className="text-red-600 focus:text-red-600"
-                                >
-                                    <Trash className="mr-2 h-4 w-4" />
-                                    Delete
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                <FormField
+                    control={control}
+                    name={`schedules.${index}.scheduleName`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormControl>
+                                <Input placeholder="Schedule name (optional)" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {/* MODE SWITCHING UI */}
+                {isRecurring ? (
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={control}
+                                name={`schedules.${index}.startDate`}
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button variant={"outline"} className={cn("w-full h-12 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                        {field.value ? format(field.value, "PPP") : <span>Start date</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={control}
+                                name={`schedules.${index}.endDate`}
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <FormControl>
+                                                    <Button variant={"outline"} className={cn("w-full h-12 pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                        {field.value ? format(field.value, "PPP") : <span>End date</span>}
+                                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                    </Button>
+                                                </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    mode="single"
+                                                    selected={field.value}
+                                                    onSelect={field.onChange}
+                                                    initialFocus
+                                                    disabled={(date) => {
+                                                        const start = watch(`schedules.${index}.startDate`);
+                                                        return start ? date < start : false;
+                                                    }}
+                                                />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* Shift Days Selector */}
+                        <FormField
+                            control={control}
+                            name={`schedules.${index}.daysOfWeek`}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <Label className="text-sm font-medium mb-2 block text-muted-foreground">Shift days</Label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {WEEKDAYS.map((day) => {
+                                            const isSelected = field.value?.includes(day.value);
+                                            return (
+                                                <div
+                                                    key={day.value}
+                                                    onClick={() => {
+                                                        const current = field.value || [];
+                                                        if (isSelected) {
+                                                            field.onChange(current.filter((d: number) => d !== day.value));
+                                                        } else {
+                                                            field.onChange([...current, day.value]);
+                                                        }
+                                                    }}
+                                                    className={cn(
+                                                        "h-10 w-10 rounded-full flex items-center justify-center cursor-pointer border transition-all text-sm font-medium",
+                                                        isSelected
+                                                            ? "bg-primary text-primary-foreground border-primary"
+                                                            : "bg-background hover:bg-muted border-border text-muted-foreground"
+                                                    )}
+                                                >
+                                                    {day.label}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
-
+                ) : (
+                    // STANDARD MODE (Multi-select)
                     <FormField
                         control={control}
-                        name={`schedules.${index}.scheduleName`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormControl>
-                                    <Input placeholder="Schedule name *" {...field} className="rounded-full" />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={control}
-                        name={`schedules.${index}.date`}
+                        name={`schedules.${index}.dates`}
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
-                                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                                <Popover>
                                     <PopoverTrigger asChild>
                                         <FormControl>
                                             <Button
                                                 variant={"outline"}
                                                 className={cn(
-                                                    "w-full pl-3 text-left font-normal h-11 rounded-full",
-                                                    !field.value && "text-muted-foreground"
+                                                    "w-full pl-3 text-left font-normal min-h-12 h-auto py-2 flex justify-between items-center",
+                                                    (!field.value || field.value.length === 0) && "text-muted-foreground"
                                                 )}
                                             >
-                                                {field.value ? (
-                                                    format(field.value, "PPP")
+                                                {field.value && field.value.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-2 items-center">
+                                                        {field.value.sort((a: Date, b: Date) => a.getTime() - b.getTime()).slice(0, 4).map((date: Date) => (
+                                                            <div key={date.toISOString()} className="bg-secondary text-secondary-foreground px-2 py-1 rounded-md text-xs font-medium flex items-center gap-1 group">
+                                                                {format(date, "MMM d")}
+                                                                <div
+                                                                    role="button"
+                                                                    className="hover:bg-background/20 rounded-full p-0.5 cursor-pointer"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        field.onChange(field.value.filter((d: Date) => d.getTime() !== date.getTime()));
+                                                                    }}
+                                                                >
+                                                                    <X className="h-3 w-3" />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {field.value.length > 4 && (
+                                                            <div className="bg-muted text-muted-foreground px-2 py-1 rounded-md text-xs font-medium">
+                                                                +{field.value.length - 4} more
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 ) : (
-                                                    <span>Select date</span>
+                                                    <span>Select date(s)</span>
                                                 )}
-                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                <CalendarIcon className="h-4 w-4 opacity-50 shrink-0 ml-2" />
                                             </Button>
                                         </FormControl>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[320px] p-0 rounded-xl overflow-hidden shadow-lg border-0" align="start" sideOffset={8} collisionPadding={16}>
-                                        <div className="p-4 bg-white">
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <div className="p-2 bg-background border rounded-md">
                                             <Calendar
-                                                mode="single"
-                                                selected={field.value}
-                                                onSelect={(date) => {
-                                                    field.onChange(date);
-                                                    setIsCalendarOpen(false); // Auto-close on select
+                                                mode="multiple"
+                                                selected={field.value || []}
+                                                onSelect={field.onChange}
+                                                className="rounded-md border-0"
+                                                classNames={{
+                                                    months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full justify-center",
                                                 }}
-                                                disabled={(date) =>
-                                                    date < new Date(new Date().setHours(0, 0, 0, 0))
-                                                }
-                                                initialFocus
-                                                // Enable Year Navigation
-                                                fromYear={new Date().getFullYear()}
-                                                toYear={new Date().getFullYear() + 2}
-                                                captionLayout="dropdown"
-                                                className="border rounded-md"
+                                                min={1}
                                             />
+                                            {field.value?.length > 0 && (
+                                                <div className="p-2 border-t flex justify-end">
+                                                    <Button variant="ghost" size="sm" onClick={() => field.onChange([])}>Clear Selection</Button>
+                                                </div>
+                                            )}
                                         </div>
-                                        {/* Footer removed for smoother UX (Auto-close) */}
                                     </PopoverContent>
                                 </Popover>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-                </div>
+                )}
 
                 {/* Section 2: Times */}
                 <div className="grid grid-cols-3 gap-4">
@@ -237,12 +340,12 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                             <FormItem>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger className="rounded-full">
+                                        <SelectTrigger className="h-12">
                                             <SelectValue placeholder="Break time" />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="0">Break time</SelectItem>
+                                        <SelectItem value="0">Total unpaid break</SelectItem>
                                         <SelectItem value="15">15m</SelectItem>
                                         <SelectItem value="30">30m</SelectItem>
                                         <SelectItem value="45">45m</SelectItem>
@@ -262,7 +365,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
 
                 {/* Section 3: Positions Shell */}
                 <div className="space-y-4">
-                    <h3 className="text-sm font-semibold">Positions</h3>
+                    <h3 className="text-sm font-bold">Positions</h3>
 
                     {fields.length > 0 && (
                         <div className="mb-4">
@@ -273,7 +376,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     <Button
                         type="button"
                         variant="outline"
-                        className="w-full h-12 border-dashed border-2 text-zinc-500 bg-zinc-50/50 hover:bg-zinc-100 hover:border-zinc-400 hover:text-zinc-900"
+                        className="w-full sm:w-auto h-12 border-2 border-primary text-primary hover:bg-primary/5 hover:text-primary transition-colors font-medium px-8"
                         onClick={() => setIsPositionDialogOpen(true)}
                     >
                         <Plus className="mr-2 h-4 w-4" />

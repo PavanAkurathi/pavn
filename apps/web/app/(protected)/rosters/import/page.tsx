@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
-import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -51,7 +50,7 @@ export default function BulkImportPage() {
     };
 
     const parseFile = (file: File) => {
-        const reader = new FileReader();
+
 
         if (file.name.endsWith(".csv")) {
             Papa.parse(file, {
@@ -60,8 +59,18 @@ export default function BulkImportPage() {
                 complete: (results) => processRawData(results.data),
             });
         } else {
-            reader.onload = (e) => {
+            const reader = new FileReader(); // Move FileReader inside the block or just use it differently?
+            // Actually, we need to await the import, so parseFile needs to be async.
+            // But parseFile is called by handleFile which is sync event handler.
+            // We can make parseFile async.
+
+            // Wait, existing code has reader definition above.
+            // Let's refactor slightly to be clean.
+            // I'll replace the whole ELSE block.
+
+            reader.onload = async (e) => {
                 const data = e.target?.result;
+                const XLSX = await import("xlsx"); // Dynamic Import
                 const workbook = XLSX.read(data, { type: "binary" });
                 const sheetName = workbook.SheetNames[0];
                 if (!sheetName) {
