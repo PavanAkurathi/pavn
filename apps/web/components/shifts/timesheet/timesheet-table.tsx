@@ -23,40 +23,30 @@ import {
     DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu";
 
-// Define the shape of our data (matches what ShiftDetailView uses)
-interface TimesheetData {
-    id: string;
-    name: string;
-    avatar?: string;
-    initials?: string;
-    shiftDuration: string;
-    hourlyRate: string;
-    clockIn: string;
-    clockOut: string;
-    breakDuration: string;
-    rating?: number;
-}
+import { TimesheetViewModel, getWorkerStatus } from "@/lib/timesheet-utils";
+
+// Removed local TimesheetData in favor of shared TimesheetViewModel
 
 // Custom filter for "Issues" (Late, Missing, etc)
-const issueFilter: FilterFn<TimesheetData> = (row, columnId, value) => {
+const issueFilter: FilterFn<TimesheetViewModel> = (row, columnId, value) => {
     const worker = row.original;
     if (!value) return true; // Show all if filter is off
 
-    // Logic from ShiftDetailView to determine "Issue"
-    const isLate = !!worker.clockIn && worker.clockIn !== "05:00 PM" && worker.clockIn !== "05:00 AM";
-    const isMissing = !worker.clockIn || !worker.clockOut;
-    const isOT = !!worker.clockOut && (worker.clockOut === "12:00 AM" || worker.clockOut > "11:30 PM");
+    const status = getWorkerStatus(worker);
 
-    return isLate || isMissing || isOT;
+    // Filter matches if any variant is not default
+    return status.clockInVariant !== 'default' ||
+        status.clockOutVariant !== 'default' ||
+        status.breakVariant !== 'default';
 };
 
 interface TimesheetTableProps {
-    data: TimesheetData[];
+    data: TimesheetViewModel[];
     onUpdateWorker: (id: string, field: string, value: any) => void;
     onSaveWorker: (id: string, field: string, value: any) => void;
     isApproved: boolean;
     isCancelled: boolean;
-    getWorkerStatus: (worker: TimesheetData) => any;
+    // getWorkerStatus is now internal/shared, removed from props
 }
 
 export function TimesheetTable({
@@ -65,15 +55,13 @@ export function TimesheetTable({
     onSaveWorker,
     isApproved,
     isCancelled,
-
-    getWorkerStatus
 }: TimesheetTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState("");
     const [showIssuesOnly, setShowIssuesOnly] = useState(false);
 
     // Columns are needed for sorting, even if we render custom rows
-    const columns: ColumnDef<TimesheetData>[] = [
+    const columns: ColumnDef<TimesheetViewModel>[] = [
         { accessorKey: "name", header: "Name" },
         { accessorKey: "clockIn", header: "Clock In" },
         { accessorKey: "clockOut", header: "Clock Out" },

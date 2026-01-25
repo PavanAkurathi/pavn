@@ -13,6 +13,7 @@ import { AddWorkerDialog } from "./add-worker-dialog";
 import { Shift, TimesheetWorker } from "@/lib/types";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { getWorkerStatus, parseTimeStringToIso, UpdateTimesheetPayload } from "@/lib/timesheet-utils";
 
 interface ShiftDetailViewProps {
     onBack: () => void;
@@ -65,7 +66,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         id: string;
         field: string;
         value: any;
-        payload: any;
+        payload: UpdateTimesheetPayload;
         action: string;
         workerName: string;
         fieldLabel: string;
@@ -107,24 +108,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
 
     // Helper to calculate variants dynamically
-    const getWorkerStatus = (worker: { clockIn?: string; clockOut?: string; breakDuration?: string }) => {
-        let clockInVariant: "default" | "destructive" | "warning" = "default";
-        let clockOutVariant: "default" | "destructive" | "warning" = "default";
-        let breakVariant: "default" | "destructive" | "warning" = "default";
-
-        // Clock In Logic
-        if (!worker.clockIn) clockInVariant = "destructive"; // Missing = Red
-        else if (worker.clockIn !== "05:00 PM" && worker.clockIn !== "05:00 AM") clockInVariant = "destructive"; // Late = Red
-
-        // Clock Out Logic
-        if (!worker.clockOut) clockOutVariant = "destructive"; // Missing = Red
-        else if (worker.clockOut === "12:00 AM" || worker.clockOut > "11:30 PM") clockOutVariant = "warning"; // OT = Amber
-
-        // Break Logic
-        if (!worker.breakDuration || worker.breakDuration === "0 min") breakVariant = "destructive"; // Missing/Zero = Red
-
-        return { clockInVariant, clockOutVariant, breakVariant };
-    };
+    // Logic moved to @/lib/timesheet-utils
 
     // Calculate generic error state (Blocking ONLY if data is MISSING)
     // "disable the button only when the clock in or clock out or breaks are not avaiable"
@@ -192,52 +176,21 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         try {
             const shiftDate = new Date(shift.startTime); // Base date
 
-            const parseTime = (timeStr: string) => {
-                if (!timeStr) return undefined;
-                // Parse "05:00 PM"
-                const parts = timeStr.split(' ');
-                if (parts.length < 2) return undefined;
-
-                const [time, period] = parts;
-                if (!time) return undefined;
-
-                const timeParts = time.split(':');
-                if (timeParts.length < 2) return undefined;
-
-                const [hours, minutes] = timeParts.map(Number);
-                if (hours === undefined || minutes === undefined) return undefined;
-
-                let date = new Date(shiftDate);
-                let h = hours;
-                if (period === 'PM' && h !== 12) h += 12;
-                if (period === 'AM' && h === 12) h = 0;
-                date.setHours(h, minutes, 0, 0);
-
-                return date.toISOString();
-            };
-
             // We need to re-construct the payload with ISO strings
             if (field === 'clockIn') {
-                data.clockIn = parseTime(value);
-                // Send existing output too?
-                // If we only send one, backend might nullify others if not careful?
-                // Backend: const clockIn = data?.clockIn ... const clockOut = data?.clockOut
-                // Backend checks `if (data?.clockIn)`. So partial update is OK?
-                // Backend: "const clockIn = data?.clockIn ? ... : null" -> This implies if we DON'T send it, it becomes NULL?
-                // Let's check backend line 58: "const clockIn = data?.clockIn ? ... : null"
-                // line 59: "const clockOut = ... : null"
-                // line 73: db.update... set({ clockIn, clockOut })
-                // YES, it OVERWRITES with null if missing. We must send BOTH.
+                data.clockIn = parseTimeStringToIso(value, shiftDate);
+                // Send existing output too
+                // Backend overwrites with null if missing. We must send BOTH.
 
-                data.clockOut = parseTime(latestWorker.clockOut);
+                data.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
                 data.breakMinutes = parseInt(latestWorker.breakDuration) || 0; // "30 min" -> 30
             } else if (field === 'clockOut') {
-                data.clockIn = parseTime(latestWorker.clockIn);
-                data.clockOut = parseTime(value);
+                data.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
+                data.clockOut = parseTimeStringToIso(value, shiftDate);
                 data.breakMinutes = parseInt(latestWorker.breakDuration) || 0;
             } else if (field === 'breakDuration') {
-                data.clockIn = parseTime(latestWorker.clockIn);
-                data.clockOut = parseTime(latestWorker.clockOut);
+                data.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
+                data.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
                 data.breakMinutes = parseInt(value) || 0;
             }
 
@@ -328,7 +281,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 onSaveWorker={saveTimesheetEntry}
                 isApproved={isApproved}
                 isCancelled={isCancelled}
-                getWorkerStatus={getWorkerStatus}
             />
 
             {!isCancelled && (

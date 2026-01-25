@@ -2,22 +2,9 @@
 import useSWR from "swr";
 import { authClient } from "@repo/auth/client";
 
-export interface LocationOption {
-    id: string;
-    name: string;
-    address: string;
-    timezone?: string;
-}
+import { Location, Contact } from "@/lib/types";
 
-export interface ContactOption {
-    id: string; // This is the User ID now (to match DB FK)
-    memberId?: string; // Original Member ID
-    userId: string; // Linked user account
-    name: string;
-    phone: string;
-    initials: string;
-    role: string;
-}
+// Removed local LocationOption and ContactOption interfaces in favor of shared types
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -31,7 +18,7 @@ export function useOrganizationId() {
 export function useLocations() {
     const orgId = useOrganizationId();
 
-    const { data, error, isLoading, mutate } = useSWR<LocationOption[]>(
+    const { data, error, isLoading, mutate } = useSWR<Location[]>(
         orgId ? `/api/organizations/${orgId}/locations` : null,
         fetcher
     );
@@ -47,7 +34,7 @@ export function useLocations() {
 export function useContacts() {
     const orgId = useOrganizationId();
 
-    const { data, error, isLoading } = useSWR<ContactOption[]>(
+    const { data, error, isLoading } = useSWR<Contact[]>(
         orgId ? `/api/organizations/${orgId}/members` : null,
         fetcher
     );

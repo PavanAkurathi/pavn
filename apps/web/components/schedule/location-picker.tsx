@@ -18,10 +18,10 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@repo/ui/components/ui/popover";
-import { LocationOption } from "@/hooks/use-schedule-data";
+import { Location } from "@/lib/types";
 
 interface LocationPickerProps {
-    locations: LocationOption[];
+    locations: Location[];
     value: string;
     onValueChange: (value: string) => void;
     onAddLocation?: () => void;

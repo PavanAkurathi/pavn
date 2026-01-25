@@ -15,12 +15,12 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@repo/ui/components/ui/popover";
-import { ContactOption } from "@/hooks/use-schedule-data";
+import { Contact } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
 
 interface ContactPickerProps {
-    contacts: ContactOption[];
+    contacts: Contact[];
     value: string[];
     onValueChange: (value: string[]) => void;
 }

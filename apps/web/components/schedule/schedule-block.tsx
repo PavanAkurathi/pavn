@@ -201,8 +201,10 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                         {WEEKDAYS.map((day) => {
                                             const isSelected = field.value?.includes(day.value);
                                             return (
-                                                <div
+                                                <Button
                                                     key={day.value}
+                                                    type="button"
+                                                    variant="outline"
                                                     onClick={() => {
                                                         const current = field.value || [];
                                                         if (isSelected) {
@@ -212,14 +214,14 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                         }
                                                     }}
                                                     className={cn(
-                                                        "h-10 w-10 rounded-full flex items-center justify-center cursor-pointer border transition-all text-sm font-medium",
+                                                        "h-10 w-10 rounded-full p-0 transition-all font-medium",
                                                         isSelected
-                                                            ? "bg-primary text-primary-foreground border-primary"
-                                                            : "bg-background hover:bg-muted border-border text-muted-foreground"
+                                                            ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground"
+                                                            : "bg-background hover:bg-muted text-muted-foreground hover:text-foreground"
                                                     )}
                                                 >
                                                     {day.label}
-                                                </div>
+                                                </Button>
                                             )
                                         })}
                                     </div>

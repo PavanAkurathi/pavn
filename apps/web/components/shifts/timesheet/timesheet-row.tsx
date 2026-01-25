@@ -150,12 +150,14 @@ export function TimesheetRow({
                 <span className="text-xs text-muted-foreground md:hidden">Rating</span>
                 <div className="flex items-center gap-1 justify-center">
                     {[1, 2, 3, 4, 5].map((star) => (
-                        <button
+                        <Button
                             key={star}
+                            variant="ghost"
+                            size="icon"
                             onClick={() => onRatingChange?.(star)}
-                            className="focus:outline-none disabled:cursor-not-allowed"
-                            type="button"
                             disabled={disabled}
+                            className="h-8 w-8 hover:bg-transparent"
+                            type="button"
                         >
                             <Star
                                 className={cn(
@@ -165,7 +167,7 @@ export function TimesheetRow({
                                         : "fill-muted/20 text-muted-foreground/40 hover:text-yellow-400/50"
                                 )}
                             />
-                        </button>
+                        </Button>
                     ))}
                 </div>
             </div>

@@ -16,11 +16,11 @@ import { SHIFT_STATUS, LOCATIONS, VIEW_MODES } from "@/lib/constants";
 import { useCrewData, CrewMember } from "@/hooks/use-crew-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { filterActiveShifts, filterNeedsApprovalShifts, filterHistoryShifts } from "@/lib/shifts/view-list";
-import type { Shift } from "@/lib/types";
+import type { Shift, Location } from "@/lib/types";
 
 interface ShiftsViewProps {
     initialShifts: Shift[];
-    availableLocations: any[]; // Updated to accept object structure from packages/shifts
+    availableLocations: Location[];
     defaultTab?: string;
     pendingCount: number;
 }
@@ -34,13 +34,20 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
 
     const { crew } = useCrewData();
 
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<{
+        location: string;
+        status: string;
+        view: string;
+        startDate: string | null;
+        endDate: string | null;
+        workerId: string | null;
+    }>({
         location: LOCATIONS.ALL,
         status: SHIFT_STATUS.ALL,
         view: VIEW_MODES.LIST,
-        startDate: null as string | null,
-        endDate: null as string | null,
-        workerId: null as string | null,
+        startDate: null,
+        endDate: null,
+        workerId: null,
     });
 
     // -- DETAIL VIEW DATA FETCHING --

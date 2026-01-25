@@ -20,9 +20,7 @@ export default withSentryConfig(nextConfig, {
     widenClientFileUpload: true,
 
     // Automatically annotate React components to show their full name in stack traces (increases bundle size)
-    reactComponentAnnotation: {
-        enabled: true,
-    },
+    // moved to webpack.reactComponentAnnotation
 
     // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
     // This can increase your server load as well as your hosting bill.
@@ -33,12 +31,14 @@ export default withSentryConfig(nextConfig, {
     // Hides source maps from generated client bundles
     hideSourceMaps: true,
 
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
-
-    // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
-    // See the following for more information:
-    // https://docs.sentry.io/product/crons/
-    // https://vercel.com/docs/cron-jobs
-    automaticVercelMonitors: true,
+    // Sentry Webpack Plugin Options
+    webpack: {
+        reactComponentAnnotation: {
+            enabled: true,
+        },
+        treeshake: {
+            removeDebugLogging: true,
+        },
+        automaticVercelMonitors: true,
+    },
 });
