@@ -13,6 +13,7 @@ import { CalendarView } from "./calendar-view";
 import { EventFilters } from "./event-filters";
 import { ShiftDetailView } from "./shift-detail-view";
 import { SHIFT_STATUS, LOCATIONS, VIEW_MODES } from "@/lib/constants";
+import { useCrewData, CrewMember } from "@/hooks/use-crew-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { filterActiveShifts, filterNeedsApprovalShifts, filterHistoryShifts } from "@/lib/shifts/view-list";
 import type { Shift } from "@/lib/types";
@@ -31,12 +32,15 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
     // Derive selection from URL
     const selectedShiftId = searchParams.get("shiftId");
 
+    const { crew } = useCrewData();
+
     const [filters, setFilters] = useState({
         location: LOCATIONS.ALL,
         status: SHIFT_STATUS.ALL,
         view: VIEW_MODES.LIST,
         startDate: null as string | null,
         endDate: null as string | null,
+        workerId: null as string | null,
     });
 
     // -- DETAIL VIEW DATA FETCHING --
@@ -68,7 +72,13 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                 return false;
             }
 
-            // 3. Date Range
+            // 3. Worker
+            if (filters.workerId) {
+                const hasWorker = shift.assignedWorkers?.some(w => w.id === filters.workerId);
+                if (!hasWorker) return false;
+            }
+
+            // 4. Date Range
             // Only apply date range filtering in List View.
             // Calendar View manages its own date scope and should receive all loaded shifts.
             if (filters.view === VIEW_MODES.LIST && filters.startDate && filters.endDate) {
@@ -84,7 +94,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
 
             return true;
         });
-    }, [initialShifts, filters.location, filters.view, filters.startDate, filters.endDate]);
+    }, [initialShifts, filters.location, filters.view, filters.startDate, filters.endDate, filters.workerId]);
 
     const handleFilterUpdate = (updates: Partial<typeof filters>) => {
         setFilters((prev) => ({ ...prev, ...updates }));
@@ -153,6 +163,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                 filters={filters}
                 setFilters={handleFilterUpdate}
                 availableLocations={availableLocations}
+                availableWorkers={crew}
             />
 
             <div className="mt-6">

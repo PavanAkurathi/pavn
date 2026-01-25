@@ -53,6 +53,7 @@ const issueFilter: FilterFn<TimesheetData> = (row, columnId, value) => {
 interface TimesheetTableProps {
     data: TimesheetData[];
     onUpdateWorker: (id: string, field: string, value: any) => void;
+    onSaveWorker: (id: string, field: string, value: any) => void;
     isApproved: boolean;
     isCancelled: boolean;
     getWorkerStatus: (worker: TimesheetData) => any;
@@ -61,8 +62,10 @@ interface TimesheetTableProps {
 export function TimesheetTable({
     data,
     onUpdateWorker,
+    onSaveWorker,
     isApproved,
     isCancelled,
+
     getWorkerStatus
 }: TimesheetTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -189,6 +192,8 @@ export function TimesheetTable({
                                     onClockInChange={(val) => onUpdateWorker(worker.id, "clockIn", val)}
                                     onClockOutChange={(val) => onUpdateWorker(worker.id, "clockOut", val)}
                                     onBreakChange={(val) => onUpdateWorker(worker.id, "breakDuration", val)}
+                                    // Pass save handler for onBlur events
+                                    onSave={(field, val) => onSaveWorker(worker.id, field, val)}
                                     onRatingChange={(r) => onUpdateWorker(worker.id, "rating", r)}
                                     onWriteUp={() => console.log("Write Up", worker.name)}
                                     onAddToRoster={() => console.log("Add", worker.name)}

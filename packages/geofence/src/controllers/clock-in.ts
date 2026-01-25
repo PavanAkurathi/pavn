@@ -7,6 +7,8 @@ import { z } from "zod";
 import { nanoid } from "nanoid";
 import { applyClockInRules } from "../utils/time-rules";
 import { validateShiftTransition } from "@repo/config";
+import { cancelNotificationByType } from "@repo/notifications";
+import { notifyManagers } from "../utils/manager-notifications";
 
 const ClockInSchema = z.object({
     shiftId: z.string(),
@@ -43,7 +45,8 @@ export async function clockInController(
             with: {
                 location: true,
                 assignments: {
-                    where: eq(shiftAssignment.workerId, workerId)
+                    where: eq(shiftAssignment.workerId, workerId),
+                    with: { worker: true }
                 }
             }
         });
@@ -56,6 +59,7 @@ export async function clockInController(
         if (!assignment) {
             return Response.json({ error: "You are not assigned to this shift" }, { status: 403 });
         }
+
 
         if (assignment.clockIn) {
             return Response.json({
@@ -165,6 +169,25 @@ export async function clockInController(
             });
         });
 
+        // 6. Cancel pending notifications (Cleanup)
+        // Fire and forget (caught) to not block the response
+        try {
+            await Promise.all([
+                cancelNotificationByType(shiftId, workerId, 'shift_start'),
+                cancelNotificationByType(shiftId, workerId, 'late_warning'), // Also cancel late warning (WH-206 prep or included)
+                // Actually the plan for WH-205 says shift_start and 15_min.
+                // WH-206 says "Cancel Late Warning".
+                // I'll do 15_min and shift_start as per plan WH-205.
+                cancelNotificationByType(shiftId, workerId, '15_min')
+            ]);
+        } catch (cleanupError) {
+            console.error("[CLOCK_IN] Failed to cancel notifications:", cleanupError);
+        }
+
+        // 7. Notify Managers (Async, fire and forget)
+        notifyManagers('clock-in', shiftRecord, assignment.worker?.name || "Unknown Worker").catch(err => {
+            console.error("[CLOCK_IN] Failed to notify managers:", err);
+        });
         // 8. Return success
         return Response.json({
             success: true,

@@ -34,6 +34,7 @@ interface TimesheetRowProps {
     onClockInChange?: (value: string) => void;
     onClockOutChange?: (value: string) => void;
     onBreakChange?: (value: string) => void;
+    onSave?: (field: string, value: any) => void;
     onRatingChange?: (rating: number) => void;
     onWriteUp?: () => void;
 }
@@ -70,6 +71,7 @@ export function TimesheetRow({
     onBreakChange,
     onRatingChange,
     onWriteUp,
+    onSave,
 }: TimesheetRowProps) {
     return (
         <div className={cn(
@@ -94,6 +96,7 @@ export function TimesheetRow({
                 <TimePicker
                     value={clockIn}
                     onChange={onClockInChange}
+                    onBlur={() => onSave?.('clockIn', clockIn)}
                     className={cn("font-mono text-sm", getVariantClass(clockInVariant))}
                     disabled={disabled}
                     placeholder="00:00"
@@ -106,6 +109,7 @@ export function TimesheetRow({
                 <TimePicker
                     value={clockOut}
                     onChange={onClockOutChange}
+                    onBlur={() => onSave?.('clockOut', clockOut)}
                     className={cn("font-mono text-sm", getVariantClass(clockOutVariant))}
                     disabled={disabled}
                     placeholder="00:00"
@@ -115,7 +119,18 @@ export function TimesheetRow({
             {/* 4. Total Unpaid Break */}
             <div className="flex flex-col gap-1.5 md:w-[150px]">
                 <span className="text-xs text-muted-foreground md:hidden">Break</span>
-                <Select value={breakDuration} onValueChange={onBreakChange} disabled={disabled}>
+                <Select
+                    value={breakDuration}
+                    onValueChange={(val) => {
+                        onBreakChange?.(val);
+                        // For Select, we must save immediately as there is no blur equivalent for the composite component easily exposed
+                        // But we should defer slightly or just call save. 
+                        // Since onBreakChange updates state, we might save 'old' value if we call immediately? 
+                        // Actually onSave uses the passed val if we pass it.
+                        onSave?.('breakDuration', val);
+                    }}
+                    disabled={disabled}
+                >
                     <SelectTrigger className={cn("rounded-full font-mono text-sm", getVariantClass(breakVariant))}>
                         <SelectValue placeholder="Select duration" />
                     </SelectTrigger>

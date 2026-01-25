@@ -1,18 +1,20 @@
 import { db } from "@repo/database";
-import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and, lt, gt, inArray } from "drizzle-orm";
+import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location } from "@repo/database/schema";
+import { eq, and, lt, gt, inArray, like, sql } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
 import { AppError } from "@repo/observability";
 import { newId } from "../utils/ids";
 import { expandRecurringDates, RecurrenceConfig } from "../utils/recurrence";
+import { createHash } from "crypto";
+import { buildNotificationSchedule } from "@repo/notifications";
 
 import { z } from "zod";
 
-// Rate Limiting (In-Memory for MVP)
+// Rate Limiting
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 10;
-const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+// const rateLimitMap = new Map<string, { count: number; windowStart: number }>(); // Removed [ARCH-005]
 
 const PublishSchema = z.object({
     idempotencyKey: z.string().optional(), // WH-110: Allow client to pass unique key
@@ -51,20 +53,41 @@ const PublishSchema = z.object({
 
 export const publishScheduleController = async (req: Request, headerOrgId: string): Promise<Response> => {
     // WH-111: Rate Limiting
-    const now = Date.now();
-    const record = rateLimitMap.get(headerOrgId) || { count: 0, windowStart: now };
+    // WH-111 / WH-140 [ARCH-005]: Persistent Rate Limiting
+    const rateLimitKey = `publish_schedule:${headerOrgId}`;
+    const windowMs = RATE_LIMIT_WINDOW;
+    const nowMs = Date.now();
 
-    if (now - record.windowStart > RATE_LIMIT_WINDOW) {
-        record.count = 1;
-        record.windowStart = now;
-    } else {
-        record.count++;
-    }
-    rateLimitMap.set(headerOrgId, record);
+    const [limitState] = await db
+        .insert(rateLimitState)
+        .values({
+            key: rateLimitKey,
+            count: 1,
+            windowStart: String(nowMs) // Store as string for decimal type
+        })
+        .onConflictDoUpdate({
+            target: rateLimitState.key,
+            set: {
+                // If window expired (diff > windowMs), reset count to 1 and update windowStart.
+                // Else increment count.
+                // Note: Drizzle `sql` helper needed for atomic logic inside update
+                count: sql`CASE 
+                    WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN 1 
+                    ELSE ${rateLimitState.count} + 1 
+                END`,
+                windowStart: sql`CASE 
+                    WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN ${String(nowMs)} 
+                    ELSE ${rateLimitState.windowStart} 
+                END`
+            }
+        })
+        .returning();
 
-    if (record.count > MAX_REQUESTS) {
+    if (limitState && limitState.count > MAX_REQUESTS) {
+        const windowStart = Number(limitState.windowStart);
+        const retryAfter = Math.ceil((windowStart + windowMs - nowMs) / 1000);
         throw new AppError("Rate limit exceeded. Please try again later.", "RATE_LIMIT_EXCEEDED", 429, {
-            retryAfter: Math.ceil((record.windowStart + RATE_LIMIT_WINDOW - now) / 1000)
+            retryAfter: retryAfter > 0 ? retryAfter : 60
         });
     }
 
@@ -86,26 +109,39 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
     // Force use of header-derived orgId
     const activeOrgId = headerOrgId;
 
-    // WH-110: Idempotency Check
-    // If client provided a key, check if we already processed it.
-    // We check if any shift exists with this scheduleGroupId.
+    // WH-140: Robust Idempotency with Payload Hashing
+    // Generate a deterministic hash of the critical payload configuration
+    // We include schedules and recurrence settings.
+    const payloadString = JSON.stringify({ schedules, recurrence, locationId, organizationId });
+    const payloadHash = createHash('sha256').update(payloadString).digest('hex');
+
+    // WH-110: Idempotency Check [ARCH-007: Decoupled Table]
     if (idempotencyKey) {
-        const existingBatch = await db.query.shift.findFirst({
+        const existingKey = await db.query.idempotencyKey.findFirst({
             where: and(
-                eq(shift.organizationId, activeOrgId),
-                eq(shift.scheduleGroupId, idempotencyKey)
-            ),
-            columns: { id: true, createdAt: true }
+                eq(idempotencyKeyTable.key, idempotencyKey),
+                eq(idempotencyKeyTable.organizationId, activeOrgId)
+            )
         });
 
-        if (existingBatch) {
-            console.log(`Idempotency hit for key: ${idempotencyKey}`);
-            return Response.json({
-                success: true,
-                message: "Batch already processed (Idempotent)",
-                batchId: idempotencyKey,
-                processedAt: existingBatch.createdAt
-            }, { status: 200 });
+        if (existingKey) {
+            if (existingKey.hash === payloadHash) {
+                console.log(`Idempotency hit for key: ${idempotencyKey}`);
+                // Return cached response logic could go here if we stored it
+                return Response.json({
+                    success: true,
+                    message: "Batch already processed (Idempotent)",
+                    batchId: idempotencyKey,
+                    processedAt: existingKey.createdAt
+                }, { status: 200 });
+            } else {
+                console.warn(`Idempotency Conflict: Key ${idempotencyKey} leveraged with different payload.`);
+                throw new AppError(
+                    "Idempotency Key Usage Conflict: This key has already been used.",
+                    "IDEMPOTENCY_CONFLICT",
+                    409
+                );
+            }
         }
     }
 
@@ -152,6 +188,7 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
 
     // Fetch Existing Assignments in Batch
     const overlapMap = new Map<string, Array<{ startTime: Date; endTime: Date; title: string }>>();
+    const availabilityMap = new Map<string, Array<{ startTime: Date; endTime: Date; type: string }>>();
 
     if (allWorkerIds.size > 0 && minDateStr && maxDateStr) {
         const uniqueWorkerIds = Array.from(allWorkerIds);
@@ -160,20 +197,31 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
         const searchStart = combineDateTimeTz(minDateStr, "00:00", timezone);
         const searchEnd = addDays(combineDateTimeTz(maxDateStr, "23:59", timezone), 2);
 
-        const existing = await db.select({
-            workerId: shiftAssignment.workerId,
-            startTime: shift.startTime,
-            endTime: shift.endTime,
-            title: shift.title
-        })
-            .from(shiftAssignment)
-            .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
-            .where(and(
-                inArray(shiftAssignment.workerId, uniqueWorkerIds),
-                inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress', 'completed', 'approved']),
-                lt(shift.startTime, searchEnd),
-                gt(shift.endTime, searchStart)
-            ));
+        const [existing, availabilityRecords] = await Promise.all([
+            db.select({
+                workerId: shiftAssignment.workerId,
+                startTime: shift.startTime,
+                endTime: shift.endTime,
+                title: shift.title
+            })
+                .from(shiftAssignment)
+                .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+                .where(and(
+                    inArray(shiftAssignment.workerId, uniqueWorkerIds),
+                    inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress', 'completed', 'approved']),
+                    eq(shift.organizationId, activeOrgId), // [SEC-CRITICAL] Scope to Org to prevent cross-tenant leak
+                    lt(shift.startTime, searchEnd),
+                    gt(shift.endTime, searchStart)
+                )),
+
+            db.query.workerAvailability.findMany({
+                where: and(
+                    inArray(workerAvailability.workerId, uniqueWorkerIds),
+                    lt(workerAvailability.startTime, searchEnd),
+                    gt(workerAvailability.endTime, searchStart)
+                )
+            })
+        ]);
 
         // Group by Worker
         for (const record of existing) {
@@ -181,6 +229,14 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
             const list = overlapMap.get(record.workerId) || [];
             list.push({ startTime: record.startTime, endTime: record.endTime, title: record.title });
             overlapMap.set(record.workerId, list);
+        }
+
+        // Group Availability
+        for (const record of availabilityRecords) {
+            if (!record.workerId) continue;
+            const list = availabilityMap.get(record.workerId) || [];
+            list.push({ startTime: record.startTime, endTime: record.endTime, type: record.type });
+            availabilityMap.set(record.workerId, list);
         }
     }
 
@@ -192,7 +248,8 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
     for (const block of schedules) {
 
         // GROUPING: Generate a Layout Intent ID for this block ("Batch Context")
-        const scheduleIntentId = idempotencyKey || newId('int');
+        // [ARCH-007] Decoupled: Always generate a fresh internal ID. Idempotency is handled via table.
+        const scheduleIntentId = newId('int');
 
         // WH-130: Expand Dates
         const effectiveDates = expandRecurringDates(block.dates, recurrence as RecurrenceConfig);
@@ -262,6 +319,22 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
                             );
                         }
 
+                        // [AVL-004] Check Availability
+                        const workerAvailabilityFromDb = availabilityMap.get(workerId) || [];
+                        const availabilityConflict = workerAvailabilityFromDb.find(a =>
+                            a.type === 'unavailable' &&
+                            a.startTime < endDateTime &&
+                            a.endTime > startDateTime
+                        );
+
+                        if (availabilityConflict) {
+                            throw new AppError(
+                                `Worker ${workerId} is unavailable during this time`,
+                                "AVAILABILITY_CONFLICT",
+                                409
+                            );
+                        }
+
                         // 2. Check In-Memory Batch for overlap (Current Request)
                         // We iterate existing assignments.
                         for (const existingAssign of assignmentsToInsert) {
@@ -293,6 +366,13 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
         }
     }
 
+    // WH-204: Fetch location name for notification body
+    const locationRecord = await db.query.location.findFirst({
+        where: eq(location.id, locationId),
+        columns: { name: true }
+    });
+    const venueName = locationRecord?.name || 'the venue';
+
     // 2. Execute Batch Inserts (Atomic Transaction)
     await db.transaction(async (tx) => {
         if (shiftsToInsert.length > 0) {
@@ -301,6 +381,49 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
 
         if (assignmentsToInsert.length > 0) {
             await tx.insert(shiftAssignment).values(assignmentsToInsert);
+        }
+
+        // [ARCH-007] Record Idempotency Key
+        if (idempotencyKey) {
+            await tx.insert(idempotencyKeyTable).values({
+                key: idempotencyKey,
+                organizationId: activeOrgId,
+                hash: payloadHash,
+                expiresAt: addDays(new Date(), 7) // 7 day retention for keys
+            });
+        }
+
+        // WH-204: Schedule Notifications
+        if (status === 'published' && assignmentsToInsert.length > 0) {
+            const notificationsToInsert: typeof scheduledNotification.$inferInsert[] = [];
+
+            for (const assignment of assignmentsToInsert) {
+                if (!assignment.workerId) continue;
+
+                const shiftData = shiftsToInsert.find(s => s.id === assignment.shiftId);
+                if (!shiftData) continue;
+
+                const schedule = await buildNotificationSchedule(
+                    assignment.workerId,
+                    assignment.shiftId,
+                    activeOrgId,
+                    shiftData.startTime as Date,
+                    shiftData.title,
+                    venueName
+                );
+
+                notificationsToInsert.push(...schedule);
+            }
+
+            if (notificationsToInsert.length > 0) {
+                // Batch insert in chunks of 100
+                const CHUNK_SIZE = 100;
+                for (let i = 0; i < notificationsToInsert.length; i += CHUNK_SIZE) {
+                    const chunk = notificationsToInsert.slice(i, i + CHUNK_SIZE);
+                    await tx.insert(scheduledNotification).values(chunk);
+                }
+                console.log(`[PUBLISH] Scheduled ${notificationsToInsert.length} notifications`);
+            }
         }
     });
 

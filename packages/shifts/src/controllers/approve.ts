@@ -2,15 +2,28 @@
 
 import { db } from "@repo/database";
 import { shift, shiftAssignment, organization, member } from "@repo/database/schema";
-import { eq, and, inArray } from "drizzle-orm";
-import { logAudit, logShiftChange, AppError } from "@repo/observability";
+import { eq, and, inArray, sql } from "drizzle-orm";
+import { logAudit, AppError } from "@repo/observability";
 import { differenceInMinutes, addMinutes } from "date-fns";
-
+import { calculateShiftPay } from "../utils/calculations";
 import { validateShiftTransition, ShiftStatus } from "@repo/config";
 
-export const approveShiftController = async (shiftId: string, orgId: string) => {
+export const approveShiftController = async (shiftId: string, orgId: string, actorId: string) => {
     // 1. Get Shift & Assignments
     const result = await db.transaction(async (tx) => {
+        // [SEC-003] Internal Actor Permission Validation
+        const memberRecord = await tx.query.member.findFirst({
+            where: and(
+                eq(member.organizationId, orgId),
+                eq(member.userId, actorId)
+            ),
+            columns: { role: true }
+        });
+
+        if (!memberRecord || !['admin', 'manager', 'owner'].includes(memberRecord.role)) {
+            throw new AppError("Insufficient permissions to approve shifts", "FORBIDDEN", 403);
+        }
+
         const shiftRecord = await tx.query.shift.findFirst({
             where: and(
                 eq(shift.id, shiftId),
@@ -25,7 +38,7 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
             throw new AppError("Shift not found", "SHIFT_NOT_FOUND", 404);
         }
 
-        // WH-009: Validate Transition
+        // Validate Transition
         try {
             validateShiftTransition(shiftRecord.status as ShiftStatus, 'approved');
         } catch (e) {
@@ -33,11 +46,6 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
                 throw new AppError(e.message, "INVALID_TRANSITION", 400);
             }
             throw e;
-        }
-
-        // 2. Validate Status (Redundant check kept for strictness if needed, or remove)
-        if (!['completed', 'assigned'].includes(shiftRecord.status)) {
-            // Logic covered by validateShiftTransition, but keeping for safety if config changes
         }
 
         // 2. Audit Assignments
@@ -49,6 +57,7 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
             hourlyRateSnapshot: number | null;
             breakMinutes: number;
             adjustmentNotes: string | null;
+            workerId: string; // Needed for audit
         }[] = [];
 
         for (const assign of shiftRecord.assignments) {
@@ -60,7 +69,8 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
                     grossPayCents: 0,
                     hourlyRateSnapshot: null,
                     breakMinutes: 0,
-                    adjustmentNotes: null
+                    adjustmentNotes: null,
+                    workerId: assign.workerId
                 });
                 continue;
             }
@@ -73,21 +83,53 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
 
             // CASE: Valid (Calculate Pay)
             if (assign.clockIn && assign.clockOut) {
-                // ... (Calculation logic identical to original)
                 const scheduledStart = new Date(shiftRecord.startTime);
+                const scheduledEnd = new Date(shiftRecord.endTime);
                 const actualClockIn = new Date(assign.clockIn);
-                const GRACE_PERIOD_MINUTES = 5;
+                const actualClockOut = new Date(assign.clockOut);
 
-                const useScheduledStart = actualClockIn <= addMinutes(scheduledStart, GRACE_PERIOD_MINUTES);
+                const START_GRACE_PERIOD = 5; // Minutes to snap start time
+                const END_GRACE_PERIOD = 5; // [FIN-004] Minutes to snap end time
+
+                const useScheduledStart = actualClockIn <= addMinutes(scheduledStart, START_GRACE_PERIOD);
                 const effectiveStart = useScheduledStart ? scheduledStart : actualClockIn;
-                const totalMinutes = differenceInMinutes(assign.clockOut, effectiveStart);
+
+                // [FIN-004] Symmetric Grace Period for Clock Out
+                // If worker clocks out slightly early (within 5 mins of end), pay them until scheduled end.
+                // Logic: if actualClockOut >= (scheduledEnd - 5m) -> effectiveEnd = scheduledEnd
+                // Note: We also cap at scheduledEnd usually? Or do we pay OT? 
+                // Current logic seems to just use difference.
+                // Requirement says "Snap effectiveEnd to scheduledEnd if worker clocks out within grace window".
+                // Assuming this means "snap UP" to scheduled end.
+                const earlyGraceThreshold = addMinutes(scheduledEnd, -END_GRACE_PERIOD);
+                const useScheduledEnd = actualClockOut >= earlyGraceThreshold; // If they left within 5 mins of end (or later)
+
+                const effectiveEnd = useScheduledEnd ? scheduledEnd : actualClockOut;
+
+                // If they stayed LATE, effectiveEnd is scheduledEnd per "snap" logic? 
+                // User requirement: "Snap effectiveEnd to scheduledEnd if the worker clocks out within the grace window"
+                // Usually this means "don't penalize early leave". But if they stay late, we usually pay them (OT).
+                // Let's refine: The request specifically says "payroll logic... docks pay for actualClockOut even if it is 1 minute early".
+                // So we want to PREVENT docking.
+                // Case 1: 5:00 PM end. Clock out 4:58 PM. -> Pay until 5:00 PM.
+                // Case 2: 5:00 PM end. Clock out 5:15 PM. -> Pay until 5:15 PM (unless specific overtime rules, but base requirement implies fixing the early penalty).
+                // If useScheduledEnd is true, we snap to scheduledEnd.
+                // Wait: if actualClockOut is 5:15 PM, that is > earlyGraceThreshold (4:55). So useScheduledEnd=true -> Snap to 5:00 PM.
+                // This would effectively KILL overtime pay if we blindly snap.
+                // We should only snap if `actualClockOut < scheduledEnd`.
+
+                let calculatedEnd = actualClockOut;
+                if (actualClockOut < scheduledEnd && actualClockOut >= earlyGraceThreshold) {
+                    calculatedEnd = scheduledEnd;
+                }
+
+                const totalMinutes = differenceInMinutes(calculatedEnd, effectiveStart);
 
                 if (totalMinutes < 0) {
                     dirtyAssignments.push(assign.workerId);
                     continue;
                 }
 
-                // WH-126: Trust Manager Break Logic
                 const breakMinutes = assign.breakMinutes || 0;
 
                 if (breakMinutes < 0 || breakMinutes >= totalMinutes) {
@@ -96,12 +138,13 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
                 }
 
                 const billableMinutes = Math.max(0, totalMinutes - breakMinutes);
-                const hours = billableMinutes / 60;
                 const rate = shiftRecord.price || 0;
-                const pay = Math.ceil(hours * rate);
+
+                // WH-137: Centralized Pay Calculation
+                const pay = calculateShiftPay(billableMinutes, rate);
 
                 let note: string | null = null;
-                const scheduledEnd = new Date(shiftRecord.endTime);
+                // scheduledEnd already defined above
                 if (differenceInMinutes(assign.clockOut, scheduledEnd) > 15) {
                     note = "Flag: Clock-out >15m past schedule";
                 }
@@ -112,7 +155,8 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
                     grossPayCents: pay,
                     hourlyRateSnapshot: rate,
                     breakMinutes: breakMinutes,
-                    adjustmentNotes: note
+                    adjustmentNotes: note,
+                    workerId: assign.workerId
                 });
             }
         }
@@ -122,17 +166,21 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
             throw new AppError("Cannot approve: Workers missing clock-out times.", "DIRTY_DATA", 409, { workerIds: dirtyAssignments });
         }
 
-        // 5. Commit Changes
-        for (const u of updates) {
-            await tx.update(shiftAssignment)
-                .set({
-                    status: u.status,
-                    grossPayCents: u.grossPayCents,
-                    hourlyRateSnapshot: u.hourlyRateSnapshot,
-                    breakMinutes: u.breakMinutes,
-                    adjustmentNotes: u.adjustmentNotes
-                })
-                .where(eq(shiftAssignment.id, u.id));
+        // 5. Commit Changes (WH-139: Batch Operations)
+        if (updates.length > 0) {
+            // Option 1: Promise.all for concurrency (Drizzle doesn't support bulk update with different values easily yet without CASE)
+            // For readability and safety, Promise.all inside transaction is efficient enough vs sequential wait
+            await Promise.all(updates.map(u =>
+                tx.update(shiftAssignment)
+                    .set({
+                        status: u.status,
+                        grossPayCents: u.grossPayCents,
+                        hourlyRateSnapshot: u.hourlyRateSnapshot,
+                        breakMinutes: u.breakMinutes,
+                        adjustmentNotes: u.adjustmentNotes
+                    })
+                    .where(eq(shiftAssignment.id, u.id))
+            ));
         }
 
         const res = await tx.update(shift)
@@ -146,34 +194,38 @@ export const approveShiftController = async (shiftId: string, orgId: string) => 
             throw new AppError("Race condition: Shift was modified or approved by another request.", "RACE_CONDITION", 409);
         }
 
+        // Batch Audit: Single Shift Approved Log
         await logAudit({
             action: 'shift.approved',
             entityType: 'shift',
             entityId: shiftId,
             organizationId: orgId,
+            userId: actorId,
             metadata: {
                 approvedAssignmentsCount: updates.length,
                 totalPayCents: updates.reduce((acc, u) => acc + u.grossPayCents, 0)
             }
         });
 
-        for (const u of updates) {
-            if (u.status === 'no_show') {
-                const originalAssignment = shiftRecord.assignments.find(a => a.id === u.id);
-                if (originalAssignment) {
-                    await logAudit({
-                        action: 'assignment.no_show',
-                        entityType: 'shift_assignment',
-                        entityId: u.id,
-                        organizationId: orgId,
-                        userId: originalAssignment.workerId,
-                        metadata: {
-                            shiftId: shiftId,
-                            reason: 'No clock-in/out recorded at approval'
-                        }
-                    });
-                }
-            }
+        // Batch Audit: No Shows
+        // Collecting No Shows for a single batch log or looping (Audit service might not support batch yet)
+        // Keeping loop for No Show audits as they are rare entities, but preventing N+1 for the main flow
+        const noShows = updates.filter(u => u.status === 'no_show');
+        if (noShows.length > 0) {
+            await Promise.all(noShows.map(u =>
+                logAudit({
+                    action: 'assignment.no_show',
+                    entityType: 'shift_assignment',
+                    entityId: u.id,
+                    organizationId: orgId,
+                    userId: actorId, // The manager/system acting
+                    targetUserId: u.workerId, // The worker being marked as no-show
+                    metadata: {
+                        shiftId: shiftId,
+                        reason: 'No clock-in/out recorded at approval'
+                    }
+                })
+            ));
         }
 
         return Response.json({ success: true }, { status: 200 });

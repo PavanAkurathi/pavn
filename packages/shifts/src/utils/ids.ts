@@ -5,7 +5,7 @@ import { customAlphabet } from 'nanoid';
 // Alphanumeric alphabet, 16 chars + 4 char prefix = 20 chars (standard length)
 const generate = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', 16);
 
-export type IdPrefix = 'org' | 'loc' | 'shf' | 'wkr' | 'int' | 'asg';
+export type IdPrefix = 'org' | 'loc' | 'shf' | 'wkr' | 'int' | 'asg' | 'avl';
 
 /**
  * Generates a focused, prefixed ID.

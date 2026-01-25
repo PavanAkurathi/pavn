@@ -136,7 +136,7 @@ const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
             address: s.location?.address,
             latitude: s.location?.latitude ? Number(s.location.latitude) : undefined,
             longitude: s.location?.longitude ? Number(s.location.longitude) : undefined,
-            geofenceRadius: s.location?.geofenceRadius || 100 // Default 100m
+            geofenceRadius: s.location?.geofenceRadius || 150 // [UX-008] Default 150m (Matched)
         },
         organization: {
             id: s.organization?.id || 'unknown',

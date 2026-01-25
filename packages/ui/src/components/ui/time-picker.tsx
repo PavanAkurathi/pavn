@@ -40,9 +40,10 @@ interface TimePickerProps {
     className?: string;
     disabled?: boolean;
     placeholder?: string;
+    onBlur?: () => void;
 }
 
-export function TimePicker({ value, onChange, className, disabled, placeholder = "Pick a time" }: TimePickerProps) {
+export function TimePicker({ value, onChange, className, disabled, placeholder = "Pick a time", onBlur }: TimePickerProps) {
     const [open, setOpen] = React.useState(false);
 
     // Parse value or default to now
@@ -74,6 +75,7 @@ export function TimePicker({ value, onChange, className, disabled, placeholder =
                         className
                     )}
                     disabled={disabled}
+                    onBlur={onBlur}
                 >
                     <Clock className="mr-2 h-4 w-4" />
                     {value || placeholder}

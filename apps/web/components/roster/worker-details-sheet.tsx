@@ -12,6 +12,7 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Separator } from "@repo/ui/components/ui/separator";
 import { Mail, Phone, MapPin, AlertCircle, Calendar, Award } from "lucide-react";
 import { format } from "date-fns";
+import { AvailabilityList } from "./availability-list";
 
 export interface WorkerDetails {
     id: string;
@@ -164,6 +165,17 @@ export function WorkerDetailsSheet({ worker, isOpen, onClose }: WorkerDetailsShe
                         ) : (
                             <p className="text-sm text-muted-foreground italic">No certifications on file.</p>
                         )}
+
+                    </div>
+
+                    <Separator />
+
+                    {/* Availability */}
+                    <div>
+                        <h4 className="flex items-center gap-2 text-sm font-medium mb-3 text-muted-foreground uppercase tracking-wider">
+                            <Calendar className="h-4 w-4" /> Availability (Next 30 Days)
+                        </h4>
+                        <AvailabilityList workerId={worker.id} />
                     </div>
                 </div>
             </SheetContent>

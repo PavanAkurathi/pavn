@@ -9,6 +9,7 @@ interface AuditEntry {
     entityId: string;
     action: string;
     userId?: string; // actorId
+    targetUserId?: string; // The user being acted upon (e.g. worker)
     userName?: string;
     changes?: {
         before: Record<string, any>;
@@ -37,7 +38,10 @@ export async function logAudit(entry: AuditEntry): Promise<void> {
             ipAddress: entry.ipAddress,
             userAgent: entry.userAgent,
             changes: entry.changes,
-            metadata: entry.metadata,
+            metadata: {
+                ...entry.metadata,
+                targetUserId: entry.targetUserId // Store in metadata if no dedicated column yet
+            },
             createdAt: new Date(),
         });
     } catch (error) {

@@ -21,6 +21,8 @@ import { getWorkerShiftsController } from "./controllers/worker-shifts";
 import { createLocationController } from "./controllers/create-location";
 import { requestCorrectionController, getPendingCorrectionsController, reviewCorrectionController } from "@repo/geofence";
 import { exportTimesheetsController } from "./controllers/export-timesheets";
+import { getTimesheetsReportController } from "./controllers/get-timesheets-report";
+import { getReportFiltersController } from "./controllers/get-report-filters";
 
 const app = new Hono<{
     Variables: {
@@ -130,11 +132,29 @@ app.get("/organizations/:orgId/crew", async (c) => {
     return await getCrewController(headerOrgId, { search, limit: safeLimit, offset });
 });
 
+// [AVL-003] Get Availability
+import { getAvailabilityController } from "./controllers/get-availability";
+app.get("/organizations/:orgId/availability", async (c) => {
+    const orgId = c.get('orgId');
+    const from = c.req.query("from") || new Date().toISOString();
+    const to = c.req.query("to") || new Date(Date.now() + 86400000 * 7).toISOString(); // Default 7 days
+    const workerId = c.req.query("workerId");
+    return await getAvailabilityController(orgId, from, to, workerId);
+});
+
 // Schedule Routes
 app.post("/schedules/publish", async (c) => {
     const orgId = c.get('orgId');
     // publishScheduleController needs to be updated to take orgId
     return await publishScheduleController(c.req.raw, orgId);
+});
+
+// [AVL-002] Worker Availability
+import { setAvailabilityController } from "./controllers/set-availability";
+app.post("/worker/availability", async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    return await setAvailabilityController(c.req.raw, user.id);
 });
 
 // Worker Shift Routes (WH-001)
@@ -209,6 +229,14 @@ app.delete("/shifts/drafts", async (c) => {
     return await deleteDraftsController(orgId);
 });
 
+// [FEAT-009] Shift Group Endpoint
+import { getShiftGroupController } from "./controllers/get-shift-group";
+app.get("/shifts/groups/:groupId", async (c) => {
+    const groupId = c.req.param("groupId");
+    const orgId = c.get('orgId');
+    return await getShiftGroupController(groupId, orgId);
+});
+
 app.get("/shifts/:id", async (c) => {
     const id = c.req.param("id");
     const orgId = c.get('orgId');
@@ -218,7 +246,10 @@ app.get("/shifts/:id", async (c) => {
 app.post("/shifts/:id/approve", async (c) => {
     const id = c.req.param("id");
     const orgId = c.get('orgId');
-    return await approveShiftController(id, orgId);
+    const user = c.get('user');
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    return await approveShiftController(id, orgId, user.id);
 });
 
 app.get("/shifts/:id/timesheets", async (c) => {
@@ -232,16 +263,39 @@ app.patch("/shifts/:shiftId/timesheet", async (c) => {
     return await updateTimesheetController(c.req.raw, orgId);
 });
 
+// Timesheets Preview (JSON for Reports UI)
+app.get("/timesheets", async (c) => {
+    const orgId = c.get('orgId');
+    const queryParams: Record<string, string> = {};
+    const url = new URL(c.req.url);
+    url.searchParams.forEach((value, key) => {
+        queryParams[key] = value;
+    });
+    return await getTimesheetsReportController(orgId, queryParams);
+});
+
+// Report Filter Options
+app.get("/timesheets/filters", async (c) => {
+    const orgId = c.get('orgId');
+    const queryParams: Record<string, string> = {};
+    const url = new URL(c.req.url);
+    url.searchParams.forEach((value, key) => {
+        queryParams[key] = value;
+    });
+    return await getReportFiltersController(orgId, queryParams);
+});
+
 app.get("/timesheets/export", async (c) => {
     const orgId = c.get('orgId');
-    const start = c.req.query("start");
-    const end = c.req.query("end");
 
-    if (!start || !end) {
-        return c.json({ error: "Missing start or end date query params" }, 400);
-    }
+    // Collect all query params
+    const queryParams: Record<string, string> = {};
+    const url = new URL(c.req.url);
+    url.searchParams.forEach((value, key) => {
+        queryParams[key] = value;
+    });
 
-    return await exportTimesheetsController(orgId, start, end);
+    return await exportTimesheetsController(orgId, queryParams);
 });
 
 const port = process.env.PORT || 4005;

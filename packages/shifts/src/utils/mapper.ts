@@ -27,6 +27,7 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
         locationName: dbShift.location?.name || "Unknown Location", // Fallback if join is missing
         locationId: dbShift.locationId || "unknown",
         locationAddress: dbShift.location?.address || undefined,
+        geofenceRadius: dbShift.location?.geofenceRadius || 150, // [UX-008] Default to 150m (Consistent with Create)
         contactId: dbShift.contactId,
         // Convert Date objects to ISO Strings
         startTime: dbShift.startTime.toISOString(),

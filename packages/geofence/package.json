@@ -13,6 +13,7 @@
         "@repo/auth": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/database": "workspace:*",
+        "@repo/notifications": "workspace:*",
         "@repo/observability": "workspace:*",
         "drizzle-orm": "^0.31.2",
         "hono": "^4.0.0",

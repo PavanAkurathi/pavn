@@ -97,6 +97,20 @@ export const api = {
             const response = await fetch(`${CONFIG.SHIFTS_API_URL}/shifts/${id}`, { headers });
             if (!response.ok) throw new Error(await response.text());
             return await response.json();
+        },
+
+        // WH-210: Fetch shifts with geofence data
+        getUpcomingWithLocation: async (): Promise<WorkerShift[]> => {
+            const headers = await getAuthHeaders();
+            // This hits the new Hono endpoint /shifts/upcoming
+            const response = await fetch(`${CONFIG.API_URL}/shifts/upcoming`, { headers });
+
+            if (!response.ok) {
+                throw new Error(await response.text() || "Failed to fetch upcoming shifts");
+            }
+
+            const data = await response.json();
+            return data.shifts;
         }
     },
 
@@ -163,5 +177,38 @@ export const api = {
             }
             return await response.json();
         }
+    },
+
+    preferences: {
+        get: async () => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${CONFIG.API_URL}/preferences`, { headers });
+            if (!response.ok) throw new Error(await response.text());
+            const data = await response.json();
+            return data.preferences;
+        },
+        update: async (data: Partial<WorkerPreferences>) => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${CONFIG.API_URL}/preferences`, {
+                method: 'PATCH',
+                headers,
+                body: JSON.stringify(data)
+            });
+            if (!response.ok) throw new Error(await response.text());
+            const resData = await response.json();
+            return resData.preferences;
+        }
     }
 };
+
+export interface WorkerPreferences {
+    nightBeforeEnabled: boolean;
+    sixtyMinEnabled: boolean;
+    fifteenMinEnabled: boolean;
+    shiftStartEnabled: boolean;
+    lateWarningEnabled: boolean;
+    geofenceAlertsEnabled: boolean;
+    quietHoursEnabled: boolean;
+    quietHoursStart?: string;
+    quietHoursEnd?: string;
+}

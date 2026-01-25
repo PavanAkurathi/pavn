@@ -1,5 +1,6 @@
 # Antigravity SaaS (Pavn)
 
+- [Notification & Tracking Service](./docs/NOTIFICATIONS.md)
 Monorepo for the Antigravity SaaS platform, built with [Turborepo](https://turbo.build/repo).
 
 ## Apps & Packages

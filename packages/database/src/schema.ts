@@ -1,6 +1,6 @@
 // packages/database/src/schema.ts
 
-import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType, jsonb, time, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
 // PostGIS Geometry Type Helper
@@ -147,7 +147,8 @@ export const location = pgTable("location", {
     createdAt: timestamp("created_at").notNull(),
     updatedAt: timestamp("updated_at").notNull(),
 }, (table) => ({
-    locationOrgIdx: index("location_org_idx").on(table.organizationId)
+    locationOrgIdx: index("location_org_idx").on(table.organizationId),
+    locationPosIdx: index("location_pos_idx").using("gist", table.position) // GIST Index for PostGIS
 }));
 
 // ============================================================================
@@ -379,6 +380,7 @@ export const workerLocation = pgTable("worker_location", {
     workerLocationShiftIdx: index("worker_location_shift_idx").on(table.shiftId),
     workerLocationTimeIdx: index("worker_location_time_idx").on(table.recordedAt),
     workerLocationOrgIdx: index("worker_location_org_idx").on(table.organizationId),
+    workerLocationPosIdx: index("worker_location_pos_idx").using("gist", table.position) // GIST Index for PostGIS
 }));
 
 export const workerLocationRelations = relations(workerLocation, ({ one }) => ({
@@ -526,4 +528,152 @@ export const auditLogRelations = relations(auditLog, ({ one }) => ({
         fields: [auditLog.organizationId],
         references: [organization.id],
     }),
+}));
+
+// ============================================================================
+// 7. INFRASTRUCTURE & SYSTEM
+// ============================================================================
+
+export const rateLimitState = pgTable("rate_limit_state", {
+    key: text("key").primaryKey(), // e.g. "publish_schedule:{orgId}"
+    count: integer("count").notNull().default(0),
+    windowStart: decimal("window_start", { precision: 20, scale: 0 }).notNull(), // BigInt workaround for timestamps
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const idempotencyKey = pgTable("idempotency_key", {
+    key: text("key").primaryKey(), // The client-provided key
+    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+    hash: text("hash").notNull(), // Payload hash
+    responseData: json("response_data"), // To cache the successful response
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    expiresAt: timestamp("expires_at").notNull(), // Cleanup policy
+}, (table) => ({
+    idempotencyOrgIdx: index("idempotency_org_idx").on(table.organizationId)
+}));
+
+export const workerAvailability = pgTable("worker_availability", {
+    id: text("id").primaryKey(),
+    workerId: text("worker_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+
+    // Time Range
+    startTime: timestamp("start_time").notNull(),
+    endTime: timestamp("end_time").notNull(),
+
+    // Type of Availability
+    // 'unavailable': Blocked off (e.g. "I can't work")
+    // 'preferred': "I want to work" (future feature)
+    type: text("type").notNull().default("unavailable"),
+
+    // Optional: Recurrence (if we want "Every Monday") - Keeping it simple for V1 (Flat dates)
+    // reason: text("reason"), // e.g. "Doctor appt", "Class" - purely for worker reference
+
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+}, (table) => ({
+    availWorkerIdx: index("avail_worker_idx").on(table.workerId),
+    availTimeIdx: index("avail_time_idx").on(table.startTime, table.endTime)
+}));
+
+export const workerAvailabilityRelations = relations(workerAvailability, ({ one }) => ({
+    worker: one(user, {
+        fields: [workerAvailability.workerId],
+        references: [user.id],
+    }),
+}));
+
+// ============================================================================
+// 8. NOTIFICATIONS & MOBILE
+// ============================================================================
+
+export const scheduledNotification = pgTable("scheduled_notifications", {
+    id: text("id").primaryKey(),
+    workerId: text("worker_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    shiftId: text("shift_id").references(() => shift.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+
+    type: text("type").notNull(), // 'night_before' | '60_min' | '15_min' | 'shift_start' | 'late_warning'
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    data: jsonb("data").default({}),
+
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    status: text("status").notNull().default("pending"), // 'pending' | 'sent' | 'failed' | 'cancelled'
+
+    attempts: integer("attempts").default(0),
+    lastError: text("last_error"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => ({
+    pendingQueueIdx: index("idx_notifications_pending_queue").on(table.scheduledAt, table.status),
+    shiftIdx: index("idx_notifications_shift").on(table.shiftId),
+    workerIdx: index("idx_notifications_worker").on(table.workerId),
+}));
+
+export const deviceToken = pgTable("device_tokens", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+
+    pushToken: text("push_token").notNull(),
+    platform: text("platform").notNull(), // 'ios' | 'android' | 'web'
+
+    deviceName: text("device_name"),
+    appVersion: text("app_version"),
+    osVersion: text("os_version"),
+
+    isActive: boolean("is_active").default(true),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+}, (table) => ({
+    userTokenUnique: uniqueIndex("idx_device_tokens_unique").on(table.userId, table.pushToken),
+    activeUserIdx: index("idx_device_tokens_user").on(table.userId),
+}));
+
+export const workerNotificationPreferences = pgTable("worker_notification_preferences", {
+    workerId: text("worker_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+
+    nightBeforeEnabled: boolean("night_before_enabled").default(true),
+    sixtyMinEnabled: boolean("sixty_min_enabled").default(true),
+    fifteenMinEnabled: boolean("fifteen_min_enabled").default(true),
+    shiftStartEnabled: boolean("shift_start_enabled").default(true),
+    lateWarningEnabled: boolean("late_warning_enabled").default(true),
+    geofenceAlertsEnabled: boolean("geofence_alerts_enabled").default(true),
+
+    quietHoursEnabled: boolean("quiet_hours_enabled").default(false),
+    quietHoursStart: time("quiet_hours_start"),
+    quietHoursEnd: time("quiet_hours_end"),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const managerNotificationPreferences = pgTable("manager_notification_preferences", {
+    managerId: text("manager_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+
+    clockInAlertsEnabled: boolean("clock_in_alerts_enabled").default(true),
+    clockOutAlertsEnabled: boolean("clock_out_alerts_enabled").default(true),
+
+    // 'all' | 'booked_by_me' | 'onsite_contact'
+    shiftScope: text("shift_scope").default("all").notNull(),
+
+    // 'all' | 'selected'
+    locationScope: text("location_scope").default("all").notNull(),
+
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+// Relations
+export const scheduledNotificationRelations = relations(scheduledNotification, ({ one }) => ({
+    worker: one(user, { fields: [scheduledNotification.workerId], references: [user.id] }),
+    shift: one(shift, { fields: [scheduledNotification.shiftId], references: [shift.id] }),
+    organization: one(organization, { fields: [scheduledNotification.organizationId], references: [organization.id] }),
+}));
+
+export const deviceTokenRelations = relations(deviceToken, ({ one }) => ({
+    user: one(user, { fields: [deviceToken.userId], references: [user.id] }),
 }));

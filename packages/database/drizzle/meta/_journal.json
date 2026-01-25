@@ -127,6 +127,34 @@
       "when": 1768971361905,
       "tag": "0017_wet_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1769143370109,
+      "tag": "0018_first_reptil",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1769144633383,
+      "tag": "0019_colossal_cloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1769314435702,
+      "tag": "0020_common_proemial_gods",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1769363361196,
+      "tag": "0021_tired_squirrel_girl",
+      "breakpoints": true
     }
   ]
 }

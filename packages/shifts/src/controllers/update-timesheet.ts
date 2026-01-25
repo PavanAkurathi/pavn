@@ -1,12 +1,12 @@
 // packages/shifts/src/controllers/update-timesheet.ts
 
-
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { AppError } from "@repo/observability";
-
 import { z } from "zod";
+import { calculateShiftPay } from "../utils/calculations";
+import { differenceInMinutes } from "date-fns";
 
 const TimesheetSchema = z.object({
     shiftId: z.string(),
@@ -33,7 +33,7 @@ export const updateTimesheetController = async (req: Request, orgId: string): Pr
     // Verify Shift Ownership
     const validShift = await db.query.shift.findFirst({
         where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
-        columns: { id: true }
+        columns: { id: true, price: true }
     });
 
     if (!validShift) {
@@ -46,7 +46,8 @@ export const updateTimesheetController = async (req: Request, orgId: string): Pr
                 status: 'no_show',
                 clockIn: null,
                 clockOut: null,
-                breakMinutes: 0
+                breakMinutes: 0,
+                grossPayCents: 0
             })
             .where(and(
                 eq(shiftAssignment.shiftId, shiftId),
@@ -54,11 +55,25 @@ export const updateTimesheetController = async (req: Request, orgId: string): Pr
             ));
     }
     else if (action === 'update_time') {
+        const clockIn = data?.clockIn ? new Date(data.clockIn) : null;
+        const clockOut = data?.clockOut ? new Date(data.clockOut) : null;
+        const breakMinutes = data?.breakMinutes || 0;
+
+        let grossPayCents = 0;
+
+        // Calculate pay immediately if we have valid times
+        if (clockIn && clockOut) {
+            const totalMinutes = differenceInMinutes(clockOut, clockIn);
+            const billableMinutes = Math.max(0, totalMinutes - breakMinutes);
+            grossPayCents = calculateShiftPay(billableMinutes, validShift.price || 0);
+        }
+
         await db.update(shiftAssignment)
             .set({
-                clockIn: data?.clockIn ? new Date(data.clockIn) : null,
-                clockOut: data?.clockOut ? new Date(data.clockOut) : null,
-                breakMinutes: data?.breakMinutes || 0,
+                clockIn,
+                clockOut,
+                breakMinutes,
+                grossPayCents,
                 status: 'completed' // Manually corrected means it's ready for approval audit
             })
             .where(and(

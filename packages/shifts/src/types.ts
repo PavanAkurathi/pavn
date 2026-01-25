@@ -10,6 +10,7 @@ export interface Shift {
     locationId?: string;
     locationName: string;
     locationAddress?: string;
+    geofenceRadius?: number; // [UX-008] Enforce consistency
     contactId?: string | null;  // For re-hydrating drafts
     startTime: string; // ISO string
     endTime: string;   // ISO string

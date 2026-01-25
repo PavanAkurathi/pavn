@@ -13,6 +13,7 @@ const NAV_ITEMS = [
     { label: "Shifts", href: "/dashboard/shifts" },
     { label: "Rosters", href: "/rosters" },
     { label: "Reports", href: "/reports" },
+    { label: "Availability", href: "/dashboard/availability" }, // [AVL-006]
 ];
 
 interface NavHeaderProps {

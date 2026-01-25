@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { Button } from "@repo/ui/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@repo/ui/components/ui/dialog";
 
 import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalFooter } from "./timesheet/shift-approval-footer";
@@ -11,6 +12,7 @@ import { AddWorkerDialog } from "./add-worker-dialog";
 
 import { Shift, TimesheetWorker } from "@/lib/types";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface ShiftDetailViewProps {
     onBack: () => void;
@@ -57,6 +59,17 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     // Initialize state
     const [workers, setWorkers] = React.useState(getWorkersFromProps);
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
+
+    // State for Save Confirmation Dialog
+    const [pendingSave, setPendingSave] = React.useState<{
+        id: string;
+        field: string;
+        value: any;
+        payload: any;
+        action: string;
+        workerName: string;
+        fieldLabel: string;
+    } | null>(null);
 
     // Sync state when upstream data arrives (Fixes async data missing bug)
     React.useEffect(() => {
@@ -130,6 +143,127 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const workerCount = workers.length;
     const filledCount = workers.filter(w => !!w.clockIn && !!w.clockOut).length;
 
+    const confirmSave = async () => {
+        if (!pendingSave) return;
+
+        try {
+            await import("@/lib/api/shifts").then(mod =>
+                mod.updateTimesheet(shift.id, pendingSave.id, pendingSave.action, pendingSave.payload)
+            );
+            toast.success("Timesheet saved");
+        } catch (e) {
+            console.error(e);
+            toast.error("Failed to save timesheet");
+        } finally {
+            setPendingSave(null);
+        }
+    };
+
+    const cancelSave = () => {
+        setPendingSave(null);
+    };
+
+    // Auto-save handler (Debounce or onBlur handled by child)
+    const saveTimesheetEntry = async (id: string, field: string, value: any) => {
+        // Optimistic update already happened via updateWorker
+        // Now identify the action type
+        let action = 'update_time';
+        let data: any = {};
+
+        // Find the worker from current state to get complete object
+        const latestWorker = workers.find(w => w.id === id);
+        if (!latestWorker) return;
+
+        // Construct payload based on what changed, but backend expects full or partial time object
+        // We'll send the updated fields.
+        // Note: The backend update_time expects { clockIn, clockOut, breakMinutes }
+
+        // Helper to parse time strings back to Date ISO strings if needed, 
+        // OR the backend controller lines 58-59: new Date(data.clockIn).
+        // Our UI uses "hh:mm a" format (e.g. "05:00 PM") or ISO? 
+        // Reviewing ShiftDetailView getWorkersFromProps:
+        // clockIn: ts.clockIn ? format(new Date(ts.clockIn), "hh:mm a") : ""
+        // So the State `workers` holds "05:00 PM".
+        // The backend `new Date("05:00 PM")` might fail or result in Invalid Date if not fully qualified with date.
+
+        // CRITICAL FIX: We need to convert the UI time string back to a valid Date object relative to the shift date.
+        // We should start with shift.startTime day.
+
+        try {
+            const shiftDate = new Date(shift.startTime); // Base date
+
+            const parseTime = (timeStr: string) => {
+                if (!timeStr) return undefined;
+                // Parse "05:00 PM"
+                const parts = timeStr.split(' ');
+                if (parts.length < 2) return undefined;
+
+                const [time, period] = parts;
+                if (!time) return undefined;
+
+                const timeParts = time.split(':');
+                if (timeParts.length < 2) return undefined;
+
+                const [hours, minutes] = timeParts.map(Number);
+                if (hours === undefined || minutes === undefined) return undefined;
+
+                let date = new Date(shiftDate);
+                let h = hours;
+                if (period === 'PM' && h !== 12) h += 12;
+                if (period === 'AM' && h === 12) h = 0;
+                date.setHours(h, minutes, 0, 0);
+
+                return date.toISOString();
+            };
+
+            // We need to re-construct the payload with ISO strings
+            if (field === 'clockIn') {
+                data.clockIn = parseTime(value);
+                // Send existing output too?
+                // If we only send one, backend might nullify others if not careful?
+                // Backend: const clockIn = data?.clockIn ... const clockOut = data?.clockOut
+                // Backend checks `if (data?.clockIn)`. So partial update is OK?
+                // Backend: "const clockIn = data?.clockIn ? ... : null" -> This implies if we DON'T send it, it becomes NULL?
+                // Let's check backend line 58: "const clockIn = data?.clockIn ? ... : null"
+                // line 59: "const clockOut = ... : null"
+                // line 73: db.update... set({ clockIn, clockOut })
+                // YES, it OVERWRITES with null if missing. We must send BOTH.
+
+                data.clockOut = parseTime(latestWorker.clockOut);
+                data.breakMinutes = parseInt(latestWorker.breakDuration) || 0; // "30 min" -> 30
+            } else if (field === 'clockOut') {
+                data.clockIn = parseTime(latestWorker.clockIn);
+                data.clockOut = parseTime(value);
+                data.breakMinutes = parseInt(latestWorker.breakDuration) || 0;
+            } else if (field === 'breakDuration') {
+                data.clockIn = parseTime(latestWorker.clockIn);
+                data.clockOut = parseTime(latestWorker.clockOut);
+                data.breakMinutes = parseInt(value) || 0;
+            }
+
+            // NEW LOGIC: Show Alert with Save Action instead of auto-save
+            const workerName = workers.find(w => w.id === id)?.name || "Worker";
+            const fieldLabel = field === 'clockIn' ? 'Clock In' : field === 'clockOut' ? 'Clock Out' : 'Break';
+
+            // Format value for display if possible (value is already formatted string for inputs usually)
+            // But we need to capture the payload data for the API call in a closure for the action
+
+            setPendingSave({
+                id,
+                field,
+                value,
+                payload: data,
+                action,
+                workerName,
+                fieldLabel
+            });
+
+        } catch (e) {
+            console.error(e);
+            toast.error("Error preparing save");
+        }
+    };
+
     return (
         <div className="flex flex-col space-y-6 pb-24">
             {/* Header */}
@@ -191,6 +325,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             <TimesheetTable
                 data={workers}
                 onUpdateWorker={updateWorker}
+                onSaveWorker={saveTimesheetEntry}
                 isApproved={isApproved}
                 isCancelled={isCancelled}
                 getWorkerStatus={getWorkerStatus}
@@ -214,6 +349,28 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 onConfirm={handleAddWorkers}
                 existingWorkerIds={workers.map(w => w.id)}
             />
+
+            <Dialog open={!!pendingSave} onOpenChange={(open) => !open && cancelSave()}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-amber-500" />
+                            Unsaved Changes
+                        </DialogTitle>
+                        <DialogDescription>
+                            You have modified the <strong>{pendingSave?.fieldLabel}</strong> for <strong>{pendingSave?.workerName}</strong>.
+                            Do you want to save this change permanently?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-md border">
+                        New Value: <span className="text-foreground font-semibold">{pendingSave?.value?.toString()}</span>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={cancelSave}>Cancel</Button>
+                        <Button onClick={confirmSave}>Save Changes</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -149,9 +149,9 @@ export async function clockOutController(
                 where: eq(shiftAssignment.shiftId, shiftId)
             });
 
-            // Check if everyone is done (including the one we just updated, as query sees uncommitted changes in same TX usually, or at least consistent snapshot)
+            // Check if all assignments complete (or are no-shows) → update shift status
             const allComplete = allAssignments.every(a =>
-                a.clockOut !== null
+                a.clockOut !== null || a.status === 'no_show'
             );
 
             if (allComplete) {

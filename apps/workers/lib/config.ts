@@ -14,4 +14,5 @@ export const CONFIG = {
     // Prioritize environment variables (set in .env or EAS Build)
     SHIFTS_API_URL: process.env.EXPO_PUBLIC_SHIFTS_API_URL || getLocalUrl(4005),
     GEOFENCE_API_URL: process.env.EXPO_PUBLIC_GEOFENCE_API_URL || getLocalUrl(4006),
+    API_URL: process.env.EXPO_PUBLIC_API_URL || getLocalUrl(4006),
 };

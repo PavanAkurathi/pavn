@@ -12,6 +12,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@repo/ui/components/ui/
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@repo/ui/components/ui/select';
 import { SHIFT_STATUS, LOCATIONS, VIEW_MODES, STATUS_LABELS } from '@/lib/constants';
+import { WorkerCombobox } from './worker-combobox';
 
 interface FilterState {
     location: string | null;
@@ -19,15 +20,17 @@ interface FilterState {
     view: string | null;
     startDate: string | null;
     endDate: string | null;
+    workerId: string | null;
 }
 
 interface EventFiltersProps {
     filters: FilterState;
     setFilters: (updates: any) => void;
-    availableLocations: any[]; // Updated to accept object structure
+    availableLocations: any[];
+    availableWorkers: { id: string; name: string; initials: string }[];
 }
 
-export function EventFilters({ filters, setFilters, availableLocations }: EventFiltersProps) {
+export function EventFilters({ filters, setFilters, availableLocations, availableWorkers }: EventFiltersProps) {
 
     const dateRange: DateRange | undefined = React.useMemo(() => {
         if (!filters.startDate && !filters.endDate) return undefined;
@@ -56,6 +59,7 @@ export function EventFilters({ filters, setFilters, availableLocations }: EventF
     const hasActiveFilters =
         filters.location !== LOCATIONS.ALL ||
         filters.status !== SHIFT_STATUS.ALL ||
+        filters.workerId !== null ||
         (filters.startDate !== '' && filters.startDate !== null);
 
     return (
@@ -88,6 +92,13 @@ export function EventFilters({ filters, setFilters, availableLocations }: EventF
                         })}
                     </SelectContent>
                 </Select>
+
+                {/* Worker Search Combobox */}
+                <WorkerCombobox
+                    workers={availableWorkers}
+                    value={filters.workerId}
+                    onChange={(val) => setFilters({ workerId: val })}
+                />
 
                 {/* Date Range */}
                 <Popover>
@@ -142,7 +153,8 @@ export function EventFilters({ filters, setFilters, availableLocations }: EventF
                             location: LOCATIONS.ALL,
                             status: SHIFT_STATUS.ALL,
                             startDate: null,
-                            endDate: null
+                            endDate: null,
+                            workerId: null
                         })}
                         className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     >
