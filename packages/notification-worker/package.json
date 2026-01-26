@@ -10,7 +10,7 @@
     "dependencies": {
         "@repo/database": "workspace:*",
         "@repo/notifications": "workspace:*",
-        "drizzle-orm": "^0.31.2"
+        "drizzle-orm": "0.45.1"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
