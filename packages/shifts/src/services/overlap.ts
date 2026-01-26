@@ -8,10 +8,11 @@ export interface OverlapCheckParams {
     startTime: Date;
     endTime: Date;
     excludeShiftId?: string; // For updates
+    organizationId?: string; // [SEC] Scope to Org
 }
 
 export const findOverlappingAssignment = async (params: OverlapCheckParams) => {
-    const { workerId, startTime, endTime, excludeShiftId } = params;
+    const { workerId, startTime, endTime, excludeShiftId, organizationId } = params;
 
     // Overlap Formula: (StartA < EndB) and (EndA > StartB)
     // Here A is existing shift, B is new shift.
@@ -23,6 +24,8 @@ export const findOverlappingAssignment = async (params: OverlapCheckParams) => {
         inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress', 'completed', 'approved']),
         // Exclude current shift if updating
         excludeShiftId ? not(eq(shift.id, excludeShiftId)) : undefined,
+        // Optional: Scope to Organization
+        organizationId ? eq(shift.organizationId, organizationId) : undefined,
         // Overlap logic
         lt(shift.startTime, endTime),
         gt(shift.endTime, startTime)

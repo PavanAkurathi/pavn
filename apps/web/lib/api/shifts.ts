@@ -209,3 +209,34 @@ export const updateTimesheet = async (shiftId: string, workerId: string, action:
     if (!res.ok) throw new Error(await res.text());
     return res.json();
 };
+
+export const cancelShift = async (shiftId: string, orgId?: string) => {
+    const activeOrgId = await getSecureOrgId(orgId);
+    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/cancel`, {
+        method: "POST",
+        headers: {
+            "x-org-id": activeOrgId,
+            "Content-Type": "application/json",
+            "Cookie": (await headers()).get("cookie") || "",
+        },
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+};
+
+export const assignWorkers = async (shiftId: string, workerIds: string[], orgId?: string) => {
+    const activeOrgId = await getSecureOrgId(orgId);
+    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/assign`, {
+        method: "POST",
+        headers: {
+            "x-org-id": activeOrgId,
+            "Content-Type": "application/json",
+            "Cookie": (await headers()).get("cookie") || "",
+        },
+        body: JSON.stringify({ workerIds }),
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+};

@@ -60,6 +60,8 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     // Initialize state
     const [workers, setWorkers] = React.useState(getWorkersFromProps);
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
+    const [isCancelConfirmOpen, setIsCancelConfirmOpen] = React.useState(false);
+    const [isCancelling, setIsCancelling] = React.useState(false);
 
     // State for Save Confirmation Dialog
     const [pendingSave, setPendingSave] = React.useState<{
@@ -83,27 +85,25 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         );
     };
 
-    const handleAddWorkers = (newWorkerIds: string[]) => {
-        // In a real app, you'd call an API here (e.g., POST /shifts/:id/assign)
-        // For now, we update local state optimistically.
-        // We create placeholder entries so the UI updates immediately.
+    const handleAddWorkers = async (newWorkerIds: string[]) => {
+        try {
+            await import("@/lib/api/shifts").then(mod => mod.assignWorkers(shift.id, newWorkerIds));
+            toast.success(`Assigned ${newWorkerIds.length} workers successfully`);
 
-        const newWorkers = newWorkerIds.map(id => ({
-            id,
-            name: "New Worker (Refreshing...)", // Accessing name would require looking up in crew list
-            avatar: `https://github.com/shadcn.png`,
-            initials: "NW",
-            shiftDuration: "-",
-            hourlyRate: "$0/hr",
-            clockIn: "",
-            clockOut: "",
-            breakDuration: "0 min",
-            rating: 0,
-        }));
-
-        setWorkers(prev => [...prev, ...newWorkers]);
-        // Ideally trigger a re-fetch or router.refresh() here 
-        // router.refresh(); 
+            // Re-fetch all data to ensure consistent state/avatars/names
+            // Since we don't have a direct refetch function here, we can trigger a router refresh or 
+            // manually optimistically update if we had full worker objects.
+            // But AddWorkerDialog only passes IDs.
+            // Ideally, onBack() or a dedicated refetch logic should be used.
+            // For now, let's keep the optimistic update but relying on page reload for full details is safer if complex.
+            // However, the previous optimistic code has placeholder names.
+            // Let's rely on router refresh if possible, but we are client side.
+            // Actually, we can just Optimistically update and assume success, but best is to reload page data.
+            window.location.reload();
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to assign workers");
+        }
     };
 
 
@@ -217,6 +217,22 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         }
     };
 
+    const handleCancelShift = async () => {
+        setIsCancelling(true);
+        try {
+            await import("@/lib/api/shifts").then(mod => mod.cancelShift(shift.id));
+            toast.success("Shift cancelled successfully");
+            onBack(); // Return to previous screen
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to cancel shift");
+        } finally {
+            setIsCancelling(false);
+            setIsCancelConfirmOpen(false);
+        }
+    };
+
+
     return (
         <div className="flex flex-col space-y-6 pb-24">
             {/* Header */}
@@ -245,7 +261,11 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </div>
                 </div>
             </div>
-
+            {!isApproved && !isCancelled && (
+                <Button variant="destructive" onClick={() => setIsCancelConfirmOpen(true)}>
+                    Cancel Shift
+                </Button>
+            )}
             {/* Shift Summary Header */}
             <ShiftSummaryHeader
                 title={shift.title}
@@ -283,17 +303,19 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 isCancelled={isCancelled}
             />
 
-            {!isCancelled && (
-                <ShiftApprovalFooter
-                    workerCount={workerCount}
-                    filledCount={filledCount}
-                    totalHours={totalHours}
-                    totalCost={totalCost}
-                    hasErrors={hasErrors}
-                    isApproved={isApproved}
-                    onApprove={() => onApprove?.()}
-                />
-            )}
+            {
+                !isCancelled && (
+                    <ShiftApprovalFooter
+                        workerCount={workerCount}
+                        filledCount={filledCount}
+                        totalHours={totalHours}
+                        totalCost={totalCost}
+                        hasErrors={hasErrors}
+                        isApproved={isApproved}
+                        onApprove={() => onApprove?.()}
+                    />
+                )
+            }
 
             <AddWorkerDialog
                 isOpen={isAddWorkerOpen}
@@ -323,6 +345,28 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+
+            {/* Cancel Confirmation Dialog */}
+            <Dialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="h-5 w-5 text-red-500" />
+                            Cancel Shift
+                        </DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to cancel this shift? This action will notify all assigned workers and cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCancelConfirmOpen(false)}>Keep Shift</Button>
+                        <Button variant="destructive" onClick={handleCancelShift} disabled={isCancelling}>
+                            {isCancelling ? "Cancelling..." : "Yes, Cancel Shift"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div >
     );
 }
+

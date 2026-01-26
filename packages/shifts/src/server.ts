@@ -23,6 +23,8 @@ import { requestCorrectionController, getPendingCorrectionsController, reviewCor
 import { exportTimesheetsController } from "./controllers/export-timesheets";
 import { getTimesheetsReportController } from "./controllers/get-timesheets-report";
 import { getReportFiltersController } from "./controllers/get-report-filters";
+import { cancelShiftController } from "./controllers/cancel";
+import { assignWorkerController } from "./controllers/assign";
 
 const app = new Hono<{
     Variables: {
@@ -250,6 +252,21 @@ app.post("/shifts/:id/approve", async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     return await approveShiftController(id, orgId, user.id);
+});
+
+app.post("/shifts/:id/cancel", async (c) => {
+    const id = c.req.param("id");
+    const orgId = c.get('orgId');
+    const user = c.get('user');
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    return await cancelShiftController(id, orgId, user.id);
+});
+
+app.post("/shifts/:id/assign", async (c) => {
+    const id = c.req.param("id");
+    const orgId = c.get('orgId');
+    return await assignWorkerController(c.req.raw, id, orgId);
 });
 
 app.get("/shifts/:id/timesheets", async (c) => {
