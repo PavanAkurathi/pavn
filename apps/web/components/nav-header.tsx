@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation";
 import { cn } from "@repo/ui/lib/utils";
 import { Button } from "@repo/ui/components/ui/button";
 import { authClient } from "@repo/auth/client";
-import { Plus, Building2, Bell } from "lucide-react";
+import { Plus, Building2 } from "lucide-react";
 import { NavUser } from "./nav-user";
+import { NotificationsPopover } from "./notifications/notifications-popover";
 
 const NAV_ITEMS = [
     { label: "Shifts", href: "/dashboard/shifts" },
@@ -93,11 +94,9 @@ export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
 
                     <div className="h-6 w-px bg-slate-200 hidden sm:block" />
 
-                    <Link href="/settings?tab=notifications">
-                        <Button variant="ghost" size="icon" className="text-muted-foreground">
-                            <Bell className="h-5 w-5" />
-                        </Button>
-                    </Link>
+                    <div className="hidden sm:block">
+                        <NotificationsPopover />
+                    </div>
 
                     <NavUser />
                 </div>
