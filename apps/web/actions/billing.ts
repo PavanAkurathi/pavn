@@ -23,9 +23,12 @@ async function getSession() {
 // ---------------------------------------------------------
 export async function createCheckoutSession() {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
 
-    const orgId = session.session.activeOrganizationId;
+    if (!activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
+
+    const orgId = activeOrganizationId;
     const org = await db.query.organization.findFirst({
         where: eq(organization.id, orgId)
     });
@@ -37,7 +40,7 @@ export async function createCheckoutSession() {
 
     if (!customerId) {
         const customer = await stripe.customers.create({
-            email: session.user.email,
+            email: session!.user.email,
             name: org.name,
             metadata: { orgId: orgId } // CRITICAL: Links Stripe back to DB
         });
@@ -67,10 +70,12 @@ export async function createCheckoutSession() {
 // ---------------------------------------------------------
 export async function createCustomerPortal() {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+
+    if (!activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
 
     const org = await db.query.organization.findFirst({
-        where: eq(organization.id, session.session.activeOrganizationId),
+        where: eq(organization.id, activeOrganizationId),
         columns: { stripeCustomerId: true }
     });
 
@@ -89,10 +94,12 @@ export async function createCustomerPortal() {
 // ---------------------------------------------------------
 export async function getInvoiceHistory() {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) return [];
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+
+    if (!activeOrganizationId) return [];
 
     const org = await db.query.organization.findFirst({
-        where: eq(organization.id, session.session.activeOrganizationId),
+        where: eq(organization.id, activeOrganizationId),
         columns: { stripeCustomerId: true }
     });
 
@@ -129,10 +136,12 @@ export async function getInvoiceHistory() {
 // ---------------------------------------------------------
 export async function getSubscriptionDetails() {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) return { status: "inactive" };
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+
+    if (!activeOrganizationId) return { status: "inactive" };
 
     const org = await db.query.organization.findFirst({
-        where: eq(organization.id, session.session.activeOrganizationId),
+        where: eq(organization.id, activeOrganizationId),
         columns: {
             subscriptionStatus: true,
             currentPeriodEnd: true

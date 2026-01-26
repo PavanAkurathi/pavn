@@ -48,7 +48,8 @@ export async function addMember(input: AddMemberInput) {
         throw new Error("Unauthorized");
     }
 
-    const activeOrgId = session.session.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrgId = (session.session as any).activeOrganizationId as string || undefined;
     if (!activeOrgId) {
         throw new Error("No active organization");
     }
@@ -184,7 +185,8 @@ export async function bulkImport(workers: BulkImportWorker[]) {
         throw new Error("Unauthorized");
     }
 
-    const activeOrgId = session.session.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrgId = (session.session as any).activeOrganizationId as string || undefined;
     if (!activeOrgId) {
         throw new Error("No active organization");
     }
@@ -236,7 +238,8 @@ export async function removeMember(memberId: string) {
         throw new Error("Unauthorized");
     }
 
-    const activeOrgId = session.session.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrgId = (session.session as any).activeOrganizationId as string || undefined;
     if (!activeOrgId) {
         throw new Error("No active organization");
     }

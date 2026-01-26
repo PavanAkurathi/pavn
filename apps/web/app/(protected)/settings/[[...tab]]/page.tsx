@@ -28,7 +28,8 @@ export default async function SettingsPage(props: { params: Promise<{ tab?: stri
         redirect("/auth/login");
     }
 
-    let activeOrgId = session.session.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    let activeOrgId = (session.session as any).activeOrganizationId as string | undefined;
     let organization = null;
     let locations: any[] = [];
     let role = "member";

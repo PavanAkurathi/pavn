@@ -9,19 +9,21 @@
         "./client": "./src/client.ts"
     },
     "dependencies": {
-        "@better-auth/expo": "1.2.0",
+        "@better-auth/expo": "1.4.17",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
-        "better-auth": "1.2.0",
+        "better-auth": "1.4.17",
+        "@better-auth/stripe": "^1.4.17",
         "dotenv": "^16.0.0",
         "drizzle-orm": "0.45.1",
         "nanoid": "^5.0.0",
         "twilio": "^5.11.2",
-        "@repo/utils": "workspace:*"
+        "@repo/utils": "workspace:*",
+        "stripe": "^20.1.0"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "typescript": "^5.4.5",
-        "@types/node": "^20.14.0"
+        "@types/node": "^25.0.10"
     }
 }

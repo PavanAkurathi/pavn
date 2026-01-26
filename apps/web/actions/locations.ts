@@ -29,7 +29,10 @@ const createLocationSchema = z.object({
 
 export async function createLocation(data: z.infer<typeof createLocationSchema>) {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) {
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+
+    if (!activeOrganizationId) {
         return { error: "No active organization" };
     }
 
@@ -42,7 +45,7 @@ export async function createLocation(data: z.infer<typeof createLocationSchema>)
     try {
         await db.insert(location).values({
             id: nanoid(),
-            organizationId: session.session.activeOrganizationId,
+            organizationId: activeOrganizationId,
             name: safeData.name,
             address: safeData.address,
             zip: safeData.zip, // Stored separately now
@@ -65,7 +68,10 @@ export async function createLocation(data: z.infer<typeof createLocationSchema>)
 
 export async function updateLocation(id: string, data: z.infer<typeof createLocationSchema>) {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) {
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+
+    if (!activeOrganizationId) {
         return { error: "No active organization" };
     }
 
@@ -89,7 +95,7 @@ export async function updateLocation(id: string, data: z.infer<typeof createLoca
             })
             .where(and(
                 eq(location.id, id),
-                eq(location.organizationId, session.session.activeOrganizationId)
+                eq(location.organizationId, activeOrganizationId)
             ));
 
         revalidatePath("/settings");
@@ -102,7 +108,10 @@ export async function updateLocation(id: string, data: z.infer<typeof createLoca
 
 export async function deleteLocation(locationId: string) {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) {
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+
+    if (!activeOrganizationId) {
         return { error: "No active organization" };
     }
 
@@ -110,7 +119,7 @@ export async function deleteLocation(locationId: string) {
         await db.delete(location)
             .where(and(
                 eq(location.id, locationId),
-                eq(location.organizationId, session.session.activeOrganizationId)
+                eq(location.organizationId, activeOrganizationId)
             ));
 
         revalidatePath("/settings");

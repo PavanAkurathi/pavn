@@ -16,7 +16,8 @@ export default async function RostersPage() {
     }
 
     const { user: currentUser, session } = sessionResponse;
-    let activeOrgId = session.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    let activeOrgId = (session as any).activeOrganizationId as string | undefined;
 
     if (!activeOrgId) {
         // Fallback: Check if user has any memberships

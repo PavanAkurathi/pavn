@@ -17,7 +17,8 @@ export default async function ProtectedLayout({
     });
 
     let activeOrg = null;
-    let activeOrgId = sessionResponse?.session?.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    let activeOrgId = (sessionResponse?.session as any)?.activeOrganizationId as string | undefined;
 
     // Fallback: If no active org in session, find the first membership
     if (!activeOrgId && sessionResponse?.user?.id) {

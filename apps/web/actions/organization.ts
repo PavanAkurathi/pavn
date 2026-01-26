@@ -23,7 +23,10 @@ const updateOrgSchema = z.object({
 
 export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) {
     const session = await getSession();
-    if (!session?.session.activeOrganizationId) {
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+
+    if (!activeOrganizationId) {
         return { error: "No active organization" };
     }
 
@@ -39,7 +42,7 @@ export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) 
                 name: safeData.name,
                 metadata: safeData.metadata,
             })
-            .where(eq(organization.id, session.session.activeOrganizationId));
+            .where(eq(organization.id, activeOrganizationId));
 
         revalidatePath("/settings");
         return { success: true };

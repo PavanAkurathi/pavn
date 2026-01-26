@@ -3,6 +3,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization, emailOTP, phoneNumber } from "better-auth/plugins";
+import { stripe } from "@better-auth/stripe";
+import Stripe from "stripe";
 import { expo } from "@better-auth/expo";
 import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
@@ -10,7 +12,7 @@ import { nanoid } from "nanoid";
 import { sendOtp } from "@repo/email";
 import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
-export const auth = betterAuth({
+export const auth: ReturnType<typeof betterAuth> = betterAuth({
     appName: "Antigravity SaaS",
     secret: (() => {
         if (process.env.BETTER_AUTH_SECRET) return process.env.BETTER_AUTH_SECRET;
@@ -46,7 +48,8 @@ export const auth = betterAuth({
             verification: schema.verification,
             organization: schema.organization,
             member: schema.member,
-            invitation: schema.invitation
+            invitation: schema.invitation,
+            subscription: schema.subscription
         }
     }),
 
@@ -155,5 +158,24 @@ export const auth = betterAuth({
                 await sendOTP(phoneNumber, code);
             },
         }),
+        stripe({
+            stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY!, {
+                apiVersion: "2025-12-15.clover" as any, // Match SDK version
+            }),
+            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+            createCustomerOnSignUp: true,
+            subscription: {
+                enabled: true,
+                plans: [
+                    {
+                        name: "pro",
+                        priceId: process.env.STRIPE_PRICE_ID_MONTHLY || "price_default",
+                        freeTrial: {
+                            days: 14
+                        }
+                    }
+                ]
+            }
+        })
     ],
 });

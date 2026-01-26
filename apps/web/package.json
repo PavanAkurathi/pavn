@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
+    "@repo/email": "workspace:*",
     "@repo/auth": "workspace:*",
+    "@better-auth/stripe": "^1.4.17",
     "@repo/database": "workspace:*",
     "@repo/shifts-service": "workspace:*",
     "@repo/ui": "*",
@@ -25,7 +27,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/google.maps": "^3.58.1",
     "@vis.gl/react-google-maps": "^1.7.1",
-    "better-auth": "1.2.0",
+    "better-auth": "1.4.17",
     "date-fns": "^4.1.0",
     "drizzle-orm": "0.45.1",
     "lucide-react": "^0.562.0",
@@ -41,7 +43,7 @@
     "stripe": "^20.1.0",
     "swr": "^2.3.8",
     "xlsx": "^0.18.5",
-    "zod": "3.23.8"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@repo/eslint-config": "*",

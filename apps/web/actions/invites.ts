@@ -13,7 +13,8 @@ export async function resendInvite(memberId: string) {
     });
 
     if (!session) throw new Error("Unauthorized");
-    const activeOrgId = session.session.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrgId = (session.session as any).activeOrganizationId as string | undefined;
 
     // Fetch Member & User details
     const memberRecord = await db.query.member.findFirst({
@@ -57,7 +58,8 @@ export async function deleteMemberAction(memberId: string) {
     });
 
     if (!session) throw new Error("Unauthorized");
-    const activeOrgId = session.session.activeOrganizationId;
+    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+    const activeOrgId = (session.session as any).activeOrganizationId as string | undefined;
 
     // Verify admin/owner permission
     const currentMember = await db.query.member.findFirst({

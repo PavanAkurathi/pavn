@@ -21,6 +21,7 @@ export const user = pgTable("user", {
     emailVerified: boolean("email_verified").notNull(),
     image: text("image"),
     phoneNumber: text("phone_number"),
+    stripeCustomerId: text("stripe_customer_id"),
 
     // Profile Extensions
     emergencyContact: json("emergency_contact").$type<{
@@ -677,3 +678,27 @@ export const scheduledNotificationRelations = relations(scheduledNotification, (
 export const deviceTokenRelations = relations(deviceToken, ({ one }) => ({
     user: one(user, { fields: [deviceToken.userId], references: [user.id] }),
 }));
+
+// ============================================================================
+// 9. BILLING & SUBSCRIPTIONS
+// ============================================================================
+
+export const subscription = pgTable("subscription", {
+    id: text("id").primaryKey(),
+    plan: text("plan").notNull(),
+    referenceId: text("reference_id").notNull(), // User ID or Org ID
+    stripeCustomerId: text("stripe_customer_id"),
+    stripeSubscriptionId: text("stripe_subscription_id"),
+    status: text("status"),
+    periodStart: timestamp("period_start", { mode: 'date' }),
+    periodEnd: timestamp("period_end", { mode: 'date' }),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end"),
+    cancelAt: timestamp("cancel_at", { mode: 'date' }),
+    canceledAt: timestamp("canceled_at", { mode: 'date' }),
+    endedAt: timestamp("ended_at", { mode: 'date' }),
+    trialStart: timestamp("trial_start", { mode: 'date' }),
+    trialEnd: timestamp("trial_end", { mode: 'date' }),
+    seats: integer("seats"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});

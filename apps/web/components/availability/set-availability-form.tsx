@@ -29,9 +29,7 @@ import { Input } from "@repo/ui/components/ui/input";
 
 // Schema matching the Controller
 const formSchema = z.object({
-    date: z.date({
-        required_error: "A date is required.",
-    }),
+    date: z.date(),
     startTime: z.string().regex(/^\d{2}:\d{2}$/, "Required"),
     endTime: z.string().regex(/^\d{2}:\d{2}$/, "Required"),
     type: z.enum(["unavailable", "preferred"]),
