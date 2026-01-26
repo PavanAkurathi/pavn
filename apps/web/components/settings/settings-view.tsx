@@ -5,7 +5,7 @@
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { Separator } from "@repo/ui/components/ui/separator";
-import { User, Building, MapPin, Users, CreditCard, Shield } from "lucide-react";
+import { User, Building, MapPin, Users, CreditCard, Shield, Bell } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
 import { ProfileForm } from "@/components/settings/profile-form";
@@ -14,6 +14,7 @@ import { LocationsForm } from "@/components/settings/locations-form";
 import { SecurityForm } from "@/components/settings/security-form";
 import { TeamList } from "@/components/settings/team-list";
 import { BillingView } from "@/components/settings/billing/billing-view";
+import { NotificationsView } from "@/components/settings/notifications-view";
 import { deleteLocation, createLocation, updateLocation } from "@/actions/locations";
 
 interface SettingsViewProps {
@@ -66,6 +67,7 @@ export function SettingsView({
                         <TabItem value="profile" icon={<User className="w-4 h-4" />} label="Profile" />
                         <TabItem value="security" icon={<Shield className="w-4 h-4" />} label="Security" />
                         <TabItem value="business" icon={<Building className="w-4 h-4" />} label="Business" />
+                        <TabItem value="notifications" icon={<Bell className="w-4 h-4" />} label="Notifications" />
                         <TabItem value="locations" icon={<MapPin className="w-4 h-4" />} label="Locations" />
                         <TabItem value="team" icon={<Users className="w-4 h-4" />} label="Team" />
                         <TabItem value="billing" icon={<CreditCard className="w-4 h-4" />} label="Billing" />
@@ -96,6 +98,10 @@ export function SettingsView({
 
                     <TabsContent value="team" className="mt-0 space-y-6">
                         <TeamList members={members} />
+                    </TabsContent>
+
+                    <TabsContent value="notifications" className="mt-0 space-y-6">
+                        <NotificationsView />
                     </TabsContent>
 
                     <TabsContent value="billing" className="mt-0 space-y-6">

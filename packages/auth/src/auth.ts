@@ -18,7 +18,10 @@ export const auth = betterAuth({
             console.warn("⚠️ USING INSECURE DEFAULT SECRET FOR DEV ⚠️");
             return "default_dev_secret_do_not_use_in_prod";
         }
-        throw new Error("❌ BETTER_AUTH_SECRET is missing in production!");
+        // Allow build to pass without secret if we can detect it (optional, but safer to just warn)
+        // Checking for standard CI/Build flags if we wanted to bypass, but BetterAuth might need it for type gen?
+        // Sticking to strict requirement for now but clearer message.
+        throw new Error("❌ BETTER_AUTH_SECRET is missing in production! Please add this environment variable to your deployment settings (Railway/Vercel).");
     })(),
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
