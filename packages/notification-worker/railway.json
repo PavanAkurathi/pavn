@@ -2,13 +2,9 @@
     "$schema": "https://railway.app/railway.schema.json",
     "build": {
         "watchPatterns": [
-            "packages/shifts/**",
+            "packages/notification-worker/**",
             "packages/database/**",
-            "packages/auth/**",
-            "packages/config/**",
-            "packages/geofence/**",
             "packages/notifications/**",
-            "packages/observability/**",
             "pnpm-lock.yaml",
             "turbo.json"
         ]

@@ -150,7 +150,7 @@ app.get("/flagged", async (c) => {
     return await getFlaggedTimesheetsController(orgId);
 });
 
-const port = process.env.GEOFENCE_PORT ? parseInt(process.env.GEOFENCE_PORT) : 4006;
+const port = process.env.GEOFENCE_PORT ? parseInt(process.env.GEOFENCE_PORT) : 4007;
 console.log(`📍 Geofence service running at http://localhost:${port}`);
 
 export default {

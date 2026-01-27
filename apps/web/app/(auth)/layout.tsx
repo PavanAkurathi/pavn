@@ -22,12 +22,7 @@ export default function AuthLayout({
                 <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-slate-600/10 rounded-full blur-3xl"></div>
 
                 <div className="relative z-10">
-                    <blockquote className="space-y-2">
-                        <p className="text-lg">
-                            &ldquo;Since switching to Workers Hive, our scheduling time dropped by 80%. It's a game changer.&rdquo;
-                        </p>
-                        <footer className="text-sm text-slate-400 font-medium">Sofie R. - Operations Director at Bean & Brew</footer>
-                    </blockquote>
+                    {/* Testimonial Removed */}
                 </div>
             </div>
 

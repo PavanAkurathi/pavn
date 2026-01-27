@@ -6,6 +6,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Check, CreditCard, Loader2 } from "lucide-react";
+import posthog from "posthog-js";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createCheckoutSession, createCustomerPortal } from "@/actions/billing";
@@ -22,6 +23,9 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
     const handleAction = async () => {
         setLoading(true);
         try {
+            if (!isActive) {
+                posthog.capture('checkout_started', { price: 25 });
+            }
             const res = isActive ? await createCustomerPortal() : await createCheckoutSession();
 
             if (res?.error) {
@@ -59,7 +63,7 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-3xl font-bold">$20</span>
+                        <span className="text-3xl font-bold">$25</span>
                         <span className="text-muted-foreground">/mo per location</span>
                     </div>
                     <ul className="space-y-2 mb-6">

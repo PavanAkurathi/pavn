@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import posthog from "posthog-js";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Card } from "@repo/ui/components/ui/card";
@@ -67,6 +68,19 @@ export function SignupForm() {
                 setIsLoading(true);
             },
             onSuccess: async () => {
+                // Track signup event
+                posthog.identify(data.email, {
+                    email: data.email,
+                    name: fullName,
+                    phone: data.phone,
+                    company_name: data.businessName
+                });
+
+                posthog.capture('signup_completed', {
+                    method: 'email',
+                    company_name: data.businessName
+                });
+
                 toast.success("Account created! Please verify your email.");
                 router.push(`/auth/verify-email?email=${encodeURIComponent(data.email)}`);
             },

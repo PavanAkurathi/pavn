@@ -38,8 +38,9 @@ export async function processNotifications() {
 
         // Drizzle .execute returns array of rows directly? Or dependent on driver?
         // With bun:sqlite / postgres.js it varies. 
-        // Let's assume standard postgres return shape or cast it.
-        const rows = pending as unknown as Array<{
+        // Handle both { rows: [...] } and [...] formats
+        const result = pending as any;
+        const rows = (Array.isArray(result) ? result : result.rows || []) as Array<{
             id: string;
             worker_id: string;
             title: string;

@@ -8,6 +8,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Plus, X } from "lucide-react";
+import posthog from "posthog-js";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
 import {
@@ -266,6 +267,14 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
             };
 
             await publishSchedule(payload, activeOrganizationId);
+
+            // Track schedule publish
+            posthog.capture('schedule_published', {
+                status: status,
+                location_id: data.locationId,
+                shift_count: apiSchedules.length
+            });
+
             toast.success(status === 'published' ? "Schedule published successfully!" : "Draft saved successfully!");
             localStorage.removeItem("schedule-layout-draft");
             router.push("/dashboard/shifts");

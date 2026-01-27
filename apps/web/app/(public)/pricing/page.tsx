@@ -12,6 +12,20 @@ export const metadata: Metadata = {
 export default function PricingPage() {
     return (
         <div className="bg-slate-50 min-h-screen pb-20">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify({
+                        "@context": "https://schema.org",
+                        "@type": "PriceSpecification",
+                        "price": "25.00",
+                        "priceCurrency": "USD",
+                        "unitCode": "MON",
+                        "name": "The Hive Plan",
+                        "description": "Unlimited staff, geofenced timeclock, and scheduling for one location."
+                    })
+                }}
+            />
 
             {/* Header */}
             <section className="bg-slate-900 text-white pt-24 pb-32 text-center px-6">
@@ -30,7 +44,7 @@ export default function PricingPage() {
                     <div className="p-10 text-center border-b border-slate-100">
                         <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest mb-4">The Hive Plan</h3>
                         <div className="flex justify-center items-baseline gap-2 mb-2">
-                            <span className="text-6xl font-extrabold text-slate-900">$20</span>
+                            <span className="text-6xl font-extrabold text-slate-900">$25</span>
                             <span className="text-xl text-slate-500 font-medium">/month</span>
                         </div>
                         <p className="text-slate-400 text-sm">Per location. Billed monthly.</p>

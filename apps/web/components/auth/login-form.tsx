@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import posthog from "posthog-js";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Card } from "@repo/ui/components/ui/card";
@@ -37,6 +38,10 @@ export function LoginForm() {
                 setIsLoading(true);
             },
             onSuccess: () => {
+                // Track login
+                posthog.identify(email);
+                posthog.capture('login_completed', { method: 'email' });
+
                 toast.success("Welcome back!");
                 router.push("/dashboard");
             },

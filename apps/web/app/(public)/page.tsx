@@ -23,20 +23,12 @@ export default function LandingPage() {
     <div className="flex flex-col min-h-screen bg-background font-sans">
 
       {/* --- HERO SECTION --- */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden border-b border-border">
+      <section className="relative pt-24 pb-20 lg:pt-32 lg:pb-32 overflow-hidden border-b border-border">
         <div className="container mx-auto px-6 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
 
             {/* Left Content */}
             <div className="lg:w-1/2 space-y-8">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-background border border-border shadow-sm text-sm font-bold tracking-wide text-foreground">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-600"></span>
-                </span>
-                LIVE FOR PHASE 1
-              </div>
-
               <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-foreground">
                 Scheduling made <br />
                 <span className="text-destructive">effortless.</span>
@@ -127,24 +119,7 @@ export default function LandingPage() {
       {/* --- 3. COMPARISON TABLE (Instawork Style) --- */}
       <ComparisonTable />
 
-      {/* --- TESTIMONIAL --- */}
-      <section className="py-24 bg-white border-b border-border">
-        <div className="container mx-auto px-6 max-w-4xl text-center">
-          <div className="flex justify-center gap-1 mb-6">
-            {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400" />)}
-          </div>
-          <h3 className="text-2xl md:text-4xl font-bold text-slate-900 leading-tight mb-8">
-            &quot;We were paying $300 a month for 7shifts. Switching to Workers Hive saved us $3,500 a year, and the crew actually prefers the app.&quot;
-          </h3>
-          <div className="flex items-center justify-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-slate-200"></div>
-            <div className="text-left">
-              <div className="font-bold text-slate-900">James V.</div>
-              <div className="text-sm text-slate-500">General Manager, Boston</div>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* --- FAQ --- */}
       <FAQ />

@@ -6,6 +6,8 @@ import { Toaster } from "@repo/ui/components/ui/sonner";
 // 👇 Import UI CSS (Optional, but good for completeness)
 import "@repo/ui/globals.css";
 
+import { CSPostHogProvider } from "@/providers/posthog-provider";
+
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -18,6 +20,10 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Workers Hive",
   description: "The OS for Modern Hospitality",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://workershive.com'),
+  alternates: {
+    canonical: '/',
+  },
 };
 
 export default function RootLayout({
@@ -43,7 +49,9 @@ export default function RootLayout({
               ])
             }}
           />
-          {children}
+          <CSPostHogProvider>
+            {children}
+          </CSPostHogProvider>
           <Toaster />
         </div>
       </body>

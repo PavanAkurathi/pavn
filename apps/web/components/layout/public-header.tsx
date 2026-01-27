@@ -22,11 +22,15 @@ export function PublicHeader() {
             <div className="container mx-auto px-6 h-20 flex items-center justify-between">
 
                 {/* Logo */}
+                {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight text-slate-900">
                     <div className="bg-slate-900 text-white p-1 rounded-lg">
                         <Command className="w-5 h-5" />
                     </div>
                     Workers Hive
+                    <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200 uppercase tracking-wide">
+                        BETA
+                    </span>
                 </Link>
 
                 {/* Desktop Nav */}
