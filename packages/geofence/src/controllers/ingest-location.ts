@@ -67,7 +67,7 @@ export async function ingestLocationController(
             }
         });
 
-        // Filter by time window
+        // Filter by time window (Time-Boxing: +/- 60 mins)
         let relevantShift = null;
         let relevantAssignment = null;
         let venueLocationId = null;
@@ -77,13 +77,20 @@ export async function ingestLocationController(
             const shiftStart = new Date(activeAssignment.shift.startTime);
             const shiftEnd = new Date(activeAssignment.shift.endTime);
 
-            // Is this shift within our tracking window?
-            if (shiftStart <= windowEnd && shiftEnd >= windowStart) {
+            // [INFRA-001] Time-Boxing: 60 min buffer
+            const bufferMs = 60 * 60 * 1000;
+            if (now.getTime() >= shiftStart.getTime() - bufferMs && now.getTime() <= shiftEnd.getTime() + bufferMs) {
                 relevantShift = activeAssignment.shift;
                 relevantAssignment = activeAssignment;
                 venueLocationId = activeAssignment.shift.locationId;
                 venueName = activeAssignment.shift.location?.name;
+            } else {
+                // Discard ping (Cost Control)
+                return Response.json({ success: true, message: "Ignored: Outside 60m shift window" });
             }
+        } else {
+            // No active assignment found at all?
+            return Response.json({ success: true, message: "Ignored: No active shift" });
         }
 
         // 4. Calculate distance to venue (if we have a relevant shift) using PostGIS
@@ -110,17 +117,36 @@ export async function ingestLocationController(
             }
         }
 
+        // Fetch previous ping for Transition Logic & Throttling
+        const previousPing = relevantShift ? await db.query.workerLocation.findFirst({
+            where: and(
+                eq(workerLocation.workerId, workerId),
+                eq(workerLocation.shiftId, relevantShift.id)
+            ),
+            orderBy: [desc(workerLocation.recordedAt)]
+        }) : null;
+
+        // [INFRA-002] Throttling: If clocked in & on site, only ping every 10 mins
+        if (isOnSite && relevantAssignment && relevantAssignment.clockIn && !relevantAssignment.clockOut) {
+            if (previousPing && (now.getTime() - previousPing.recordedAt.getTime()) < 10 * 60 * 1000) {
+                // Skip write
+                return Response.json({
+                    success: true,
+                    throttled: true,
+                    data: {
+                        isOnSite,
+                        distanceMeters,
+                        eventType: 'ping_throttled', // informative
+                        shiftId: relevantShift?.id || null,
+                        canClockIn: false, // Already clocked in
+                        canClockOut: true,
+                    }
+                });
+            }
+        }
+
         // 5. Detect arrival (transition from outside to inside geofence)
         if (isOnSite && relevantAssignment && !relevantAssignment.clockIn) {
-            // Check if this is first time on-site
-            const previousPing = relevantShift ? await db.query.workerLocation.findFirst({
-                where: and(
-                    eq(workerLocation.workerId, workerId),
-                    eq(workerLocation.shiftId, relevantShift.id)
-                ),
-                orderBy: [desc(workerLocation.recordedAt)]
-            }) : null;
-
             if (!previousPing || !previousPing.isOnSite) {
                 eventType = 'arrival';
                 // TODO: Trigger push notification + SMS
@@ -138,14 +164,6 @@ export async function ingestLocationController(
 
         // 6. Detect departure (leaving geofence while clocked in, without clocking out)
         if (!isOnSite && relevantAssignment?.clockIn && !relevantAssignment.clockOut) {
-            const previousPing = relevantShift ? await db.query.workerLocation.findFirst({
-                where: and(
-                    eq(workerLocation.workerId, workerId),
-                    eq(workerLocation.shiftId, relevantShift.id)
-                ),
-                orderBy: [desc(workerLocation.recordedAt)]
-            }) : null;
-
             if (previousPing?.isOnSite) {
                 // Prevent Spam: Only alert if not already flagged
                 if (relevantAssignment.reviewReason !== 'left_geofence') {

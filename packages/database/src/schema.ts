@@ -123,6 +123,10 @@ export const organization = pgTable("organization", {
 
     // Configuration
     earlyClockInBufferMinutes: integer("early_clock_in_buffer_minutes").notNull().default(60),
+    currencyCode: text("currency_code").notNull().default("USD"),
+    timezone: text("timezone").notNull().default("America/New_York"), // Default to EST/EDT or UTC? User said 'timezone'. Falling back to a safe default.
+    breakThresholdMinutes: integer("break_threshold_minutes"), // Custom rule override
+    regionalOvertimePolicy: text("regional_overtime_policy").notNull().default("weekly_40"), // 'weekly_40' | 'daily_8'
 });
 
 export const location = pgTable("location", {

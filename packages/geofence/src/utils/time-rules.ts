@@ -97,7 +97,7 @@ export function enforceBreakRules(
     clockIn: Date,
     clockOut: Date,
     recordedBreaks: number,
-    state: 'MA' | 'CA' | 'NY' | 'default' = 'default'
+    config: { breakThresholdMinutes?: number | null; currencyCode?: string } = {}
 ): BreakEnforcementResult {
     const totalMinutes = Math.round((clockOut.getTime() - clockIn.getTime()) / 60000);
     const totalHours = totalMinutes / 60;
@@ -110,19 +110,31 @@ export function enforceBreakRules(
         };
     }
 
-    // Shift under 6 hours - no break required
-    if (totalHours < 6) {
+    // Determine Threshold (Default: 6 hours = 360 mins)
+    // Canada (CAD) default: 5 hours = 300 mins
+    let thresholdMinutes = 360;
+
+    if (config.breakThresholdMinutes) {
+        thresholdMinutes = config.breakThresholdMinutes;
+    } else if (config.currencyCode === 'CAD') {
+        thresholdMinutes = 300;
+    }
+
+    const thresholdHours = thresholdMinutes / 60;
+
+    // Shift under threshold - no break required
+    if (totalMinutes < thresholdMinutes) {
         return {
             breakMinutes: 0,
             wasEnforced: false
         };
     }
 
-    // 6+ hours: Mandatory 30 min unpaid break
+    // Over threshold: Mandatory 30 min unpaid break
     // In a real app, complex state logic (CA vs MA) would go here.
     return {
         breakMinutes: 30,
         wasEnforced: true,
-        reason: `Mandatory 30min break for ${totalHours.toFixed(1)}hr shift`
+        reason: `Mandatory 30min break for >${thresholdHours.toFixed(1)}hr shift`
     };
 }

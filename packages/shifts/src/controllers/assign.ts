@@ -28,7 +28,8 @@ export const assignWorkerController = async (req: Request, shiftId: string, orgI
             status: true,
             startTime: true,
             endTime: true,
-            title: true
+            title: true,
+            price: true
         }
     });
 
@@ -79,7 +80,8 @@ export const assignWorkerController = async (req: Request, shiftId: string, orgI
         id: newId("asg"),
         shiftId: shiftId,
         workerId: workerId,
-        status: 'active' as const
+        status: 'active' as const,
+        hourlyRateSnapshot: existingShift.price
     }));
 
     await db.insert(shiftAssignment).values(values);

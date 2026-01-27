@@ -3,8 +3,8 @@ export type ShiftStatus = 'draft' | 'published' | 'assigned' | 'in-progress' | '
 export const VALID_TRANSITIONS: Record<ShiftStatus, ShiftStatus[]> = {
     'draft': ['published', 'cancelled'],
     'published': ['assigned', 'cancelled'],
-    'assigned': ['published', 'in-progress', 'cancelled'], // Can go back to published if unassigned
-    'in-progress': ['completed', 'cancelled'], // Can be cancelled mid-shift
+    'assigned': ['published', 'in-progress', 'cancelled', 'approved'], // Can go back to published if unassigned
+    'in-progress': ['completed', 'cancelled', 'approved'], // Can be cancelled mid-shift
     'completed': ['approved', 'in-progress'], // 'in-progress' allowed for reopening/correction
     'approved': ['completed'], // Can be un-approved for corrections
     'cancelled': ['draft', 'published'], // Can be re-drafted or re-published

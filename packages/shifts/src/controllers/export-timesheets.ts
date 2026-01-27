@@ -1,7 +1,10 @@
+// [PAY-001] Professional Excel Export (SpreadsheetML XML)
+// Does not require 'exceljs' dependency but opens natively in Excel.
+
 import { db } from "@repo/database";
-import { shift, shiftAssignment, user, location } from "@repo/database/schema";
-import { eq, and, gte, lte, like, inArray, ilike } from "drizzle-orm";
-import { differenceInMinutes, format } from "date-fns";
+import { shift, shiftAssignment, user, location, organization } from "@repo/database/schema";
+import { eq, and, gte, lte, like, inArray, ilike, desc, asc } from "drizzle-orm";
+import { differenceInMinutes, format, startOfWeek, endOfWeek, isSameWeek } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
@@ -14,7 +17,7 @@ const ExportQuerySchema = z.object({
     position: z.string().optional(),
     workerId: z.string().optional(),
     search: z.string().optional(),
-    format: z.enum(['csv', 'excel']).optional().default('csv'),
+    format: z.enum(['csv', 'excel']).optional().default('excel'),
 });
 
 export async function exportTimesheetsController(
@@ -27,64 +30,49 @@ export async function exportTimesheetsController(
         throw new AppError("Invalid query parameters", "VALIDATION_ERROR", 400, parsed.error.flatten());
     }
 
-    const { start: startDate, end: endDate, locationId, position, workerId, search, format: exportFormat } = parsed.data;
+    const { start: startDate, end: endDate, locationId, position, workerId, search } = parsed.data;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        throw new AppError("Invalid date format. Use YYYY-MM-DD", "INVALID_DATE", 400);
-    }
+    // 1. Fetch Organization Policy
+    const orgRecord = await db.query.organization.findFirst({
+        where: eq(organization.id, orgId),
+        columns: { regionalOvertimePolicy: true }
+    });
+    const overtimePolicy = orgRecord?.regionalOvertimePolicy || 'weekly_40'; // 'daily_8' or 'weekly_40'
 
-    // Build WHERE conditions dynamically
+    // Build WHERE conditions
     const conditions = [
         eq(shift.organizationId, orgId),
         eq(shift.status, 'approved'),
         gte(shift.startTime, start),
         lte(shift.startTime, end),
-        // Only include completed/approved assignments (not no-shows by default)
         inArray(shiftAssignment.status, ['completed', 'approved', 'active']),
     ];
 
-    if (locationId) {
-        conditions.push(eq(shift.locationId, locationId));
-    }
+    if (locationId) conditions.push(eq(shift.locationId, locationId));
+    if (position) conditions.push(eq(shift.title, position));
+    if (workerId) conditions.push(eq(shiftAssignment.workerId, workerId));
+    if (search) conditions.push(ilike(user.name, `%${search}%`));
 
-    if (position) {
-        // Case-insensitive position filter via ILIKE workaround
-        conditions.push(eq(shift.title, position));
-    }
-
-    if (workerId) {
-        conditions.push(eq(shiftAssignment.workerId, workerId));
-    }
-
-    if (search) {
-        conditions.push(ilike(user.name, `%${search}%`));
-    }
-
-    // Enhanced SELECT with location join
+    // Fetch Data
     const results = await db
         .select({
-            // Worker info
+            workerId: user.id,
             workerName: user.name,
             workerEmail: user.email,
-            workerPhone: user.phoneNumber,
-            // Position/Role
             position: shift.title,
-            // Location
             locationName: location.name,
-            locationAddress: location.address,
-            // Scheduled times
             scheduledStart: shift.startTime,
             scheduledEnd: shift.endTime,
             shiftPrice: shift.price,
-            // Actuals
             clockIn: shiftAssignment.clockIn,
             clockOut: shiftAssignment.clockOut,
             breakMinutes: shiftAssignment.breakMinutes,
             grossPayCents: shiftAssignment.grossPayCents,
+            hourlyRateSnapshot: shiftAssignment.hourlyRateSnapshot,
             assignmentStatus: shiftAssignment.status,
         })
         .from(shiftAssignment)
@@ -92,104 +80,133 @@ export async function exportTimesheetsController(
         .innerJoin(user, eq(shiftAssignment.workerId, user.id))
         .leftJoin(location, eq(shift.locationId, location.id))
         .where(and(...conditions))
-        .limit(10001); // SQL limit for safety
+        .orderBy(asc(user.name), asc(shift.startTime)); // Sort by Worker, then Date for calc
 
-    // Check row limit
-    if (results.length > 10000) {
-        throw new AppError(
-            "Export too large. Please narrow your date range or add filters.",
-            "EXPORT_TOO_LARGE",
-            400,
-            { rowCount: results.length, maxAllowed: 10000 }
-        );
-    }
+    // 2. Process Data (Calculate Overtime)
+    // We need to track weekly totals if policy is 'weekly_40'
+    const processedRows = [];
+    const workerWeeklyHours: Record<string, Record<string, number>> = {}; // workerId -> weekKey -> minutes
 
-    // Direct usage of results (no in-memory filtering needed)
-    const filteredResults = results;
+    for (const row of results) {
+        if (!row.clockIn || !row.clockOut) continue;
 
-    // CSV Headers (16 columns)
-    const headers = [
-        'Worker Name', 'Worker Email', 'Worker Phone', 'Position',
-        'Location', 'Location Address', 'Date',
-        'Scheduled Start', 'Scheduled End', 'Actual Start', 'Actual End',
-        'Break (min)', 'Total Hours', 'Hourly Rate', 'Total Pay', 'Status'
-    ];
+        const totalMinutes = Math.max(0, differenceInMinutes(row.clockOut, row.clockIn) - (row.breakMinutes || 0));
+        let regularMinutes = totalMinutes;
+        let overtimeMinutes = 0;
 
-    const rows = filteredResults.map(row => {
-        // Calculate hours
-        const totalMinutes = row.clockIn && row.clockOut
-            ? differenceInMinutes(row.clockOut, row.clockIn) - (row.breakMinutes || 0)
-            : 0;
-        const totalHours = (totalMinutes / 60).toFixed(2);
-        const grossPay = row.grossPayCents ? (row.grossPayCents / 100).toFixed(2) : '0.00';
-        const hourlyRate = row.shiftPrice ? (row.shiftPrice / 100).toFixed(2) : '0.00';
-
-        // CSV Injection Prevention
-        const sanitize = (val: unknown): string => {
-            const s = String(val ?? '');
-            if (/^[=+\-@\t\r]/.test(s)) {
-                return "'" + s;
+        if (overtimePolicy === 'daily_8') {
+            const limit = 8 * 60; // 480 mins
+            if (totalMinutes > limit) {
+                regularMinutes = limit;
+                overtimeMinutes = totalMinutes - limit;
             }
-            return s;
-        };
+        } else if (overtimePolicy === 'weekly_40') {
+            const weekKey = format(startOfWeek(row.scheduledStart), 'yyyy-MM-dd');
 
-        // Format times as HH:MM
-        const formatTime = (date: Date | null): string => {
-            if (!date) return '';
-            return format(date, 'HH:mm');
-        };
+            let workerRecord = workerWeeklyHours[row.workerId];
+            if (!workerRecord) {
+                workerRecord = {};
+                workerWeeklyHours[row.workerId] = workerRecord;
+            }
 
-        // Format date as YYYY-MM-DD
-        const formatDate = (date: Date): string => {
-            return format(date, 'yyyy-MM-dd');
-        };
+            const currentTotal = workerRecord[weekKey] || 0;
 
-        return [
-            sanitize(row.workerName || 'Unknown'),
-            sanitize(row.workerEmail || ''),
-            sanitize(row.workerPhone || ''),
-            sanitize(row.position || ''),
-            sanitize(row.locationName || ''),
-            sanitize(row.locationAddress || ''),
-            formatDate(row.scheduledStart),
-            formatTime(row.scheduledStart),
-            formatTime(row.scheduledEnd),
-            formatTime(row.clockIn),
-            formatTime(row.clockOut),
-            String(row.breakMinutes || 0),
-            totalHours,
+            // Re-calc logic:
+            // This is a simplified sequential sweep. It assumes we processing in chronological order per worker.
+            // If previous shifts already filled the bucket, this whole shift might be OT.
+
+            const limit = 40 * 60; // 2400 mins
+
+            if (currentTotal >= limit) {
+                // Already over limit, all is overtime
+                regularMinutes = 0;
+                overtimeMinutes = totalMinutes;
+            } else if (currentTotal + totalMinutes > limit) {
+                // Split
+                regularMinutes = limit - currentTotal;
+                overtimeMinutes = totalMinutes - regularMinutes;
+            }
+
+            // Update bucket
+            workerRecord[weekKey] = currentTotal + totalMinutes;
+        }
+
+        const hourlyRate = (row.hourlyRateSnapshot || row.shiftPrice || 0) / 100;
+        const regularHours = regularMinutes / 60;
+        const overtimeHours = overtimeMinutes / 60;
+
+        // Calculate Pay
+        const regularPay = regularHours * hourlyRate;
+        const overtimePay = overtimeHours * hourlyRate * 1.5;
+        const totalPay = regularPay + overtimePay;
+
+        processedRows.push({
+            ...row,
+            totalMinutes,
+            regularHours,
+            overtimeHours,
             hourlyRate,
-            grossPay,
-            sanitize(row.assignmentStatus || 'completed'),
-        ];
-    });
-
-    // Build CSV
-    const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-
-    // Return empty file with headers if no data
-    const filename = `timesheets-${startDate}-to-${endDate}`;
-
-    if (exportFormat === 'csv') {
-        return new Response(csvContent, {
-            status: 200,
-            headers: {
-                'Content-Type': 'text/csv; charset=utf-8',
-                'Content-Disposition': `attachment; filename="${filename}.csv"`
-            }
+            totalPay
         });
     }
 
-    // Excel format - for now return CSV with xlsx extension (placeholder)
-    // TODO: Add exceljs for proper Excel generation
-    return new Response(csvContent, {
-        status: 200,
+    // 3. Generate Output (XML Spreadsheet)
+    const xmlBody = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Worksheet ss:Name="Timesheets">
+  <Table>
+   <Row>
+    <Cell><Data ss:Type="String">Worker Name</Data></Cell>
+    <Cell><Data ss:Type="String">Email</Data></Cell>
+    <Cell><Data ss:Type="String">Date</Data></Cell>
+    <Cell><Data ss:Type="String">Total Minutes</Data></Cell>
+    <Cell><Data ss:Type="String">Break (min)</Data></Cell>
+    <Cell><Data ss:Type="String">Regular Hours</Data></Cell>
+    <Cell><Data ss:Type="String">Overtime Hours</Data></Cell>
+    <Cell><Data ss:Type="String">Hourly Rate</Data></Cell>
+    <Cell><Data ss:Type="String">Total Pay</Data></Cell>
+   </Row>
+   ${processedRows.map(row => `
+   <Row>
+    <Cell><Data ss:Type="String">${escapeXml(row.workerName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(row.workerEmail)}</Data></Cell>
+    <Cell><Data ss:Type="String">${format(row.scheduledStart, 'yyyy-MM-dd')}</Data></Cell>
+    <Cell><Data ss:Type="Number">${row.totalMinutes}</Data></Cell>
+    <Cell><Data ss:Type="Number">${row.breakMinutes || 0}</Data></Cell>
+    <Cell><Data ss:Type="Number">${row.regularHours.toFixed(2)}</Data></Cell>
+    <Cell><Data ss:Type="Number">${row.overtimeHours.toFixed(2)}</Data></Cell>
+    <Cell><Data ss:Type="Number">${row.hourlyRate.toFixed(2)}</Data></Cell>
+    <Cell><Data ss:Type="Number">${row.totalPay.toFixed(2)}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const filename = `payroll_export_${startDate}_${endDate}.xls`;
+
+    return new Response(xmlBody, {
         headers: {
-            'Content-Type': 'text/csv; charset=utf-8',
-            'Content-Disposition': `attachment; filename="${filename}.csv"`
+            'Content-Type': 'application/vnd.ms-excel',
+            'Content-Disposition': `attachment; filename="${filename}"`
         }
+    });
+}
+
+function escapeXml(unsafe: string | null): string {
+    if (!unsafe) return '';
+    return unsafe.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+        }
+        return c;
     });
 }

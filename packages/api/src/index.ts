@@ -8,6 +8,10 @@ import shifts from './routes/shifts';
 import preferences from './routes/preferences';
 import managerPreferences from './routes/manager-preferences';
 
+import { db } from '@repo/database';
+import { member } from '@repo/database/schema';
+import { eq, and } from 'drizzle-orm';
+
 const app = new Hono<{
     Variables: {
         user: typeof auth.$Infer.Session.user | null;
@@ -31,6 +35,26 @@ app.use('*', async (c, next) => {
     const session = await auth.api.getSession({ headers: c.req.raw.headers });
     if (!session) {
         return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // [SEC-001] Multi-Tenancy Identity Audit
+    // Verify userId belongs to x-org-id if provided
+    const orgId = c.req.header('x-org-id');
+    if (orgId) {
+        // Optimization: In a real production app, cache this membership in Redis or the Session token.
+        // For now, we query DB to ensure "No exceptions" strictness.
+        const membership = await db.query.member.findFirst({
+            where: and(
+                eq(member.userId, session.user.id),
+                eq(member.organizationId, orgId)
+            ),
+            columns: { id: true }
+        });
+
+        if (!membership) {
+            console.warn(`[SEC-AUDIT] User ${session.user.id} attempted to access Org ${orgId} without membership.`);
+            return c.json({ error: 'Forbidden: You are not a member of this organization' }, 403);
+        }
     }
 
     c.set('user', session.user);

@@ -58,6 +58,8 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
             breakMinutes: number;
             adjustmentNotes: string | null;
             workerId: string; // Needed for audit
+            clockOut?: Date;
+            clockOutMethod?: string;
         }[] = [];
 
         for (const assign of shiftRecord.assignments) {
@@ -75,9 +77,24 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
                 continue;
             }
 
-            // CASE: Dirty Data (Missing Clock Out)
+            // CASE: Missing Clock Out (Auto-Fix)
             if (assign.clockIn && !assign.clockOut) {
-                dirtyAssignments.push(assign.workerId);
+                const scheduledEnd = new Date(shiftRecord.endTime);
+
+                updates.push({
+                    id: assign.id,
+                    status: 'completed',
+                    grossPayCents: calculateShiftPay(
+                        Math.max(0, differenceInMinutes(scheduledEnd, new Date(assign.clockIn)) - (assign.breakMinutes || 0)),
+                        shiftRecord.price || 0
+                    ),
+                    hourlyRateSnapshot: shiftRecord.price || 0,
+                    breakMinutes: assign.breakMinutes || 0,
+                    adjustmentNotes: "System-generated clock-out due to missing worker punch.",
+                    workerId: assign.workerId,
+                    clockOut: scheduledEnd,
+                    clockOutMethod: 'system_auto_finalized'
+                });
                 continue;
             }
 
@@ -138,7 +155,14 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
                 }
 
                 const billableMinutes = Math.max(0, totalMinutes - breakMinutes);
-                const rate = shiftRecord.price || 0;
+
+                // [FIN-002] Rate Lock: Use snapshot, fallback to shift price
+                let rate = assign.hourlyRateSnapshot;
+                if (rate === null || rate === undefined) {
+                    // Log warning (using console for now, or logAudit if possible, but keep it simple)
+                    console.warn(`[RateLock] Missing snapshot for assignment ${assign.id}. Fallback to shift price.`);
+                    rate = shiftRecord.price || 0;
+                }
 
                 // WH-137: Centralized Pay Calculation
                 const pay = calculateShiftPay(billableMinutes, rate);
@@ -177,7 +201,9 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
                         grossPayCents: u.grossPayCents,
                         hourlyRateSnapshot: u.hourlyRateSnapshot,
                         breakMinutes: u.breakMinutes,
-                        adjustmentNotes: u.adjustmentNotes
+                        adjustmentNotes: u.adjustmentNotes,
+                        ...(u.clockOut ? { clockOut: u.clockOut } : {}),
+                        ...(u.clockOutMethod ? { clockOutMethod: u.clockOutMethod } : {})
                     })
                     .where(eq(shiftAssignment.id, u.id))
             ));

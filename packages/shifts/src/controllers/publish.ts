@@ -358,7 +358,8 @@ export const publishScheduleController = async (req: Request, headerOrgId: strin
                             id: newId('asg'),
                             shiftId: shiftId,
                             workerId: workerId,
-                            status: 'active'
+                            status: 'active',
+                            hourlyRateSnapshot: position.price || 0
                         });
                     }
                 }
