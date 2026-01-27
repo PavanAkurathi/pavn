@@ -154,10 +154,10 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
             },
         }),
         stripe({
-            stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY!, {
+            stripeClient: new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
                 apiVersion: "2025-12-15.clover" as any, // Match SDK version
             }),
-            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+            stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
             createCustomerOnSignUp: true,
             subscription: {
                 enabled: true,

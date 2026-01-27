@@ -15,7 +15,9 @@
         "migrate": "drizzle-kit migrate",
         "push": "drizzle-kit push",
         "studio": "drizzle-kit studio",
-        "reset": "bun run ./scripts/reset.ts"
+        "reset": "bun run ./scripts/reset.ts",
+        "type-check": "tsc --noEmit",
+        "purge:locations": "bun run ./scripts/purge-locations.ts"
     },
     "dependencies": {
         "@neondatabase/serverless": "^0.9.3",

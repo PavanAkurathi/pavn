@@ -5,8 +5,7 @@ import { shift, shiftAssignment, workerLocation, organization, location } from "
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { applyClockInRules } from "../utils/time-rules";
-import { validateShiftTransition } from "@repo/config";
+import { applyClockInRules, validateShiftTransition } from "@repo/config";
 import { cancelNotificationByType } from "@repo/notifications";
 import { notifyManagers } from "../utils/manager-notifications";
 
@@ -15,6 +14,7 @@ const ClockInSchema = z.object({
     latitude: z.string(),
     longitude: z.string(),
     accuracyMeters: z.number().optional(),
+    deviceTimestamp: z.string().datetime(), // Required for replay protection
 });
 
 export async function clockInController(
@@ -34,7 +34,32 @@ export async function clockInController(
             }, { status: 400 });
         }
 
-        const { shiftId, latitude, longitude, accuracyMeters } = parseResult.data;
+        const { shiftId, latitude, longitude, accuracyMeters, deviceTimestamp } = parseResult.data;
+
+        // [SEC-005] Anti-Spoofing Checks
+        // 1. Replay Attack Prevention (Time Variance > 5 minutes)
+        const deviceTime = new Date(deviceTimestamp);
+        const serverTime = new Date();
+        const timeDiffMinutes = Math.abs(serverTime.getTime() - deviceTime.getTime()) / 60000;
+
+        if (timeDiffMinutes > 5) {
+            return Response.json({
+                error: "Location data is stale or future-dated",
+                code: "REPLAY_DETECTED",
+                serverTime: serverTime.toISOString(),
+                deviceTime: deviceTime.toISOString()
+            }, { status: 400 });
+        }
+
+        // 2. Accuracy Threshold (Reject if > 200m uncertainty)
+        if (accuracyMeters && accuracyMeters > 200) {
+            return Response.json({
+                error: "GPS signal too weak",
+                code: "LOW_ACCURACY",
+                accuracy: accuracyMeters,
+                required: 200
+            }, { status: 400 });
+        }
 
         // 2. Fetch shift details
         const shiftRecord = await db.query.shift.findFirst({

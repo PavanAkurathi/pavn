@@ -32,8 +32,9 @@ describe("WH-115: History Pagination", () => {
         const calls = mockFindMany.mock.calls;
         // Verify we have calls and arguments before accessing index
         // This resolves: Object is possibly 'undefined' and Tuple type '[]' of length '0'
-        if (calls.length > 0 && calls[0].length > 0) {
-            const callArgs = calls[0][0] as any; // Cast for test ease, or define type if needed
+        if (calls.length > 0 && calls[0] && calls[0].length > 0) {
+            const safeCalls = calls as any;
+            const callArgs = safeCalls[0][0];
             expect(callArgs.limit).toBe(10);
             expect(callArgs.offset).toBe(20);
             expect(callArgs.where).toBeDefined();
@@ -49,8 +50,9 @@ describe("WH-115: History Pagination", () => {
         expect(mockFindMany).toHaveBeenCalledTimes(1);
 
         const calls = mockFindMany.mock.calls;
-        if (calls.length > 0 && calls[0].length > 0) {
-            const callArgs = calls[0][0] as any;
+        if (calls.length > 0 && calls[0] && calls[0].length > 0) {
+            const safeCalls = calls as any;
+            const callArgs = safeCalls[0][0];
             expect(callArgs.limit).toBe(50);
             expect(callArgs.offset).toBe(0);
         }

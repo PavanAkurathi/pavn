@@ -7,6 +7,7 @@ import { eq, and, gte, lte, like, inArray, ilike, desc, asc } from "drizzle-orm"
 import { differenceInMinutes, format, startOfWeek, endOfWeek, isSameWeek } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { AppError } from "@repo/observability";
+import { calculateDailyOvertimeMinutes } from "@repo/config";
 import { z } from "zod";
 
 // Query parameter schema
@@ -95,11 +96,8 @@ export async function exportTimesheetsController(
         let overtimeMinutes = 0;
 
         if (overtimePolicy === 'daily_8') {
-            const limit = 8 * 60; // 480 mins
-            if (totalMinutes > limit) {
-                regularMinutes = limit;
-                overtimeMinutes = totalMinutes - limit;
-            }
+            overtimeMinutes = calculateDailyOvertimeMinutes(totalMinutes, 'daily_8');
+            regularMinutes = totalMinutes - overtimeMinutes;
         } else if (overtimePolicy === 'weekly_40') {
             const weekKey = format(startOfWeek(row.scheduledStart), 'yyyy-MM-dd');
 

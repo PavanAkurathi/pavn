@@ -37,8 +37,8 @@ describe("WH-117: Timesheet Status Mapping", () => {
         const res = await getShiftTimesheetsController("shift_1", "org_1");
         const data = await res.json() as TimesheetWorker[];
 
-        expect(data[0].status).toBe("rostered");
-        expect(data[1].status).toBe("rostered");
+        expect(data[0]!.status).toBe("rostered");
+        expect(data[1]!.status).toBe("rostered");
     });
 
     test("maps 'completed' to 'submitted'", async () => {
@@ -47,7 +47,7 @@ describe("WH-117: Timesheet Status Mapping", () => {
         ]);
         const res = await getShiftTimesheetsController("shift_1", "org_1");
         const data = await res.json() as TimesheetWorker[];
-        expect(data[0].status).toBe("submitted");
+        expect(data[0]!.status).toBe("submitted");
     });
 
     test("maps 'approved' to 'approved'", async () => {
@@ -56,7 +56,7 @@ describe("WH-117: Timesheet Status Mapping", () => {
         ]);
         const res = await getShiftTimesheetsController("shift_1", "org_1");
         const data = await res.json() as TimesheetWorker[];
-        expect(data[0].status).toBe("approved");
+        expect(data[0]!.status).toBe("approved");
     });
 
     test("maps 'cancelled' and 'no_show' to 'blocked'", async () => {
@@ -66,7 +66,7 @@ describe("WH-117: Timesheet Status Mapping", () => {
         ]);
         const res = await getShiftTimesheetsController("shift_1", "org_1");
         const data = await res.json() as TimesheetWorker[];
-        expect(data[0].status).toBe("blocked");
-        expect(data[1].status).toBe("blocked");
+        expect(data[0]!.status).toBe("blocked");
+        expect(data[1]!.status).toBe("blocked");
     });
 });

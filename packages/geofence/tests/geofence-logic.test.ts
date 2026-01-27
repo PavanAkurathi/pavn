@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { applyClockInRules } from "../src/utils/time-rules";
+import { applyClockInRules } from "@repo/config";
 
 describe("Geofence Logic", () => {
     describe("applyClockInRules", () => {

@@ -6,7 +6,10 @@ import { approveShiftController } from "../src/controllers/approve";
 const mockQuery = mock(() => Promise.resolve<any>(null));
 const mockTransaction = mock((cb) => cb({
     update: mockUpdate,
-    query: { shift: { findFirst: mockQuery } }
+    query: {
+        shift: { findFirst: mockQuery },
+        member: { findFirst: mock(() => Promise.resolve({ role: 'admin' })) }
+    }
 }));
 const mockUpdate = mock(() => ({ set: mockSet }));
 const mockSet = mock(() => ({ where: mockWhere }));
@@ -25,10 +28,7 @@ mock.module("@repo/database", () => ({
 }));
 
 mock.module("@repo/config", () => ({
-    validateShiftTransition: () => true
-}));
-
-mock.module("@repo/geofence", () => ({
+    validateShiftTransition: () => true,
     enforceBreakRules: () => ({ breakMinutes: 0, wasEnforced: false })
 }));
 
@@ -56,7 +56,7 @@ describe("Approve Shift - No Show Audit", () => {
         };
         mockQuery.mockResolvedValue(mockShift);
 
-        await approveShiftController("s1", "org1");
+        await approveShiftController("s1", "org1", "test_actor");
 
         // Verify Transaction
         expect(mockTransaction).toHaveBeenCalled();
@@ -73,7 +73,7 @@ describe("Approve Shift - No Show Audit", () => {
 
         const logEntry = noShowLog[0] as any;
         expect(logEntry.entityId).toBe("a1");
-        expect(logEntry.userId).toBe("w1");
+        expect(logEntry.userId).toBe("test_actor");
         expect(logEntry.metadata.reason).toContain("No clock-in");
     });
 });

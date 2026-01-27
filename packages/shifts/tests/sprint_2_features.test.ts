@@ -95,7 +95,7 @@ describe("Sprint 2 Features (Unit)", () => {
         mockBuilder.query.shift.findFirst.mockResolvedValue(mockShift);
 
         // 2. Act
-        await approveShiftController(shiftId, orgId);
+        await approveShiftController(shiftId, orgId, "test_actor");
 
         // 3. Assert on Updates
         // The controller iterates assignments and updates them.

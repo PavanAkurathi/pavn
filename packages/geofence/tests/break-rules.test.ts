@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { enforceBreakRules } from "../src/utils/time-rules";
+import { enforceBreakRules } from "@repo/config";
 
 describe("Break Enforcement Rules", () => {
     test("Should not enforce break for shift < 6 hours", () => {

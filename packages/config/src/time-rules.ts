@@ -138,3 +138,25 @@ export function enforceBreakRules(
         reason: `Mandatory 30min break for >${thresholdHours.toFixed(1)}hr shift`
     };
 }
+
+/**
+ * Calculates overtime minutes based on regional policy.
+ * 
+ * Policies:
+ * - 'daily_8': Overtime after 8 hours (480 mins) in a day.
+ * - 'weekly_40': (Not handled here, usually at payroll aggregation level).
+ * 
+ * @param billableMinutes - Total billable minutes for the shift (after breaks)
+ * @param policy - Regional policy code
+ * @returns Number of minutes that are considered overtime
+ */
+export function calculateDailyOvertimeMinutes(billableMinutes: number, policy: string = 'weekly_40'): number {
+    if (policy === 'daily_8') {
+        const threshold = 480; // 8 hours
+        if (billableMinutes > threshold) {
+            return billableMinutes - threshold;
+        }
+    }
+    // Default 'weekly_40' implies no daily OT (unless CA/Other rules apply, but for MVP it's 0 daily)
+    return 0;
+}

@@ -6,14 +6,14 @@ import { eq, and, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { logAudit } from "@repo/database";
-import { applyClockOutRules } from "../utils/time-rules";
-import { validateShiftTransition } from "@repo/config";
+import { applyClockOutRules, validateShiftTransition } from "@repo/config";
 
 const ClockOutSchema = z.object({
     shiftId: z.string(),
     latitude: z.string(),
     longitude: z.string(),
     accuracyMeters: z.number().optional(),
+    deviceTimestamp: z.string().datetime(),
 });
 
 export async function clockOutController(
@@ -33,7 +33,30 @@ export async function clockOutController(
             }, { status: 400 });
         }
 
-        const { shiftId, latitude, longitude, accuracyMeters } = parseResult.data;
+        const { shiftId, latitude, longitude, accuracyMeters, deviceTimestamp } = parseResult.data;
+
+        // [SEC-005] Anti-Spoofing Checks
+        const deviceTime = new Date(deviceTimestamp);
+        const serverTime = new Date();
+        const timeDiffMinutes = Math.abs(serverTime.getTime() - deviceTime.getTime()) / 60000;
+
+        if (timeDiffMinutes > 5) {
+            return Response.json({
+                error: "Location data is stale or future-dated",
+                code: "REPLAY_DETECTED",
+                serverTime: serverTime.toISOString(),
+                deviceTime: deviceTime.toISOString()
+            }, { status: 400 });
+        }
+
+        if (accuracyMeters && accuracyMeters > 200) {
+            return Response.json({
+                error: "GPS signal too weak",
+                code: "LOW_ACCURACY",
+                accuracy: accuracyMeters,
+                required: 200
+            }, { status: 400 });
+        }
 
         // 2. Fetch shift with location and assignment
         const shiftRecord = await db.query.shift.findFirst({

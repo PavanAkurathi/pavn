@@ -8,6 +8,9 @@
         ".": "./src/index.ts",
         "./client": "./src/client.ts"
     },
+    "scripts": {
+        "type-check": "tsc --noEmit"
+    },
     "dependencies": {
         "@better-auth/expo": "1.4.17",
         "@repo/database": "workspace:*",

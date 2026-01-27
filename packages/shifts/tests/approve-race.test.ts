@@ -55,7 +55,7 @@ describe("approveShiftController Race Condition", () => {
         // The enum usually is: scheduled -> assigned -> in-progress -> completed (clock out) -> approved (manager) -> paid.
         // So 'completed' is the correct state for approval.
 
-        const response = await approveShiftController(shiftId, orgId);
+        const response = await approveShiftController(shiftId, orgId, "test_actor");
 
         // Assertion
         expect(response.status).toBe(200);

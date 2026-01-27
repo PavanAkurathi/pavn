@@ -6,7 +6,10 @@ import { approveShiftController } from "../src/controllers/approve";
 const mockQuery = mock(() => Promise.resolve<any>(null));
 const mockTransaction = mock((cb) => cb({
     update: mockUpdate,
-    query: { shift: { findFirst: mockQuery } }
+    query: {
+        shift: { findFirst: mockQuery },
+        member: { findFirst: mock(() => Promise.resolve({ role: 'admin' })) }
+    }
 }));
 const mockUpdate = mock(() => ({ set: mockSet }));
 const mockSet = mock(() => ({ where: mockWhere }));
@@ -25,12 +28,7 @@ mock.module("@repo/database", () => ({
 }));
 
 mock.module("@repo/config", () => ({
-    validateShiftTransition: () => true
-}));
-
-// Mock geofence enforceBreakRules to return something we can verify is utilized in the current code
-// In the future code, this won't be called, or we will check that we ignore it
-mock.module("@repo/geofence", () => ({
+    validateShiftTransition: () => true,
     enforceBreakRules: () => ({ breakMinutes: 30, wasEnforced: true, reason: 'Enforced' })
 }));
 
@@ -78,7 +76,7 @@ describe("WH-126 Break Enforcement Removal", () => {
         };
         mockQuery.mockResolvedValue(mockShift);
 
-        await approveShiftController("s1", "org1");
+        await approveShiftController("s1", "org1", "test_actor");
 
         const setCall = (mockSet.mock.calls as any)[0];
         const updatePayload = setCall[0];
@@ -107,7 +105,7 @@ describe("WH-126 Break Enforcement Removal", () => {
         };
         mockQuery.mockResolvedValue(mockShift);
 
-        await approveShiftController("s1", "org1");
+        await approveShiftController("s1", "org1", "test_actor");
         const updatePayload = (mockSet.mock.calls as any)[0][0];
         expect(updatePayload.grossPayCents).toBe(7750);
         expect(updatePayload.breakMinutes).toBe(15);
@@ -135,7 +133,7 @@ describe("WH-126 Break Enforcement Removal", () => {
 
         // Expect controller to throw AppError
         try {
-            await approveShiftController("s1", "org1");
+            await approveShiftController("s1", "org1", "test_actor");
             expect(true).toBe(false); // Should have thrown
         } catch (e: any) {
             expect(e).toBeInstanceOf(MockAppError);
