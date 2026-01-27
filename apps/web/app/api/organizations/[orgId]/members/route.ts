@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@repo/database";
 import { member, user } from "@repo/database/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or } from "@repo/database";
 
 export async function GET(
     request: NextRequest,

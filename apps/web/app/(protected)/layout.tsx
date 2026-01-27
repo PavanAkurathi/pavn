@@ -5,7 +5,7 @@ import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { organization, member } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { eq } from "@repo/database";
 
 export default async function ProtectedLayout({
     children,

@@ -12,7 +12,7 @@ import {
     account as accountSchema,
     user as userSchema
 } from "@repo/database/schema";
-import { eq, and, desc, or } from "drizzle-orm";
+import { eq, and, desc, or } from "@repo/database";
 import { SettingsView } from "@/components/settings/settings-view";
 import { getSubscriptionDetails, getInvoiceHistory } from "@/actions/billing";
 

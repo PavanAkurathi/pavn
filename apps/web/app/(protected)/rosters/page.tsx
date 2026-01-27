@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@repo/database";
 import { member, user, organization, certification } from "@repo/database/schema";
-import { eq, and, ne, inArray } from "drizzle-orm";
+import { eq, and, ne, inArray } from "@repo/database";
 import { RosterTable } from "../../../components/roster/roster-table";
 
 export default async function RostersPage() {

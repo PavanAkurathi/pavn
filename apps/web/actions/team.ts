@@ -4,7 +4,7 @@ import { auth, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { member, user, organization, invitation, certification } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and } from "@repo/database";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
 

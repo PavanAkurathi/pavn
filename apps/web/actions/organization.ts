@@ -6,7 +6,7 @@ import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { eq } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 

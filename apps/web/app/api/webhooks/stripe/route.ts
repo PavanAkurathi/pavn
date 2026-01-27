@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { eq } from "@repo/database";
 import Stripe from "stripe";
 
 const getStripe = () => {

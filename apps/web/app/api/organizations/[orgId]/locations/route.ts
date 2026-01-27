@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@repo/database";
 import { location } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { eq } from "@repo/database";
 
 export async function GET(
     request: NextRequest,

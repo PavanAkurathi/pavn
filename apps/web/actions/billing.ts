@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
 import Stripe from "stripe";
 

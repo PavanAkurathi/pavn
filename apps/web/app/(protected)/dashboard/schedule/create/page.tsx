@@ -6,7 +6,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@repo/database";
 import { member, user } from "@repo/database/schema";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and, ne } from "@repo/database";
 
 export default async function CreateSchedulePage() {
     // 0. Auth Check & Org ID

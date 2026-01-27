@@ -6,7 +6,7 @@ import { db } from "@repo/database";
 import { location } from "@repo/database/schema";
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
-import { eq, and } from "drizzle-orm";
+import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { nanoid } from "nanoid";
 import { z } from "zod";

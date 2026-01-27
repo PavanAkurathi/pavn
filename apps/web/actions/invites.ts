@@ -4,7 +4,7 @@ import { auth, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { member, user } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
 
 export async function resendInvite(memberId: string) {
