@@ -1,6 +1,8 @@
 {
     "$schema": "https://railway.app/railway.schema.json",
     "build": {
+        "builder": "RAILPACK",
+        "buildCommand": "bun run build --filter=@repo/geofence",
         "watchPatterns": [
             "packages/geofence/**",
             "packages/database/**",
@@ -13,7 +15,7 @@
         ]
     },
     "deploy": {
-        "startCommand": "bun run start",
+        "startCommand": "bunx turbo run start --filter=@repo/geofence",
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10
     }

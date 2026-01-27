@@ -1,6 +1,8 @@
 {
     "$schema": "https://railway.app/railway.schema.json",
     "build": {
+        "builder": "RAILPACK",
+        "buildCommand": "bun run build --filter=@repo/notification-worker",
         "watchPatterns": [
             "packages/notification-worker/**",
             "packages/database/**",
@@ -10,7 +12,7 @@
         ]
     },
     "deploy": {
-        "startCommand": "bun run start",
+        "startCommand": "bunx turbo run start --filter=@repo/notification-worker",
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 10
     }
