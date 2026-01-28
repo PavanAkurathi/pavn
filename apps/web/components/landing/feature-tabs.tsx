@@ -44,18 +44,18 @@ export function FeatureTabs() {
                                 <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700">
                                     <Calendar className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900">Drag, Drop, Done.</h3>
+                                <h3 className="text-2xl font-bold text-slate-900">Simple Shift Management.</h3>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Build shifts in minutes using our visual builder. Copy previous weeks, handle availability conflicts automatically, and publish to the team instantly via SMS/Email.
+                                    Assign shifts to your team in seconds. View your entire roster at a glance and notify workers instantly via SMS/Email when schedules change.
                                 </p>
                                 <ul className="space-y-3 pt-4">
                                     <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
                                         <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">✓</span>
-                                        Open Shift bidding
+                                        Instant notifications
                                     </li>
                                     <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
                                         <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">✓</span>
-                                        Labor cost forecasting
+                                        Real-time availability checks
                                     </li>
                                 </ul>
                             </div>

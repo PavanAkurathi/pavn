@@ -68,9 +68,10 @@ export function ComparisonTable() {
                         />
 
                         {/* --- ROW 4: PAYROLL --- */}
+                        {/* --- ROW 4: INSTANT COMPLIANCE --- */}
                         <Row
-                            title="Payroll Exports"
-                            description="One-click CSV exports formatted for ADP, Gusto, Paychex, and QuickBooks."
+                            title="Compliance Checks"
+                            description="Automatically track certifications and expirations. Never schedule an unqualified worker again."
                             hive={true}
                             competitor={false}
                         />

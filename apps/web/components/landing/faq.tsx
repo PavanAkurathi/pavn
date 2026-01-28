@@ -23,9 +23,9 @@ export function FAQ() {
                     </AccordionItem>
 
                     <AccordionItem value="item-2" className="border border-border bg-card rounded-lg px-4">
-                        <AccordionTrigger className="text-lg font-medium text-card-foreground">Does it integrate with my Payroll?</AccordionTrigger>
+                        <AccordionTrigger className="text-lg font-medium text-card-foreground">Can I manage multiple locations?</AccordionTrigger>
                         <AccordionContent className="text-muted-foreground pb-4">
-                            We provide 1-click CSV exports formatted for all major payroll providers (ADP, Gusto, Paychex, QuickBooks). Direct API integrations are coming in Phase 2.
+                            Yes. You can create as many organizations as you need and switch between them instantly. Each location is billed separately at the same flat rate.
                         </AccordionContent>
                     </AccordionItem>
 
