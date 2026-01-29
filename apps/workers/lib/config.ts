@@ -11,9 +11,10 @@ const getLocalUrl = (port: number) => {
 };
 
 export const CONFIG = {
-    // Prioritize environment variables (set in .env or EAS Build)
+    // All services now run on a single unified API gateway at port 4005
+    // In production, set EXPO_PUBLIC_API_URL to https://shift-serf.up.railway.app
     AUTH_API_URL: process.env.EXPO_PUBLIC_AUTH_API_URL || getLocalUrl(4005),
     SHIFTS_API_URL: process.env.EXPO_PUBLIC_SHIFTS_API_URL || getLocalUrl(4005),
-    GEOFENCE_API_URL: process.env.EXPO_PUBLIC_GEOFENCE_API_URL || getLocalUrl(4006),
-    API_URL: process.env.EXPO_PUBLIC_API_URL || getLocalUrl(4006),
+    GEOFENCE_API_URL: process.env.EXPO_PUBLIC_GEOFENCE_API_URL || getLocalUrl(4005),
+    API_URL: process.env.EXPO_PUBLIC_API_URL || getLocalUrl(4005),
 };
