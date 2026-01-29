@@ -1,5 +1,4 @@
 // packages/shifts/src/server.ts
-// Combined API Gateway: Shifts + Geofence + API services
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
@@ -7,8 +6,6 @@ import { auth } from "@repo/auth"; // Import shared auth
 import { db } from "@repo/database";
 import { member } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
-
-// Shifts Controllers
 import { getUpcomingShifts } from "./controllers/upcoming";
 import { getPendingShifts } from "./controllers/pending";
 import { getHistoryShifts } from "./controllers/history";
@@ -28,23 +25,6 @@ import { getTimesheetsReportController } from "./controllers/get-timesheets-repo
 import { getReportFiltersController } from "./controllers/get-report-filters";
 import { cancelShiftController } from "./controllers/cancel";
 import { assignWorkerController } from "./controllers/assign";
-import { getAvailabilityController } from "./controllers/get-availability";
-import { setAvailabilityController } from "./controllers/set-availability";
-import { getShiftGroupController } from "./controllers/get-shift-group";
-
-// Geofence Controllers
-import { ingestLocationController } from "@repo/geofence/src/controllers/ingest-location";
-import { clockInController } from "@repo/geofence/src/controllers/clock-in";
-import { clockOutController } from "@repo/geofence/src/controllers/clock-out";
-import { geocodeLocationController, geocodeAllLocationsController } from "@repo/geofence/src/controllers/geocode-location";
-import { managerOverrideController } from "@repo/geofence/src/controllers/manager-override";
-import { getFlaggedTimesheetsController } from "@repo/geofence/src/controllers/flagged-timesheets";
-
-// API Routes (packages/api)
-import devices from "@repo/api/src/routes/devices";
-import preferences from "@repo/api/src/routes/preferences";
-import managerPreferences from "@repo/api/src/routes/manager-preferences";
-import shiftsRoute from "@repo/api/src/routes/shifts";
 
 const app = new Hono<{
     Variables: {
@@ -57,7 +37,7 @@ const app = new Hono<{
 // CORS Middleware
 import { corsConfig } from "@repo/config";
 
-// CORS Middleware
+// ...\n\n// CORS Middleware
 app.use(
     "*",
     cors(corsConfig)
@@ -123,88 +103,6 @@ app.use("*", async (c, next) => {
 // Health Check
 app.get("/health", (c) => c.text("OK"));
 
-// ============================================================================
-// GEOFENCE ROUTES (from packages/geofence/src/server.ts)
-// ============================================================================
-
-// Geofence & Location
-app.post("/location", async (c) => {
-    const user = c.get("user");
-    const orgId = c.get("orgId");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await ingestLocationController(c.req.raw, user.id, orgId);
-});
-
-// Timeclock
-app.post("/clock-in", async (c) => {
-    const user = c.get("user");
-    const orgId = c.get("orgId");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await clockInController(c.req.raw, user.id, orgId);
-});
-
-app.post("/clock-out", async (c) => {
-    const user = c.get("user");
-    const orgId = c.get("orgId");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await clockOutController(c.req.raw, user.id, orgId);
-});
-
-// Geocoding
-app.post("/geocode", async (c) => {
-    const orgId = c.get("orgId");
-    const body: any = await c.req.json();
-    return await geocodeLocationController({ ...body, orgId });
-});
-
-app.post("/geocode/all", async (c) => {
-    const orgId = c.get("orgId");
-    return await geocodeAllLocationsController(orgId);
-});
-
-// Corrections & Exceptions (Geofence routes for corrections/override/flagged)
-app.post("/corrections", async (c) => {
-    const user = c.get("user");
-    const orgId = c.get("orgId");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await requestCorrectionController(c.req.raw, user.id, orgId);
-});
-
-app.post("/corrections/review", async (c) => {
-    const user = c.get("user");
-    const orgId = c.get("orgId");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await reviewCorrectionController(c.req.raw, user.id, orgId);
-});
-
-app.post("/override", async (c) => {
-    const user = c.get("user");
-    const orgId = c.get("orgId");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await managerOverrideController(c.req.raw, user.id, orgId);
-});
-
-app.get("/flagged", async (c) => {
-    const orgId = c.get("orgId");
-    return await getFlaggedTimesheetsController(orgId);
-});
-
-// ============================================================================
-// API ROUTES (from packages/api/src/index.ts)
-// ============================================================================
-
-// Mount @repo/api routes
-app.route('/devices', devices);
-app.route('/preferences', preferences);
-app.route('/manager-preferences', managerPreferences);
-// Note: The shifts route from @repo/api provides "/shifts/upcoming" with geofence data
-// We mount it separately to avoid conflicts with the shifts service routes
-app.route('/api', shiftsRoute); // This will be available at /api/shifts/upcoming
-
-// ============================================================================
-// SHIFTS SERVICE ROUTES (original routes)
-// ============================================================================
-
 // Location Routes
 app.post("/locations", async (c) => {
     const orgId = c.get('orgId');
@@ -214,6 +112,12 @@ app.post("/locations", async (c) => {
 // Organization Routes
 app.get("/organizations/:orgId/crew", async (c) => {
     const orgId = c.req.param("orgId");
+    // Validate that param matches header? 
+    // Ideally yes, but for now header is source of truth for DB queries usually.
+    // The previous getCrewController used the param as orgId.
+    // We should enforce that the header orgId matches the param orgId or just use header.
+    // The user requirement says "filter ALL database queries by them [x-org-id]".
+    // So we should use c.get('orgId').
     const headerOrgId = c.get('orgId');
     if (orgId !== headerOrgId) {
         return c.json({ error: "Organization mismatch" }, 403);
@@ -229,6 +133,7 @@ app.get("/organizations/:orgId/crew", async (c) => {
 });
 
 // [AVL-003] Get Availability
+import { getAvailabilityController } from "./controllers/get-availability";
 app.get("/organizations/:orgId/availability", async (c) => {
     const orgId = c.get('orgId');
     const from = c.req.query("from") || new Date().toISOString();
@@ -240,10 +145,12 @@ app.get("/organizations/:orgId/availability", async (c) => {
 // Schedule Routes
 app.post("/schedules/publish", async (c) => {
     const orgId = c.get('orgId');
+    // publishScheduleController needs to be updated to take orgId
     return await publishScheduleController(c.req.raw, orgId);
 });
 
 // [AVL-002] Worker Availability
+import { setAvailabilityController } from "./controllers/set-availability";
 app.post("/worker/availability", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
@@ -273,6 +180,8 @@ app.post("/worker/adjustments", async (c) => {
 
 app.get("/adjustments/pending", async (c) => {
     const orgId = c.get('orgId');
+    // Ensure user is manager/admin? Middleware currently only checks valid session + org context.
+    // In V2 we might want strict role checks. For now, matching existing pattern.
     return await getPendingCorrectionsController(orgId);
 });
 
@@ -321,6 +230,7 @@ app.delete("/shifts/drafts", async (c) => {
 });
 
 // [FEAT-009] Shift Group Endpoint
+import { getShiftGroupController } from "./controllers/get-shift-group";
 app.get("/shifts/groups/:groupId", async (c) => {
     const groupId = c.req.param("groupId");
     const orgId = c.get('orgId');
@@ -404,10 +314,7 @@ app.get("/timesheets/export", async (c) => {
 });
 
 const port = process.env.PORT || 4005;
-console.log(`🚀 Combined API Gateway running at http://localhost:${port}`);
-console.log(`   ✓ Shifts Service routes`);
-console.log(`   ✓ Geofence Service routes (/clock-in, /clock-out, /location)`);
-console.log(`   ✓ API Service routes (/devices, /preferences)`);
+console.log(`🦊 Service is running at http://localhost:${port}`);
 
 export default {
     port,
