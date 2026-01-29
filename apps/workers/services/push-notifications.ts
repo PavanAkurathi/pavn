@@ -48,7 +48,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     // Register with backend
     try {
-        await api.post('/devices/register', {
+        await api.devices.register({
             pushToken,
             platform: Platform.OS,
             deviceName: Device.deviceName || 'Unknown Device',

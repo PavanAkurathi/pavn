@@ -2,7 +2,7 @@ import { createAuthClient } from "better-auth/react";
 import { expoClient } from "@better-auth/expo/client";
 import { organizationClient, phoneNumberClient } from "better-auth/client/plugins";
 import * as SecureStore from "expo-secure-store";
-import Constants from "expo-constants";
+import { CONFIG } from "./config";
 
 // Ideally from env, but hardcoded for dev (LAN IP for physical device testing)
 // const BASE_URL = Constants.expoConfig?.hostUri 
@@ -10,7 +10,7 @@ import Constants from "expo-constants";
 //    : "http://localhost:4005";
 
 // Sticking to localhost for Simulator for now, user can change for real device
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:4005";
+const BASE_URL = CONFIG.AUTH_API_URL;
 
 
 export const authClient = createAuthClient({

@@ -47,7 +47,11 @@ export default function ShiftDetailScreen() {
     const handleClockIn = async () => {
         if (!shift) return;
         try {
-            await clockIn(shift.id);
+            await clockIn(shift.id, {
+                latitude: shift.location.latitude,
+                longitude: shift.location.longitude,
+                geofenceRadius: shift.location.geofenceRadius
+            });
             showBanner("Success", "Clocked in successfully", "success");
             loadShift(); // Refresh to update status
         } catch (error: any) {
@@ -58,7 +62,11 @@ export default function ShiftDetailScreen() {
     const handleClockOut = async () => {
         if (!shift) return;
         try {
-            await clockOut(shift.id);
+            await clockOut(shift.id, {
+                latitude: shift.location.latitude,
+                longitude: shift.location.longitude,
+                geofenceRadius: shift.location.geofenceRadius
+            });
             showBanner("Success", "Clocked out successfully", "success");
             loadShift();
         } catch (error: any) {

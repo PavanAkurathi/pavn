@@ -15,7 +15,7 @@ export const otpSchema = z.string()
 export const validate = <T>(schema: z.ZodSchema<T>, data: unknown): string | null => {
     const result = schema.safeParse(data);
     if (!result.success) {
-        return result.error.errors[0].message;
+        return result.error.issues[0].message;
     }
     return null;
 };

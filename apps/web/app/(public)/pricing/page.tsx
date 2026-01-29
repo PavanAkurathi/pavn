@@ -6,7 +6,7 @@ import { FAQ } from '@/components/landing/faq';
 
 export const metadata: Metadata = {
     title: 'Pricing | Workers Hive',
-    description: 'Simple flat-rate pricing for restaurant scheduling. $20/month per location. Unlimited staff included.',
+    description: 'Simple flat-rate pricing for restaurant scheduling. $25/month per location. Unlimited staff included.',
 };
 
 export default function PricingPage() {

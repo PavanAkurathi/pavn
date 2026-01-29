@@ -29,7 +29,7 @@ export default function LoginScreen() {
             Toast.show({
                 type: 'error',
                 text1: 'Invalid Phone Number',
-                text2: result.error.errors[0].message
+                text2: result.error.issues[0].message
             });
             return;
         }
@@ -84,7 +84,7 @@ export default function LoginScreen() {
                 type: 'error',
                 text1: 'Validation Error',
                 text2: !phoneResult.success
-                    ? phoneResult.error.errors[0].message
+                    ? phoneResult.error.issues[0].message
                     : (otpError || "Invalid input")
             });
             return;

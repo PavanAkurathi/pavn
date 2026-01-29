@@ -36,6 +36,7 @@ export interface ClockInRequest {
     latitude: string;
     longitude: string;
     accuracyMeters?: number;
+    deviceTimestamp: string;
 }
 
 export interface CreateAdjustmentRequest {
@@ -197,6 +198,28 @@ export const api = {
             if (!response.ok) throw new Error(await response.text());
             const resData = await response.json();
             return resData.preferences;
+        }
+    },
+    devices: {
+        register: async (data: any) => {
+            const headers = await getAuthHeaders();
+            const response = await fetch(`${CONFIG.API_URL}/devices/register`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(data)
+            });
+
+            if (!response.ok) {
+                // Try to parse JSON error
+                try {
+                    const errJson = await response.json();
+                    throw new Error(errJson.error || "Device registration failed");
+                } catch (e) {
+                    if (e instanceof Error && e.message !== "Device registration failed") throw e;
+                    throw new Error(await response.text() || "Device registration failed");
+                }
+            }
+            return await response.json();
         }
     }
 };
