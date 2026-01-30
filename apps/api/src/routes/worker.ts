@@ -1,5 +1,32 @@
-// apps/api/src/routes/worker.ts
-// Worker-facing Routes (shifts, availability, adjustments)
+/**
+ * @fileoverview Worker-Facing Routes
+ * @module apps/api/routes/worker
+ * 
+ * Endpoints for workers (members) to view their shifts, set availability,
+ * submit adjustment requests, and manage their profile.
+ * 
+ * @description
+ * These routes are accessible to all authenticated users (including members).
+ * Workers use these endpoints from the mobile app to:
+ * - View their upcoming and past shifts
+ * - Set their availability for scheduling
+ * - Request time adjustments/corrections
+ * - View and update their profile
+ * 
+ * Endpoints:
+ * - GET /shifts - Worker's assigned shifts (upcoming/history/all)
+ * - POST /availability - Set availability windows
+ * - GET /availability - Get current availability
+ * - POST /adjustments - Submit time correction request (rate limited)
+ * - GET /adjustments - View submitted adjustment requests
+ * - GET /profile - Get worker profile
+ * - PATCH /profile - Update profile info
+ * 
+ * @requires @repo/shifts - Shift and availability controllers
+ * @requires @repo/geofence - Correction request handling
+ * @author WorkersHive Team
+ * @since 1.0.0
+ */
 
 import { Hono } from "hono";
 import type { AppContext } from "../index";
