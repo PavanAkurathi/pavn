@@ -1,5 +1,34 @@
-// apps/api/src/routes/shifts.ts
-// Shift Management Routes
+/**
+ * @fileoverview Shift Management Routes
+ * @module apps/api/routes/shifts
+ * 
+ * Handles all shift-related operations for managers including draft management,
+ * shift lists, approvals, assignments, and schedule publishing.
+ * 
+ * @description
+ * This router provides the core scheduling functionality for WorkersHive.
+ * Most endpoints require manager role or above. Business logic is delegated
+ * to controllers in @repo/shifts package.
+ * 
+ * Endpoints:
+ * - GET /drafts - Get unpublished draft shifts
+ * - DELETE /drafts - Clear all drafts
+ * - GET /upcoming - Future published shifts
+ * - GET /pending-approval - Shifts awaiting approval
+ * - GET /history - Past completed shifts
+ * - GET /groups/:groupId - Get shift group details
+ * - GET /:id - Single shift details
+ * - POST /:id/approve - Approve a pending shift
+ * - POST /:id/cancel - Cancel a shift
+ * - POST /:id/assign - Assign worker to shift
+ * - GET /:id/timesheets - Get timesheets for shift
+ * - PATCH /:shiftId/timesheet - Update timesheet
+ * - POST /publish - Publish draft schedule (rate limited)
+ * 
+ * @requires @repo/shifts - Shift business logic controllers
+ * @author WorkersHive Team
+ * @since 1.0.0
+ */
 
 import { Hono } from "hono";
 import type { AppContext } from "../index";
