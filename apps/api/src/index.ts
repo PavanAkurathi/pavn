@@ -1,5 +1,50 @@
-// apps/api/src/index.ts
-// Centralized API Server - Single entry point for all backend routes
+/**
+ * @fileoverview WorkersHive API Server - Main Entry Point
+ * @module apps/api
+ * 
+ * Centralized Hono-based REST API server for the WorkersHive staffing platform.
+ * Handles all backend routes for shift management, timesheets, geofencing,
+ * billing, and organization management.
+ * 
+ * @description
+ * This is the single entry point for all backend API routes. It consolidates
+ * what was previously spread across multiple packages into a unified server.
+ * 
+ * Architecture:
+ * - Global middleware: CORS, auth, request tracing, error handling
+ * - Modular routes: Each domain has its own router module
+ * - RBAC: Role-based access control at route level
+ * - Multi-tenant: Organization context via x-org-id header
+ * 
+ * Public Routes (no auth):
+ * - GET /health - Health check
+ * - POST/GET /api/auth/* - Better Auth handlers
+ * 
+ * Protected Routes (require auth + org context):
+ * - /shifts/* - Shift management
+ * - /worker/* - Worker-facing endpoints
+ * - /timesheets/* - Timesheet reports
+ * - /billing/* - Billing & payments
+ * - /organizations/* - Crew & locations
+ * - /geofence/* - Clock in/out
+ * 
+ * @requires hono
+ * @requires @repo/auth - Better Auth configuration
+ * @requires @repo/database - Drizzle ORM + PostgreSQL
+ * @requires @repo/config - CORS and environment config
+ * @requires @repo/observability - Sentry, logging, request tracing
+ * 
+ * @example
+ * // Start the server
+ * bun run src/index.ts
+ * 
+ * // Health check
+ * curl http://localhost:4005/health
+ * 
+ * @author WorkersHive Team
+ * @since 1.0.0
+ * @version 1.0.0
+ */
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
