@@ -38,11 +38,11 @@ import type { AppContext } from "../index";
 import { requireManager, requireAdmin } from "../middleware";
 
 // Import controllers
-import { 
-    getCrewController, 
+import {
+    getCrewController,
     getAvailabilityController,
-    createLocationController 
-} from "@repo/shifts";
+    createLocationController
+} from "@repo/shifts-service";
 
 export const organizationsRouter = new Hono<AppContext>();
 
@@ -53,7 +53,7 @@ export const organizationsRouter = new Hono<AppContext>();
 organizationsRouter.get("/:orgId/crew", requireManager(), async (c) => {
     const orgId = c.req.param("orgId");
     const headerOrgId = c.get("orgId");
-    
+
     // Ensure URL org matches header org (prevent cross-org access)
     if (orgId !== headerOrgId) {
         return c.json({ error: "Organization mismatch", code: "ORG_MISMATCH" }, 403);
