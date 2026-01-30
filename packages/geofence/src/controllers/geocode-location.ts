@@ -3,7 +3,7 @@
 import { db } from "@repo/database";
 import { location } from "@repo/database/schema";
 import { eq, and, isNull, sql } from "drizzle-orm";
-import { geocodeAddress } from "../utils/geocode";
+import { geocodeAddress, type GeocodeResponse } from "../utils/geocode";
 
 interface GeocodeLocationRequest {
     locationId: string;
@@ -39,12 +39,6 @@ export async function geocodeLocationController(
                 success: true,
                 message: "Already geocoded",
                 data: {
-                    // Extracting from DB would require a separate query or parsing, 
-                    // but for this "Already geocoded" response we might just return the timestamp 
-                    // or re-fetch if we really need coordinates. 
-                    // For now, let's omit lat/long return or fetch them if critical.
-                    // Given the frontend likely needs them, we should probably fetch them?
-                    // Actually, let's just return success without data or fetch them.
                     geocodedAt: loc.geocodedAt
                 }
             });
@@ -53,7 +47,8 @@ export async function geocodeLocationController(
         // 3. Geocode the address
         const result = await geocodeAddress(loc.address);
 
-        if (!result.success) {
+        // 4. Handle error case with proper type narrowing
+        if (result.success === false) {
             return Response.json({
                 error: "Geocoding failed",
                 details: result.error,
@@ -61,7 +56,7 @@ export async function geocodeLocationController(
             }, { status: 400 });
         }
 
-        // 4. Update location with coordinates
+        // 5. Update location with coordinates (result.success is true here)
         await db.update(location)
             .set({
                 position: sql`ST_GeogFromText(${`POINT(${result.data.longitude} ${result.data.latitude})`})`,
@@ -115,7 +110,16 @@ export async function geocodeAllLocationsController(orgId: string): Promise<Resp
 
             const result = await geocodeAddress(loc.address);
 
-            if (result.success) {
+            // Proper type narrowing with explicit boolean check
+            if (result.success === false) {
+                results.failed++;
+                results.errors.push({
+                    locationId: loc.id,
+                    name: loc.name,
+                    error: result.error
+                });
+            } else {
+                // result.success is true here
                 await db.update(location)
                     .set({
                         position: sql`ST_GeogFromText(${`POINT(${result.data.longitude} ${result.data.latitude})`})`,
@@ -125,13 +129,6 @@ export async function geocodeAllLocationsController(orgId: string): Promise<Resp
                     })
                     .where(eq(location.id, loc.id));
                 results.success++;
-            } else {
-                results.failed++;
-                results.errors.push({
-                    locationId: loc.id,
-                    name: loc.name,
-                    error: result.error
-                });
             }
 
             // Rate limit (provider-specific)
