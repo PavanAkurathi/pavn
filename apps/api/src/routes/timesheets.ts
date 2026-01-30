@@ -41,7 +41,7 @@ import {
     getTimesheetsReportController,
     getReportFiltersController,
     exportTimesheetsController,
-} from "@repo/shifts";
+} from "@repo/shifts-service";
 
 export const timesheetsRouter = new Hono<AppContext>();
 

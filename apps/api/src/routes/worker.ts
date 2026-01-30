@@ -33,7 +33,7 @@ import type { AppContext } from "../index";
 import { rateLimit, RATE_LIMITS } from "../middleware";
 
 // Import controllers
-import { getWorkerShiftsController, setAvailabilityController } from "@repo/shifts";
+import { getWorkerShiftsController, setAvailabilityController } from "@repo/shifts-service";
 import { requestCorrectionController } from "@repo/geofence";
 
 export const workerRouter = new Hono<AppContext>();
@@ -67,7 +67,7 @@ workerRouter.post("/availability", async (c) => {
 workerRouter.get("/availability", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    
+
     // TODO: Implement get worker's own availability
     return c.json({ availability: [], message: "Not yet implemented" });
 });
@@ -87,7 +87,7 @@ workerRouter.post("/adjustments", rateLimit(RATE_LIMITS.api), async (c) => {
 workerRouter.get("/adjustments", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    
+
     // TODO: Implement get worker's own adjustment requests
     return c.json({ adjustments: [], message: "Not yet implemented" });
 });
@@ -99,7 +99,7 @@ workerRouter.get("/adjustments", async (c) => {
 workerRouter.get("/profile", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    
+
     return c.json({
         id: user.id,
         name: user.name,
@@ -111,7 +111,7 @@ workerRouter.get("/profile", async (c) => {
 workerRouter.patch("/profile", async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    
+
     // TODO: Implement profile update
     return c.json({ error: "Not yet implemented" }, 501);
 });

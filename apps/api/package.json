@@ -14,6 +14,7 @@
     "@repo/database": "workspace:*",
     "@repo/geofence": "workspace:*",
     "@repo/notifications": "workspace:*",
+    "@repo/shifts-service": "workspace:*",
     "@repo/observability": "workspace:*",
     "@hono/swagger-ui": "^0.4.1",
     "@hono/zod-openapi": "^0.16.0",
