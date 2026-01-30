@@ -18,23 +18,42 @@ export const configureObservability = (tracker: ErrorTracker) => {
 };
 
 // Utilities for packages to use
-import * as Sentry from "@sentry/node";
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { ZodError } from "zod";
 import { nanoid } from "nanoid";
 
+// Lazy Sentry import to prevent crashes when SENTRY_DSN is missing
+let Sentry: any = null;
+
 export const initSentry = () => {
-    Sentry.init({
-        dsn: process.env.SENTRY_DSN,
-        tracesSampleRate: 1.0,
-        environment: process.env.NODE_ENV || "development",
-    });
+    if (!process.env.SENTRY_DSN) {
+        console.log('[Observability] SENTRY_DSN not set, skipping Sentry init');
+        return;
+    }
+    
+    try {
+        // Dynamic import to prevent build-time issues
+        Sentry = require("@sentry/node");
+        Sentry.init({
+            dsn: process.env.SENTRY_DSN,
+            tracesSampleRate: 1.0,
+            environment: process.env.NODE_ENV || "development",
+        });
+    } catch (error) {
+        console.warn('[Observability] Failed to initialize Sentry:', error);
+    }
 };
 
 export const logError = (error: unknown, context?: Record<string, any>) => {
     console.error(error);
-    Sentry.captureException(error, { extra: context });
+    if (Sentry) {
+        try {
+            Sentry.captureException(error, { extra: context });
+        } catch {
+            // Silently fail
+        }
+    }
 };
 
 // --- WH-112: Standard Error Handling ---
