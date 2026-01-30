@@ -26,18 +26,23 @@ import { getReportFiltersController } from "./controllers/get-report-filters";
 import { cancelShiftController } from "./controllers/cancel";
 import { assignWorkerController } from "./controllers/assign";
 
+// Import new middleware
+import { getUserRole, requireManager, requireAdmin, requirePermission, type Role } from "./middleware/rbac";
+import { rateLimit, RATE_LIMITS } from "./middleware/rate-limit";
+
 const app = new Hono<{
     Variables: {
         orgId: string;
         user: typeof auth.$Infer.Session.user | null;
-        session: typeof auth.$Infer.Session.session | null
+        session: typeof auth.$Infer.Session.session | null;
+        userRole: Role | null;
     };
 }>();
 
 // CORS Middleware
 import { corsConfig } from "@repo/config";
 
-// ...\n\n// CORS Middleware
+// CORS Middleware
 app.use(
     "*",
     cors(corsConfig)
@@ -77,13 +82,10 @@ app.use("*", async (c, next) => {
     // 2. Validate TenantContext
     const orgId = c.req.header("x-org-id");
     if (!orgId) {
-        // Fallback: If no header, maybe use activeOrganizationId from session?
-        // For now, strict requirement as per previous implementations
         return c.json({ error: "Missing Tenant Context" }, 401);
     }
 
-    // 3. Verify Membership (The "Worker belongs to Org" check)
-    // Strict membership check via DB query
+    // 3. Verify Membership AND Get Role
     const memberRecord = await db.query.member.findFirst({
         where: and(
             eq(member.organizationId, orgId),
@@ -96,28 +98,25 @@ app.use("*", async (c, next) => {
         return c.json({ error: "Access Denied: Not a member of this organization" }, 403);
     }
 
+    // Set role in context for RBAC middleware
     c.set("orgId", orgId);
+    c.set("userRole", memberRecord.role as Role);
+    
     await next();
 });
 
 // Health Check
 app.get("/health", (c) => c.text("OK"));
 
-// Location Routes
-app.post("/locations", async (c) => {
+// Location Routes (Manager+ only)
+app.post("/locations", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     return await createLocationController(c.req.raw, orgId);
 });
 
 // Organization Routes
-app.get("/organizations/:orgId/crew", async (c) => {
+app.get("/organizations/:orgId/crew", requireManager(), async (c) => {
     const orgId = c.req.param("orgId");
-    // Validate that param matches header? 
-    // Ideally yes, but for now header is source of truth for DB queries usually.
-    // The previous getCrewController used the param as orgId.
-    // We should enforce that the header orgId matches the param orgId or just use header.
-    // The user requirement says "filter ALL database queries by them [x-org-id]".
-    // So we should use c.get('orgId').
     const headerOrgId = c.get('orgId');
     if (orgId !== headerOrgId) {
         return c.json({ error: "Organization mismatch" }, 403);
@@ -134,7 +133,7 @@ app.get("/organizations/:orgId/crew", async (c) => {
 
 // [AVL-003] Get Availability
 import { getAvailabilityController } from "./controllers/get-availability";
-app.get("/organizations/:orgId/availability", async (c) => {
+app.get("/organizations/:orgId/availability", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     const from = c.req.query("from") || new Date().toISOString();
     const to = c.req.query("to") || new Date(Date.now() + 86400000 * 7).toISOString(); // Default 7 days
@@ -142,14 +141,13 @@ app.get("/organizations/:orgId/availability", async (c) => {
     return await getAvailabilityController(orgId, from, to, workerId);
 });
 
-// Schedule Routes
-app.post("/schedules/publish", async (c) => {
+// Schedule Routes (Manager+ only)
+app.post("/schedules/publish", requireManager(), rateLimit(RATE_LIMITS.publish), async (c) => {
     const orgId = c.get('orgId');
-    // publishScheduleController needs to be updated to take orgId
     return await publishScheduleController(c.req.raw, orgId);
 });
 
-// [AVL-002] Worker Availability
+// [AVL-002] Worker Availability (Workers can set their own)
 import { setAvailabilityController } from "./controllers/set-availability";
 app.post("/worker/availability", async (c) => {
     const user = c.get("user");
@@ -157,7 +155,7 @@ app.post("/worker/availability", async (c) => {
     return await setAvailabilityController(c.req.raw, user.id);
 });
 
-// Worker Shift Routes (WH-001)
+// Worker Shift Routes (WH-001) - Workers can access their own shifts
 app.get("/worker/shifts", async (c) => {
     const user = c.get("user");
     const orgId = c.get("orgId");
@@ -170,7 +168,8 @@ app.get("/worker/shifts", async (c) => {
     return await getWorkerShiftsController(user.id, orgId, { status, limit, offset });
 });
 
-app.post("/worker/adjustments", async (c) => {
+// Workers can request adjustments (rate limited)
+app.post("/worker/adjustments", rateLimit(RATE_LIMITS.api), async (c) => {
     const user = c.get("user");
     const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
@@ -178,14 +177,14 @@ app.post("/worker/adjustments", async (c) => {
     return await requestCorrectionController(c.req.raw, user.id, orgId);
 });
 
-app.get("/adjustments/pending", async (c) => {
+// Manager+ only: View pending adjustments
+app.get("/adjustments/pending", requireManager(), async (c) => {
     const orgId = c.get('orgId');
-    // Ensure user is manager/admin? Middleware currently only checks valid session + org context.
-    // In V2 we might want strict role checks. For now, matching existing pattern.
     return await getPendingCorrectionsController(orgId);
 });
 
-app.post("/adjustments/review", async (c) => {
+// Manager+ only: Review adjustments
+app.post("/adjustments/review", requireManager(), async (c) => {
     const user = c.get("user");
     const orgId = c.get('orgId');
     if (!user) return c.json({ error: "Unauthorized" }, 401);
@@ -193,19 +192,19 @@ app.post("/adjustments/review", async (c) => {
     return await reviewCorrectionController(c.req.raw, user.id, orgId);
 });
 
-// Shift Routes
-app.get("/shifts/upcoming", async (c) => {
+// Shift Routes (Manager+ for listing all shifts)
+app.get("/shifts/upcoming", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     return await getUpcomingShifts(orgId);
 });
 
-app.get("/shifts/pending-approval", async (c) => {
+app.get("/shifts/pending-approval", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     return await getPendingShifts(orgId);
 });
 
 // WH-115: History Pagination
-app.get("/shifts/history", async (c) => {
+app.get("/shifts/history", requireManager(), async (c) => {
     const orgId = c.get('orgId');
 
     // Parse pagination
@@ -219,31 +218,34 @@ app.get("/shifts/history", async (c) => {
     return await getHistoryShifts(orgId, { limit: safeLimit, offset: safeOffset });
 });
 
-app.get("/shifts/drafts", async (c) => {
+app.get("/shifts/drafts", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     return await getDraftShifts(orgId);
 });
 
-app.delete("/shifts/drafts", async (c) => {
+app.delete("/shifts/drafts", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     return await deleteDraftsController(orgId);
 });
 
 // [FEAT-009] Shift Group Endpoint
 import { getShiftGroupController } from "./controllers/get-shift-group";
-app.get("/shifts/groups/:groupId", async (c) => {
+app.get("/shifts/groups/:groupId", requireManager(), async (c) => {
     const groupId = c.req.param("groupId");
     const orgId = c.get('orgId');
     return await getShiftGroupController(groupId, orgId);
 });
 
+// Single shift access - workers can view if assigned, managers can view all
 app.get("/shifts/:id", async (c) => {
     const id = c.req.param("id");
     const orgId = c.get('orgId');
+    // Note: getShiftByIdController should check if user is assigned or is manager
     return await getShiftByIdController(id, orgId);
 });
 
-app.post("/shifts/:id/approve", async (c) => {
+// Manager+ only: Approve shifts
+app.post("/shifts/:id/approve", requireManager(), async (c) => {
     const id = c.req.param("id");
     const orgId = c.get('orgId');
     const user = c.get('user');
@@ -252,7 +254,8 @@ app.post("/shifts/:id/approve", async (c) => {
     return await approveShiftController(id, orgId, user.id);
 });
 
-app.post("/shifts/:id/cancel", async (c) => {
+// Manager+ only: Cancel shifts
+app.post("/shifts/:id/cancel", requireManager(), async (c) => {
     const id = c.req.param("id");
     const orgId = c.get('orgId');
     const user = c.get('user');
@@ -261,25 +264,28 @@ app.post("/shifts/:id/cancel", async (c) => {
     return await cancelShiftController(id, orgId, user.id);
 });
 
-app.post("/shifts/:id/assign", async (c) => {
+// Manager+ only: Assign workers
+app.post("/shifts/:id/assign", requireManager(), async (c) => {
     const id = c.req.param("id");
     const orgId = c.get('orgId');
     return await assignWorkerController(c.req.raw, id, orgId);
 });
 
-app.get("/shifts/:id/timesheets", async (c) => {
+// Manager+ only: View timesheets
+app.get("/shifts/:id/timesheets", requireManager(), async (c) => {
     const id = c.req.param("id");
     const orgId = c.get('orgId');
     return await getShiftTimesheetsController(id, orgId);
 });
 
-app.patch("/shifts/:shiftId/timesheet", async (c) => {
+// Manager+ only: Update timesheets
+app.patch("/shifts/:shiftId/timesheet", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     return await updateTimesheetController(c.req.raw, orgId);
 });
 
-// Timesheets Preview (JSON for Reports UI)
-app.get("/timesheets", async (c) => {
+// Timesheets Preview (JSON for Reports UI) - Manager+ only
+app.get("/timesheets", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     const queryParams: Record<string, string> = {};
     const url = new URL(c.req.url);
@@ -289,8 +295,8 @@ app.get("/timesheets", async (c) => {
     return await getTimesheetsReportController(orgId, queryParams);
 });
 
-// Report Filter Options
-app.get("/timesheets/filters", async (c) => {
+// Report Filter Options - Manager+ only
+app.get("/timesheets/filters", requireManager(), async (c) => {
     const orgId = c.get('orgId');
     const queryParams: Record<string, string> = {};
     const url = new URL(c.req.url);
@@ -300,7 +306,8 @@ app.get("/timesheets/filters", async (c) => {
     return await getReportFiltersController(orgId, queryParams);
 });
 
-app.get("/timesheets/export", async (c) => {
+// Manager+ only: Export timesheets
+app.get("/timesheets/export", requireManager(), async (c) => {
     const orgId = c.get('orgId');
 
     // Collect all query params
@@ -311,6 +318,35 @@ app.get("/timesheets/export", async (c) => {
     });
 
     return await exportTimesheetsController(orgId, queryParams);
+});
+
+// ============================================================================
+// PAYMENT ROUTES - Admin ONLY (Managers cannot CRUD payment methods)
+// ============================================================================
+app.get("/billing/payment-methods", requireAdmin(), async (c) => {
+    // TODO: Implement payment methods list
+    return c.json({ paymentMethods: [], message: "Not yet implemented" });
+});
+
+app.post("/billing/payment-methods", requireAdmin(), async (c) => {
+    // TODO: Implement add payment method
+    return c.json({ error: "Not yet implemented" }, 501);
+});
+
+app.delete("/billing/payment-methods/:id", requireAdmin(), async (c) => {
+    // TODO: Implement delete payment method
+    return c.json({ error: "Not yet implemented" }, 501);
+});
+
+app.patch("/billing/payment-methods/:id/default", requireAdmin(), async (c) => {
+    // TODO: Implement set default payment method
+    return c.json({ error: "Not yet implemented" }, 501);
+});
+
+// Admin only: Organization settings
+app.patch("/settings/organization", requireAdmin(), async (c) => {
+    // TODO: Implement org settings update
+    return c.json({ error: "Not yet implemented" }, 501);
 });
 
 const port = process.env.PORT || 4005;
