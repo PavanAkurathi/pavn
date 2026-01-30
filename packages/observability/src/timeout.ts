@@ -3,7 +3,7 @@ import { AppError } from "./index";
 
 export const timeout = (durationMs: number = 30000) => {
     return async (c: Context, next: Next) => {
-        let timer: Timer | undefined;
+        let timer: ReturnType<typeof setTimeout> | undefined;
 
         const timeoutPromise = new Promise((_, reject) => {
             timer = setTimeout(() => {
