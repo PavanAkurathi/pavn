@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import { applyClockInRules, validateShiftTransition } from "@repo/config";
 import { cancelNotificationByType } from "@repo/notifications";
 import { notifyManagers } from "../utils/manager-notifications";
+import { logAudit } from "@repo/database";
 
 const ClockInSchema = z.object({
     shiftId: z.string(),
@@ -191,6 +192,26 @@ export async function clockInController(
                 eventType: 'clock_in',
                 recordedAt: now,
                 deviceTimestamp: now,
+            });
+
+            // D. Log Audit (WH-BUG-004 FIX)
+            await logAudit({
+                action: 'shift_assignment.clock_in',
+                entityType: 'shift_assignment',
+                entityId: assignment.id,
+                actorId: workerId,
+                organizationId: orgId,
+                metadata: {
+                    latitude,
+                    longitude,
+                    method: 'geofence',
+                    distanceMeters,
+                    scheduledStart: scheduledStart.toISOString(),
+                    actualClockIn: clockInResult.recordedTime.toISOString(),
+                    wasEarly: clockInResult.isEarly,
+                    wasLate: clockInResult.isLate,
+                    minutesDifference: clockInResult.minutesDifference,
+                }
             });
         });
 
