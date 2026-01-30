@@ -1,5 +1,37 @@
-// apps/api/src/routes/organizations.ts
-// Organization Management Routes
+/**
+ * @fileoverview Organization Management Routes
+ * @module apps/api/routes/organizations
+ * 
+ * Handles crew management, availability viewing, location management,
+ * and organization settings.
+ * 
+ * @description
+ * This router manages the organizational structure of WorkersHive:
+ * - Crew (workers/members) listing and management
+ * - Worker availability for scheduling
+ * - Venue/location management
+ * - Organization-wide settings
+ * 
+ * RBAC Rules:
+ * - Managers can view and invite crew, manage locations
+ * - Admins can remove crew members, delete locations, update settings
+ * 
+ * Endpoints:
+ * - GET /:orgId/crew - List crew members with search/pagination
+ * - POST /:orgId/crew/invite - Invite new worker (manager+)
+ * - DELETE /:orgId/crew/:memberId - Remove crew member (admin+)
+ * - GET /:orgId/availability - Get worker availability for date range
+ * - GET /:orgId/locations - List venue locations
+ * - POST /locations - Create new location
+ * - PATCH /:orgId/locations/:locationId - Update location
+ * - DELETE /:orgId/locations/:locationId - Delete location (admin+)
+ * - GET /:orgId/settings - Get org settings
+ * - PATCH /:orgId/settings - Update org settings (admin+)
+ * 
+ * @requires @repo/shifts - Crew and availability controllers
+ * @author WorkersHive Team
+ * @since 1.0.0
+ */
 
 import { Hono } from "hono";
 import type { AppContext } from "../index";
@@ -22,6 +54,7 @@ organizationsRouter.get("/:orgId/crew", requireManager(), async (c) => {
     const orgId = c.req.param("orgId");
     const headerOrgId = c.get("orgId");
     
+    // Ensure URL org matches header org (prevent cross-org access)
     if (orgId !== headerOrgId) {
         return c.json({ error: "Organization mismatch", code: "ORG_MISMATCH" }, 403);
     }
@@ -34,7 +67,7 @@ organizationsRouter.get("/:orgId/crew", requireManager(), async (c) => {
 });
 
 organizationsRouter.post("/:orgId/crew/invite", requireManager(), async (c) => {
-    // TODO: Implement worker invitation
+    // TODO: Implement worker invitation via email/SMS
     return c.json({ error: "Not yet implemented" }, 501);
 });
 
@@ -75,16 +108,16 @@ organizationsRouter.patch("/:orgId/locations/:locationId", requireManager(), asy
 });
 
 organizationsRouter.delete("/:orgId/locations/:locationId", requireAdmin(), async (c) => {
-    // TODO: Implement location deletion
+    // TODO: Implement location deletion (soft delete)
     return c.json({ error: "Not yet implemented" }, 501);
 });
 
 // =============================================================================
-// ORGANIZATION SETTINGS (Admin only)
+// ORGANIZATION SETTINGS (Admin only for updates)
 // =============================================================================
 
 organizationsRouter.get("/:orgId/settings", requireManager(), async (c) => {
-    // TODO: Implement settings retrieval
+    // TODO: Implement settings retrieval from database
     return c.json({
         name: "Organization",
         timezone: "America/New_York",
