@@ -16,7 +16,7 @@
  * - Async DB persistence for multi-instance consistency
  * - Configurable windows and limits per endpoint type
  * - Standard rate limit headers (X-RateLimit-*)
- * - Automatic memory cleanup every 10 minutes
+ * - Serverless-compatible (no setInterval)
  * 
  * Pre-configured Limits:
  * - clockAction: 5/minute (prevent clock spam)
@@ -61,6 +61,7 @@ interface RateLimitConfig {
 /**
  * In-memory cache for fast rate limit lookups.
  * Key format: "userId:orgId:path"
+ * Note: In serverless, this resets on cold starts - DB persistence handles continuity
  */
 const memoryCache = new Map<string, { count: number; windowStart: number }>();
 
@@ -116,6 +117,12 @@ export function rateLimit(config: RateLimitConfig) {
         cached.count++;
         memoryCache.set(key, cached);
         
+        // Cleanup old entries on each request (instead of setInterval)
+        // Only run cleanup ~1% of requests to avoid overhead
+        if (Math.random() < 0.01) {
+            cleanupRateLimitCache();
+        }
+        
         // Check if over limit
         if (cached.count > config.maxRequests) {
             const retryAfter = Math.ceil((cached.windowStart + config.windowMs - now) / 1000);
@@ -138,7 +145,9 @@ export function rateLimit(config: RateLimitConfig) {
         c.res.headers.set("X-RateLimit-Reset", String(Math.ceil((cached.windowStart + config.windowMs) / 1000)));
         
         // Persist to DB asynchronously (for distributed rate limiting)
-        persistRateLimitAsync(key, cached.count, cached.windowStart).catch(console.error);
+        persistRateLimitAsync(key, cached.count, cached.windowStart).catch(() => {
+            // Silently fail - rate limiting will still work via memory
+        });
         
         await next();
     };
@@ -147,7 +156,7 @@ export function rateLimit(config: RateLimitConfig) {
 /**
  * Asynchronously persist rate limit state to database.
  * This enables distributed rate limiting across multiple instances.
- * Non-blocking and failure-tolerant (logs warning on error).
+ * Non-blocking and failure-tolerant.
  * 
  * @param key - Rate limit key
  * @param count - Current request count
@@ -171,15 +180,14 @@ async function persistRateLimitAsync(key: string, count: number, windowStart: nu
                 },
             });
     } catch (error) {
-        // Non-critical, just log
-        console.warn("[RATE_LIMIT] Failed to persist:", error);
+        // Non-critical, silently fail
     }
 }
 
 /**
  * Cleanup expired entries from in-memory cache.
  * Removes entries older than 1 hour to prevent memory leaks.
- * Called automatically every 10 minutes.
+ * Called probabilistically on requests (serverless-compatible).
  */
 export function cleanupRateLimitCache() {
     const now = Date.now();
@@ -191,6 +199,3 @@ export function cleanupRateLimitCache() {
         }
     }
 }
-
-// Run cleanup every 10 minutes
-setInterval(cleanupRateLimitCache, 600_000);
