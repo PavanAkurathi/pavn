@@ -1,12 +1,49 @@
-// apps/api/src/middleware/rbac.ts
-// Role-Based Access Control Middleware
+/**
+ * @fileoverview Role-Based Access Control (RBAC) Middleware
+ * @module apps/api/middleware/rbac
+ * 
+ * Provides middleware functions for enforcing role-based permissions
+ * across API routes. Implements a hierarchical permission system with
+ * four roles: owner > admin > manager > member.
+ * 
+ * @description
+ * This module defines the permission matrix for WorkersHive and provides
+ * reusable middleware functions that can be applied to routes to enforce
+ * access control based on the authenticated user's role.
+ * 
+ * Role Hierarchy:
+ * - owner: Full access to all resources and settings
+ * - admin: Full operational access, billing/payment management
+ * - manager: Shift/crew management, timesheet approval, no payment access
+ * - member: Own data only (shifts, timesheets, profile)
+ * 
+ * Permission Format: "resource:action" or "resource:action:scope"
+ * Examples: "shifts:read", "timesheets:write", "shifts:read:own"
+ * 
+ * @example
+ * // Protect a route - require manager or above
+ * router.get("/shifts", requireManager(), async (c) => { ... });
+ * 
+ * // Require specific permission
+ * router.delete("/user", requirePermission("users:delete"), async (c) => { ... });
+ * 
+ * // Admin-only route
+ * router.post("/billing", requireAdmin(), async (c) => { ... });
+ * 
+ * @author WorkersHive Team
+ * @since 1.0.0
+ */
 
 import { Context, Next } from "hono";
 import type { AppContext } from "../index";
 
 export type Role = "owner" | "admin" | "manager" | "member";
 
-// Permission definitions
+/**
+ * Permission definitions for each role.
+ * Owner has wildcard (*) access to everything.
+ * Other roles have explicit permission lists.
+ */
 const ROLE_PERMISSIONS: Record<Role, string[]> = {
     owner: ["*"], // Full access
     admin: [
@@ -36,7 +73,12 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
 };
 
 /**
- * Check if a role has a specific permission
+ * Check if a role has a specific permission.
+ * Supports wildcard matching and hierarchical permissions.
+ * 
+ * @param role - The user's role
+ * @param permission - The permission to check (e.g., "shifts:read")
+ * @returns True if the role has the permission
  */
 export function hasPermission(role: Role | null, permission: string): boolean {
     if (!role) return false;
@@ -56,7 +98,11 @@ export function hasPermission(role: Role | null, permission: string): boolean {
 }
 
 /**
- * Middleware: Require specific permission(s)
+ * Middleware factory: Require specific permission(s) to access route.
+ * Returns 403 Forbidden if any required permission is missing.
+ * 
+ * @param permissions - One or more permissions required
+ * @returns Hono middleware function
  */
 export function requirePermission(...permissions: string[]) {
     return async (c: Context<AppContext>, next: Next) => {
@@ -77,7 +123,10 @@ export function requirePermission(...permissions: string[]) {
 }
 
 /**
- * Middleware: Require manager or above (manager, admin, owner)
+ * Middleware: Require manager role or above (manager, admin, owner).
+ * Use for shift management, crew management, timesheet approval.
+ * 
+ * @returns Hono middleware function
  */
 export function requireManager() {
     return async (c: Context<AppContext>, next: Next) => {
@@ -96,7 +145,10 @@ export function requireManager() {
 }
 
 /**
- * Middleware: Require admin or above (admin, owner)
+ * Middleware: Require admin role or above (admin, owner).
+ * Use for billing, payment methods, organization settings.
+ * 
+ * @returns Hono middleware function
  */
 export function requireAdmin() {
     return async (c: Context<AppContext>, next: Next) => {
@@ -115,7 +167,10 @@ export function requireAdmin() {
 }
 
 /**
- * Middleware: Require owner only
+ * Middleware: Require owner role only.
+ * Use for destructive operations, ownership transfer, org deletion.
+ * 
+ * @returns Hono middleware function
  */
 export function requireOwner() {
     return async (c: Context<AppContext>, next: Next) => {
