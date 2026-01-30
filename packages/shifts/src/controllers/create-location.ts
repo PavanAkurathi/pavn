@@ -31,9 +31,10 @@ export const createLocationController = async (req: Request, orgId: string): Pro
     const geocodeResult = await geocodeAddress(address);
 
     if (!geocodeResult.success) {
+        const failure = geocodeResult as any;
         throw new AppError(
-            geocodeResult.error || "Could not verify address. Please check and try again.",
-            geocodeResult.code || "GEOCODING_FAILED",
+            failure.error || "Could not verify address. Please check and try again.",
+            failure.code || "GEOCODING_FAILED",
             400
         );
     }
