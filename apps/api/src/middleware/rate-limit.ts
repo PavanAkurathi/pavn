@@ -1,5 +1,44 @@
-// apps/api/src/middleware/rate-limit.ts
-// Rate Limiting Middleware with Memory + DB persistence
+/**
+ * @fileoverview Rate Limiting Middleware with Hybrid Memory + Database Persistence
+ * @module apps/api/middleware/rate-limit
+ * 
+ * Implements sliding window rate limiting to prevent API abuse. Uses a hybrid
+ * approach: fast in-memory cache for immediate checks, with async database
+ * persistence for distributed deployments.
+ * 
+ * @description
+ * This middleware protects endpoints from abuse by tracking request counts
+ * per user/org/path combination. It's designed for both single-instance and
+ * distributed deployments.
+ * 
+ * Features:
+ * - Memory-first for sub-millisecond checks
+ * - Async DB persistence for multi-instance consistency
+ * - Configurable windows and limits per endpoint type
+ * - Standard rate limit headers (X-RateLimit-*)
+ * - Automatic memory cleanup every 10 minutes
+ * 
+ * Pre-configured Limits:
+ * - clockAction: 5/minute (prevent clock spam)
+ * - publish: 10/minute (schedule publishing)
+ * - api: 100/minute (general endpoints)
+ * - auth: 10/15min (login attempts)
+ * - strict: 3/minute (sensitive operations)
+ * 
+ * @example
+ * // Apply rate limiting to a route
+ * import { rateLimit, RATE_LIMITS } from "../middleware";
+ * 
+ * router.post("/clock-in", rateLimit(RATE_LIMITS.clockAction), async (c) => {
+ *     // Handler...
+ * });
+ * 
+ * // Custom rate limit
+ * router.post("/export", rateLimit({ windowMs: 60000, maxRequests: 5 }), ...);
+ * 
+ * @author WorkersHive Team
+ * @since 1.0.0
+ */
 
 import { Context, Next } from "hono";
 import { db } from "@repo/database";
@@ -7,37 +46,54 @@ import { rateLimitState } from "@repo/database/schema";
 import { eq, and, sql } from "drizzle-orm";
 import type { AppContext } from "../index";
 
+/**
+ * Configuration options for rate limiting.
+ */
 interface RateLimitConfig {
-    windowMs: number;      // Time window in milliseconds
-    maxRequests: number;   // Max requests per window
-    keyFn?: (c: Context) => string; // Custom key generator
+    /** Time window in milliseconds */
+    windowMs: number;
+    /** Maximum requests allowed per window */
+    maxRequests: number;
+    /** Optional custom key generator function */
+    keyFn?: (c: Context) => string;
 }
 
-// In-memory cache for fast lookups
+/**
+ * In-memory cache for fast rate limit lookups.
+ * Key format: "userId:orgId:path"
+ */
 const memoryCache = new Map<string, { count: number; windowStart: number }>();
 
 /**
- * Default rate limit configurations
+ * Pre-configured rate limit settings for common use cases.
+ * Import and use these with the rateLimit() middleware.
  */
 export const RATE_LIMITS = {
-    // Clock in/out - 5 per minute (prevent spam)
+    /** Clock in/out actions - 5 per minute (prevent spam) */
     clockAction: { windowMs: 60_000, maxRequests: 5 },
     
-    // Schedule publish - 10 per minute
+    /** Schedule publish - 10 per minute */
     publish: { windowMs: 60_000, maxRequests: 10 },
     
-    // General API - 100 per minute
+    /** General API endpoints - 100 per minute */
     api: { windowMs: 60_000, maxRequests: 100 },
     
-    // Auth attempts - 10 per 15 minutes
+    /** Auth attempts - 10 per 15 minutes (brute force protection) */
     auth: { windowMs: 900_000, maxRequests: 10 },
     
-    // Strict - 3 per minute (for sensitive operations)
+    /** Strict limit - 3 per minute (for sensitive operations) */
     strict: { windowMs: 60_000, maxRequests: 3 },
 } as const;
 
 /**
- * Rate limiting middleware
+ * Rate limiting middleware factory.
+ * 
+ * Checks request count against configured limits and returns 429
+ * if the limit is exceeded. Sets standard rate limit headers on
+ * all responses.
+ * 
+ * @param config - Rate limit configuration
+ * @returns Hono middleware function
  */
 export function rateLimit(config: RateLimitConfig) {
     return async (c: Context<AppContext>, next: Next) => {
@@ -89,7 +145,13 @@ export function rateLimit(config: RateLimitConfig) {
 }
 
 /**
- * Async DB persistence for distributed environments
+ * Asynchronously persist rate limit state to database.
+ * This enables distributed rate limiting across multiple instances.
+ * Non-blocking and failure-tolerant (logs warning on error).
+ * 
+ * @param key - Rate limit key
+ * @param count - Current request count
+ * @param windowStart - Window start timestamp
  */
 async function persistRateLimitAsync(key: string, count: number, windowStart: number) {
     try {
@@ -115,7 +177,9 @@ async function persistRateLimitAsync(key: string, count: number, windowStart: nu
 }
 
 /**
- * Cleanup expired entries from memory cache
+ * Cleanup expired entries from in-memory cache.
+ * Removes entries older than 1 hour to prevent memory leaks.
+ * Called automatically every 10 minutes.
  */
 export function cleanupRateLimitCache() {
     const now = Date.now();
