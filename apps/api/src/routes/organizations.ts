@@ -14,6 +14,15 @@ import { requireAdmin, requireManager } from "../middleware/index.js";
 import {
     getCrewController,
     createLocationController,
+    getLocationsController,
+    updateLocationController,
+    deleteLocationController,
+    inviteWorkerController,
+    updateWorkerController,
+    deactivateWorkerController,
+    reactivateWorkerController,
+    getSettingsController,
+    updateSettingsController,
     WorkerSchema,
     LocationSchema,
 } from "@repo/shifts-service";
@@ -59,7 +68,14 @@ const inviteWorkerRoute = createRoute({
 organizationsRouter.openapi(inviteWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+
+    const orgId = c.get("orgId");
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const body = await c.req.json();
+    const result = await inviteWorkerController({ ...body, inviterId: user.id }, orgId);
+    return c.json(result as any, 200);
 });
 
 const updateWorkerRoute = createRoute({
@@ -78,7 +94,12 @@ const updateWorkerRoute = createRoute({
 organizationsRouter.openapi(updateWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+
+    const id = c.req.param("id");
+    const orgId = c.get("orgId");
+    const body = await c.req.json();
+    const result = await updateWorkerController(body, id, orgId);
+    return c.json(result as any, 200);
 });
 
 const deactivateWorkerRoute = createRoute({
@@ -97,7 +118,11 @@ const deactivateWorkerRoute = createRoute({
 organizationsRouter.openapi(deactivateWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+
+    const id = c.req.param("id");
+    const orgId = c.get("orgId");
+    const result = await deactivateWorkerController(id, orgId);
+    return c.json(result as any, 200);
 });
 
 const reactivateWorkerRoute = createRoute({
@@ -116,7 +141,11 @@ const reactivateWorkerRoute = createRoute({
 organizationsRouter.openapi(reactivateWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+
+    const id = c.req.param("id");
+    const orgId = c.get("orgId");
+    const result = await reactivateWorkerController(id, orgId);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
@@ -138,18 +167,9 @@ organizationsRouter.openapi(getLocationsRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
-    // Mock implementation as getLocationsController might be missing or different
-    // Check if it's exported: Step 347 showed it wasn't there?
-    // Wait, Step 347 showed index.ts lines 1-57. I don't see getLocationsController there?
-    // Ah, lines 52-56 show AVAILABLE_LOCATIONS constant. 
-    // And line 40: export { createLocationController } from "./controllers/create-location";
-    // I missed getLocationsController. 
-    // Let's assume it's NOT exported and mock it.
-
-    return c.json([
-        { id: "loc-1", name: "Main Office", address: "123 Main St" },
-        { id: "loc-2", name: "Downtown Branch", address: "456 Downtown Ave" }
-    ] as any, 200);
+    const orgId = c.get("orgId");
+    const result = await getLocationsController(orgId);
+    return c.json(result as any, 200);
 });
 
 const createLocationRoute = createRoute({
@@ -188,7 +208,12 @@ const updateLocationRoute = createRoute({
 organizationsRouter.openapi(updateLocationRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+
+    const id = c.req.param("id");
+    const orgId = c.get("orgId");
+    const body = await c.req.json();
+    const result = await updateLocationController(body, id, orgId);
+    return c.json(result as any, 200);
 });
 
 const deleteLocationRoute = createRoute({
@@ -207,7 +232,11 @@ const deleteLocationRoute = createRoute({
 organizationsRouter.openapi(deleteLocationRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+
+    const id = c.req.param("id");
+    const orgId = c.get("orgId");
+    const result = await deleteLocationController(id, orgId);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
@@ -229,7 +258,11 @@ const updateSettingsRoute = createRoute({
 organizationsRouter.openapi(updateSettingsRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+
+    const orgId = c.get("orgId");
+    const body = await c.req.json();
+    const result = await updateSettingsController(body, orgId);
+    return c.json(result as any, 200);
 });
 
 const getSettingsRoute = createRoute({
@@ -247,17 +280,9 @@ organizationsRouter.openapi(getSettingsRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
-    // Mock settings
-    return c.json({
-        name: "Organization",
-        timezone: "America/New_York",
-        clockRules: {
-            earlyClockInMinutes: 15,
-            autoClockOutAfterHours: 12,
-            requireGeofence: true,
-            geofenceRadiusMeters: 150,
-        },
-    } as any, 200);
+    const orgId = c.get("orgId");
+    const result = await getSettingsController(orgId);
+    return c.json(result as any, 200);
 });
 
 export default organizationsRouter;

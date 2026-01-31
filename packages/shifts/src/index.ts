@@ -46,6 +46,21 @@ export { setAvailabilityController } from "./controllers/set-availability";
 // Worker shifts
 export { getWorkerShiftsController } from "./controllers/worker-shifts";
 
+// Organization & Locations
+export { getLocationsController } from "./controllers/get-locations";
+export { updateLocationController } from "./controllers/update-location";
+export { deleteLocationController } from "./controllers/delete-location";
+
+// Worker Management
+export { inviteWorkerController } from "./controllers/invite-worker";
+export { updateWorkerController } from "./controllers/update-worker";
+export { deactivateWorkerController } from "./controllers/deactivate-worker";
+export { reactivateWorkerController } from "./controllers/reactivate-worker";
+
+// Settings
+export { getSettingsController } from "./controllers/get-settings";
+export { updateSettingsController } from "./controllers/update-settings";
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================

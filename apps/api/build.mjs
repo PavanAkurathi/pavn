@@ -27,11 +27,11 @@ function getAliases() {
         // Standalone: packages should be in node_modules or we bundle everything
         return {};
     }
-    
+
     return {
         '@repo/auth': join(monorepoRoot, 'packages/auth/src/index.ts'),
         '@repo/database': join(monorepoRoot, 'packages/database/src/index.ts'),
-        '@repo/database/schema': join(monorepoRoot, 'packages/database/src/schema/index.ts'),
+        '@repo/database/schema': join(monorepoRoot, 'packages/database/src/schema.ts'),
         '@repo/config': join(monorepoRoot, 'packages/config/src/index.ts'),
         '@repo/geofence': join(monorepoRoot, 'packages/geofence/src/index.ts'),
         '@repo/shifts-service': join(monorepoRoot, 'packages/shifts/src/index.ts'),
@@ -45,9 +45,9 @@ function getAliases() {
 async function build() {
     try {
         const aliases = getAliases();
-        
+
         console.log('📦 Bundling with aliases:', Object.keys(aliases));
-        
+
         const result = await esbuild.build({
             entryPoints: [join(__dirname, 'src/index.ts')],
             bundle: true,
@@ -57,39 +57,39 @@ async function build() {
             outfile: join(__dirname, 'dist/index.js'),
             sourcemap: false,
             minify: false,
-            
+
             // Bundle ALL workspace packages into output
             packages: 'bundle',
-            
+
             // Keep node_modules packages external (they have proper JS exports)
             external: [
                 // Hono ecosystem
                 'hono',
                 'hono/*',
                 '@hono/*',
-                
+
                 // Database
                 'drizzle-orm',
                 'drizzle-orm/*',
                 '@neondatabase/serverless',
                 'postgres',
-                
+
                 // Auth
                 'better-auth',
                 'better-auth/*',
                 '@better-auth/*',
-                
+
                 // Utilities
                 'zod',
                 'nanoid',
                 'dotenv',
-                
+
                 // Services
                 'twilio',
                 'stripe',
                 'resend',
                 '@sentry/node',
-                
+
                 // Node builtins
                 'crypto',
                 'fs',
@@ -109,16 +109,16 @@ async function build() {
                 'dns',
                 'assert',
             ],
-            
+
             alias: aliases,
-            
+
             resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
-            
+
             loader: {
                 '.ts': 'ts',
                 '.tsx': 'tsx',
             },
-            
+
             // Better error messages
             logLevel: 'info',
             metafile: true,
