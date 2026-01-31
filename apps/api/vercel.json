@@ -1,8 +1,11 @@
 {
+    "buildCommand": "cd ../.. && npm install && cd apps/api && npm run build",
+    "installCommand": "npm install",
+    "framework": null,
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/api/index"
+            "destination": "/api"
         }
     ]
 }
