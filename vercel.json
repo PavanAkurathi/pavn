@@ -1,0 +1,18 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "version": 2,
+    "builds": [
+        {
+            "src": "apps/api/api/index.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "apps/api/api/index.js"
+        }
+    ],
+    "buildCommand": "cd apps/api && npm install esbuild && node build.mjs",
+    "installCommand": "npm install --legacy-peer-deps"
+}
