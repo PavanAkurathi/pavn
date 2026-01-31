@@ -32,7 +32,7 @@
  * @since 1.0.0
  */
 
-import { Hono } from "hono";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { requireManager } from "../middleware";
 
@@ -41,48 +41,128 @@ import {
     getTimesheetsReportController,
     getReportFiltersController,
     exportTimesheetsController,
+    TimesheetReportSchema, // Schema
 } from "@repo/shifts-service";
 
-export const timesheetsRouter = new Hono<AppContext>();
+export const timesheetsRouter = new OpenAPIHono<AppContext>();
+
+// Apply manager auth to all routes in this file
+timesheetsRouter.use("/*", requireManager());
 
 // =============================================================================
 // TIMESHEET REPORTS
 // =============================================================================
 
-timesheetsRouter.get("/", requireManager(), async (c) => {
-    const orgId = c.get("orgId");
-    const queryParams = parseQueryParams(c.req.url);
-    return await getTimesheetsReportController(orgId, queryParams);
+const getReportRoute = createRoute({
+    method: 'get',
+    path: '/',
+    summary: 'Get Timesheet Report',
+    description: 'Get aggregated timesheet report.',
+    responses: {
+        200: {
+            content: { 'application/json': { schema: TimesheetReportSchema } },
+            description: 'Timesheet report'
+        },
+        403: { description: 'Forbidden' }
+    }
 });
 
-timesheetsRouter.get("/filters", requireManager(), async (c) => {
+timesheetsRouter.openapi(getReportRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
-    return await getReportFiltersController(orgId, queryParams);
+    const result = await getTimesheetsReportController(orgId, queryParams);
+    return c.json(result as any, 200);
+});
+
+const getFiltersRoute = createRoute({
+    method: 'get',
+    path: '/filters',
+    summary: 'Get Report Filters',
+    description: 'Get available filters for reports.',
+    responses: {
+        200: {
+            content: { 'application/json': { schema: z.any() } },
+            description: 'Filters'
+        }
+    }
+});
+
+timesheetsRouter.openapi(getFiltersRoute, async (c) => {
+    const orgId = c.get("orgId");
+    const queryParams = parseQueryParams(c.req.url);
+    const result = await getReportFiltersController(orgId, queryParams);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
 // EXPORTS
 // =============================================================================
 
-timesheetsRouter.get("/export", requireManager(), async (c) => {
-    const orgId = c.get("orgId");
-    const queryParams = parseQueryParams(c.req.url);
-    return await exportTimesheetsController(orgId, queryParams);
+const exportRoute = createRoute({
+    method: 'get',
+    path: '/export',
+    summary: 'Export Timesheets',
+    description: 'Export timesheets in specified format.',
+    request: {
+        query: z.object({
+            format: z.string().optional()
+        })
+    },
+    responses: {
+        200: {
+            description: 'File download',
+            content: { 'application/octet-stream': { schema: z.string() } }
+        }
+    }
 });
 
-timesheetsRouter.get("/export/csv", requireManager(), async (c) => {
+timesheetsRouter.openapi(exportRoute, async (c) => {
+    const orgId = c.get("orgId");
+    const queryParams = parseQueryParams(c.req.url);
+    const result = await exportTimesheetsController(orgId, queryParams);
+    return c.json(result as any, 200);
+});
+
+const exportCsvRoute = createRoute({
+    method: 'get',
+    path: '/export/csv',
+    summary: 'Export as CSV',
+    description: 'Export timesheets as CSV.',
+    responses: {
+        200: {
+            description: 'CSV file',
+            content: { 'text/csv': { schema: z.string() } }
+        }
+    }
+});
+
+timesheetsRouter.openapi(exportCsvRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
     queryParams.format = "csv";
-    return await exportTimesheetsController(orgId, queryParams);
+    const result = await exportTimesheetsController(orgId, queryParams);
+    return c.json(result as any, 200);
 });
 
-timesheetsRouter.get("/export/pdf", requireManager(), async (c) => {
+const exportPdfRoute = createRoute({
+    method: 'get',
+    path: '/export/pdf',
+    summary: 'Export as PDF',
+    description: 'Export timesheets as PDF.',
+    responses: {
+        200: {
+            description: 'PDF file',
+            content: { 'application/pdf': { schema: z.string() } }
+        }
+    }
+});
+
+timesheetsRouter.openapi(exportPdfRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
     queryParams.format = "pdf";
-    return await exportTimesheetsController(orgId, queryParams);
+    const result = await exportTimesheetsController(orgId, queryParams);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================

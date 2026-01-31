@@ -5,6 +5,7 @@
 // TYPES
 // =============================================================================
 export type { Shift, ShiftStatus, TimesheetWorker } from "./types";
+export * from "./schemas";
 
 // =============================================================================
 // CONTROLLERS (Business Logic)
