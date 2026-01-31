@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target node --sourcemap=none",
+    "build": "node build.mjs",
+    "build:bun": "bun build src/index.ts --outdir dist --target node --sourcemap=none",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -28,7 +29,7 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
     "@types/bun": "^1.1.6",
-    "esbuild": "^0.20.0",
+    "esbuild": "^0.24.0",
     "typescript": "^5.5.4"
   }
 }
