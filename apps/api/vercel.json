@@ -1,14 +1,8 @@
 {
-    "git": {
-        "deploymentEnabled": {
-            "master": true
-        }
-    },
-    "ignoreCommand": "npx turbo-ignore api",
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/api"
+            "destination": "/api/index"
         }
     ]
 }

@@ -46,22 +46,23 @@
  * @version 1.0.0
  */
 
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { swaggerUI } from "@hono/swagger-ui";
 import { cors } from "hono/cors";
 import { auth } from "@repo/auth";
-import { db } from "@repo/database";
+import { db, eq, and } from "@repo/database";
 import { member } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
 import { corsConfig } from "@repo/config";
 import { requestId, errorHandler, timeout } from "@repo/observability";
 
 // Import route modules
-import { shiftsRouter } from "./routes/shifts";
-import { workerRouter } from "./routes/worker";
-import { timesheetsRouter } from "./routes/timesheets";
-import { billingRouter } from "./routes/billing";
-import { organizationsRouter } from "./routes/organizations";
-import { geofenceRouter } from "./routes/geofence";
+// Import route modules
+import { shiftsRouter } from "./routes/shifts.js";
+import { workerRouter } from "./routes/worker.js";
+import { timesheetsRouter } from "./routes/timesheets.js";
+import { billingRouter } from "./routes/billing.js";
+import { organizationsRouter } from "./routes/organizations.js";
+import { geofenceRouter } from "./routes/geofence.js";
 
 // Types
 export type Role = "owner" | "admin" | "manager" | "member";
@@ -76,7 +77,22 @@ export type AppContext = {
 };
 
 // Create main app
-const app = new Hono<AppContext>();
+const app = new OpenAPIHono<AppContext>();
+
+// =============================================================================
+// OPENAPI & SWAGGER
+// =============================================================================
+
+app.doc("/openapi.json", {
+    openapi: "3.0.0",
+    info: {
+        version: "1.0.0",
+        title: "WorkersHive API",
+        description: "API for managing shifts, workers, and organizations.",
+    },
+});
+
+app.get("/docs", swaggerUI({ url: "/openapi.json" }));
 
 // =============================================================================
 // GLOBAL MIDDLEWARE
@@ -186,3 +202,13 @@ export default {
 };
 
 export { app };
+
+// Vercel Serverless/Edge Exports
+import { handle } from 'hono/vercel';
+export const GET = handle(app);
+export const POST = handle(app);
+export const PUT = handle(app);
+export const DELETE = handle(app);
+export const PATCH = handle(app);
+export const OPTIONS = handle(app);
+export const HEAD = handle(app);

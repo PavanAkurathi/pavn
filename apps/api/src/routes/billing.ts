@@ -32,19 +32,37 @@
  * @since 1.0.0
  */
 
-import { Hono } from "hono";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { requireAdmin, requireManager } from "../middleware";
+import { BillingInfoSchema } from "@repo/shifts-service";
 
-export const billingRouter = new Hono<AppContext>();
+export const billingRouter = new OpenAPIHono<AppContext>();
 
 // =============================================================================
 // SUBSCRIPTION / BILLING INFO (Manager can view)
 // =============================================================================
 
-billingRouter.get("/", requireManager(), async (c) => {
+const getBillingRoute = createRoute({
+    method: 'get',
+    path: '/',
+    summary: 'Get Billing Info',
+    description: 'Get current subscription and billing status.',
+    responses: {
+        200: { content: { 'application/json': { schema: BillingInfoSchema } }, description: 'Billing info' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+billingRouter.openapi(getBillingRoute, async (c) => {
+    // Auth check (Manager)
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) {
+        return c.json({ error: "Access denied" }, 403);
+    }
+
     const orgId = c.get("orgId");
-    
+
     // TODO: Implement billing info retrieval from Stripe
     return c.json({
         plan: "professional",
@@ -54,17 +72,45 @@ billingRouter.get("/", requireManager(), async (c) => {
             workers: 0,
             shifts: 0,
         },
-    });
+    } as any, 200);
 });
 
-billingRouter.get("/invoices", requireManager(), async (c) => {
+const getInvoicesRoute = createRoute({
+    method: 'get',
+    path: '/invoices',
+    summary: 'Get Invoices',
+    description: 'Get invoice history.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Invoices' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+billingRouter.openapi(getInvoicesRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     // TODO: Implement invoice listing from Stripe
-    return c.json({ invoices: [] });
+    return c.json({ invoices: [] } as any, 200);
 });
 
-billingRouter.get("/usage", requireManager(), async (c) => {
+const getUsageRoute = createRoute({
+    method: 'get',
+    path: '/usage',
+    summary: 'Get Usage Stats',
+    description: 'Get current billing period usage.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Usage stats' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+billingRouter.openapi(getUsageRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const orgId = c.get("orgId");
-    
+
     // TODO: Implement usage stats from database
     return c.json({
         period: {
@@ -74,52 +120,126 @@ billingRouter.get("/usage", requireManager(), async (c) => {
         workers: { count: 0, limit: 100 },
         shifts: { count: 0, limit: 1000 },
         storage: { used: 0, limit: 10737418240 }, // 10GB in bytes
-    });
+    } as any, 200);
 });
 
 // =============================================================================
 // PAYMENT METHODS (Admin ONLY - Managers cannot CRUD)
 // =============================================================================
 
-billingRouter.get("/payment-methods", requireAdmin(), async (c) => {
+const getPaymentMethodsRoute = createRoute({
+    method: 'get',
+    path: '/payment-methods',
+    summary: 'Get Payment Methods',
+    description: 'List payment methods (Admin only).',
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Payment methods' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+billingRouter.openapi(getPaymentMethodsRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+
     // TODO: Implement Stripe payment methods list
-    return c.json({ paymentMethods: [] });
+    return c.json({ paymentMethods: [] } as any, 200);
 });
 
-billingRouter.post("/payment-methods", requireAdmin(), async (c) => {
-    // TODO: Implement add payment method via Stripe
-    return c.json({ error: "Not yet implemented" }, 501);
+const addPaymentMethodRoute = createRoute({
+    method: 'post',
+    path: '/payment-methods',
+    summary: 'Add Payment Method',
+    description: 'Add a new payment method (Admin only).',
+    responses: {
+        501: { description: 'Not implemented' }
+    }
 });
 
-billingRouter.delete("/payment-methods/:id", requireAdmin(), async (c) => {
-    const paymentMethodId = c.req.param("id");
-    // TODO: Implement delete payment method
-    return c.json({ error: "Not yet implemented" }, 501);
+billingRouter.openapi(addPaymentMethodRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
-billingRouter.patch("/payment-methods/:id/default", requireAdmin(), async (c) => {
-    const paymentMethodId = c.req.param("id");
-    // TODO: Implement set default payment method
-    return c.json({ error: "Not yet implemented" }, 501);
+const deletePaymentMethodRoute = createRoute({
+    method: 'delete',
+    path: '/payment-methods/{id}',
+    summary: 'Delete Payment Method',
+    description: 'Delete a payment method (Admin only).',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        501: { description: 'Not implemented' }
+    }
+});
+
+billingRouter.openapi(deletePaymentMethodRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    return c.json({ error: "Not yet implemented" } as any, 501);
+});
+
+const setDefaultPaymentMethodRoute = createRoute({
+    method: 'patch',
+    path: '/payment-methods/{id}/default',
+    summary: 'Set Default Payment Method',
+    description: 'Set default payment method (Admin only).',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        501: { description: 'Not implemented' }
+    }
+});
+
+billingRouter.openapi(setDefaultPaymentMethodRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
 // =============================================================================
 // SUBSCRIPTION MANAGEMENT (Admin ONLY)
 // =============================================================================
 
-billingRouter.post("/subscribe", requireAdmin(), async (c) => {
-    // TODO: Implement subscription creation via Stripe
-    return c.json({ error: "Not yet implemented" }, 501);
+const subscribeRoute = createRoute({
+    method: 'post',
+    path: '/subscribe',
+    summary: 'Create Subscription',
+    description: 'Create a new subscription (Admin only).',
+    responses: { 501: { description: 'Not implemented' } }
 });
 
-billingRouter.post("/cancel", requireAdmin(), async (c) => {
-    // TODO: Implement subscription cancellation
-    return c.json({ error: "Not yet implemented" }, 501);
+billingRouter.openapi(subscribeRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
-billingRouter.post("/upgrade", requireAdmin(), async (c) => {
-    // TODO: Implement plan upgrade
-    return c.json({ error: "Not yet implemented" }, 501);
+const cancelRoute = createRoute({
+    method: 'post',
+    path: '/cancel',
+    summary: 'Cancel Subscription',
+    description: 'Cancel current subscription (Admin only).',
+    responses: { 501: { description: 'Not implemented' } }
+});
+
+billingRouter.openapi(cancelRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    return c.json({ error: "Not yet implemented" } as any, 501);
+});
+
+const upgradeRoute = createRoute({
+    method: 'post',
+    path: '/upgrade',
+    summary: 'Upgrade Plan',
+    description: 'Upgrade subscription plan (Admin only).',
+    responses: { 501: { description: 'Not implemented' } }
+});
+
+billingRouter.openapi(upgradeRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
 export default billingRouter;

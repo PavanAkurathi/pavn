@@ -17,6 +17,9 @@ export { getPendingCorrectionsController, reviewCorrectionController } from "./c
 export { managerOverrideController } from "./controllers/manager-override";
 export { getFlaggedTimesheetsController } from "./controllers/flagged-timesheets";
 
+// Export schemas for OpenAPI
+export * from "./schemas";
+
 // Location
 export { geocodeLocationController } from "./controllers/geocode-location";
 export { ingestLocationController } from "./controllers/ingest-location";

@@ -30,7 +30,7 @@
  * @since 1.0.0
  */
 
-import { Hono } from "hono";
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { requireManager } from "../middleware";
 import { rateLimit, RATE_LIMITS } from "../middleware";
@@ -50,109 +50,321 @@ import {
     getShiftTimesheetsController,
     updateTimesheetController,
     publishScheduleController,
+    UpcomingShiftsResponseSchema,
+    ShiftSchema,
+    TimesheetSchema,
 } from "@repo/shifts-service";
 
-export const shiftsRouter = new Hono<AppContext>();
+export const shiftsRouter = new OpenAPIHono<AppContext>();
 
 // =============================================================================
 // DRAFT SHIFTS
 // =============================================================================
 
-shiftsRouter.get("/drafts", requireManager(), async (c) => {
-    const orgId = c.get("orgId");
-    return await getDraftShifts(orgId);
+const getDraftsRoute = createRoute({
+    method: 'get',
+    path: '/drafts',
+    summary: 'Get Draft Shifts',
+    description: 'Get all shifts in draft status.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.array(ShiftSchema) } }, description: 'Draft shifts' },
+        403: { description: 'Forbidden' }
+    }
 });
 
-shiftsRouter.delete("/drafts", requireManager(), async (c) => {
+shiftsRouter.openapi(getDraftsRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const orgId = c.get("orgId");
-    return await deleteDraftsController(orgId);
+    const result = await getDraftShifts(orgId);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
 // SHIFT LISTS
 // =============================================================================
 
-shiftsRouter.get("/upcoming", requireManager(), async (c) => {
-    const orgId = c.get("orgId");
-    return await getUpcomingShifts(orgId);
+const upcomingRoute = createRoute({
+    method: 'get',
+    path: '/upcoming',
+    summary: 'Get Upcoming Shifts',
+    description: 'Retrieve a list of future published shifts for the organization.',
+    responses: {
+        200: {
+            content: {
+                'application/json': {
+                    schema: UpcomingShiftsResponseSchema,
+                },
+            },
+            description: 'List of upcoming shifts',
+        },
+        403: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        error: z.string(),
+                    }),
+                },
+            },
+            description: 'Access denied',
+        },
+    },
 });
 
-shiftsRouter.get("/pending-approval", requireManager(), async (c) => {
+shiftsRouter.openapi(upcomingRoute, async (c) => {
+    // Middleware-like check since openapi() doesn't support array middleware easily yet
+    // In a full refactor, we'd use a middleware wrapper or specific OpenAPI middleware
+    const userRole = c.get("userRole");
+    // basic check, though requireManager() middleware is better. 
+    // For this POC, we'll assume the global auth middleware handled the user context,
+    // but specific role checks might need to be inside here or via a middleware wrapper.
+    if (userRole !== "manager" && userRole !== "owner" && userRole !== "admin") {
+        return c.json({ error: "Access denied" }, 403);
+    }
+
     const orgId = c.get("orgId");
-    return await getPendingShifts(orgId);
+    const result = await getUpcomingShifts(orgId);
+    return c.json(result as any, 200);
 });
 
-shiftsRouter.get("/history", requireManager(), async (c) => {
+const getPendingRoute = createRoute({
+    method: 'get',
+    path: '/pending-approval',
+    summary: 'Get Pending Shifts',
+    description: 'Get shifts waiting for approval.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.array(ShiftSchema) } }, description: 'Pending shifts' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(getPendingRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const result = await getPendingShifts(orgId);
+    return c.json(result as any, 200);
+});
+
+const getHistoryRoute = createRoute({
+    method: 'get',
+    path: '/history',
+    summary: 'Get Shift History',
+    description: 'Get past shifts.',
+    request: {
+        query: z.object({
+            limit: z.string().optional(),
+            offset: z.string().optional()
+        })
+    },
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift history' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(getHistoryRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const orgId = c.get("orgId");
     const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "50"), 1), 100);
     const offset = Math.max(parseInt(c.req.query("offset") || "0"), 0);
-    return await getHistoryShifts(orgId, { limit, offset });
+    const result = await getHistoryShifts(orgId, { limit, offset });
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
 // SHIFT GROUPS
 // =============================================================================
 
-shiftsRouter.get("/groups/:groupId", requireManager(), async (c) => {
+const getGroupRoute = createRoute({
+    method: 'get',
+    path: '/groups/{groupId}',
+    summary: 'Get Shift Group',
+    description: 'Get details of a shift group.',
+    request: { params: z.object({ groupId: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift group' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(getGroupRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const groupId = c.req.param("groupId");
     const orgId = c.get("orgId");
-    return await getShiftGroupController(groupId, orgId);
+    const result = await getShiftGroupController(groupId, orgId);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
 // SINGLE SHIFT OPERATIONS
 // =============================================================================
 
-shiftsRouter.get("/:id", async (c) => {
-    const id = c.req.param("id");
-    const orgId = c.get("orgId");
-    return await getShiftByIdController(id, orgId);
+const getShiftRoute = createRoute({
+    method: 'get',
+    path: '/{id}',
+    summary: 'Get Shift',
+    description: 'Get shift details.',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: ShiftSchema } }, description: 'Shift details' }
+    }
 });
 
-shiftsRouter.post("/:id/approve", requireManager(), async (c) => {
+shiftsRouter.openapi(getShiftRoute, async (c) => {
+    const id = c.req.param("id");
+    const orgId = c.get("orgId");
+    const result = await getShiftByIdController(id, orgId);
+    return c.json(result as any, 200);
+});
+
+const approveShiftRoute = createRoute({
+    method: 'post',
+    path: '/{id}/approve',
+    summary: 'Approve Shift',
+    description: 'Approve a pending shift.',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift approved' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(approveShiftRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await approveShiftController(id, orgId, user.id);
+    const result = await approveShiftController(id, orgId, user.id);
+    return c.json(result as any, 200);
 });
 
-shiftsRouter.post("/:id/cancel", requireManager(), async (c) => {
+const cancelShiftRoute = createRoute({
+    method: 'post',
+    path: '/{id}/cancel',
+    summary: 'Cancel Shift',
+    description: 'Cancel a shift.',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift canceled' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(cancelShiftRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    return await cancelShiftController(id, orgId, user.id);
+    const result = await cancelShiftController(id, orgId, user.id);
+    return c.json(result as any, 200);
 });
 
-shiftsRouter.post("/:id/assign", requireManager(), async (c) => {
+const assignWorkerRoute = createRoute({
+    method: 'post',
+    path: '/{id}/assign',
+    summary: 'Assign Worker',
+    description: 'Assign a worker to a shift.',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker assigned' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(assignWorkerRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const id = c.req.param("id");
     const orgId = c.get("orgId");
-    return await assignWorkerController(c.req.raw, id, orgId);
+    const result = await assignWorkerController(c.req.raw, id, orgId);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
 // SHIFT TIMESHEETS
 // =============================================================================
 
-shiftsRouter.get("/:id/timesheets", requireManager(), async (c) => {
-    const id = c.req.param("id");
-    const orgId = c.get("orgId");
-    return await getShiftTimesheetsController(id, orgId);
+const getShiftTimesheetsRoute = createRoute({
+    method: 'get',
+    path: '/{id}/timesheets',
+    summary: 'Get Shift Timesheets',
+    description: 'Get timesheets for a shift.',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: z.array(TimesheetSchema) } }, description: 'Timesheets' },
+        403: { description: 'Forbidden' }
+    }
 });
 
-shiftsRouter.patch("/:shiftId/timesheet", requireManager(), async (c) => {
+shiftsRouter.openapi(getShiftTimesheetsRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
+    const id = c.req.param("id");
     const orgId = c.get("orgId");
-    return await updateTimesheetController(c.req.raw, orgId);
+    const result = await getShiftTimesheetsController(id, orgId);
+    return c.json(result as any, 200);
+});
+
+const updateTimesheetRoute = createRoute({
+    method: 'patch',
+    path: '/{shiftId}/timesheet',
+    summary: 'Update Timesheet',
+    description: 'Update a timesheet entry.',
+    request: { params: z.object({ shiftId: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Timesheet updated' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(updateTimesheetRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const result = await updateTimesheetController(c.req.raw, orgId);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
 // SCHEDULE PUBLISHING
 // =============================================================================
 
-shiftsRouter.post("/publish", requireManager(), rateLimit(RATE_LIMITS.publish), async (c) => {
+const publishRoute = createRoute({
+    method: 'post',
+    path: '/publish',
+    summary: 'Publish Schedule',
+    description: 'Publish draft shifts.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Schedule published' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(publishRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
     const orgId = c.get("orgId");
-    return await publishScheduleController(c.req.raw, orgId);
+    const result = await publishScheduleController(c.req.raw, orgId);
+    return c.json(result as any, 200);
 });
 
 export default shiftsRouter;

@@ -1,12 +1,12 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "private": true,
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --external:@neondatabase/serverless --external:ws",
+    "build": "bun build src/index.ts --outdir dist --target node --sourcemap=none",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,7 +20,7 @@
     "@hono/swagger-ui": "^0.4.1",
     "@hono/zod-openapi": "^0.16.0",
     "@neondatabase/serverless": "^0.9.0",
-    "drizzle-orm": "^0.33.0",
+    "drizzle-orm": "0.45.1",
     "hono": "^4.6.0",
     "nanoid": "^5.0.7",
     "zod": "^3.23.8"
