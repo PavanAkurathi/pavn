@@ -1,10 +1,7 @@
 {
-    "buildCommand": "node build-vercel.mjs",
-    "outputDirectory": ".",
-    "installCommand": "npm install esbuild --save-dev",
-    "framework": null,
+    "bunVersion": "1.x",
     "functions": {
-        "api/index.js": {
+        "api/index.ts": {
             "memory": 1024,
             "maxDuration": 30
         }
