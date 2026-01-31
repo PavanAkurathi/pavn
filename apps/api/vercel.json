@@ -1,7 +1,7 @@
 {
-    "buildCommand": "npm install esbuild && node build.mjs",
+    "buildCommand": "node build-vercel.mjs",
     "outputDirectory": ".",
-    "installCommand": "npm install --legacy-peer-deps",
+    "installCommand": "npm install esbuild --save-dev",
     "framework": null,
     "functions": {
         "api/index.js": {
