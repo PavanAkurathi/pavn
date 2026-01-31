@@ -168,10 +168,12 @@ export const member = pgTable("member", {
     userId: text("user_id")
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
-    role: text("role").notNull(), // "admin" | "member" (Text is safer than Enum for libraries)
+    role: text("role").notNull(), // "admin" | "member"
+    status: text("status").notNull().default("active"), // "active" | "inactive" | "invited"
     hourlyRate: integer("hourly_rate"), // Stored in cents, nullable
     jobTitle: text("job_title"), // e.g. "Security Guard", nullable
     createdAt: timestamp("created_at").notNull(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
 }, (table) => ({
     memberOrgIdx: index("member_org_idx").on(table.organizationId),
     memberUserIdx: index("member_user_idx").on(table.userId),

@@ -21,7 +21,7 @@
   "resolutions": {
     "drizzle-orm": "0.45.1",
     "drizzle-kit": "0.31.8",
-    "zod": "^4.3.6",
+    "zod": "^3.24.1",
     "@hookform/resolvers": "3.9.0"
   },
   "workspaces": [

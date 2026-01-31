@@ -1,0 +1,9 @@
+# Dependency Management Rule
+ALWAYS use the latest stable versions of dependencies.
+Before implementing any new feature or adding a package:
+1. CHECK the latest version on the official website (npm, GitHub releases, etc.).
+2. VERIFY that the version specified in `package.json` matches the latest stable release.
+3. If there is a mismatch, update the dependency to the latest version, unless there is a documented reason not to (e.g., breaking changes, known bugs).
+4. CONFIRM compatibility with the rest of the stack.
+
+Ref: User Request "i want to make and make it a rule! always use latest dependencies and confirm to check the version through offical websites before ijmplementing"
