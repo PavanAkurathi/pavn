@@ -1,7 +1,14 @@
 {
-    "buildCommand": "cd ../.. && npm install && cd apps/api && npm run build",
-    "installCommand": "npm install",
+    "buildCommand": "npm install esbuild && node build.mjs",
+    "outputDirectory": ".",
+    "installCommand": "npm install --legacy-peer-deps",
     "framework": null,
+    "functions": {
+        "api/index.js": {
+            "memory": 1024,
+            "maxDuration": 30
+        }
+    },
     "rewrites": [
         {
             "source": "/(.*)",
