@@ -2,14 +2,15 @@
   "extends": "@repo/typescript-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "jsx": "react-jsx",
     "types": [
       "bun"
     ]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "api/**/*"
   ],
   "exclude": [
     "node_modules",

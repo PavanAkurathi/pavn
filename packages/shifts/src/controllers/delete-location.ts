@@ -18,10 +18,14 @@ export const deleteLocationController = async (id: string, orgId: string) => {
     // TODO: Check if location is used in shifts before deleting?
     // For now, simple delete.
 
-    const deleted = await db
+    const [deletedRecord] = await db
         .delete(location)
         .where(eq(location.id, id))
         .returning();
 
-    return { success: true, id: deleted[0].id };
+    if (!deletedRecord) {
+        throw new Error("Failed to delete location");
+    }
+
+    return { success: true, id: deletedRecord.id };
 };

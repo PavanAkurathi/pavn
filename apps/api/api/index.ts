@@ -1,5 +1,6 @@
 import { handle } from 'hono/vercel';
-import { app } from '../src/index';
+// @ts-ignore - Importing from dist which is built before deployment
+import { app } from '../dist/index.js';
 
 export const GET = handle(app);
 export const POST = handle(app);
