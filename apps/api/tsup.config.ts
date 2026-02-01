@@ -26,9 +26,12 @@ export default defineConfig({
         'stripe',
         'resend',
         'react',
+        'react/*',
+        'react/jsx-runtime',
         'expo-server-sdk',
         '@sentry/node',
         'date-fns',
+        'date-fns/*',
         'date-fns-tz',
         'google-libphonenumber',
         'crypto'

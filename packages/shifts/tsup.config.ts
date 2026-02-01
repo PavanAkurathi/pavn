@@ -11,6 +11,7 @@ export default defineConfig({
     noExternal: [/@repo\/.*/],
     external: [
         'date-fns',
+        'date-fns/*',
         'date-fns-tz',
         'drizzle-orm',
         'drizzle-orm/*',
@@ -27,6 +28,8 @@ export default defineConfig({
         'stripe',
         'resend',
         'react',
+        'react/*',
+        'react/jsx-runtime',
         'expo-server-sdk',
         '@sentry/node',
         'google-libphonenumber',
