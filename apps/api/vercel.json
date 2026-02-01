@@ -1,17 +1,19 @@
 {
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "bunVersion": "1.x",
     "buildCommand": "node build.mjs",
-    "outputDirectory": ".",
+    "outputDirectory": "dist",
     "installCommand": "cd ../.. && bun install",
     "functions": {
-        "api/index.js": {
+        "dist/index.js": {
             "maxDuration": 30,
-            "includeFiles": "dist/**"
+            "memory": 1024
         }
     },
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/api"
+            "destination": "/dist/index.js"
         }
     ]
 }
