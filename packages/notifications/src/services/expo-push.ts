@@ -1,4 +1,4 @@
-import Expo, { ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 import { db } from '@repo/database';
 import { deviceToken } from '@repo/database/schema';
 import { eq, and, inArray } from 'drizzle-orm';
