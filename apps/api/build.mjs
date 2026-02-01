@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Build script for Vercel deployment
- * Bundles all @repo/* packages into a single file
+Build script for Vercel deployment
+Bundles all @repo/* packages and dependencies into a single file
  */
 
 import * as esbuild from 'esbuild';
@@ -15,13 +15,11 @@ const monorepoRoot = join(__dirname, '../..');
 console.log('🔧 Building API for Vercel...');
 console.log('📁 Current dir:', __dirname);
 
-// Ensure dist exists
 const distDir = join(__dirname, 'dist');
 if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true });
 }
 
-// Build aliases for workspace packages - point to TypeScript source
 const aliases = {
     '@repo/auth': join(monorepoRoot, 'packages/auth/src/index.ts'),
     '@repo/database': join(monorepoRoot, 'packages/database/src/index.ts'),
@@ -36,7 +34,7 @@ const aliases = {
     '@repo/email': join(monorepoRoot, 'packages/email/src/index.ts'),
 };
 
-console.log('📦 Bundling with aliases:', Object.keys(aliases));
+console.log('📦 Bundling workspace packages...');
 
 async function build() {
     try {
@@ -47,48 +45,19 @@ async function build() {
             target: 'node20',
             format: 'esm',
             outfile: join(__dirname, 'dist/index.js'),
-            sourcemap: false,
-            minify: false,
-            
-            // Bundle workspace packages (they're TypeScript)
+            sourcemap: true,
+            minify: true,
             packages: 'bundle',
-            
-            // Keep npm packages external
+
+            // Only keep Node.js built-ins and native modules as external
             external: [
-                // Hono
-                'hono',
-                'hono/*',
-                '@hono/*',
-                // Database
-                'drizzle-orm',
-                'drizzle-orm/*',
-                '@neondatabase/serverless',
-                'postgres',
-                // Auth  
-                'better-auth',
-                'better-auth/*',
-                '@better-auth/*',
-                // Utils
-                'zod',
-                'nanoid',
-                'dotenv',
-                // Services
-                'twilio',
-                'stripe',
-                'resend',
-                '@sentry/node',
-                'expo-server-sdk',
-                // React (for email templates)
-                'react',
-                'react/*',
-                // Date utils
-                'date-fns',
-                'date-fns/*',
-                'date-fns-tz',
-                // Phone validation
-                'google-libphonenumber',
+                // Only true Node.js built-ins
+                'node:*',
+                // Native modules that can't be bundled
+                'better-sqlite3',
+                'pg-native',
             ],
-            
+
             alias: aliases,
             resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
             loader: { '.ts': 'ts', '.tsx': 'tsx' },
@@ -96,11 +65,10 @@ async function build() {
             metafile: true,
         });
 
-        // Log stats
         for (const [file, info] of Object.entries(result.metafile?.outputs || {})) {
             console.log(`📄 ${file}: ${(info.bytes / 1024).toFixed(1)} KB`);
         }
-        
+
         console.log('✅ Build complete!');
     } catch (error) {
         console.error('❌ Build failed:', error);
