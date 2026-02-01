@@ -1,11 +1,3 @@
-// Vercel serverless entry point - Bun runtime
-import { handle } from 'hono/vercel';
-import { app } from '../src/index';
-
-export const GET = handle(app);
-export const POST = handle(app);
-export const PUT = handle(app);
-export const DELETE = handle(app);
-export const PATCH = handle(app);
-export const OPTIONS = handle(app);
-export const HEAD = handle(app);
+// DEPRECATED - Use index.js instead
+// This file should be deleted
+export {};
