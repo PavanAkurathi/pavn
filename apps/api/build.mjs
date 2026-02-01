@@ -53,38 +53,36 @@ async function build() {
             // Bundle workspace packages (they're TypeScript)
             packages: 'bundle',
             
-            // ONLY externalize packages that:
-            // 1. Have native bindings or complex node_modules structures
-            // 2. Are listed in apps/api/package.json dependencies
+            // ONLY externalize packages that have proper ESM exports
+            // CJS-only packages should NOT be external (esbuild handles CJS→ESM)
             external: [
-                // Hono - in package.json
+                // Hono - proper ESM
                 'hono',
                 'hono/*',
                 '@hono/*',
-                // Database - in package.json
+                // Database - proper ESM
                 'drizzle-orm',
                 'drizzle-orm/*',
                 '@neondatabase/serverless',
                 'postgres',
-                // Auth - in package.json
+                // Auth - proper ESM
                 'better-auth',
                 'better-auth/*',
                 '@better-auth/*',
-                // Utils - in package.json
+                // Utils - proper ESM
                 'zod',
                 'nanoid',
-                // Services - in package.json
+                // Services with native bindings - must be external
                 'twilio',
                 'stripe',
                 'resend',
                 '@sentry/node',
                 'expo-server-sdk',
-                // Date utils - in package.json
+                // Date utils - proper ESM
                 'date-fns',
                 'date-fns/*',
                 'date-fns-tz',
-                // Phone validation - in package.json
-                'google-libphonenumber',
+                // NOTE: google-libphonenumber is CJS-only, let esbuild bundle it
             ],
             
             alias: aliases,
