@@ -34,7 +34,8 @@
     "expo-server-sdk": "^3.7.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
-    "google-libphonenumber": "^3.2.34"
+    "google-libphonenumber": "^3.2.34",
+    "postgres": "^3.4.4"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
