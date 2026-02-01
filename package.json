@@ -2,7 +2,7 @@
   "name": "hive",
   "private": true,
   "scripts": {
-    "build": "turbo run build --filter=@repo/api",
+    "build": "cd apps/api && node build.mjs",
     "dev": "turbo run dev --filter=!@repo/jobs",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
