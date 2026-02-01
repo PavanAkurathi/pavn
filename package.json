@@ -2,7 +2,7 @@
   "name": "hive",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
+    "build": "bun run --bun turbo run build",
     "dev": "turbo run dev --filter=!@repo/jobs",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
