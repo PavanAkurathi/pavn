@@ -53,39 +53,37 @@ async function build() {
             // Bundle workspace packages (they're TypeScript)
             packages: 'bundle',
             
-            // Keep npm packages external
+            // ONLY externalize packages that:
+            // 1. Have native bindings or complex node_modules structures
+            // 2. Are listed in apps/api/package.json dependencies
             external: [
-                // Hono
+                // Hono - in package.json
                 'hono',
                 'hono/*',
                 '@hono/*',
-                // Database
+                // Database - in package.json
                 'drizzle-orm',
                 'drizzle-orm/*',
                 '@neondatabase/serverless',
                 'postgres',
-                // Auth  
+                // Auth - in package.json
                 'better-auth',
                 'better-auth/*',
                 '@better-auth/*',
-                // Utils
+                // Utils - in package.json
                 'zod',
                 'nanoid',
-                'dotenv',
-                // Services
+                // Services - in package.json
                 'twilio',
                 'stripe',
                 'resend',
                 '@sentry/node',
                 'expo-server-sdk',
-                // React (for email templates)
-                'react',
-                'react/*',
-                // Date utils
+                // Date utils - in package.json
                 'date-fns',
                 'date-fns/*',
                 'date-fns-tz',
-                // Phone validation
+                // Phone validation - in package.json
                 'google-libphonenumber',
             ],
             
