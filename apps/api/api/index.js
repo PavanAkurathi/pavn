@@ -1,4 +1,4 @@
-// Vercel serverless entry point
+// Vercel serverless entry point - imports from bundled output
 import { handle } from 'hono/vercel';
 import { app } from '../dist/index.js';
 
