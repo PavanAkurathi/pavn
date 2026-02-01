@@ -10,7 +10,6 @@ export default defineConfig({
     external: [
         '@neondatabase/serverless',
         'drizzle-orm',
-        'drizzle-orm/*',
         'dotenv',
         'nanoid'
     ]

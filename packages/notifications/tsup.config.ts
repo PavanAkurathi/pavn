@@ -7,12 +7,14 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
+    // Bundle @repo packages, externalize npm packages
+    noExternal: [/@repo\/.*/],
     external: [
-        '@repo/database',
         'date-fns',
         'drizzle-orm',
-        'drizzle-orm/*',
         'expo-server-sdk',
-        'nanoid'
+        'nanoid',
+        '@neondatabase/serverless',
+        'dotenv'
     ]
 });

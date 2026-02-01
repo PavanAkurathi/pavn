@@ -7,12 +7,15 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
+    // Bundle @repo packages, externalize npm packages
+    noExternal: [/@repo\/.*/],
     external: [
-        '@repo/database',
         '@sentry/node',
         'hono',
-        'hono/*',
         'nanoid',
-        'zod'
+        'zod',
+        'drizzle-orm',
+        '@neondatabase/serverless',
+        'dotenv'
     ]
 });

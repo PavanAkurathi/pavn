@@ -7,17 +7,23 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
+    // Bundle @repo packages, externalize npm packages
+    noExternal: [/@repo\/.*/],
     external: [
-        '@repo/auth',
-        '@repo/config',
-        '@repo/database',
-        '@repo/notifications',
-        '@repo/observability',
         'drizzle-orm',
-        'drizzle-orm/*',
         'hono',
-        'hono/*',
         'nanoid',
-        'zod'
+        'zod',
+        '@neondatabase/serverless',
+        'dotenv',
+        'better-auth',
+        'better-auth/*',
+        '@better-auth/*',
+        'twilio',
+        'stripe',
+        'resend',
+        'expo-server-sdk',
+        'date-fns',
+        '@sentry/node'
     ]
 });

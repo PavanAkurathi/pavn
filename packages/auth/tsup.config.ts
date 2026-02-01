@@ -7,10 +7,9 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
+    // Bundle @repo packages, externalize npm packages
+    noExternal: [/@repo\/.*/],
     external: [
-        '@repo/database',
-        '@repo/email',
-        '@repo/utils',
         'better-auth',
         'better-auth/*',
         '@better-auth/*',
@@ -19,6 +18,10 @@ export default defineConfig({
         'stripe',
         'twilio',
         'nanoid',
-        'dotenv'
+        'dotenv',
+        'resend',
+        'react',
+        '@neondatabase/serverless',
+        'google-libphonenumber'
     ]
 });
