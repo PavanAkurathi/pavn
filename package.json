@@ -2,7 +2,7 @@
   "name": "hive",
   "private": true,
   "scripts": {
-    "build": "cd apps/api && node build.mjs",
+    "build": "node build.mjs",
     "dev": "turbo run dev --filter=!@repo/jobs",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
@@ -10,6 +10,7 @@
     "db:reset": "bun run --filter @repo/database reset"
   },
   "devDependencies": {
+    "esbuild": "^0.27.2",
     "prettier": "^3.7.4",
     "turbo": "^2.8.0",
     "typescript": "5.9.2"

@@ -1,7 +1,7 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "bunVersion": "1.x",
-    "buildCommand": "cd apps/api && node build.mjs",
+    "buildCommand": "node build.mjs",
     "functions": {
         "api/index.ts": {
             "maxDuration": 30,
