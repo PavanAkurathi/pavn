@@ -14,8 +14,8 @@
         }
     },
     "scripts": {
-        "build": "tsup",
-        "lint": "eslint . --max-warnings 0"
+        "lint": "eslint . --max-warnings 0",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "resend": "^4.0.0",
@@ -26,7 +26,6 @@
         "@repo/typescript-config": "*",
         "@types/node": "^20.11.0",
         "@types/react": "^18.2.55",
-        "tsup": "^8.0.0",
         "typescript": "^5.3.3"
     }
 }

@@ -14,8 +14,6 @@
         }
     },
     "scripts": {
-        "build": "tsup",
-        "dev": "tsup --watch",
         "lint": "eslint .",
         "typecheck": "tsc --noEmit"
     },
@@ -23,8 +21,7 @@
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
         "@types/node": "^20.11.0",
-        "typescript": "^5.3.3",
-        "tsup": "^8.0.0"
+        "typescript": "^5.3.3"
     },
     "dependencies": {
         "google-libphonenumber": "^3.2.34",
