@@ -7,8 +7,5 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
-    external: [
-        'resend',
-        'react'
-    ]
+    external: ['resend', 'react']
 });

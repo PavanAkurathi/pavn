@@ -7,18 +7,9 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
-    // Don't bundle dependencies - they're in node_modules
-    noExternal: [],
+    // Bundle @repo packages, externalize npm packages
+    noExternal: [/@repo\/.*/],
     external: [
-        // Workspace packages (pre-built)
-        '@repo/auth',
-        '@repo/config', 
-        '@repo/database',
-        '@repo/geofence',
-        '@repo/notifications',
-        '@repo/shifts-service',
-        '@repo/observability',
-        // NPM packages
         'hono',
         'hono/*',
         '@hono/*',
@@ -30,6 +21,16 @@ export default defineConfig({
         '@better-auth/*',
         'zod',
         'nanoid',
-        'dotenv'
+        'dotenv',
+        'twilio',
+        'stripe',
+        'resend',
+        'react',
+        'expo-server-sdk',
+        '@sentry/node',
+        'date-fns',
+        'date-fns-tz',
+        'google-libphonenumber',
+        'crypto'
     ]
 });

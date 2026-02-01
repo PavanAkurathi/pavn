@@ -7,7 +7,7 @@ export default defineConfig({
     splitting: false,
     sourcemap: false,
     clean: true,
-    external: [
-        'google-libphonenumber'
-    ]
+    // Bundle everything, only externalize npm packages
+    noExternal: [/.*/],
+    external: ['google-libphonenumber']
 });
