@@ -1,0 +1,56 @@
+{
+    "files": [],
+    "references": [
+        {
+            "path": "./apps/api"
+        },
+        {
+            "path": "./apps/docs"
+        },
+        {
+            "path": "./apps/web"
+        },
+        {
+            "path": "./apps/workers"
+        },
+        {
+            "path": "./packages/api"
+        },
+        {
+            "path": "./packages/auth"
+        },
+        {
+            "path": "./packages/config"
+        },
+        {
+            "path": "./packages/database"
+        },
+        {
+            "path": "./packages/dub"
+        },
+        {
+            "path": "./packages/email"
+        },
+        {
+            "path": "./packages/geofence"
+        },
+        {
+            "path": "./packages/notification-worker"
+        },
+        {
+            "path": "./packages/notifications"
+        },
+        {
+            "path": "./packages/observability"
+        },
+        {
+            "path": "./packages/shifts"
+        },
+        {
+            "path": "./packages/ui"
+        },
+        {
+            "path": "./packages/utils"
+        }
+    ]
+}
