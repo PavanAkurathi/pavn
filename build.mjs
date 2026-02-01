@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
 Build script for Vercel deployment at monorepo root
-Bundles all @repo/* packages into a single file
+Bundles all @repo/* packages and dependencies into a single file
  */
 
 import * as esbuild from 'esbuild';
@@ -14,7 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 console.log('🔧 Building API for Vercel...');
 console.log('📁 Current dir:', __dirname);
 
-const distDir = join(__dirname, 'api', 'dist');
+const distDir = join(__dirname, 'apps/api/dist');
 if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true });
 }
@@ -43,7 +43,7 @@ async function build() {
             platform: 'node',
             target: 'node20',
             format: 'esm',
-            outfile: distDir + '/index.js',
+            outfile: join(__dirname, 'apps/api/dist/index.js'),
             sourcemap: true,
             minify: true,
             packages: 'bundle',
