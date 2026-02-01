@@ -25,7 +25,8 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     // Crucial for Next.js 15+ / Server Actions environment
     trustedOrigins: [
         "http://localhost:3000",
-        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3000",    "https://pavn-gpj8aqzw8-pavanworkershives-projects.vercel.app",
+process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}`
         // Expo Deep Linking Schema
         "exp://",
         "myapp://",
