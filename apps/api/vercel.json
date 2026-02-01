@@ -1,11 +1,6 @@
 {
-    "buildCommand": "cd ../.. && bun install",
-    "installCommand": "echo 'Using workspace install'",
-    "framework": null,
-    "outputDirectory": ".",
     "functions": {
-        "api/index.ts": {
-            "runtime": "bun@1",
+        "api/index.js": {
             "maxDuration": 30
         }
     },
