@@ -1,45 +1,44 @@
 {
     "name": "@repo/database",
     "version": "0.0.0",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
-    "engines": {
-        "node": ">=20.9.0"
-    },
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "types": "./src/index.ts",
+            "bun": "./src/index.ts",
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
         },
         "./schema": {
-            "types": "./dist/schema.d.ts",
-            "import": "./dist/schema.js",
-            "require": "./dist/schema.cjs"
+            "types": "./src/schema.ts",
+            "bun": "./src/schema.ts",
+            "import": "./src/schema.ts",
+            "default": "./src/schema.ts"
         }
     },
     "scripts": {
         "build": "tsup",
-        "dev": "tsup --watch",
-        "generate": "drizzle-kit generate",
-        "migrate": "drizzle-kit migrate",
-        "push": "drizzle-kit push",
-        "studio": "drizzle-kit studio",
-        "reset": "bun run ./scripts/reset.ts",
-        "type-check": "tsc --noEmit",
-        "purge:locations": "bun run ./scripts/purge-locations.ts"
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:push": "drizzle-kit push",
+        "db:studio": "drizzle-kit studio",
+        "lint": "eslint . --max-warnings 0"
     },
     "dependencies": {
-        "@neondatabase/serverless": "^0.9.3",
-        "dotenv": "^16.4.5",
+        "@neondatabase/serverless": "^0.9.0",
         "drizzle-orm": "0.45.1",
-        "nanoid": "^5.1.6"
+        "nanoid": "^5.0.7"
     },
     "devDependencies": {
-        "@repo/typescript-config": "workspace:*",
-        "@types/node": "^20.14.0",
-        "drizzle-kit": "^0.31.8",
-        "typescript": "^5.4.5",
-        "tsup": "^8.0.0"
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
+        "@types/node": "^20.11.0",
+        "dotenv": "^16.4.5",
+        "drizzle-kit": "^0.30.6",
+        "tsup": "^8.0.0",
+        "typescript": "^5.3.3"
     }
 }
