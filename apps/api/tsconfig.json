@@ -4,9 +4,10 @@
     "outDir": "dist",
     "rootDir": ".",
     "jsx": "react-jsx",
-    "types": [
-      "bun"
-    ]
+    "types": ["bun"],
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "noEmit": true
   },
   "include": [
     "src/**/*",
