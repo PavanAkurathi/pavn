@@ -24,7 +24,7 @@
         "@repo/notifications": "workspace:*",
         "@repo/observability": "workspace:*",
         "drizzle-orm": "0.45.1",
-        "hono": "^4.6.0",
+        "hono": "4.11.7",
         "zod": "^3.24.1"
     },
     "devDependencies": {
