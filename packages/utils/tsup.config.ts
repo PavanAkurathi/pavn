@@ -1,13 +1,3 @@
-import { defineConfig } from 'tsup';
-
-export default defineConfig({
-    entry: ['src/index.ts'],
-    format: ['esm', 'cjs'],
-    dts: true,
-    splitting: false,
-    sourcemap: false,
-    clean: true,
-    // Bundle everything, only externalize npm packages
-    noExternal: [/.*/],
-    external: ['google-libphonenumber']
-});
+// Not used - Next.js transpiles TypeScript directly
+// API uses esbuild bundling instead
+export {};
