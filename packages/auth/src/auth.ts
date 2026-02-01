@@ -61,12 +61,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
         user: {
             create: {
                 before: async (user) => {
-                    if (user.phoneNumber) {
-                        const phone = user.phoneNumber as string;
+                    const params = user as any;
+                    if (params.phoneNumber) {
+                        const phone = params.phoneNumber as string;
                         if (!isValidPhoneNumber(phone)) {
                             throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
                         }
-                        user.phoneNumber = normalizePhoneNumber(phone);
+                        params.phoneNumber = normalizePhoneNumber(phone);
                     }
                     return { data: user };
                 },
@@ -104,12 +105,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
             },
             update: {
                 before: async (user) => {
-                    if (user.phoneNumber) {
-                        const phone = user.phoneNumber as string;
+                    const params = user as any;
+                    if (params.phoneNumber) {
+                        const phone = params.phoneNumber as string;
                         if (!isValidPhoneNumber(phone)) {
                             throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
                         }
-                        user.phoneNumber = normalizePhoneNumber(phone);
+                        params.phoneNumber = normalizePhoneNumber(phone);
                     }
                     return { data: user };
                 }
