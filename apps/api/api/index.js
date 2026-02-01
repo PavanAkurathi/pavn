@@ -1,5 +1,4 @@
-// Vercel Serverless Function Entry Point
-// The API is built to dist/index.js by tsup
+// Vercel serverless entry point
 import { handle } from 'hono/vercel';
 import { app } from '../dist/index.js';
 

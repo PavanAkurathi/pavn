@@ -1,7 +1,111 @@
-// DEPRECATED - This file is no longer used
-// The API now uses tsup for building (see tsup.config.ts)
-// This file should be deleted from the repo
+#!/usr/bin/env node
+/**
+ * Build script for Vercel deployment
+ * Bundles all @repo/* packages into a single file
+ */
 
-console.log('ERROR: build.mjs is deprecated. Use tsup instead.');
-console.log('Run: bun run build (which runs tsup)');
-process.exit(1);
+import * as esbuild from 'esbuild';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { existsSync, mkdirSync } from 'fs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const monorepoRoot = join(__dirname, '../..');
+
+console.log('🔧 Building API for Vercel...');
+console.log('📁 Current dir:', __dirname);
+
+// Ensure dist exists
+const distDir = join(__dirname, 'dist');
+if (!existsSync(distDir)) {
+    mkdirSync(distDir, { recursive: true });
+}
+
+// Build aliases for workspace packages - point to TypeScript source
+const aliases = {
+    '@repo/auth': join(monorepoRoot, 'packages/auth/src/index.ts'),
+    '@repo/database': join(monorepoRoot, 'packages/database/src/index.ts'),
+    '@repo/database/schema': join(monorepoRoot, 'packages/database/src/schema.ts'),
+    '@repo/config': join(monorepoRoot, 'packages/config/src/index.ts'),
+    '@repo/config/cors': join(monorepoRoot, 'packages/config/src/cors.ts'),
+    '@repo/geofence': join(monorepoRoot, 'packages/geofence/src/index.ts'),
+    '@repo/shifts-service': join(monorepoRoot, 'packages/shifts/src/index.ts'),
+    '@repo/observability': join(monorepoRoot, 'packages/observability/src/index.ts'),
+    '@repo/notifications': join(monorepoRoot, 'packages/notifications/src/index.ts'),
+    '@repo/utils': join(monorepoRoot, 'packages/utils/src/index.ts'),
+    '@repo/email': join(monorepoRoot, 'packages/email/src/index.ts'),
+};
+
+console.log('📦 Bundling with aliases:', Object.keys(aliases));
+
+async function build() {
+    try {
+        const result = await esbuild.build({
+            entryPoints: [join(__dirname, 'src/index.ts')],
+            bundle: true,
+            platform: 'node',
+            target: 'node20',
+            format: 'esm',
+            outfile: join(__dirname, 'dist/index.js'),
+            sourcemap: false,
+            minify: false,
+            
+            // Bundle workspace packages (they're TypeScript)
+            packages: 'bundle',
+            
+            // Keep npm packages external
+            external: [
+                // Hono
+                'hono',
+                'hono/*',
+                '@hono/*',
+                // Database
+                'drizzle-orm',
+                'drizzle-orm/*',
+                '@neondatabase/serverless',
+                'postgres',
+                // Auth  
+                'better-auth',
+                'better-auth/*',
+                '@better-auth/*',
+                // Utils
+                'zod',
+                'nanoid',
+                'dotenv',
+                // Services
+                'twilio',
+                'stripe',
+                'resend',
+                '@sentry/node',
+                'expo-server-sdk',
+                // React (for email templates)
+                'react',
+                'react/*',
+                // Date utils
+                'date-fns',
+                'date-fns/*',
+                'date-fns-tz',
+                // Phone validation
+                'google-libphonenumber',
+            ],
+            
+            alias: aliases,
+            resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+            loader: { '.ts': 'ts', '.tsx': 'tsx' },
+            logLevel: 'info',
+            metafile: true,
+        });
+
+        // Log stats
+        for (const [file, info] of Object.entries(result.metafile?.outputs || {})) {
+            console.log(`📄 ${file}: ${(info.bytes / 1024).toFixed(1)} KB`);
+        }
+        
+        console.log('✅ Build complete!');
+    } catch (error) {
+        console.error('❌ Build failed:', error);
+        process.exit(1);
+    }
+}
+
+build();
