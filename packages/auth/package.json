@@ -20,8 +20,8 @@
         }
     },
     "scripts": {
-        "build": "tsup",
-        "lint": "eslint . --max-warnings 0"
+        "lint": "eslint . --max-warnings 0",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "@better-auth/stripe": "^1.2.4",
@@ -36,7 +36,6 @@
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
         "@types/node": "^20.11.0",
-        "tsup": "^8.0.0",
         "typescript": "^5.3.3"
     }
 }
