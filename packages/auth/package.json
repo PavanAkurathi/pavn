@@ -1,14 +1,26 @@
 {
     "name": "@repo/auth",
     "version": "0.0.0",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "engines": {
         "node": ">=20.9.0"
     },
     "exports": {
-        ".": "./src/index.ts",
-        "./client": "./src/client.ts"
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        },
+        "./client": {
+            "types": "./dist/client.d.ts",
+            "import": "./dist/client.js",
+            "require": "./dist/client.cjs"
+        }
     },
     "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
         "type-check": "tsc --noEmit"
     },
     "dependencies": {
@@ -27,6 +39,7 @@
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "typescript": "^5.4.5",
-        "@types/node": "^25.0.10"
+        "@types/node": "^25.0.10",
+        "tsup": "^8.0.0"
     }
 }
