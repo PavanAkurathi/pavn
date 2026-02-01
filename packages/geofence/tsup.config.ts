@@ -11,7 +11,9 @@ export default defineConfig({
     noExternal: [/@repo\/.*/],
     external: [
         'drizzle-orm',
+        'drizzle-orm/*',
         'hono',
+        'hono/*',
         'nanoid',
         'zod',
         '@neondatabase/serverless',
@@ -24,6 +26,10 @@ export default defineConfig({
         'resend',
         'expo-server-sdk',
         'date-fns',
-        '@sentry/node'
+        '@sentry/node',
+        'react',
+        'react/*',
+        'react/jsx-runtime',
+        'google-libphonenumber'
     ]
 });
