@@ -1,7 +1,7 @@
 // Vercel Serverless Function Entry Point
-// Packages are pre-built with tsup, so we can import directly
+// The API is built to dist/index.js by tsup
 import { handle } from 'hono/vercel';
-import { app } from '../src/index.js';
+import { app } from '../dist/index.js';
 
 export const GET = handle(app);
 export const POST = handle(app);
