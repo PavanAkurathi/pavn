@@ -1,8 +1,6 @@
 {
-    "bunVersion": "1.x",
     "functions": {
-        "api/index.ts": {
-            "memory": 1024,
+        "api/index.js": {
             "maxDuration": 30
         }
     },
