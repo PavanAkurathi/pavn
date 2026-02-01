@@ -1,0 +1,17 @@
+{
+    "framework": null,
+    "buildCommand": "node build.mjs",
+    "outputDirectory": ".",
+    "installCommand": "cd ../.. && bun install",
+    "functions": {
+        "api/index.js": {
+            "maxDuration": 30
+        }
+    },
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/api"
+        }
+    ]
+}
