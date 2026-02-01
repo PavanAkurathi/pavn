@@ -1,29 +1,33 @@
 {
     "name": "@repo/config",
     "version": "0.0.0",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "types": "./src/index.ts",
+            "bun": "./src/index.ts",
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
         },
         "./cors": {
-            "types": "./dist/cors.d.ts",
-            "import": "./dist/cors.js",
-            "require": "./dist/cors.cjs"
+            "types": "./src/cors.ts",
+            "bun": "./src/cors.ts",
+            "import": "./src/cors.ts",
+            "default": "./src/cors.ts"
         }
     },
     "scripts": {
         "build": "tsup",
-        "dev": "tsup --watch",
-        "type-check": "tsc --noEmit"
+        "lint": "eslint . --max-warnings 0"
     },
     "devDependencies": {
-        "@repo/typescript-config": "workspace:*",
-        "@types/node": "^20.14.0",
-        "typescript": "^5.4.5",
-        "tsup": "^8.0.0"
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
+        "@types/node": "^20.11.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.3.3"
     }
 }

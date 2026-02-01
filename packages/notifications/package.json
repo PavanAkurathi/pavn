@@ -1,30 +1,33 @@
 {
     "name": "@repo/notifications",
-    "version": "1.0.0",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "types": "./src/index.ts",
+            "bun": "./src/index.ts",
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
         }
     },
     "scripts": {
         "build": "tsup",
-        "dev": "tsup --watch"
+        "lint": "eslint . --max-warnings 0"
     },
     "dependencies": {
         "@repo/database": "workspace:*",
         "date-fns": "^4.1.0",
         "drizzle-orm": "0.45.1",
-        "expo-server-sdk": "^3.10.0",
-        "nanoid": "^5.1.6"
+        "expo-server-sdk": "^3.7.0"
     },
     "devDependencies": {
-        "@repo/typescript-config": "workspace:*",
-        "@types/node": "^22.15.3",
-        "typescript": "5.9.2",
-        "tsup": "^8.0.0"
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
+        "@types/node": "^20.11.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.3.3"
     }
 }

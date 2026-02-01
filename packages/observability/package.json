@@ -2,32 +2,33 @@
     "name": "@repo/observability",
     "version": "0.0.0",
     "private": true,
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "types": "./src/index.ts",
+            "bun": "./src/index.ts",
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
         }
     },
     "scripts": {
         "build": "tsup",
-        "dev": "tsup --watch",
-        "lint": "eslint .",
-        "typecheck": "tsc --noEmit"
+        "lint": "eslint . --max-warnings 0"
+    },
+    "dependencies": {
+        "@repo/database": "workspace:*",
+        "@sentry/node": "^9.32.0",
+        "hono": "^4.6.0",
+        "nanoid": "^5.0.7",
+        "zod": "^3.24.1"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^25.0.9",
-        "tsup": "^8.0.0"
-    },
-    "dependencies": {
-        "@sentry/node": "^7.114.0",
-        "hono": "^4.4.7",
-        "nanoid": "^5.0.7",
-        "zod": "^4.3.6",
-        "@repo/database": "workspace:*"
+        "@types/node": "^20.11.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.3.3"
     }
 }
