@@ -1,14 +1,19 @@
 {
-    "rewrites": [
-        {
-            "source": "/(.*)",
-            "destination": "/api/index.js"
-        }
-    ],
+    "framework": null,
+    "buildCommand": "node build.mjs",
+    "outputDirectory": ".",
+    "installCommand": "cd ../.. && bun install",
     "functions": {
         "api/index.js": {
             "maxDuration": 30,
-            "memory": 1024
+            "memory": 1024,
+            "includeFiles": "dist/**"
         }
-    }
+    },
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/api"
+        }
+    ]
 }
