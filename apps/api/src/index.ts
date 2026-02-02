@@ -170,8 +170,11 @@ app.use("*", async (c, next) => {
 // MOUNT ROUTE MODULES
 // =============================================================================
 
+import { requireManager } from "./middleware/index.js";
+
 app.route("/shifts", shiftsRouter);
 app.route("/worker", workerRouter);
+app.use("/timesheets/*", requireManager());
 app.route("/timesheets", timesheetsRouter);
 app.route("/billing", billingRouter);
 app.route("/organizations", organizationsRouter);
