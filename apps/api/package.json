@@ -9,6 +9,7 @@
     "start": "bun ./dist/index.js",
     "typecheck": "tsc --noEmit"
   },
+  "main": "./dist/index.js",
   "dependencies": {
     "@repo/auth": "workspace:*",
     "@repo/config": "workspace:*",
