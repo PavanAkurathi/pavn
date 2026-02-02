@@ -35,11 +35,11 @@ if (!existsSync(distDir)) {
 async function build() {
     // Build aliases to resolve workspace packages to their TypeScript source
     const aliases = {};
-    
+
     if (isMonorepo) {
         const workspacePackages = [
             'auth',
-            'database', 
+            'database',
             'config',
             'geofence',
             'shifts',
@@ -48,7 +48,7 @@ async function build() {
             'utils',
             'email',
         ];
-        
+
         for (const pkg of workspacePackages) {
             const pkgPath = join(packagesDir, pkg, 'src/index.ts');
             if (existsSync(pkgPath)) {
@@ -60,9 +60,9 @@ async function build() {
                 console.log(`  ✗ @repo/${pkg} not found at ${pkgPath}`);
             }
         }
-        
+
         // Special case: database/schema subpath
-        const schemaPath = join(packagesDir, 'database/src/schema/index.ts');
+        const schemaPath = join(packagesDir, 'database/src/schema.ts');
         if (existsSync(schemaPath)) {
             aliases['@repo/database/schema'] = schemaPath;
             console.log(`  ✓ @repo/database/schema → ${schemaPath}`);
@@ -82,49 +82,49 @@ async function build() {
             sourcemap: false,
             minify: false,
             treeShaking: true,
-            
+
             // Bundle workspace packages (they export .ts files)
             packages: 'bundle',
-            
+
             // External: npm packages that have proper ESM exports
             external: [
                 // Hono
                 'hono',
                 'hono/*',
                 '@hono/*',
-                
+
                 // Database  
                 'drizzle-orm',
                 'drizzle-orm/*',
                 '@neondatabase/serverless',
                 'postgres',
-                
+
                 // Auth
                 'better-auth',
                 'better-auth/*',
                 '@better-auth/*',
-                
+
                 // Utils
                 'zod',
-                'nanoid', 
+                'nanoid',
                 'dotenv',
-                
+
                 // External services
                 'twilio',
                 'stripe',
                 'resend',
                 '@sentry/node',
             ],
-            
+
             alias: aliases,
-            
+
             resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
-            
+
             loader: {
                 '.ts': 'ts',
                 '.tsx': 'tsx',
             },
-            
+
             logLevel: 'warning',
             metafile: true,
         });
@@ -135,10 +135,10 @@ async function build() {
             const sizeKB = (info.bytes / 1024).toFixed(1);
             console.log(`   ${file}: ${sizeKB} KB`);
         }
-        
+
         console.log('\n✅ Build successful!');
         console.log(`   Output: dist/index.js`);
-        
+
     } catch (error) {
         console.error('\n❌ Build failed:');
         console.error(error);

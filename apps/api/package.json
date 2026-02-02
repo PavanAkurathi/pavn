@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "bun --bun src/index.ts",
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "build": "node build-vercel.mjs",
     "start": "bun ./dist/index.js",
     "typecheck": "tsc --noEmit"
   },
