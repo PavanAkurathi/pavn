@@ -10,6 +10,7 @@
     "db:reset": "bun run --filter @repo/database reset"
   },
   "devDependencies": {
+    "@types/google-libphonenumber": "^7.4.30",
     "@types/node": "^25.2.0",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",

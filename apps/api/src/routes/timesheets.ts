@@ -34,7 +34,7 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
-import { requireManager } from "../middleware";
+import { type Context } from "hono";
 
 // Import controllers
 import {
@@ -45,9 +45,6 @@ import {
 } from "@repo/shifts-service";
 
 export const timesheetsRouter = new OpenAPIHono<AppContext>();
-
-// Apply manager auth to all routes in this file
-timesheetsRouter.use("/*", requireManager());
 
 // =============================================================================
 // TIMESHEET REPORTS
@@ -67,7 +64,7 @@ const getReportRoute = createRoute({
     }
 });
 
-timesheetsRouter.openapi(getReportRoute, async (c) => {
+timesheetsRouter.openapi(getReportRoute, async (c: Context<AppContext>) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
     const result = await getTimesheetsReportController(orgId, queryParams);
@@ -177,7 +174,7 @@ timesheetsRouter.openapi(exportPdfRoute, async (c) => {
 function parseQueryParams(url: string): Record<string, string> {
     const params: Record<string, string> = {};
     const urlObj = new URL(url);
-    urlObj.searchParams.forEach((value, key) => {
+    urlObj.searchParams.forEach((value: string, key: string) => {
         params[key] = value;
     });
     return params;
