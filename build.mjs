@@ -8,7 +8,9 @@ import * as esbuild from 'esbuild';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, mkdirSync } from 'fs';
+import { createRequire } from 'module';
 
+const require = createRequire(import.meta.url);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 console.log('🔧 Building API for Vercel...');
@@ -31,6 +33,7 @@ const aliases = {
     '@repo/notifications': join(__dirname, 'packages/notifications/src/index.ts'),
     '@repo/utils': join(__dirname, 'packages/utils/src/index.ts'),
     '@repo/email': join(__dirname, 'packages/email/src/index.ts'),
+    'zod/v4': require.resolve('zod', { paths: [join(__dirname, 'apps/api')] }),
 };
 
 console.log('📦 Bundling workspace packages...');

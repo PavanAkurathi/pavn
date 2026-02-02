@@ -9,7 +9,14 @@
         "types": [
             "node"
         ],
-        "jsx": "react-jsx"
+        "jsx": "react-jsx",
+        "baseUrl": ".",
+        "paths": {
+            "zod/v4": [
+                "./node_modules/zod",
+                "../../node_modules/zod"
+            ]
+        }
     },
     "include": [
         "src/**/*"

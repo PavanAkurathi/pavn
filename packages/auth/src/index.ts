@@ -1,3 +1,3 @@
-export * from "./auth.js";
-export * from "./providers/sms.js";
+export * from "./auth";
+export * from "./providers/sms";
 

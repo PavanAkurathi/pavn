@@ -1,5 +1,17 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+    experimental: {
+        turbo: {
+            resolveAlias: {
+                "zod/v4": "zod",
+            },
+        },
+    },
+    webpack: (config) => {
+        config.resolve.alias["zod/v4"] = "zod";
+        return config;
+    },
+};
 
 import { withSentryConfig } from "@sentry/nextjs";
 

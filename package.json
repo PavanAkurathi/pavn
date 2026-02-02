@@ -26,7 +26,7 @@
   "resolutions": {
     "drizzle-orm": "0.45.1",
     "drizzle-kit": "0.31.8",
-    "zod": "3.24.1",
+    "zod": "4.3.6",
     "better-auth": "1.4.17",
     "@better-auth/expo": "1.4.18",
     "@better-auth/stripe": "1.4.17",

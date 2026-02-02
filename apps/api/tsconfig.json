@@ -8,7 +8,14 @@
     "moduleResolution": "bundler",
     "module": "ESNext",
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "zod/v4": [
+        "./node_modules/zod",
+        "../../node_modules/zod"
+      ]
+    }
   },
   "include": [
     "src/**/*",
