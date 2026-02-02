@@ -10,7 +10,7 @@ import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nanoid } from "nanoid";
 import { sendOtp } from "@repo/email";
-import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
+import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms.js";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
     appName: "Antigravity SaaS",
@@ -25,14 +25,15 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     // Crucial for Next.js 15+ / Server Actions environment
     trustedOrigins: [
         "http://localhost:3000",
-        "http://127.0.0.1:3000",    "https://pavn-gpj8aqzw8-pavanworkershives-projects.vercel.app",
-process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}`
-        // Expo Deep Linking Schema
+        "http://127.0.0.1:3000",
+        // Hardcoded Production URL
+        "https://pavn-gpj8aqzw8-pavanworkershives-projects.vercel.app",
+        // Dynamic Vercel URL
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
         "exp://",
         "myapp://",
-        // Development support
         "exp://**"
-    ],
+    ].filter(Boolean) as string[],
 
     database: drizzleAdapter(db, {
         provider: "pg",

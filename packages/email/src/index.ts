@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { OtpEmail } from './templates/otp';
+import { OtpEmail } from './templates/otp.js';
 
 // Initialize Resend with API Key from environment
 const FROM_EMAIL = process.env.EMAIL_FROM || "onboarding@resend.dev"; // Use EMAIL_FROM env var or fallback to default
