@@ -25,6 +25,7 @@
         "@repo/observability": "workspace:*",
         "drizzle-orm": "0.45.1",
         "hono": "4.11.7",
+        "nanoid": "^5.1.6",
         "zod": "^3.24.1"
     },
     "devDependencies": {

@@ -1,0 +1,1108 @@
+• turbo 2.8.0
+• Packages in scope: web
+• Running build in 1 packages
+• Remote caching disabled
+web:build: cache miss, executing 110ca1c05c38db77
+web:build: $ next build
+web:build: ▲ Next.js 16.1.4 (Turbopack)
+web:build: - Environments: .env
+web:build: - Experiments (use with caution):
+web:build:   · clientTraceMetadata
+web:build: 
+web:build:   Creating an optimized production build ...
+web:build: 
+web:build: > Build error occurred
+web:build: Error: Turbopack build failed with 33 errors:
+web:build: ./node_modules/.bun/@better-auth+stripe@1.4.17+fedc6a4b6b85841b/node_modules/@better-auth/stripe/dist/index.mjs:6:1
+web:build: Module not found: Can't resolve 'zod/v4'
+web:build: [0m [90m 4 |[39m [36mimport[39m { createAuthEndpoint[33m,[39m createAuthMiddleware } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 5 |[39m [36mimport[39m { [33mAPIError[39m [36mas[39m [33mAPIError$1[39m[33m,[39m getSessionFromCtx[33m,[39m originCheck[33m,[39m sessionMiddleware } [36mfrom[39m [32m"better-auth/api"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod/v4"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 7 |[39m [36mimport[39m { mergeSchema } [36mfrom[39m [32m"better-auth/db"[39m[33m;[39m
+web:build:  [90m 8 |[39m
+web:build:  [90m 9 |[39m [90m//#region src/error-codes.ts[39m[0m
+web:build: 
+web:build: 
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+stripe@1.4.17+fedc6a4b6b85841b/node_modules/@better-auth/stripe/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+stripe@1.4.17+fedc6a4b6b85841b/node_modules/@better-auth/stripe/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: https://nextjs.org/docs/messages/module-not-found
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/email-verification.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m [36mimport[39m { jwtVerify } [36mfrom[39m [32m"jose"[39m[33m;[39m
+web:build:  [90m 12 |[39m [36mimport[39m { [33mJWTExpired[39m } [36mfrom[39m [32m"jose/errors"[39m[33m;[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/email-verification.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/email-verification.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/username/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/email-verification.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m [36mimport[39m { jwtVerify } [36mfrom[39m [32m"jose"[39m[33m;[39m
+web:build:  [90m 12 |[39m [36mimport[39m { [33mJWTExpired[39m } [36mfrom[39m [32m"jose/errors"[39m[33m;[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/email-verification.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/email-verification.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/username/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/password.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m
+web:build:  [90m 12 |[39m [90m//#region src/api/routes/password.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/password.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/password.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/password.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m
+web:build:  [90m 12 |[39m [90m//#region src/api/routes/password.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/password.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/password.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-in.mjs:10:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  8 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  9 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 11 |[39m [36mimport[39m { [33mSocialProviderListEnum[39m } [36mfrom[39m [32m"@better-auth/core/social-providers"[39m[33m;[39m
+web:build:  [90m 12 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 13 |[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-in.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-in.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-in.mjs:10:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  8 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  9 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 11 |[39m [36mimport[39m { [33mSocialProviderListEnum[39m } [36mfrom[39m [32m"@better-auth/core/social-providers"[39m[33m;[39m
+web:build:  [90m 12 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 13 |[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-in.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-in.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-up.mjs:10:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  8 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  9 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 11 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 12 |[39m
+web:build:  [90m 13 |[39m [90m//#region src/api/routes/sign-up.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-up.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-up.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-up.mjs:10:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  8 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m  9 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 10 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 11 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 12 |[39m
+web:build:  [90m 13 |[39m [90m//#region src/api/routes/sign-up.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-up.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/sign-up.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/update-user.mjs:11:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  9 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m 10 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 12 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 13 |[39m
+web:build:  [90m 14 |[39m [90m//#region src/api/routes/update-user.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/update-user.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/update-user.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/update-user.mjs:11:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  9 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m 10 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 12 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 13 |[39m
+web:build:  [90m 14 |[39m [90m//#region src/api/routes/update-user.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/update-user.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/routes/update-user.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/routes.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { [33mADMIN_ERROR_CODES[39m } [36mfrom[39m [32m"./error-codes.mjs"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint[33m,[39m createAuthMiddleware } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m
+web:build:  [90m 12 |[39m [90m//#region src/plugins/admin/routes.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/admin.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/admin.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/routes.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { [33mADMIN_ERROR_CODES[39m } [36mfrom[39m [32m"./error-codes.mjs"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint[33m,[39m createAuthMiddleware } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m
+web:build:  [90m 12 |[39m [90m//#region src/plugins/admin/routes.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/admin.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/admin/admin.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/anonymous/index.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { schema } [36mfrom[39m [32m"./schema.mjs"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { generateId } [36mfrom[39m [32m"@better-auth/core/utils"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint[33m,[39m createAuthMiddleware } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m
+web:build:  [90m 12 |[39m [90m//#region src/plugins/anonymous/index.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/anonymous/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/anonymous/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/anonymous/index.mjs:9:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  7 |[39m [36mimport[39m { schema } [36mfrom[39m [32m"./schema.mjs"[39m[33m;[39m
+web:build:  [90m  8 |[39m [36mimport[39m { generateId } [36mfrom[39m [32m"@better-auth/core/utils"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 10 |[39m [36mimport[39m { createAuthEndpoint[33m,[39m createAuthMiddleware } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 11 |[39m
+web:build:  [90m 12 |[39m [90m//#region src/plugins/anonymous/index.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/anonymous/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/anonymous/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/routes.mjs:12:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m 10 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m 11 |[39m [36mimport[39m { defineErrorCodes } [36mfrom[39m [32m"@better-auth/core/utils"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 12 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 13 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 14 |[39m
+web:build:  [90m 15 |[39m [90m//#region src/plugins/email-otp/routes.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/routes.mjs:12:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m 10 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m 11 |[39m [36mimport[39m { defineErrorCodes } [36mfrom[39m [32m"@better-auth/core/utils"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 12 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 13 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 14 |[39m
+web:build:  [90m 15 |[39m [90m//#region src/plugins/email-otp/routes.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/routes.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/email-otp/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/magic-link/index.mjs:8:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  6 |[39m [36mimport[39m [32m"../../api/index.mjs"[39m[33m;[39m
+web:build:  [90m  7 |[39m [36mimport[39m { defaultKeyHasher } [36mfrom[39m [32m"./utils.mjs"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  8 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m  9 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 10 |[39m
+web:build:  [90m 11 |[39m [90m//#region src/plugins/magic-link/index.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/magic-link/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/magic-link/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/magic-link/index.mjs:8:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  6 |[39m [36mimport[39m [32m"../../api/index.mjs"[39m[33m;[39m
+web:build:  [90m  7 |[39m [36mimport[39m { defaultKeyHasher } [36mfrom[39m [32m"./utils.mjs"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  8 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m  9 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 10 |[39m
+web:build:  [90m 11 |[39m [90m//#region src/plugins/magic-link/index.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/magic-link/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/magic-link/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs:15:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m 13 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m 14 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 16 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 17 |[39m
+web:build:  [90m 18 |[39m [90m//#region src/plugins/organization/routes/crud-invites.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/organization.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/organization.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs:15:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m 13 |[39m [36mimport[39m { [33mBASE_ERROR_CODES[39m } [36mfrom[39m [32m"@better-auth/core/error"[39m[33m;[39m
+web:build:  [90m 14 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 15 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 16 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m 17 |[39m
+web:build:  [90m 18 |[39m [90m//#region src/plugins/organization/routes/crud-invites.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/organization.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/routes/crud-invites.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/organization/organization.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/siwe/index.mjs:7:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  5 |[39m [36mimport[39m { toChecksumAddress } [36mfrom[39m [32m"../../utils/hashing.mjs"[39m[33m;[39m
+web:build:  [90m  6 |[39m [36mimport[39m { schema } [36mfrom[39m [32m"./schema.mjs"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m  8 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m  9 |[39m
+web:build:  [90m 10 |[39m [90m//#region src/plugins/siwe/index.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/siwe/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/siwe/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/siwe/index.mjs:7:1
+web:build: Export email doesn't exist in target module
+web:build: [0m [90m  5 |[39m [36mimport[39m { toChecksumAddress } [36mfrom[39m [32m"../../utils/hashing.mjs"[39m[33m;[39m
+web:build:  [90m  6 |[39m [36mimport[39m { schema } [36mfrom[39m [32m"./schema.mjs"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m  8 |[39m [36mimport[39m { createAuthEndpoint } [36mfrom[39m [32m"@better-auth/core/api"[39m[33m;[39m
+web:build:  [90m  9 |[39m
+web:build:  [90m 10 |[39m [90m//#region src/plugins/siwe/index.ts[39m[0m
+web:build: 
+web:build: The export email was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import map?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/siwe/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/siwe/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/plugins/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv4 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv4 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-client] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv4 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv4 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv4 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv4 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv4 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv4 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-ssr] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv6 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv6 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-client] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv6 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv6 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv6 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv6 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs:1:1
+web:build: Export ipv6 doesn't exist in target module
+web:build: [0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 2 |[39m
+web:build:  [90m 3 |[39m [90m//#region src/utils/ip.ts[39m
+web:build:  [90m 4 |[39m [90m/**[39m[0m
+web:build: 
+web:build: The export ipv6 was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-ssr] (ecmascript).
+web:build: Did you mean to import nativeEnum?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Client Component Browser:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component Browser]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component Browser]
+web:build:     ./packages/auth/src/client.ts [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component Browser]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Client Component SSR:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/index.mjs [Client Component SSR]
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/client/react/index.mjs [Client Component SSR]
+web:build:     ./packages/auth/src/client.ts [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Client Component SSR]
+web:build:     ./apps/web/app/(auth)/auth/forgot-password/page.tsx [Server Component]
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/@better-auth+core@1.4.17+914e986bb716334c/node_modules/@better-auth/core/dist/utils/ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/utils/get-request-ip.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/api/index.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/schedule/create/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/oauth2/state.mjs:6:1
+web:build: Export looseObject doesn't exist in target module
+web:build: [0m [90m 4 |[39m [36mimport[39m { expireCookie } [36mfrom[39m [32m"../cookies/index.mjs"[39m[33m;[39m
+web:build:  [90m 5 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 7 |[39m
+web:build:  [90m 8 |[39m [90m//#region src/oauth2/state.ts[39m
+web:build:  [90m 9 |[39m [36masync[39m [36mfunction[39m generateState(c[33m,[39m link[33m,[39m additionalData) {[0m
+web:build: 
+web:build: The export looseObject was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-route] (ecmascript).
+web:build: Did you mean to import ZodObject?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/oauth2/state.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/oauth2/state.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+web:build: 
+web:build: 
+web:build: ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/oauth2/state.mjs:6:1
+web:build: Export looseObject doesn't exist in target module
+web:build: [0m [90m 4 |[39m [36mimport[39m { expireCookie } [36mfrom[39m [32m"../cookies/index.mjs"[39m[33m;[39m
+web:build:  [90m 5 |[39m [36mimport[39m { [33mAPIError[39m } [36mfrom[39m [32m"better-call"[39m[33m;[39m
+web:build: [31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m [33m*[39m [36mas[39m z [36mfrom[39m [32m"zod"[39m[33m;[39m
+web:build:  [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+web:build:  [90m 7 |[39m
+web:build:  [90m 8 |[39m [90m//#region src/oauth2/state.ts[39m
+web:build:  [90m 9 |[39m [36masync[39m [36mfunction[39m generateState(c[33m,[39m link[33m,[39m additionalData) {[0m
+web:build: 
+web:build: The export looseObject was not found in module [project]/node_modules/.bun/zod@3.24.1/node_modules/zod/lib/index.mjs [app-rsc] (ecmascript).
+web:build: Did you mean to import ZodObject?
+web:build: All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+web:build: 
+web:build: Import traces:
+web:build:   App Route:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/oauth2/state.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/api/auth/[...all]/route.ts
+web:build: 
+web:build:   Server Component:
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/oauth2/state.mjs
+web:build:     ./node_modules/.bun/better-auth@1.4.17+fb94be3ee1edd407/node_modules/better-auth/dist/index.mjs
+web:build:     ./packages/auth/src/auth.ts
+web:build:     ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+web:build: 
+web:build: 
+web:build:     at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+web:build: error: script "build" exited with code 1
+web:build: ERROR: command finished with error: command (/Users/av/Documents/pavn/apps/web) /Users/av/.bun/bin/bun run build exited (1)
+web#build: command (/Users/av/Documents/pavn/apps/web) /Users/av/.bun/bin/bun run build exited (1)
+
+ Tasks:    0 successful, 1 total
+Cached:    0 cached, 1 total
+  Time:    13.196s 
+Failed:    web#build
+
+ ERROR  run failed: command  exited (1)

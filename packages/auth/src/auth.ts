@@ -10,7 +10,7 @@ import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nanoid } from "nanoid";
 import { sendOtp } from "@repo/email";
-import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms.js";
+import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
     appName: "Antigravity SaaS",

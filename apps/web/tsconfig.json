@@ -5,6 +5,10 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "zod/v4": [
+        "./node_modules/zod",
+        "../../node_modules/zod"
       ]
     },
     "plugins": [
