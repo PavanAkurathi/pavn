@@ -119,7 +119,6 @@ async function build() {
                 // Utils
                 'date-fns',
                 'date-fns-tz',
-                'google-libphonenumber',
             ],
 
             alias: aliases,
