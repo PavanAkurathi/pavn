@@ -114,6 +114,12 @@ async function build() {
                 'stripe',
                 'resend',
                 '@sentry/node',
+                'expo-server-sdk',
+
+                // Utils
+                'date-fns',
+                'date-fns-tz',
+                'google-libphonenumber',
             ],
 
             alias: aliases,
