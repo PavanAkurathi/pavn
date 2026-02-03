@@ -1,5 +1,5 @@
 // packages/auth/check-users.ts
-
+// testing
 import { db } from "@repo/database";
 import { user } from "@repo/database/schema";
 
