@@ -12,6 +12,22 @@ import { nanoid } from "nanoid";
 import { sendOtp } from "@repo/email";
 import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || "";
+const vercelUrl = process.env.VERCEL_URL;
+const trustedOrigins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    ...(allowedOriginsEnv.split(',').map(o => o.trim()).filter(Boolean)),
+    vercelUrl ? `https://${vercelUrl}` : undefined,
+    "exp://",
+    "myapp://",
+    "exp://**"
+].filter(Boolean) as string[];
+
+console.log("[AUTH DEBUG] Allowed Origins Env:", allowedOriginsEnv);
+console.log("[AUTH DEBUG] Vercel URL Env:", vercelUrl);
+console.log("[AUTH DEBUG] Final Trusted Origins:", trustedOrigins);
+
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
     appName: "Antigravity SaaS",
     secret: (() => {
@@ -23,17 +39,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
     // Crucial for Next.js 15+ / Server Actions environment
-    trustedOrigins: [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        // Environment variables
-        ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
-        // Dynamic Vercel URL
-        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
-        "exp://",
-        "myapp://",
-        "exp://**"
-    ].filter(Boolean) as string[],
+    trustedOrigins: trustedOrigins,
 
     database: drizzleAdapter(db, {
         provider: "pg",
