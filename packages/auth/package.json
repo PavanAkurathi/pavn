@@ -3,34 +3,33 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
     "exports": {
         ".": {
-            "types": "./dist/index.d.ts",
+            "types": "./src/index.ts",
             "bun": "./src/index.ts",
-            "import": "./dist/index.js",
-            "default": "./dist/index.js"
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
         },
         "./client": {
-            "types": "./dist/client.d.ts",
+            "types": "./src/client.ts",
             "bun": "./src/client.ts",
-            "import": "./dist/client.js",
-            "default": "./dist/client.js"
+            "import": "./src/client.ts",
+            "default": "./src/client.ts"
         }
     },
     "scripts": {
-        "build": "tsc",
         "lint": "eslint . --max-warnings 0",
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@better-auth/expo": "^1.4.18",
-        "@better-auth/stripe": "^1.4.17",
+        "@better-auth/expo": "1.4.18",
+        "@better-auth/stripe": "1.2.4",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/utils": "workspace:*",
-        "better-auth": "^1.4.17",
+        "better-auth": "1.2.5",
         "nanoid": "^5.1.6",
         "stripe": "^17.7.0",
         "twilio": "^5.4.4"
