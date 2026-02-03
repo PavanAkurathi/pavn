@@ -1,6 +1,50 @@
 {
     "name": "@repo/api",
     "version": "0.0.0",
+     
+    "main": "./dist/index.js", 
+    "types": "./src/index.ts",
+    "engines": {
+        "node": ">=20.9.0"
+    },
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "scripts": {
+        "dev": "NODE_ENV=development bun --watch src/index.ts",
+        
+        "build": "bun build src/index.ts --outfile dist/index.js --bundle --platform node --target node20",
+        
+        "start": "node dist/index.js",
+        
+        "lint": "eslint . --max-warnings 0",
+        "check-types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@hono/zod-validator": "^0.2.1", 
+        "@repo/auth": "workspace:*",
+        "@repo/config": "workspace:*",
+        "@repo/database": "workspace:*",
+        "@repo/observability": "workspace:*",
+        "date-fns": "^4.1.0",
+        "drizzle-orm": "0.45.1",
+        "expo-server-sdk": "^3.10.0",
+        "hono": "^4.11.5",
+        "nanoid": "^5.1.6",
+        "zod": "^3.24.1" 
+    },
+    "devDependencies": {
+        "@repo/eslint-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@types/bun": "latest",
+        "@types/node": "^22.15.3",
+        "eslint": "^9.39.1",
+        "typescript": "5.9.2"
+    }
+}
+{
+    "name": "@repo/api",
+    "version": "0.0.0",
     "main": "./src/index.ts",
     "types": "./src/index.ts",
     "engines": {
