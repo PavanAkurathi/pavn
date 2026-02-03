@@ -26,8 +26,8 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     trustedOrigins: [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        // Hardcoded Production URL
-        "https://pavn-gpj8aqzw8-pavanworkershives-projects.vercel.app",
+        // Environment variables
+        ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
         // Dynamic Vercel URL
         process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
         "exp://",
