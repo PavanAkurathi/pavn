@@ -78,7 +78,7 @@ export default function HistoryPage() {
             </div>
 
             <HistoryList
-                shifts={MOCK_HISTORY_SHIFTS}
+                shifts={[]}
                 isLoading={false}
                 onShiftClick={(shift) => console.log("Clicked history shift", shift.id)}
             />

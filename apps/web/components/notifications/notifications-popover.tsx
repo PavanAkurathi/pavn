@@ -12,44 +12,12 @@ import { cn } from "@repo/ui/lib/utils";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 
 // Mock Data
-const MOCK_NOTIFICATIONS = [
-    {
-        id: "1",
-        title: "Shift Assigned",
-        message: "You have been assigned to 'Event Security' at Main Stage.",
-        time: "10 min ago",
-        read: false,
-        type: "info",
-    },
-    {
-        id: "2",
-        title: "Clock-In Reminder",
-        message: "Your shift starts in 1 hour. Don't forget to travel!",
-        time: "1 hour ago",
-        read: false,
-        type: "warning",
-    },
-    {
-        id: "3",
-        title: "Time Off Approved",
-        message: "Your request for Dec 24th has been approved.",
-        time: "1 day ago",
-        read: true,
-        type: "success",
-    },
-    {
-        id: "4",
-        title: "New Policy",
-        message: "Please review the updated safety guidelines.",
-        time: "2 days ago",
-        read: true,
-        type: "info",
-    },
-];
+// Mock Data removed
+const MOCK_NOTIFICATIONS: any[] = [];
 
 export function NotificationsPopover() {
     const [open, setOpen] = useState(false);
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<typeof MOCK_NOTIFICATIONS>([]);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 
