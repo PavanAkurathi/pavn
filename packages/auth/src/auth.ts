@@ -17,7 +17,11 @@ const vercelUrl = process.env.VERCEL_URL;
 const trustedOrigins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    ...(allowedOriginsEnv.split(',').map(o => o.trim()).filter(Boolean)),
+    ...(allowedOriginsEnv.split(',').map(o => {
+        const origin = o.trim();
+        if (origin.startsWith('http')) return origin;
+        return `https://${origin}`;
+    }).filter(Boolean)),
     vercelUrl ? `https://${vercelUrl}` : undefined,
     "exp://",
     "myapp://",
