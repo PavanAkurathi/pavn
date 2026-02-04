@@ -198,12 +198,13 @@ app.notFound((c) => {
 // =============================================================================
 
 const port = process.env.PORT || 4005;
-console.log(`🚀 WorkersHive API running at http://localhost:${port}`);
+const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${port}`;
+console.log(`🚀 WorkersHive API running at ${baseUrl}`);
 
 export default {
     port,
     fetch: app.fetch,
-};
+} as { port: number | string; fetch: typeof app.fetch };
 
 export { app };
 

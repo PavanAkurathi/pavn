@@ -5,8 +5,8 @@
     "rootDir": ".",
     "jsx": "react-jsx",
     // "types": ["bun"],
-    "moduleResolution": "bundler",
-    "module": "ESNext",
+    "moduleResolution": "NodeNext",
+    "module": "NodeNext",
     "noEmit": true,
     "skipLibCheck": true,
     "baseUrl": ".",
@@ -14,10 +14,6 @@
       "zod/v4": [
         "./node_modules/zod",
         "../../node_modules/zod"
-      ],
-      "*": [
-        "./node_modules/*",
-        "../../node_modules/*"
       ]
     }
   },
