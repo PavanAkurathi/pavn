@@ -32,12 +32,12 @@
     "drizzle-orm": "0.45.1",
     "lucide-react": "^0.562.0",
     "nanoid": "^5.1.0",
-    "next": "16.1.4",
+    "next": "15.1.6",
     "papaparse": "^5.5.3",
     "posthog-js": "^1.335.3",
-    "react": "^19.2.0",
+    "react": "19.0.0-rc-66855b96-20241106",
     "react-day-picker": "^9.13.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
     "react-hook-form": "^7.69.0",
     "server-only": "^0.0.1",
     "sonner": "^2.0.7",
@@ -58,6 +58,6 @@
     "eslint": "^9.39.1",
     "postcss": "8.5.6",
     "tailwindcss": "4.1.18",
-    "typescript": "5.9.2"
+    "typescript": "5.7.3"
   }
 }

@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool } from "@neondatabase/serverless";
-import * as schema from "./schema";
+import * as schema from "./schema.js";
 
 // Note: dotenv removed - Vercel/Railway provide env vars natively
 // For local dev, use `bun --env-file=.env` or set DATABASE_URL manually

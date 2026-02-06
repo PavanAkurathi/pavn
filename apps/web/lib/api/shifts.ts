@@ -3,7 +3,13 @@
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 
-const SHIFT_SERVICE_URL = process.env.SHIFT_SERVICE_URL || "http://localhost:4005";
+const getServiceUrl = () => {
+    if (process.env.SHIFT_SERVICE_URL) return process.env.SHIFT_SERVICE_URL;
+    if (process.env.NEXT_PUBLIC_APP_URL) return `${process.env.NEXT_PUBLIC_APP_URL}/api`;
+    return "http://localhost:4005/api";
+};
+
+const SHIFT_SERVICE_URL = getServiceUrl();
 
 // Helper to secure Org ID
 const getSecureOrgId = async (providedOrgId?: string) => {

@@ -1,5 +1,5 @@
 import { Context, Next } from "hono";
-import { AppError } from "./index";
+import { AppError } from "./errors";
 
 export const timeout = (durationMs: number = 30000) => {
     return async (c: Context, next: Next) => {

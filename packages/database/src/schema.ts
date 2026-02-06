@@ -541,6 +541,26 @@ export const auditLogRelations = relations(auditLog, ({ one }) => ({
 // 7. INFRASTRUCTURE & SYSTEM
 // ============================================================================
 
+export const assignmentAuditEvent = pgTable("assignment_audit_events", {
+    id: text("id").primaryKey(),
+    assignmentId: text("assignment_id").notNull(), // No FK enforcement to allow keeping logs even if assignment is deleted (audit trail)
+    actorId: text("actor_id").notNull(),
+    previousStatus: text("previous_status"),
+    newStatus: text("new_status").notNull(),
+    metadata: jsonb("metadata").$type<Record<string, any>>(), // GPS, Device Info
+    timestamp: timestamp("timestamp").notNull().defaultNow(),
+}, (table) => ({
+    auditAssignmentIdx: index("audit_assignment_idx").on(table.assignmentId),
+    auditTimestampIdx: index("audit_timestamp_idx").on(table.timestamp),
+}));
+
+export const assignmentAuditEventRelations = relations(assignmentAuditEvent, ({ one }) => ({
+    actor: one(user, {
+        fields: [assignmentAuditEvent.actorId],
+        references: [user.id],
+    }),
+}));
+
 export const rateLimitState = pgTable("rate_limit_state", {
     key: text("key").primaryKey(), // e.g. "publish_schedule:{orgId}"
     count: integer("count").notNull().default(0),

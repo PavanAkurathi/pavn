@@ -1,5 +1,5 @@
-import { db } from "./db";
-import { auditLog } from "./schema";
+import { db } from "./db.js";
+import { auditLog } from "./schema.js";
 import { nanoid } from "nanoid";
 
 export interface AuditLogParams {
