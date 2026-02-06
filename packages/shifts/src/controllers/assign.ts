@@ -3,7 +3,7 @@ import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
-import { findOverlappingAssignment } from "../services/overlap";
+import { OverlapService } from "../services/overlap";
 import { newId } from "../utils/ids";
 
 const AssignSchema = z.object({
@@ -56,19 +56,17 @@ export const assignWorkerController = async (req: Request, shiftId: string, orgI
         return Response.json({ success: true, message: "All workers already assigned" });
     }
 
-    // 3. Check for Overlaps
+    // 3. Check for Overlaps (Privacy Safe)
     for (const workerId of workersToAssign) {
-        const conflict = await findOverlappingAssignment({
+        const result = await OverlapService.findOverlappingAssignment(
             workerId,
-            startTime: existingShift.startTime,
-            endTime: existingShift.endTime,
-            excludeShiftId: shiftId,
-            organizationId: orgId
-        });
+            existingShift.startTime,
+            existingShift.endTime
+        );
 
-        if (conflict) {
+        if (result.conflict) {
             throw new AppError(
-                `Worker ${workerId} has overlapping shift: ${conflict.title}`,
+                `Worker ${workerId} is unavailable: ${result.message || 'Time conflict'}`,
                 "OVERLAP_CONFLICT",
                 409
             );

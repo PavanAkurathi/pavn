@@ -288,8 +288,44 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     };
 
     // ... (Keep handleExit, handleSaveDraft, handleDiscard) ...
-    const handleExit = () => setIsExitDialogOpen(true);
-    const handleSaveDraft = async () => handlePublish('draft'); // Simplified for now
+    const handleExit = () => {
+        // Check if form is effectively empty/dirty
+        const values = form.getValues();
+        const hasActiveSchedule = values.schedules.some(s => {
+            const hasDates = isRecurring
+                ? (s.startDate || s.daysOfWeek?.length)
+                : (s.dates && s.dates.length > 0);
+            const hasPositions = s.positions && s.positions.length > 0;
+            return hasDates || hasPositions || s.startTime || s.endTime;
+        });
+
+        if (!hasActiveSchedule) {
+            router.push("/dashboard/shifts");
+            return;
+        }
+
+        setIsExitDialogOpen(true);
+    };
+
+    const handleSaveDraft = async (e: React.MouseEvent) => {
+        // Validation for Drafts: Must have minimal config (Date + Position)
+        const values = form.getValues();
+        const validDraft = values.schedules.some(s => {
+            const hasDates = isRecurring
+                ? (s.startDate && s.endDate && s.daysOfWeek?.length)
+                : (s.dates && s.dates.length > 0);
+            const hasPositions = s.positions && s.positions.length > 0;
+            return hasDates && hasPositions;
+        });
+
+        if (!validDraft) {
+            e.preventDefault();
+            toast.error("Cannot save draft: Please select at least a date and one position.");
+            return;
+        }
+
+        handlePublish('draft');
+    };
     const handleDiscard = async () => {
         await deleteDrafts(activeOrganizationId);
         localStorage.removeItem("schedule-layout-draft");

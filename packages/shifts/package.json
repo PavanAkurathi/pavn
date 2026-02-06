@@ -11,11 +11,18 @@
             "bun": "./src/index.ts",
             "import": "./src/index.ts",
             "default": "./src/index.ts"
+        },
+        "./services/*": {
+            "types": "./src/services/*.ts",
+            "bun": "./src/services/*.ts",
+            "import": "./src/services/*.ts",
+            "default": "./src/services/*.ts"
         }
     },
     "scripts": {
         "lint": "eslint . --max-warnings 0",
-        "typecheck": "tsc --noEmit"
+        "typecheck": "tsc --noEmit",
+        "test": "bun test"
     },
     "dependencies": {
         "@repo/auth": "workspace:*",

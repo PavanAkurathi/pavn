@@ -31,7 +31,7 @@ export const initSentry = () => {
         console.log('[Observability] SENTRY_DSN not set, skipping Sentry init');
         return;
     }
-    
+
     try {
         // Dynamic import to prevent build-time issues
         Sentry = require("@sentry/node");
@@ -57,20 +57,12 @@ export const logError = (error: unknown, context?: Record<string, any>) => {
 };
 
 // --- WH-112: Standard Error Handling ---
+// --- WH-112: Standard Error Handling ---
 export * from "./audit";
 export * from "./timeout";
+export * from "./errors";
 
-export class AppError extends Error {
-    constructor(
-        public message: string,
-        public code: string = "INTERNAL_ERROR",
-        public statusCode: number = 500,
-        public details?: any
-    ) {
-        super(message);
-        this.name = "AppError";
-    }
-}
+import { AppError } from "./errors";
 
 // --- WH-113: Request Tracing ---
 

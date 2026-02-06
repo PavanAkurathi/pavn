@@ -14,7 +14,7 @@ import {
 interface ExitDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: () => void;
+    onSave: (e: React.MouseEvent) => void;
     onDiscard: () => void;
 }
 
@@ -42,7 +42,7 @@ export function ExitDialog({
                     </div>
                     <div className="flex gap-2">
                         <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={onSave}>Save & Exit</AlertDialogAction>
+                        <AlertDialogAction onClick={(e) => onSave(e)}>Save & Exit</AlertDialogAction>
                     </div>
                 </AlertDialogFooter>
             </AlertDialogContent>

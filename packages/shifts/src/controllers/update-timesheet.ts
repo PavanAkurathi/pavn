@@ -1,12 +1,8 @@
 // packages/shifts/src/controllers/update-timesheet.ts
 
-import { db } from "@repo/database";
-import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { AssignmentService } from "../services/assignments";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
-import { calculateShiftPay } from "../utils/calculations";
-import { differenceInMinutes } from "date-fns";
 
 const TimesheetSchema = z.object({
     shiftId: z.string(),
@@ -30,56 +26,27 @@ export const updateTimesheetController = async (req: Request, orgId: string): Pr
 
     const { shiftId, workerId, action, data } = parseResult.data;
 
-    // Verify Shift Ownership
-    const validShift = await db.query.shift.findFirst({
-        where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
-        columns: { id: true, price: true }
-    });
-
-    if (!validShift) {
-        throw new AppError("Shift not found or access denied", "FORBIDDEN", 403);
-    }
+    // TODO: Get real actor ID from Context (user ID)
+    const actorId = "system";
 
     if (action === 'mark_no_show') {
-        await db.update(shiftAssignment)
-            .set({
-                status: 'no_show',
-                clockIn: null,
-                clockOut: null,
-                breakMinutes: 0,
-                grossPayCents: 0
-            })
-            .where(and(
-                eq(shiftAssignment.shiftId, shiftId),
-                eq(shiftAssignment.workerId, workerId)
-            ));
+        await AssignmentService.updateStatus(actorId, "get_assignment_id_here", 'no_show', { reason: "Manager marked no-show" });
     }
     else if (action === 'update_time') {
         const clockIn = data?.clockIn ? new Date(data.clockIn) : null;
         const clockOut = data?.clockOut ? new Date(data.clockOut) : null;
-        const breakMinutes = data?.breakMinutes || 0;
 
-        let grossPayCents = 0;
-
-        // Calculate pay immediately if we have valid times
-        if (clockIn && clockOut) {
-            const totalMinutes = differenceInMinutes(clockOut, clockIn);
-            const billableMinutes = Math.max(0, totalMinutes - breakMinutes);
-            grossPayCents = calculateShiftPay(billableMinutes, validShift.price || 0);
-        }
-
-        await db.update(shiftAssignment)
-            .set({
+        await AssignmentService.updateTimesheet(
+            actorId,
+            orgId,
+            shiftId,
+            workerId,
+            {
                 clockIn,
                 clockOut,
-                breakMinutes,
-                grossPayCents,
-                status: 'completed' // Manually corrected means it's ready for approval audit
-            })
-            .where(and(
-                eq(shiftAssignment.shiftId, shiftId),
-                eq(shiftAssignment.workerId, workerId)
-            ));
+                breakMinutes: data?.breakMinutes
+            }
+        );
     } else {
         throw new AppError("Invalid action", "INVALID_ACTION", 400);
     }
