@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@repo/auth/client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import { API_BASE_URL } from "@/lib/constants";
 import {
     Form,
     FormControl,
@@ -65,10 +66,14 @@ export function SetAvailabilityForm() {
         const startUtc = new Date(startIso).toISOString();
         const endUtc = new Date(endIso).toISOString();
 
+
+
+        // ... (keep previous lines) ... 
+
         try {
             // Direct call to Hono Service (Port 4005)
             // TODO: Use env var for URL
-            const res = await fetch("http://localhost:4005/worker/availability", {
+            const res = await fetch(`${API_BASE_URL}/worker/availability`, {
                 method: "POST",
                 credentials: "include", // Ensure session cookies are sent
                 headers: {

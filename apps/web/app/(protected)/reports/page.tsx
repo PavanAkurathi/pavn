@@ -16,8 +16,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import { useOrganizationId } from "@/hooks/use-schedule-data";
+import { API_BASE_URL } from "@/lib/constants";
 
-const API_BASE = process.env.NEXT_PUBLIC_SHIFTS_API_URL || "http://localhost:4005";
+const API_BASE = API_BASE_URL;
 
 // Fetcher with auth
 const fetcher = async (url: string, orgId: string) => {

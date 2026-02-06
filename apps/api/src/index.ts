@@ -78,7 +78,7 @@ export type AppContext = {
 };
 
 // Create main app
-const app = new OpenAPIHono<AppContext>().basePath('/api');
+const app = new OpenAPIHono<AppContext>();
 
 // =============================================================================
 // OPENAPI & SWAGGER
@@ -93,7 +93,10 @@ app.doc("/openapi.json", {
     },
 });
 
-app.get("/docs", swaggerUI({ url: "/api/openapi.json" }));
+app.get("/docs", swaggerUI({ url: "/openapi.json" }));
+
+// Root route to prevent 404s
+app.get("/", (c) => c.text("WorkersHive API 🚀"));
 
 // =============================================================================
 // GLOBAL MIDDLEWARE
@@ -117,7 +120,7 @@ app.onError((err, c) => errorHandler(err, c));
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 // Auth routes (Better Auth handles these)
-app.on(["POST", "GET"], "/auth/*", (c) => {
+app.on(["POST", "GET"], "/api/auth/*", (c) => {
     return auth.handler(c.req.raw);
 });
 
@@ -127,7 +130,7 @@ app.on(["POST", "GET"], "/auth/*", (c) => {
 
 app.use("*", async (c, next) => {
     // Skip public routes
-    if (c.req.path === "/health" || c.req.path.startsWith("/auth") || c.req.path === "/docs" || c.req.path === "/openapi.json") {
+    if (c.req.path === "/health" || c.req.path.startsWith("/api/auth") || c.req.path === "/docs" || c.req.path === "/openapi.json" || c.req.path === "/") {
         await next();
         return;
     }
