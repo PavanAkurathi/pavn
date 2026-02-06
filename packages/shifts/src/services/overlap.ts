@@ -1,6 +1,6 @@
 
 import { db } from "@repo/database";
-import { shiftAssignment, shift } from "@repo/database/schema";
+import { shiftAssignment, shift, workerAvailability } from "@repo/database/schema";
 import { eq, and, ne, lte, gte, or } from "drizzle-orm";
 
 export class OverlapService {
@@ -8,47 +8,48 @@ export class OverlapService {
         userId: string,
         startTime: Date,
         endTime: Date,
+        requesterOrgId: string,
         excludeAssignmentId?: string
     ) {
-        // Query ALL assignments for this user across ALL organizations
-        // This is crucial for preventing double-booking across gigs
-
-        const overlaps = await db.query.shiftAssignment.findMany({
-            where: and(
+        // 1. Internal Overlap Check: Strict Scoping to requesterOrgId
+        // We do NOT verify overlapping shifts from other organizations (Privacy).
+        const internalConflict = await db.select({ id: shiftAssignment.id })
+            .from(shiftAssignment)
+            .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+            .where(and(
                 eq(shiftAssignment.workerId, userId),
                 ne(shiftAssignment.status, 'cancelled'),
+                eq(shift.organizationId, requesterOrgId), // STRICT: Internal Only
+                lte(shift.startTime, endTime),
+                gte(shift.endTime, startTime),
                 excludeAssignmentId ? ne(shiftAssignment.id, excludeAssignmentId) : undefined
-            ),
-            with: {
-                shift: {
-                    columns: {
-                        startTime: true,
-                        endTime: true,
-                        organizationId: true
-                    }
-                }
-            }
-        });
+            ))
+            .limit(1);
 
-        const conflicting = overlaps.find(a => {
-            if (!a.shift) return false;
-            // Check time overlap
-            return (
-                (a.shift.startTime <= endTime) &&
-                (a.shift.endTime >= startTime)
-            );
-        });
-
-        if (conflicting && conflicting.shift) {
-            // Privacy Masking: Check if it's the same organization
-            // We assume the caller knows their own orgId, but here we return a generic response
-            // The caller (Controller) should compare orgId to determine if they can show details
-
+        if (internalConflict.length > 0) {
             return {
                 conflict: true,
-                organizationId: conflicting.shift.organizationId, // Caller handles masking
-                type: 'external_busy',
-                message: 'Worker is unavailable'
+                type: 'internal_conflict',
+                message: 'Worker already has an overlapping shift in this organization.'
+            };
+        }
+
+        // 2. Global Availability Check: Hard Block if 'unavailable'
+        // This is the only "global" check we allow.
+        const unavailConflict = await db.query.workerAvailability.findFirst({
+            where: and(
+                eq(workerAvailability.workerId, userId),
+                eq(workerAvailability.type, 'unavailable'),
+                lte(workerAvailability.startTime, endTime),
+                gte(workerAvailability.endTime, startTime)
+            )
+        });
+
+        if (unavailConflict) {
+            return {
+                conflict: true,
+                type: 'unavailable',
+                message: 'Worker is marked as unavailable for this time.'
             };
         }
 

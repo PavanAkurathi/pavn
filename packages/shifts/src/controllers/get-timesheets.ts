@@ -39,8 +39,8 @@ export const getShiftTimesheetsController = async (shiftId: string, orgId: strin
             avatarInitials: getInitials(workerName),
             role: "Worker", // Not in schema yet
             hourlyRate: 0,  // Not in schema yet
-            clockIn: a.clockIn ? a.clockIn.toISOString() : undefined,
-            clockOut: a.clockOut ? a.clockOut.toISOString() : undefined,
+            clockIn: (a.effectiveClockIn || a.actualClockIn) ? (a.effectiveClockIn || a.actualClockIn)!.toISOString() : undefined,
+            clockOut: (a.effectiveClockOut || a.actualClockOut) ? (a.effectiveClockOut || a.actualClockOut)!.toISOString() : undefined,
             breakMinutes: a.breakMinutes || 0,
             status: mapAssignmentStatus(a.status as string)
         };

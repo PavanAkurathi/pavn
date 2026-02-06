@@ -127,7 +127,7 @@ export async function ingestLocationController(
         }) : null;
 
         // [INFRA-002] Throttling: If clocked in & on site, only ping every 10 mins
-        if (isOnSite && relevantAssignment && relevantAssignment.clockIn && !relevantAssignment.clockOut) {
+        if (isOnSite && relevantAssignment && relevantAssignment.actualClockIn && !relevantAssignment.actualClockOut) {
             if (previousPing && (now.getTime() - previousPing.recordedAt.getTime()) < 10 * 60 * 1000) {
                 // Skip write
                 return Response.json({
@@ -146,7 +146,7 @@ export async function ingestLocationController(
         }
 
         // 5. Detect arrival (transition from outside to inside geofence)
-        if (isOnSite && relevantAssignment && !relevantAssignment.clockIn) {
+        if (isOnSite && relevantAssignment && !relevantAssignment.actualClockIn) {
             if (!previousPing || !previousPing.isOnSite) {
                 eventType = 'arrival';
                 // TODO: Trigger push notification + SMS
@@ -163,7 +163,7 @@ export async function ingestLocationController(
         }
 
         // 6. Detect departure (leaving geofence while clocked in, without clocking out)
-        if (!isOnSite && relevantAssignment?.clockIn && !relevantAssignment.clockOut) {
+        if (!isOnSite && relevantAssignment?.actualClockIn && !relevantAssignment.actualClockOut) {
             if (previousPing?.isOnSite) {
                 // Prevent Spam: Only alert if not already flagged
                 if (relevantAssignment.reviewReason !== 'left_geofence') {
@@ -220,8 +220,8 @@ export async function ingestLocationController(
                 distanceMeters,
                 eventType,
                 shiftId: relevantShift?.id || null,
-                canClockIn: isOnSite && relevantAssignment && !relevantAssignment.clockIn,
-                canClockOut: isOnSite && relevantAssignment?.clockIn && !relevantAssignment.clockOut,
+                canClockIn: isOnSite && relevantAssignment && !relevantAssignment.actualClockIn,
+                canClockOut: isOnSite && relevantAssignment?.actualClockIn && !relevantAssignment.actualClockOut,
             }
         });
 

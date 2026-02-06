@@ -61,7 +61,8 @@ export const assignWorkerController = async (req: Request, shiftId: string, orgI
         const result = await OverlapService.findOverlappingAssignment(
             workerId,
             existingShift.startTime,
-            existingShift.endTime
+            existingShift.endTime,
+            orgId
         );
 
         if (result.conflict) {

@@ -81,14 +81,14 @@ export async function clockOutController(
             return Response.json({ error: "You are not assigned to this shift" }, { status: 403 });
         }
 
-        if (!assignment.clockIn) {
+        if (!assignment.actualClockIn) {
             return Response.json({ error: "You must clock in first" }, { status: 400 });
         }
 
-        if (assignment.clockOut) {
+        if (assignment.actualClockOut) {
             return Response.json({
                 error: "Already clocked out",
-                clockOutTime: assignment.clockOut
+                clockOutTime: assignment.actualClockOut
             }, { status: 400 });
         }
 
@@ -150,7 +150,7 @@ export async function clockOutController(
             // A. Update Assignment with Optimistic Locking
             const updatedArgs = await tx.update(shiftAssignment)
                 .set({
-                    clockOut: clockOutResult.recordedTime,
+                    actualClockOut: clockOutResult.recordedTime,
                     clockOutPosition: sql`ST_GeogFromText(${point})`,
                     clockOutVerified: true,
                     clockOutMethod: 'geofence',
@@ -159,7 +159,7 @@ export async function clockOutController(
                 })
                 .where(and(
                     eq(shiftAssignment.id, assignment.id),
-                    isNull(shiftAssignment.clockOut) // GUARD: Only update if not already clocked out
+                    isNull(shiftAssignment.actualClockOut) // GUARD: Only update if not already clocked out
                 ))
                 .returning({ id: shiftAssignment.id });
 
@@ -174,7 +174,7 @@ export async function clockOutController(
 
             // Check if all assignments complete (or are no-shows) → update shift status
             const allComplete = allAssignments.every(a =>
-                a.clockOut !== null || a.status === 'no_show'
+                a.actualClockOut !== null || a.status === 'no_show'
             );
 
             if (allComplete) {

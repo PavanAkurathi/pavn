@@ -87,10 +87,10 @@ export async function clockInController(
         }
 
 
-        if (assignment.clockIn) {
+        if (assignment.actualClockIn) {
             return Response.json({
                 error: "Already clocked in",
-                clockInTime: assignment.clockIn
+                clockInTime: assignment.actualClockIn
             }, { status: 400 });
         }
 
@@ -162,7 +162,7 @@ export async function clockInController(
             // A. Update Assignment
             await tx.update(shiftAssignment)
                 .set({
-                    clockIn: clockInResult.recordedTime,
+                    actualClockIn: clockInResult.recordedTime,
                     clockInPosition: sql`ST_GeogFromText(${point})`,
                     clockInVerified: true,
                     clockInMethod: 'geofence',

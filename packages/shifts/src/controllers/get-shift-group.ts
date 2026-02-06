@@ -51,8 +51,8 @@ export const getShiftGroupController = async (groupId: string, orgId: string): P
         avatar: a.worker?.image,
         initials: getInitials(a.worker?.name || ""),
         status: a.status,
-        clockIn: a.clockIn,
-        clockOut: a.clockOut,
+        clockIn: a.effectiveClockIn || a.actualClockIn,
+        clockOut: a.effectiveClockOut || a.actualClockOut,
         isRostered: ['assigned', 'active'].includes(a.status)
     })));
 
