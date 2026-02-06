@@ -8,58 +8,58 @@ export type { Shift, ShiftStatus, TimesheetWorker } from "./types";
 export * from "./schemas";
 
 // =============================================================================
-// CONTROLLERS (Business Logic)
+// SERVICES (Business Logic)
 // =============================================================================
 
 // Shift listing
-export { getUpcomingShifts } from "./controllers/upcoming";
-export { getPendingShifts } from "./controllers/pending";
-export { getHistoryShifts } from "./controllers/history";
-export { getDraftShifts } from "./controllers/drafts";
-export { deleteDraftsController } from "./controllers/delete-drafts";
+export { getUpcomingShifts } from "./services/upcoming";
+export { getPendingShifts } from "./services/pending";
+export { getHistoryShifts } from "./services/history";
+export { getDraftShifts } from "./services/drafts";
+export { deleteDrafts } from "./services/delete-drafts";
 
 // Single shift operations
-export { getShiftByIdController } from "./controllers/get-by-id";
-export { getShiftGroupController } from "./controllers/get-shift-group";
-export { approveShiftController } from "./controllers/approve";
-export { cancelShiftController } from "./controllers/cancel";
-export { assignWorkerController } from "./controllers/assign";
+export { getShiftById } from "./services/get-by-id";
+export { getShiftGroup } from "./services/get-shift-group";
+export { approveShift } from "./services/approve";
+export { cancelShift } from "./services/cancel";
+export { assignWorker } from "./services/assign";
 
 // Timesheets
-export { getShiftTimesheetsController } from "./controllers/get-timesheets";
-export { updateTimesheetController } from "./controllers/update-timesheet";
-export { getTimesheetsReportController } from "./controllers/get-timesheets-report";
-export { getReportFiltersController } from "./controllers/get-report-filters";
-export { exportTimesheetsController } from "./controllers/export-timesheets";
+export { getShiftTimesheets } from "./services/get-timesheets";
+export { updateTimesheet } from "./services/update-timesheet";
+export { getTimesheetsReport } from "./services/get-timesheets-report";
+export { getReportFilters } from "./services/get-report-filters";
+export { exportTimesheets } from "./services/export-timesheets";
 
 // Publishing
-export { publishScheduleController } from "./controllers/publish";
+export { publishSchedule } from "./services/publish";
 
 // Crew & Organization
-export { getCrewController } from "./controllers/get-crew";
-export { createLocationController } from "./controllers/create-location";
+export { getCrew } from "./services/get-crew";
+export { createLocation } from "./services/create-location";
 
 // Availability
-export { getAvailabilityController } from "./controllers/get-availability";
-export { setAvailabilityController } from "./controllers/set-availability";
+export { getAvailability } from "./services/get-availability";
+export { setAvailability } from "./services/set-availability";
 
 // Worker shifts
-export { getWorkerShiftsController } from "./controllers/worker-shifts";
+export { getWorkerShifts } from "./services/worker-shifts";
 
 // Organization & Locations
-export { getLocationsController } from "./controllers/get-locations";
-export { updateLocationController } from "./controllers/update-location";
-export { deleteLocationController } from "./controllers/delete-location";
+export { getLocations } from "./services/get-locations";
+export { updateLocation } from "./services/update-location";
+export { deleteLocation } from "./services/delete-location";
 
 // Worker Management
-export { inviteWorkerController } from "./controllers/invite-worker";
-export { updateWorkerController } from "./controllers/update-worker";
-export { deactivateWorkerController } from "./controllers/deactivate-worker";
-export { reactivateWorkerController } from "./controllers/reactivate-worker";
+export { inviteWorker } from "./services/invite-worker";
+export { updateWorker } from "./services/update-worker";
+export { deactivateWorker } from "./services/deactivate-worker";
+export { reactivateWorker } from "./services/reactivate-worker";
 
 // Settings
-export { getSettingsController } from "./controllers/get-settings";
-export { updateSettingsController } from "./controllers/update-settings";
+export { getSettings } from "./services/get-settings";
+export { updateSettings } from "./services/update-settings";
 
 // =============================================================================
 // CONSTANTS

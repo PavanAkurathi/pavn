@@ -2,27 +2,27 @@
 // Geofence Package - Business Logic Library (NO SERVER)
 
 // =============================================================================
-// CONTROLLERS
+// SERVICES
 // =============================================================================
 
 // Clock In/Out
-export { clockInController } from "./controllers/clock-in";
-export { clockOutController } from "./controllers/clock-out";
+export { clockIn } from "./services/clock-in";
+export { clockOut } from "./services/clock-out";
 
 // Correction Requests
-export { requestCorrectionController } from "./controllers/request-correction";
-export { getPendingCorrectionsController, reviewCorrectionController } from "./controllers/review-correction";
+export { requestCorrection } from "./services/request-correction";
+export { getPendingCorrections, reviewCorrection } from "./services/review-correction";
 
 // Manager Operations
-export { managerOverrideController } from "./controllers/manager-override";
-export { getFlaggedTimesheetsController } from "./controllers/flagged-timesheets";
+export { managerOverride } from "./services/manager-override";
+export { getFlaggedTimesheets } from "./services/flagged-timesheets";
 
 // Export schemas for OpenAPI
 export * from "./schemas";
 
 // Location
-export { geocodeLocationController } from "./controllers/geocode-location";
-export { ingestLocationController } from "./controllers/ingest-location";
+export { geocodeLocation, geocodeAllLocations } from "./services/geocode-location";
+export { ingestLocation } from "./services/ingest-location";
 
 // =============================================================================
 // UTILITIES

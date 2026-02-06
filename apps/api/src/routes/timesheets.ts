@@ -5,43 +5,19 @@
  * Provides timesheet reporting, filtering, and export functionality
  * for managers to review and export worker time records.
  * 
- * @description
- * This router handles all timesheet-related operations including:
- * - Viewing aggregated timesheet reports
- * - Filtering by date range, worker, location
- * - Exporting to CSV and PDF formats
- * 
- * All endpoints require manager role or above.
- * 
- * Endpoints:
- * - GET / - Get timesheet report with filters
- * - GET /filters - Get available filter options
- * - GET /export - Export timesheets (format via query param)
- * - GET /export/csv - Export as CSV
- * - GET /export/pdf - Export as PDF
- * 
- * Query Parameters (all endpoints):
- * - from: Start date (ISO string)
- * - to: End date (ISO string)
- * - workerId: Filter by worker
- * - locationId: Filter by location
- * - status: approved | pending | flagged
- * 
- * @requires @repo/shifts - Timesheet report controllers
- * @author WorkersHive Team
- * @since 1.0.0
+ * @requires @repo/shifts-service
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { type Context } from "hono";
 
-// Import controllers
+// Import services
 import {
-    getTimesheetsReportController,
-    getReportFiltersController,
-    exportTimesheetsController,
-    TimesheetReportSchema, // Schema
+    getTimesheetsReport,
+    getReportFilters,
+    exportTimesheets,
+    TimesheetReportSchema,
 } from "@repo/shifts-service";
 
 export const timesheetsRouter = new OpenAPIHono<AppContext>();
@@ -67,7 +43,7 @@ const getReportRoute = createRoute({
 timesheetsRouter.openapi(getReportRoute, async (c: Context<AppContext>) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
-    const result = await getTimesheetsReportController(orgId, queryParams);
+    const result = await getTimesheetsReport(orgId, queryParams);
     return c.json(result as any, 200);
 });
 
@@ -87,7 +63,7 @@ const getFiltersRoute = createRoute({
 timesheetsRouter.openapi(getFiltersRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
-    const result = await getReportFiltersController(orgId, queryParams);
+    const result = await getReportFilters(orgId, queryParams);
     return c.json(result as any, 200);
 });
 
@@ -116,8 +92,13 @@ const exportRoute = createRoute({
 timesheetsRouter.openapi(exportRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
-    const result = await exportTimesheetsController(orgId, queryParams);
-    return c.json(result as any, 200);
+    const result = await exportTimesheets(orgId, queryParams);
+
+    // Set response headers for download
+    c.header('Content-Type', result.contentType);
+    c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
+
+    return c.body(result.data as any);
 });
 
 const exportCsvRoute = createRoute({
@@ -137,8 +118,12 @@ timesheetsRouter.openapi(exportCsvRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
     queryParams.format = "csv";
-    const result = await exportTimesheetsController(orgId, queryParams);
-    return c.json(result as any, 200);
+    const result = await exportTimesheets(orgId, queryParams);
+
+    c.header('Content-Type', result.contentType);
+    c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
+
+    return c.body(result.data as any);
 });
 
 const exportPdfRoute = createRoute({
@@ -158,8 +143,12 @@ timesheetsRouter.openapi(exportPdfRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
     queryParams.format = "pdf";
-    const result = await exportTimesheetsController(orgId, queryParams);
-    return c.json(result as any, 200);
+    const result = await exportTimesheets(orgId, queryParams);
+
+    c.header('Content-Type', result.contentType);
+    c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
+
+    return c.body(result.data as any);
 });
 
 // =============================================================================
