@@ -5,45 +5,19 @@
  * Handles worker clock in/out operations with GPS verification,
  * and time correction request workflows.
  * 
- * @description
- * This router powers the core time tracking functionality:
- * - GPS-verified clock in/out (workers)
- * - Time correction/adjustment requests (workers)
- * - Pending corrections queue (managers)
- * - Correction review/approval (managers)
- * 
- * Clock actions are rate-limited (5/minute) to prevent spam.
- * Location is verified against venue geofence before allowing clock.
- * 
- * RBAC Rules:
- * - All authenticated users can clock in/out and request corrections
- * - Managers can view pending corrections and approve/deny them
- * 
- * Endpoints:
- * - POST /clock-in - Clock in with GPS coordinates (rate limited)
- * - POST /clock-out - Clock out with GPS coordinates (rate limited)
- * - POST /corrections - Submit time correction request
- * - GET /pending - List pending correction requests (manager+)
- * - POST /review - Approve/deny correction request (manager+)
- * - POST /verify-location - Check if at venue without clocking
- * 
- * @requires @repo/geofence - Clock and correction controllers
- * @author WorkersHive Team
- * @since 1.0.0
+ * @requires @repo/geofence - Geofence business logic services
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
-import { requireManager } from "../middleware";
-import { rateLimit, RATE_LIMITS } from "../middleware";
 
-// Import controllers from geofence package
+// Import services from geofence package
 import {
-    clockInController,
-    clockOutController,
-    requestCorrectionController,
-    getPendingCorrectionsController,
-    reviewCorrectionController,
+    clockIn,
+    clockOut,
+    requestCorrection,
+    getPendingCorrections,
+    reviewCorrection,
     ClockActionResponseSchema,
     PendingCorrectionsResponseSchema,
 } from "@repo/geofence";
@@ -51,7 +25,7 @@ import {
 export const geofenceRouter = new OpenAPIHono<AppContext>();
 
 // =============================================================================
-// CLOCK IN/OUT (Rate limited to prevent spam)
+// CLOCK IN/OUT
 // =============================================================================
 
 const clockInRoute = createRoute({
@@ -66,12 +40,12 @@ const clockInRoute = createRoute({
 });
 
 geofenceRouter.openapi(clockInRoute, async (c) => {
-    // TODO: Re-enable rate limiting middleware
     const user = c.get("user");
     const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const result = await clockInController(c.req.raw, user.id, orgId);
+    const body = await c.req.json();
+    const result = await clockIn(body, user.id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -87,12 +61,12 @@ const clockOutRoute = createRoute({
 });
 
 geofenceRouter.openapi(clockOutRoute, async (c) => {
-    // TODO: Re-enable rate limiting middleware
     const user = c.get("user");
     const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const result = await clockOutController(c.req.raw, user.id, orgId);
+    const body = await c.req.json();
+    const result = await clockOut(body, user.id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -116,7 +90,8 @@ geofenceRouter.openapi(requestCorrectionRoute, async (c) => {
     const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const result = await requestCorrectionController(c.req.raw, user.id, orgId);
+    const body = await c.req.json();
+    const result = await requestCorrection(body, user.id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -127,20 +102,18 @@ const getPendingCorrectionsRoute = createRoute({
     description: 'List pending correction requests (Manager).',
     responses: {
         200: { content: { 'application/json': { schema: PendingCorrectionsResponseSchema } }, description: 'Pending corrections' },
-        401: { description: 'Unauthorized' },
         403: { description: 'Forbidden' }
     }
 });
 
 geofenceRouter.openapi(getPendingCorrectionsRoute, async (c) => {
-    // Auth Check
     const userRole = c.get("userRole");
     if (!["manager", "owner", "admin"].includes(userRole as string)) {
         return c.json({ error: "Access denied" }, 403);
     }
 
     const orgId = c.get("orgId");
-    const result = await getPendingCorrectionsController(orgId);
+    const result = await getPendingCorrections(orgId);
     return c.json(result as any, 200);
 });
 
@@ -164,7 +137,8 @@ geofenceRouter.openapi(reviewCorrectionRoute, async (c) => {
     const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const result = await reviewCorrectionController(c.req.raw, user.id, orgId);
+    const body = await c.req.json();
+    const result = await reviewCorrection(body, user.id, orgId);
     return c.json(result as any, 200);
 });
 

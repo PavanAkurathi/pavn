@@ -269,4 +269,51 @@ export class AssignmentService {
 
         return { verified: true, distance: Math.round(res.distance) };
     }
+
+    /**
+     * Get assignment by shift and worker
+     */
+    static async getAssignment(shiftId: string, workerId: string) {
+        return await db.query.shiftAssignment.findFirst({
+            where: and(
+                eq(shiftAssignment.shiftId, shiftId),
+                eq(shiftAssignment.workerId, workerId)
+            )
+        });
+    }
+
+    /**
+     * Update assignment status with audit log
+     */
+    static async updateStatus(
+        actorId: string,
+        assignmentId: string,
+        status: string,
+        metadata: Record<string, any> = {}
+    ) {
+        return await db.transaction(async (tx) => {
+            const current = await tx.query.shiftAssignment.findFirst({
+                where: eq(shiftAssignment.id, assignmentId)
+            });
+
+            if (!current) throw new AppError("Assignment not found", "NOT_FOUND", 404);
+
+            await tx.update(shiftAssignment)
+                .set({
+                    status: status,
+                    updatedAt: new Date()
+                })
+                .where(eq(shiftAssignment.id, assignmentId));
+
+            await tx.insert(assignmentAuditEvent).values({
+                id: nanoid(),
+                assignmentId,
+                actorId,
+                previousStatus: current.status,
+                newStatus: status,
+                metadata,
+                timestamp: new Date()
+            });
+        });
+    }
 }

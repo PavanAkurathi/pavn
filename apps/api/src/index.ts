@@ -172,6 +172,11 @@ app.use("*", async (c, next) => {
 
 import { requireManager } from "./middleware/index.js";
 
+// Route mounting
+import { devicesRouter } from "./routes/devices.js";
+import { preferencesRouter } from "./routes/preferences.js";
+import { managerPreferencesRouter } from "./routes/manager-preferences.js";
+
 app.route("/shifts", shiftsRouter);
 app.route("/worker", workerRouter);
 app.use("/timesheets/*", requireManager());
@@ -179,6 +184,9 @@ app.route("/timesheets", timesheetsRouter);
 app.route("/billing", billingRouter);
 app.route("/organizations", organizationsRouter);
 app.route("/geofence", geofenceRouter);
+app.route("/devices", devicesRouter);
+app.route("/preferences", preferencesRouter);
+app.route("/manager-preferences", managerPreferencesRouter);
 
 // Legacy routes for backwards compatibility
 app.route("/schedules", shiftsRouter);

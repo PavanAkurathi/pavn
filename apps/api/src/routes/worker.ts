@@ -5,44 +5,27 @@
  * Endpoints for workers (members) to view their shifts, set availability,
  * submit adjustment requests, and manage their profile.
  * 
- * @description
- * These routes are accessible to all authenticated users (including members).
- * Workers use these endpoints from the mobile app to:
- * - View their upcoming and past shifts
- * - Set their availability for scheduling
- * - Request time adjustments/corrections
- * - View and update their profile
- * 
- * Endpoints:
- * - GET /shifts - Worker's assigned shifts (upcoming/history/all)
- * - POST /availability - Set availability windows
- * - GET /availability - Get current availability
- * - POST /adjustments - Submit time correction request (rate limited)
- * - GET /adjustments - View submitted adjustment requests
- * - GET /profile - Get worker profile
- * - PATCH /profile - Update profile info
- * 
- * @requires @repo/shifts - Shift and availability controllers
- * @requires @repo/geofence - Correction request handling
- * @author WorkersHive Team
- * @since 1.0.0
+ * @requires @repo/shifts-service
+ * @requires @repo/geofence
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
-import { rateLimit, RATE_LIMITS } from "../middleware";
 
-// Import controllers
-import { getWorkerShiftsController, setAvailabilityController } from "@repo/shifts-service";
-import { requestCorrectionController } from "@repo/geofence";
-
-// Schemas
+// Import services
 import {
+    getWorkerShifts,
+    setAvailability,
+    getAvailability,
     UpcomingShiftsResponseSchema,
     AvailabilityResponseSchema,
     WorkerSchema
 } from "@repo/shifts-service";
-import { CorrectionRequestSchema } from "@repo/geofence";
+
+import {
+    requestCorrection,
+    CorrectionRequestSchema
+} from "@repo/geofence";
 
 export const workerRouter = new OpenAPIHono<AppContext>();
 
@@ -53,7 +36,7 @@ export const workerRouter = new OpenAPIHono<AppContext>();
 const getShiftsRoute = createRoute({
     method: 'get',
     path: '/shifts',
-    summary: 'Get Assgined Shifts',
+    summary: 'Get Assigned Shifts',
     description: 'Get shifts assigned to the current worker (upcoming, history, or all).',
     request: {
         query: z.object({
@@ -82,7 +65,7 @@ workerRouter.openapi(getShiftsRoute, async (c) => {
     const limit = parseInt(c.req.query("limit") || "20");
     const offset = parseInt(c.req.query("offset") || "0");
 
-    const result = await getWorkerShiftsController(user.id, orgId, { status, limit, offset });
+    const result = await getWorkerShifts(user.id, orgId, { status, limit, offset });
     return c.json(result as any, 200);
 });
 
@@ -107,8 +90,10 @@ const setAvailabilityRoute = createRoute({
 workerRouter.openapi(setAvailabilityRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    const result = await setAvailabilityController(c.req.raw, user.id);
-    return c.json(result, 200);
+
+    const body = await c.req.json();
+    const result = await setAvailability(body, user.id);
+    return c.json(result as any, 200);
 });
 
 const getAvailabilityRoute = createRoute({
@@ -129,10 +114,15 @@ const getAvailabilityRoute = createRoute({
 
 workerRouter.openapi(getAvailabilityRoute, async (c) => {
     const user = c.get("user");
+    const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    // TODO: Implement get worker's own availability
-    return c.json([] as any, 200);
+    const from = c.req.query("from") || new Date().toISOString();
+    const to = c.req.query("to") || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+
+    // Using service call
+    const result = await getAvailability(orgId || "", from, to, user.id);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
@@ -154,15 +144,12 @@ const requestAdjustmentRoute = createRoute({
 });
 
 workerRouter.openapi(requestAdjustmentRoute, async (c) => {
-    // Manually apply rate limit for now since OpenAPIHono doesn't support array middleware in .openapi() easily
-    // In production we'd wrap this or usage global middleware
-    // await rateLimit(RATE_LIMITS.api)(c, () => Promise.resolve()); 
-
     const user = c.get("user");
     const orgId = c.get("orgId");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const result = await requestCorrectionController(c.req.raw, user.id, orgId);
+    const body = await c.req.json();
+    const result = await requestCorrection(body, user.id, orgId);
     return c.json(result, 200);
 });
 
@@ -186,7 +173,10 @@ workerRouter.openapi(getAdjustmentsRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    // TODO: Implement get worker's own adjustment requests
+    // Helper logic or service call for getting own adjustments
+    // Assuming getPendingCorrections is manager facing? 
+    // We might need getWorkerCorrections(userId, orgId).
+    // For now, returning empty array as placeholder logic if service doesn't exist
     return c.json([] as any, 200);
 });
 

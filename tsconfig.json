@@ -17,9 +17,6 @@
             "path": "./apps/workers"
         },
         {
-            "path": "./packages/api"
-        },
-        {
             "path": "./packages/auth"
         },
         {

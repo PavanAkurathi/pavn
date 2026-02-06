@@ -8,21 +8,20 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index.js";
-import { requireAdmin, requireManager } from "../middleware/index.js";
 
-// Import from packages
+// Import from packages (Services)
 import {
-    getCrewController,
-    createLocationController,
-    getLocationsController,
-    updateLocationController,
-    deleteLocationController,
-    inviteWorkerController,
-    updateWorkerController,
-    deactivateWorkerController,
-    reactivateWorkerController,
-    getSettingsController,
-    updateSettingsController,
+    getCrew,
+    createLocation,
+    getLocations,
+    updateLocation,
+    deleteLocation,
+    inviteWorker,
+    updateWorker,
+    deactivateWorker,
+    reactivateWorker,
+    getSettings,
+    updateSettings,
     WorkerSchema,
     LocationSchema,
 } from "@repo/shifts-service";
@@ -38,6 +37,13 @@ const getCrewRoute = createRoute({
     path: '/crew',
     summary: 'Get Crew',
     description: 'List all workers in the organization.',
+    request: {
+        query: z.object({
+            search: z.string().optional(),
+            limit: z.string().optional(),
+            offset: z.string().optional()
+        })
+    },
     responses: {
         200: { content: { 'application/json': { schema: z.array(WorkerSchema) } }, description: 'Crew list' },
         403: { description: 'Forbidden' }
@@ -49,7 +55,11 @@ organizationsRouter.openapi(getCrewRoute, async (c) => {
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const result = await getCrewController(orgId);
+    const search = c.req.query("search");
+    const limit = parseInt(c.req.query("limit") || "50");
+    const offset = parseInt(c.req.query("offset") || "0");
+
+    const result = await getCrew(orgId, { search, limit, offset });
     return c.json(result as any, 200);
 });
 
@@ -74,7 +84,7 @@ organizationsRouter.openapi(inviteWorkerRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const body = await c.req.json();
-    const result = await inviteWorkerController({ ...body, inviterId: user.id }, orgId);
+    const result = await inviteWorker({ ...body, inviterId: user.id }, orgId);
     return c.json(result as any, 200);
 });
 
@@ -98,7 +108,7 @@ organizationsRouter.openapi(updateWorkerRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const body = await c.req.json();
-    const result = await updateWorkerController(body, id, orgId);
+    const result = await updateWorker(body, id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -121,7 +131,7 @@ organizationsRouter.openapi(deactivateWorkerRoute, async (c) => {
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
-    const result = await deactivateWorkerController(id, orgId);
+    const result = await deactivateWorker(id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -144,7 +154,7 @@ organizationsRouter.openapi(reactivateWorkerRoute, async (c) => {
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
-    const result = await reactivateWorkerController(id, orgId);
+    const result = await reactivateWorker(id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -168,7 +178,7 @@ organizationsRouter.openapi(getLocationsRoute, async (c) => {
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const result = await getLocationsController(orgId);
+    const result = await getLocations(orgId);
     return c.json(result as any, 200);
 });
 
@@ -188,7 +198,8 @@ organizationsRouter.openapi(createLocationRoute, async (c) => {
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const result = await createLocationController(c.req.raw, orgId);
+    const body = await c.req.json();
+    const result = await createLocation(body, orgId);
     return c.json(result as any, 200);
 });
 
@@ -212,7 +223,7 @@ organizationsRouter.openapi(updateLocationRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const body = await c.req.json();
-    const result = await updateLocationController(body, id, orgId);
+    const result = await updateLocation(body, id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -235,7 +246,7 @@ organizationsRouter.openapi(deleteLocationRoute, async (c) => {
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
-    const result = await deleteLocationController(id, orgId);
+    const result = await deleteLocation(id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -261,7 +272,7 @@ organizationsRouter.openapi(updateSettingsRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const body = await c.req.json();
-    const result = await updateSettingsController(body, orgId);
+    const result = await updateSettings(body, orgId);
     return c.json(result as any, 200);
 });
 
@@ -281,7 +292,8 @@ organizationsRouter.openapi(getSettingsRoute, async (c) => {
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const result = await getSettingsController(orgId);
+    // getSettings logic in services/get-settings.ts takes orgId
+    const result = await getSettings(orgId);
     return c.json(result as any, 200);
 });
 

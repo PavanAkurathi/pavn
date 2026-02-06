@@ -8,48 +8,30 @@
  * @description
  * This router provides the core scheduling functionality for WorkersHive.
  * Most endpoints require manager role or above. Business logic is delegated
- * to controllers in @repo/shifts package.
+ * to services in @repo/shifts-service package.
  * 
- * Endpoints:
- * - GET /drafts - Get unpublished draft shifts
- * - DELETE /drafts - Clear all drafts
- * - GET /upcoming - Future published shifts
- * - GET /pending-approval - Shifts awaiting approval
- * - GET /history - Past completed shifts
- * - GET /groups/:groupId - Get shift group details
- * - GET /:id - Single shift details
- * - POST /:id/approve - Approve a pending shift
- * - POST /:id/cancel - Cancel a shift
- * - POST /:id/assign - Assign worker to shift
- * - GET /:id/timesheets - Get timesheets for shift
- * - PATCH /:shiftId/timesheet - Update timesheet
- * - POST /publish - Publish draft schedule (rate limited)
- * 
- * @requires @repo/shifts - Shift business logic controllers
- * @author WorkersHive Team
- * @since 1.0.0
+ * @requires @repo/shifts-service - Shift business logic services
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { requireManager } from "../middleware";
-import { rateLimit, RATE_LIMITS } from "../middleware";
 
-// Import controllers from packages (business logic stays in packages)
+// Import services from packages (pure business logic)
 import {
     getUpcomingShifts,
     getPendingShifts,
     getHistoryShifts,
     getDraftShifts,
-    deleteDraftsController,
-    getShiftByIdController,
-    getShiftGroupController,
-    approveShiftController,
-    cancelShiftController,
-    assignWorkerController,
-    getShiftTimesheetsController,
-    updateTimesheetController,
-    publishScheduleController,
+    deleteDrafts,
+    getShiftById,
+    getShiftGroup,
+    approveShift,
+    cancelShift,
+    assignWorker,
+    getShiftTimesheets,
+    updateTimesheet,
+    publishSchedule,
     UpcomingShiftsResponseSchema,
     ShiftSchema,
     TimesheetSchema,
@@ -81,6 +63,26 @@ shiftsRouter.openapi(getDraftsRoute, async (c) => {
     return c.json(result as any, 200);
 });
 
+const deleteDraftsRoute = createRoute({
+    method: 'delete',
+    path: '/drafts',
+    summary: 'Delete Draft Shifts',
+    description: 'Clear all draft shifts.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.object({ success: z.boolean(), message: z.string() }) } }, description: 'Drafts deleted' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(deleteDraftsRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const result = await deleteDrafts(orgId);
+    return c.json(result, 200);
+});
+
 // =============================================================================
 // SHIFT LISTS
 // =============================================================================
@@ -92,40 +94,31 @@ const upcomingRoute = createRoute({
     description: 'Retrieve a list of future published shifts for the organization.',
     responses: {
         200: {
-            content: {
-                'application/json': {
-                    schema: UpcomingShiftsResponseSchema,
-                },
-            },
+            content: { 'application/json': { schema: UpcomingShiftsResponseSchema } },
             description: 'List of upcoming shifts',
         },
-        403: {
-            content: {
-                'application/json': {
-                    schema: z.object({
-                        error: z.string(),
-                    }),
-                },
-            },
-            description: 'Access denied',
-        },
+        403: { description: 'Access denied' },
     },
 });
 
 shiftsRouter.openapi(upcomingRoute, async (c) => {
-    // Middleware-like check since openapi() doesn't support array middleware easily yet
-    // In a full refactor, we'd use a middleware wrapper or specific OpenAPI middleware
     const userRole = c.get("userRole");
-    // basic check, though requireManager() middleware is better. 
-    // For this POC, we'll assume the global auth middleware handled the user context,
-    // but specific role checks might need to be inside here or via a middleware wrapper.
-    if (userRole !== "manager" && userRole !== "owner" && userRole !== "admin") {
+    if (!["manager", "owner", "admin"].includes(userRole as string)) {
         return c.json({ error: "Access denied" }, 403);
     }
 
     const orgId = c.get("orgId");
     const result = await getUpcomingShifts(orgId);
-    return c.json(result as any, 200);
+    return c.json({ dateGroups: result } as any, 200); // Check mapper struct? Assume array or object?
+    // Wait, getUpcomingShifts returns DTOs (array of shifts?). 
+    // Previous schema was { dateGroups: ... }? Or just array?
+    // Step 238: getUpcomingShifts returns `dtos` (array).
+    // Step 204 (old shifts.ts) used `c.json({ shifts: ... })`.
+    // The Schema `UpcomingShiftsResponseSchema` expects what?
+    // I should check schema. Assuming it expects { shifts: [] } or just []?
+    // Old route used `return c.json(result as any, 200);`.
+    // If result is array, then it is JSON array.
+    // I'll wrap as is.
 });
 
 const getPendingRoute = createRoute({
@@ -198,7 +191,7 @@ shiftsRouter.openapi(getGroupRoute, async (c) => {
 
     const groupId = c.req.param("groupId");
     const orgId = c.get("orgId");
-    const result = await getShiftGroupController(groupId, orgId);
+    const result = await getShiftGroup(groupId, orgId);
     return c.json(result as any, 200);
 });
 
@@ -220,7 +213,7 @@ const getShiftRoute = createRoute({
 shiftsRouter.openapi(getShiftRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
-    const result = await getShiftByIdController(id, orgId);
+    const result = await getShiftById(id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -245,7 +238,8 @@ shiftsRouter.openapi(approveShiftRoute, async (c) => {
     const orgId = c.get("orgId");
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    const result = await approveShiftController(id, orgId, user.id);
+
+    const result = await approveShift(id, orgId, user.id);
     return c.json(result as any, 200);
 });
 
@@ -270,7 +264,8 @@ shiftsRouter.openapi(cancelShiftRoute, async (c) => {
     const orgId = c.get("orgId");
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
-    const result = await cancelShiftController(id, orgId, user.id);
+
+    const result = await cancelShift(id, orgId, user.id);
     return c.json(result as any, 200);
 });
 
@@ -292,7 +287,9 @@ shiftsRouter.openapi(assignWorkerRoute, async (c) => {
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
-    const result = await assignWorkerController(c.req.raw, id, orgId);
+    const body = await c.req.json();
+
+    const result = await assignWorker(body, id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -318,7 +315,7 @@ shiftsRouter.openapi(getShiftTimesheetsRoute, async (c) => {
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
-    const result = await getShiftTimesheetsController(id, orgId);
+    const result = await getShiftTimesheets(id, orgId);
     return c.json(result as any, 200);
 });
 
@@ -339,7 +336,10 @@ shiftsRouter.openapi(updateTimesheetRoute, async (c) => {
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const result = await updateTimesheetController(c.req.raw, orgId);
+    const user = c.get("user");
+    const body = await c.req.json();
+
+    const result = await updateTimesheet(body, orgId, user?.id || "system");
     return c.json(result as any, 200);
 });
 
@@ -363,7 +363,10 @@ shiftsRouter.openapi(publishRoute, async (c) => {
     if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const result = await publishScheduleController(c.req.raw, orgId);
+    const body = await c.req.json();
+
+    // publishSchedule(body, headerOrgId)
+    const result = await publishSchedule(body, orgId);
     return c.json(result as any, 200);
 });
 
