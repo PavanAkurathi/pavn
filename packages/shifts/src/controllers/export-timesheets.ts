@@ -69,11 +69,11 @@ export async function exportTimesheetsController(
             scheduledStart: shift.startTime,
             scheduledEnd: shift.endTime,
             shiftPrice: shift.price,
-            clockIn: shiftAssignment.clockIn,
-            clockOut: shiftAssignment.clockOut,
+            clockIn: shiftAssignment.effectiveClockIn,
+            clockOut: shiftAssignment.effectiveClockOut,
             breakMinutes: shiftAssignment.breakMinutes,
-            grossPayCents: shiftAssignment.grossPayCents,
-            hourlyRateSnapshot: shiftAssignment.hourlyRateSnapshot,
+            grossPayCents: shiftAssignment.estimatedCostCents,
+            hourlyRateSnapshot: shiftAssignment.budgetRateSnapshot,
             assignmentStatus: shiftAssignment.status,
         })
         .from(shiftAssignment)

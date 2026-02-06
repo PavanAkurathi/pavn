@@ -36,8 +36,8 @@ export const user = pgTable("user", {
         zip: string;
     }>(),
 
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
 }, (table) => ({
     userEmailIdx: index("user_email_idx").on(table.email)
 }));
@@ -49,11 +49,11 @@ export const certification = pgTable("certification", {
         .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(), // e.g., "ServSafe Alcohol"
     issuer: text("issuer"), // e.g., "National Restaurant Association"
-    expiresAt: timestamp("expires_at"),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'date' }),
     status: text("status").default("valid"), // 'valid', 'expired'
     imageUrl: text("image_url"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     certWorkerIdx: index("cert_worker_idx").on(table.workerId)
 }));
@@ -68,18 +68,18 @@ export const account = pgTable("account", {
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    expiresAt: timestamp("expires_at"),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'date' }),
     password: text("password"),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
 });
 
 export const session = pgTable("session", {
     id: text("id").primaryKey(),
-    expiresAt: timestamp("expires_at").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'date' }).notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     userId: text("user_id")
@@ -94,9 +94,9 @@ export const verification = pgTable("verification", {
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at"),
-    updatedAt: timestamp("updated_at"),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'date' }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }),
 });
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -114,12 +114,12 @@ export const organization = pgTable("organization", {
     name: text("name").notNull(),
     slug: text("slug").unique(),
     logo: text("logo"),
-    createdAt: timestamp("created_at").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull(),
     metadata: text("metadata"),
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
     subscriptionStatus: text("subscription_status").default("inactive"),
-    currentPeriodEnd: timestamp("current_period_end"),
+    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true, mode: 'date' }),
 
     // Configuration
     earlyClockInBufferMinutes: integer("early_clock_in_buffer_minutes").notNull().default(60),
@@ -146,11 +146,11 @@ export const location = pgTable("location", {
     // -- Geofence --
     position: geography("position"),
     geofenceRadius: integer("geofence_radius").default(100),
-    geocodedAt: timestamp("geocoded_at"),
+    geocodedAt: timestamp("geocoded_at", { withTimezone: true, mode: 'date' }),
     geocodeSource: text("geocode_source"), // 'google' | 'manual' | 'mapbox'
 
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
 }, (table) => ({
     locationOrgIdx: index("location_org_idx").on(table.organizationId),
     locationPosIdx: index("location_pos_idx").using("gist", table.position) // GIST Index for PostGIS
@@ -172,8 +172,8 @@ export const member = pgTable("member", {
     status: text("status").notNull().default("active"), // "active" | "inactive" | "invited"
     hourlyRate: integer("hourly_rate"), // Stored in cents, nullable
     jobTitle: text("job_title"), // e.g. "Security Guard", nullable
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     memberOrgIdx: index("member_org_idx").on(table.organizationId),
     memberUserIdx: index("member_user_idx").on(table.userId),
@@ -188,7 +188,7 @@ export const invitation = pgTable("invitation", {
     email: text("email").notNull(),
     role: text("role"),
     status: text("status").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'date' }).notNull(),
     inviterId: text("inviter_id")
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
@@ -240,8 +240,8 @@ export const shift = pgTable("shift", {
     title: text("title").notNull(), // e.g. "Event Security"
     description: text("description"),
 
-    startTime: timestamp("start_time").notNull(),
-    endTime: timestamp("end_time").notNull(),
+    startTime: timestamp("start_time", { withTimezone: true, mode: 'date' }).notNull(),
+    endTime: timestamp("end_time", { withTimezone: true, mode: 'date' }).notNull(),
 
     // -- Capacity --
     capacityTotal: integer("capacity_total").notNull().default(1),
@@ -257,8 +257,8 @@ export const shift = pgTable("shift", {
     // -- Grouping --
     scheduleGroupId: text("schedule_group_id"), // "int_..." for batched operations
 
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     shiftOrgIdx: index("shift_org_idx").on(table.organizationId),
     shiftStatusIdx: index("shift_status_idx").on(table.status),
@@ -281,14 +281,24 @@ export const shiftAssignment = pgTable("shift_assignment", {
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
 
-    // -- Timesheet Data (The "Actuals") --
-    clockIn: timestamp("clock_in"),
-    clockOut: timestamp("clock_out"),
+    // -- Timesheet Data (Triple-Timestamp Model) --
+    // 1. Actual (Behavioral) - Raw device timestamp
+    actualClockIn: timestamp("actual_clock_in", { withTimezone: true, mode: 'date' }),
+    actualClockOut: timestamp("actual_clock_out", { withTimezone: true, mode: 'date' }),
+
+    // 2. Effective (Billable/Payable) - Rounded/Snapped
+    effectiveClockIn: timestamp("effective_clock_in", { withTimezone: true, mode: 'date' }),
+    effectiveClockOut: timestamp("effective_clock_out", { withTimezone: true, mode: 'date' }),
+
+    // 3. Manager Verified (Final) - Validated by manager
+    managerVerifiedIn: timestamp("manager_verified_in", { withTimezone: true, mode: 'date' }),
+    managerVerifiedOut: timestamp("manager_verified_out", { withTimezone: true, mode: 'date' }),
+
     breakMinutes: integer("break_minutes").default(0),
 
-    // -- Financial Snapshot --
-    hourlyRateSnapshot: integer("hourly_rate_snapshot"),
-    grossPayCents: integer("gross_pay_cents").default(0),
+    // -- Financial Snapshot (Budgeting) --
+    budgetRateSnapshot: integer("budget_rate_snapshot"), // Was hourlyRateSnapshot
+    estimatedCostCents: integer("estimated_cost_cents").default(0), // Was grossPayCents
 
     // -- Clock In Verification --
     clockInPosition: geography("clock_in_position"),
@@ -306,19 +316,19 @@ export const shiftAssignment = pgTable("shift_assignment", {
 
     // -- Last Known Position (for flagged shifts) --
     lastKnownPosition: geography("last_known_position"),
-    lastKnownAt: timestamp("last_known_at"),
+    lastKnownAt: timestamp("last_known_at", { withTimezone: true, mode: 'date' }),
 
     // -- Manager Audit Trail --
     adjustedBy: text("adjusted_by").references(() => user.id),
-    adjustedAt: timestamp("adjusted_at"),
-    adjustmentNotes: text("adjustment_notes"),
+    adjustedAt: timestamp("adjusted_at", { withTimezone: true, mode: 'date' }),
+    // adjustmentNotes REMOVED - Use assignment_audit_events
 
     // -- Worker Status --
     // Values: 'active', 'no_show', 'removed'
     status: text("status").notNull().default("active"),
 
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     assignmentShiftIdx: index("assignment_shift_idx").on(table.shiftId),
     assignmentWorkerIdx: index("assignment_worker_idx").on(table.workerId),
@@ -380,8 +390,8 @@ export const workerLocation = pgTable("worker_location", {
     eventType: text("event_type"), // 'ping' | 'arrival' | 'departure' | 'clock_in' | 'clock_out'
 
     // Timestamps
-    recordedAt: timestamp("recorded_at").notNull().defaultNow(),
-    deviceTimestamp: timestamp("device_timestamp"), // Time from device (may differ from server)
+    recordedAt: timestamp("recorded_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    deviceTimestamp: timestamp("device_timestamp", { withTimezone: true, mode: 'date' }), // Time from device (may differ from server)
 }, (table) => ({
     workerLocationWorkerIdx: index("worker_location_worker_idx").on(table.workerId),
     workerLocationShiftIdx: index("worker_location_shift_idx").on(table.shiftId),
@@ -430,13 +440,13 @@ export const timeCorrectionRequest = pgTable("time_correction_request", {
         .references(() => organization.id, { onDelete: "cascade" }),
 
     // Requested changes (all optional - only filled if requesting change)
-    requestedClockIn: timestamp("requested_clock_in"),
-    requestedClockOut: timestamp("requested_clock_out"),
+    requestedClockIn: timestamp("requested_clock_in", { withTimezone: true, mode: 'date' }),
+    requestedClockOut: timestamp("requested_clock_out", { withTimezone: true, mode: 'date' }),
     requestedBreakMinutes: integer("requested_break_minutes"),
 
     // Original values (snapshot for comparison)
-    originalClockIn: timestamp("original_clock_in"),
-    originalClockOut: timestamp("original_clock_out"),
+    originalClockIn: timestamp("original_clock_in", { withTimezone: true, mode: 'date' }),
+    originalClockOut: timestamp("original_clock_out", { withTimezone: true, mode: 'date' }),
     originalBreakMinutes: integer("original_break_minutes"),
 
     // Request details
@@ -448,12 +458,12 @@ export const timeCorrectionRequest = pgTable("time_correction_request", {
     // Manager review
     reviewedBy: text("reviewed_by")
         .references(() => user.id),
-    reviewedAt: timestamp("reviewed_at"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true, mode: 'date' }),
     reviewNotes: text("review_notes"), // Manager's notes on decision
 
     // Timestamps
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     correctionAssignmentIdx: index("correction_assignment_idx").on(table.shiftAssignmentId),
     correctionWorkerIdx: index("correction_worker_idx").on(table.workerId),
@@ -517,7 +527,7 @@ export const auditLog = pgTable("audit_log", {
 
     metadata: json("metadata").$type<Record<string, any>>(),
 
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     auditOrgIdx: index("audit_org_idx").on(table.organizationId),
     auditEntityIdx: index("audit_entity_idx").on(table.entityType, table.entityId),
@@ -548,7 +558,7 @@ export const assignmentAuditEvent = pgTable("assignment_audit_events", {
     previousStatus: text("previous_status"),
     newStatus: text("new_status").notNull(),
     metadata: jsonb("metadata").$type<Record<string, any>>(), // GPS, Device Info
-    timestamp: timestamp("timestamp").notNull().defaultNow(),
+    timestamp: timestamp("timestamp", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     auditAssignmentIdx: index("audit_assignment_idx").on(table.assignmentId),
     auditTimestampIdx: index("audit_timestamp_idx").on(table.timestamp),
@@ -565,7 +575,7 @@ export const rateLimitState = pgTable("rate_limit_state", {
     key: text("key").primaryKey(), // e.g. "publish_schedule:{orgId}"
     count: integer("count").notNull().default(0),
     windowStart: decimal("window_start", { precision: 20, scale: 0 }).notNull(), // BigInt workaround for timestamps
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 });
 
 export const idempotencyKey = pgTable("idempotency_key", {
@@ -573,8 +583,8 @@ export const idempotencyKey = pgTable("idempotency_key", {
     organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
     hash: text("hash").notNull(), // Payload hash
     responseData: json("response_data"), // To cache the successful response
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    expiresAt: timestamp("expires_at").notNull(), // Cleanup policy
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: 'date' }).notNull(), // Cleanup policy
 }, (table) => ({
     idempotencyOrgIdx: index("idempotency_org_idx").on(table.organizationId)
 }));
@@ -584,8 +594,8 @@ export const workerAvailability = pgTable("worker_availability", {
     workerId: text("worker_id").notNull().references(() => user.id, { onDelete: "cascade" }),
 
     // Time Range
-    startTime: timestamp("start_time").notNull(),
-    endTime: timestamp("end_time").notNull(),
+    startTime: timestamp("start_time", { withTimezone: true, mode: 'date' }).notNull(),
+    endTime: timestamp("end_time", { withTimezone: true, mode: 'date' }).notNull(),
 
     // Type of Availability
     // 'unavailable': Blocked off (e.g. "I can't work")
@@ -595,8 +605,8 @@ export const workerAvailability = pgTable("worker_availability", {
     // Optional: Recurrence (if we want "Every Monday") - Keeping it simple for V1 (Flat dates)
     // reason: text("reason"), // e.g. "Doctor appt", "Class" - purely for worker reference
 
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     availWorkerIdx: index("avail_worker_idx").on(table.workerId),
     availTimeIdx: index("avail_time_idx").on(table.startTime, table.endTime)
@@ -624,15 +634,15 @@ export const scheduledNotification = pgTable("scheduled_notifications", {
     body: text("body").notNull(),
     data: jsonb("data").default({}),
 
-    scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
-    sentAt: timestamp("sent_at", { withTimezone: true }),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true, mode: 'date' }).notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true, mode: 'date' }),
     status: text("status").notNull().default("pending"), // 'pending' | 'sent' | 'failed' | 'cancelled'
 
     attempts: integer("attempts").default(0),
     lastError: text("last_error"),
 
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).defaultNow(),
 }, (table) => ({
     pendingQueueIdx: index("idx_notifications_pending_queue").on(table.scheduledAt, table.status),
     shiftIdx: index("idx_notifications_shift").on(table.shiftId),
@@ -651,10 +661,10 @@ export const deviceToken = pgTable("device_tokens", {
     osVersion: text("os_version"),
 
     isActive: boolean("is_active").default(true),
-    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: 'date' }),
 
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).defaultNow(),
 }, (table) => ({
     userTokenUnique: uniqueIndex("idx_device_tokens_unique").on(table.userId, table.pushToken),
     activeUserIdx: index("idx_device_tokens_user").on(table.userId),
@@ -674,8 +684,8 @@ export const workerNotificationPreferences = pgTable("worker_notification_prefer
     quietHoursStart: time("quiet_hours_start"),
     quietHoursEnd: time("quiet_hours_end"),
 
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).defaultNow(),
 });
 
 export const managerNotificationPreferences = pgTable("manager_notification_preferences", {
@@ -690,8 +700,8 @@ export const managerNotificationPreferences = pgTable("manager_notification_pref
     // 'all' | 'selected'
     locationScope: text("location_scope").default("all").notNull(),
 
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).defaultNow(),
 });
 
 // Relations
@@ -716,15 +726,15 @@ export const subscription = pgTable("subscription", {
     stripeCustomerId: text("stripe_customer_id"),
     stripeSubscriptionId: text("stripe_subscription_id"),
     status: text("status"),
-    periodStart: timestamp("period_start", { mode: 'date' }),
-    periodEnd: timestamp("period_end", { mode: 'date' }),
+    periodStart: timestamp("period_start", { withTimezone: true, mode: 'date' }),
+    periodEnd: timestamp("period_end", { withTimezone: true, mode: 'date' }),
     cancelAtPeriodEnd: boolean("cancel_at_period_end"),
-    cancelAt: timestamp("cancel_at", { mode: 'date' }),
-    canceledAt: timestamp("canceled_at", { mode: 'date' }),
-    endedAt: timestamp("ended_at", { mode: 'date' }),
-    trialStart: timestamp("trial_start", { mode: 'date' }),
-    trialEnd: timestamp("trial_end", { mode: 'date' }),
+    cancelAt: timestamp("cancel_at", { withTimezone: true, mode: 'date' }),
+    canceledAt: timestamp("canceled_at", { withTimezone: true, mode: 'date' }),
+    endedAt: timestamp("ended_at", { withTimezone: true, mode: 'date' }),
+    trialStart: timestamp("trial_start", { withTimezone: true, mode: 'date' }),
+    trialEnd: timestamp("trial_end", { withTimezone: true, mode: 'date' }),
     seats: integer("seats"),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).defaultNow().notNull(),
 });

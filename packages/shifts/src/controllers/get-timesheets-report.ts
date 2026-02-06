@@ -74,10 +74,10 @@ export async function getTimesheetsReportController(
             scheduledEnd: shift.endTime,
             locationId: location.id,
             locationName: location.name,
-            clockIn: shiftAssignment.clockIn,
-            clockOut: shiftAssignment.clockOut,
+            clockIn: shiftAssignment.effectiveClockIn,
+            clockOut: shiftAssignment.effectiveClockOut,
             breakMinutes: shiftAssignment.breakMinutes,
-            grossPayCents: shiftAssignment.grossPayCents,
+            grossPayCents: shiftAssignment.estimatedCostCents,
             shiftPrice: shift.price,
             assignmentStatus: shiftAssignment.status,
         })

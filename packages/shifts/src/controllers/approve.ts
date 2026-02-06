@@ -53,57 +53,56 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
         const updates: {
             id: string;
             status: "no_show" | "completed";
-            grossPayCents: number;
-            hourlyRateSnapshot: number | null;
+            estimatedCostCents: number;
+            budgetRateSnapshot: number | null;
             breakMinutes: number;
-            adjustmentNotes: string | null;
             workerId: string; // Needed for audit
-            clockOut?: Date;
-            clockOutMethod?: string;
+            effectiveClockIn?: Date;
+            effectiveClockOut?: Date;
+            clockOutMethod?: string; // Metadata ONLY, not column
         }[] = [];
 
         for (const assign of shiftRecord.assignments) {
             // CASE: No Show (Empty times)
-            if (!assign.clockIn && !assign.clockOut) {
+            if (!assign.actualClockIn && !assign.actualClockOut) {
                 updates.push({
                     id: assign.id,
                     status: 'no_show',
-                    grossPayCents: 0,
-                    hourlyRateSnapshot: null,
+                    estimatedCostCents: 0,
+                    budgetRateSnapshot: null,
                     breakMinutes: 0,
-                    adjustmentNotes: null,
                     workerId: assign.workerId
                 });
                 continue;
             }
 
             // CASE: Missing Clock Out (Auto-Fix)
-            if (assign.clockIn && !assign.clockOut) {
+            if (assign.actualClockIn && !assign.actualClockOut) {
                 const scheduledEnd = new Date(shiftRecord.endTime);
 
                 updates.push({
                     id: assign.id,
                     status: 'completed',
-                    grossPayCents: calculateShiftPay(
-                        Math.max(0, differenceInMinutes(scheduledEnd, new Date(assign.clockIn)) - (assign.breakMinutes || 0)),
+                    estimatedCostCents: calculateShiftPay(
+                        Math.max(0, differenceInMinutes(scheduledEnd, new Date(assign.actualClockIn)) - (assign.breakMinutes || 0)),
                         shiftRecord.price || 0
                     ),
-                    hourlyRateSnapshot: shiftRecord.price || 0,
+                    budgetRateSnapshot: shiftRecord.price || 0,
                     breakMinutes: assign.breakMinutes || 0,
-                    adjustmentNotes: "System-generated clock-out due to missing worker punch.",
                     workerId: assign.workerId,
-                    clockOut: scheduledEnd,
+                    effectiveClockIn: assign.actualClockIn,
+                    effectiveClockOut: scheduledEnd,
                     clockOutMethod: 'system_auto_finalized'
                 });
                 continue;
             }
 
             // CASE: Valid (Calculate Pay)
-            if (assign.clockIn && assign.clockOut) {
+            if (assign.actualClockIn && assign.actualClockOut) {
                 const scheduledStart = new Date(shiftRecord.startTime);
                 const scheduledEnd = new Date(shiftRecord.endTime);
-                const actualClockIn = new Date(assign.clockIn);
-                const actualClockOut = new Date(assign.clockOut);
+                const actualClockIn = new Date(assign.actualClockIn);
+                const actualClockOut = new Date(assign.actualClockOut);
 
                 const START_GRACE_PERIOD = 5; // Minutes to snap start time
                 const END_GRACE_PERIOD = 5; // [FIN-004] Minutes to snap end time
@@ -157,7 +156,7 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
                 const billableMinutes = Math.max(0, totalMinutes - breakMinutes);
 
                 // [FIN-002] Rate Lock: Use snapshot, fallback to shift price
-                let rate = assign.hourlyRateSnapshot;
+                let rate = assign.budgetRateSnapshot;
                 if (rate === null || rate === undefined) {
                     // Log warning (using console for now, or logAudit if possible, but keep it simple)
                     console.warn(`[RateLock] Missing snapshot for assignment ${assign.id}. Fallback to shift price.`);
@@ -169,18 +168,19 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
 
                 let note: string | null = null;
                 // scheduledEnd already defined above
-                if (differenceInMinutes(assign.clockOut, scheduledEnd) > 15) {
+                if (differenceInMinutes(actualClockOut, scheduledEnd) > 15) {
                     note = "Flag: Clock-out >15m past schedule";
                 }
 
                 updates.push({
                     id: assign.id,
                     status: 'completed',
-                    grossPayCents: pay,
-                    hourlyRateSnapshot: rate,
+                    estimatedCostCents: pay,
+                    budgetRateSnapshot: rate,
                     breakMinutes: breakMinutes,
-                    adjustmentNotes: note,
-                    workerId: assign.workerId
+                    workerId: assign.workerId,
+                    effectiveClockIn: effectiveStart,
+                    effectiveClockOut: calculatedEnd
                 });
             }
         }
@@ -198,12 +198,14 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
                 tx.update(shiftAssignment)
                     .set({
                         status: u.status,
-                        grossPayCents: u.grossPayCents,
-                        hourlyRateSnapshot: u.hourlyRateSnapshot,
+                        estimatedCostCents: u.estimatedCostCents,
+                        budgetRateSnapshot: u.budgetRateSnapshot,
                         breakMinutes: u.breakMinutes,
-                        adjustmentNotes: u.adjustmentNotes,
-                        ...(u.clockOut ? { clockOut: u.clockOut } : {}),
-                        ...(u.clockOutMethod ? { clockOutMethod: u.clockOutMethod } : {})
+                        ...(u.effectiveClockIn ? { effectiveClockIn: u.effectiveClockIn } : {}),
+                        ...(u.effectiveClockOut ? { effectiveClockOut: u.effectiveClockOut } : {}),
+                        // Note: actualClockIn/Out are NOT updated here (they are source)
+                        // Note: managerVerifiedIn/Out are NOT updated here (requires manual manager override, this is systematic approval)
+                        updatedAt: new Date() // Add updated_at here or ensure default updates
                     })
                     .where(eq(shiftAssignment.id, u.id))
             ));
@@ -229,7 +231,7 @@ export const approveShiftController = async (shiftId: string, orgId: string, act
             userId: actorId,
             metadata: {
                 approvedAssignmentsCount: updates.length,
-                totalPayCents: updates.reduce((acc, u) => acc + u.grossPayCents, 0)
+                totalCostCents: updates.reduce((acc, u) => acc + u.estimatedCostCents, 0)
             }
         });
 
