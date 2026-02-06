@@ -24,3 +24,6 @@ export const STATUS_LABELS: Record<string, string> = {
     [SHIFT_STATUS.CANCELLED]: 'Cancelled',
     [SHIFT_STATUS.APPROVED]: 'Approved',
 };
+
+// Centralized API Configuration
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_SHIFTS_API_URL || "http://localhost:4005";
