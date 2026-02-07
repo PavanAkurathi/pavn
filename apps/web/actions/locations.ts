@@ -4,7 +4,9 @@ import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { LocationService, createLocationSchema } from "@repo/shifts/services/locations";
+// Switch to functional exports that handle geocoding
+import { createLocation as createLocationService, updateLocation as updateLocationService, deleteLocation as deleteLocationService } from "@repo/shifts-service";
+import { createLocationSchema } from "@repo/shifts-service/schemas";
 
 async function getSession() {
     return await auth.api.getSession({
@@ -22,7 +24,7 @@ export async function createLocation(data: z.infer<typeof createLocationSchema>)
     }
 
     try {
-        await LocationService.create(activeOrganizationId, data);
+        await createLocationService(data, activeOrganizationId);
         revalidatePath("/settings");
         return { success: true };
     } catch (error: any) {
@@ -41,7 +43,7 @@ export async function updateLocation(id: string, data: z.infer<typeof createLoca
     }
 
     try {
-        await LocationService.update(activeOrganizationId, id, data);
+        await updateLocationService(data, id, activeOrganizationId);
         revalidatePath("/settings");
         return { success: true };
     } catch (error: any) {
@@ -60,7 +62,7 @@ export async function deleteLocation(locationId: string) {
     }
 
     try {
-        await LocationService.delete(activeOrganizationId, locationId);
+        await deleteLocationService(locationId, activeOrganizationId);
         revalidatePath("/settings");
         return { success: true };
     } catch (error: any) {

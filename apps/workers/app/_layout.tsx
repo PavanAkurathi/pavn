@@ -7,6 +7,8 @@ import "../services/location";
 import * as Sentry from '@sentry/react-native';
 import { isRunningInExpoGo } from 'expo';
 
+import { ErrorBoundary } from "../components/ErrorBoundary";
+
 // Initialize Sentry
 Sentry.init({
     dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
@@ -16,13 +18,17 @@ Sentry.init({
 
 function RootLayout() {
 
+    // ...
+
     return (
         <SafeAreaProvider>
             <StatusBar style="light" />
-            <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="(auth)" />
-            </Stack>
+            <ErrorBoundary>
+                <Stack screenOptions={{ headerShown: false }}>
+                    <Stack.Screen name="index" />
+                    <Stack.Screen name="(auth)" />
+                </Stack>
+            </ErrorBoundary>
             <Toast />
         </SafeAreaProvider>
     );

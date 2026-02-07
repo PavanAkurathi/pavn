@@ -2,36 +2,38 @@ name: CI
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main"]
   pull_request:
     types: [opened, synchronize]
 
 jobs:
   build:
-    name: Build & Lint
+    name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
-      - name: Install Dependencies
-        run: bun install
-
-      - name: Build
-        run: bun run build
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Lint
         run: bun run lint
 
-      # Typecheck is often part of build or lint commands in some setups, 
-      # but separate check is good to be explicit.
-      # Assuming 'check-types' script exists in root package.json or handled via turbo
-      #- name: Typecheck
-      #  run: bun run check-types
+      - name: Type Check
+        run: bun run check-types
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build

@@ -1,5 +1,5 @@
 import { db } from "@repo/database";
-import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location } from "@repo/database/schema";
+import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences } from "@repo/database/schema";
 import { eq, and, lt, gt, inArray, like, sql } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
 import { fromZonedTime } from "date-fns-tz";
@@ -395,6 +395,32 @@ export const publishSchedule = async (body: any, headerOrgId: string) => {
 
         // WH-204: Schedule Notifications
         if (status === 'published' && assignmentsToInsert.length > 0) {
+
+            // OPTIMIZATION: Bulk fetch preferences to avoid N+1 inside loop
+            // Optimization for N+1: Collect all worker IDs
+            const workerIdsForNotifs = Array.from(new Set(assignmentsToInsert.map(a => a.workerId).filter(Boolean))) as string[];
+
+            const preferencesMap = new Map<string, any>(); // Using any to match the shape expected by buildNotificationSchedule which matches schema
+
+            if (workerIdsForNotifs.length > 0) {
+                const prefs = await db.query.workerNotificationPreferences.findMany({
+                    where: inArray(workerNotificationPreferences.workerId, workerIdsForNotifs)
+                });
+
+                for (const p of prefs) {
+                    preferencesMap.set(p.workerId, {
+                        nightBeforeEnabled: p.nightBeforeEnabled ?? true,
+                        sixtyMinEnabled: p.sixtyMinEnabled ?? true,
+                        fifteenMinEnabled: p.fifteenMinEnabled ?? true,
+                        shiftStartEnabled: p.shiftStartEnabled ?? true,
+                        lateWarningEnabled: p.lateWarningEnabled ?? true,
+                        quietHoursEnabled: p.quietHoursEnabled ?? false,
+                        quietHoursStart: p.quietHoursStart,
+                        quietHoursEnd: p.quietHoursEnd,
+                    });
+                }
+            }
+
             const notificationsToInsert: typeof scheduledNotification.$inferInsert[] = [];
 
             for (const assignment of assignmentsToInsert) {
@@ -403,13 +429,26 @@ export const publishSchedule = async (body: any, headerOrgId: string) => {
                 const shiftData = shiftsToInsert.find(s => s.id === assignment.shiftId);
                 if (!shiftData) continue;
 
+                // Use cached prefs or default
+                const userPrefs = preferencesMap.get(assignment.workerId) || {
+                    nightBeforeEnabled: true,
+                    sixtyMinEnabled: true,
+                    fifteenMinEnabled: true,
+                    shiftStartEnabled: true,
+                    lateWarningEnabled: true,
+                    quietHoursEnabled: false,
+                    quietHoursStart: null,
+                    quietHoursEnd: null
+                };
+
                 const schedule = await buildNotificationSchedule(
                     assignment.workerId,
                     assignment.shiftId,
                     activeOrgId,
                     shiftData.startTime as Date,
                     shiftData.title,
-                    venueName
+                    venueName,
+                    userPrefs // INJECTED
                 );
 
                 notificationsToInsert.push(...schedule);

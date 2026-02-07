@@ -133,43 +133,50 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
         }
     }
 
-    // 6. Detect Departure
-    if (!isOnSite && relevantAssignment?.actualClockIn && !relevantAssignment.actualClockOut) {
-        if (previousPing?.isOnSite) {
-            if (relevantAssignment.reviewReason !== 'left_geofence') {
-                eventType = 'departure';
-                await db.update(shiftAssignment)
-                    .set({
-                        needsReview: true,
-                        reviewReason: 'left_geofence',
-                        lastKnownPosition: sql`ST_GeogFromText(${point})`,
-                        lastKnownAt: now,
-                        updatedAt: now,
-                    })
-                    .where(eq(shiftAssignment.id, relevantAssignment.id));
+    // 6. Detect Departure & 7. Store Record (Atomic)
+    await db.transaction(async (tx) => {
+        if (!isOnSite && relevantAssignment?.actualClockIn && !relevantAssignment.actualClockOut) {
+            if (previousPing?.isOnSite) {
+                if (relevantAssignment.reviewReason !== 'left_geofence') {
+                    eventType = 'departure';
+                    await tx.update(shiftAssignment)
+                        .set({
+                            needsReview: true,
+                            reviewReason: 'left_geofence',
+                            lastKnownPosition: sql`ST_GeogFromText(${point})`,
+                            lastKnownAt: now,
+                            updatedAt: now,
+                        })
+                        .where(eq(shiftAssignment.id, relevantAssignment.id));
 
-                if (membership.user.phoneNumber) {
-                    const message = `Hi ${membership.user.name}, we detected you left the venue. You have been flagged for review. Please clock out or contact your manager.`;
-                    sendSMS(membership.user.phoneNumber, message).catch(err => console.error("SMS failed", err));
+                    // SMS sent "fire-and-forget" outside transaction to avoid blocking, 
+                    // or loosely couple here (swallowing error inside tx is fine for SMS)
+                    if (membership.user.phoneNumber) {
+                        try {
+                            const message = `Hi ${membership.user.name}, we detected you left the venue. You have been flagged for review. Please clock out or contact your manager.`;
+                            await sendSMS(membership.user.phoneNumber, message);
+                        } catch (err) {
+                            console.error("SMS failed", err);
+                        }
+                    }
                 }
             }
         }
-    }
 
-    // 7. Store Record
-    await db.insert(workerLocation).values({
-        id: nanoid(),
-        workerId,
-        shiftId: relevantShift?.id || null,
-        organizationId: orgId,
-        position: sql`ST_GeogFromText(${point})`,
-        accuracyMeters: accuracyMeters || null,
-        venuePosition: venueLocationId ? sql`(SELECT position FROM ${location} WHERE ${location.id} = ${venueLocationId})` : null,
-        distanceToVenueMeters: distanceMeters,
-        isOnSite,
-        eventType,
-        recordedAt: now,
-        deviceTimestamp: deviceTimestamp ? new Date(deviceTimestamp) : null,
+        await tx.insert(workerLocation).values({
+            id: nanoid(),
+            workerId,
+            shiftId: relevantShift?.id || null,
+            organizationId: orgId,
+            position: sql`ST_GeogFromText(${point})`,
+            accuracyMeters: accuracyMeters || null,
+            venuePosition: venueLocationId ? sql`(SELECT position FROM ${location} WHERE ${location.id} = ${venueLocationId})` : null,
+            distanceToVenueMeters: distanceMeters,
+            isOnSite,
+            eventType,
+            recordedAt: now,
+            deviceTimestamp: deviceTimestamp ? new Date(deviceTimestamp) : null,
+        });
     });
 
     return {

@@ -36,7 +36,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     appName: "Antigravity SaaS",
     secret: (() => {
         if (process.env.BETTER_AUTH_SECRET) return process.env.BETTER_AUTH_SECRET;
-        // Fallback for verification/build steps where env might be missing
+
+        // CRITICAL: Fail fast in production
+        if (process.env.NODE_ENV === "production") {
+            throw new Error("FATAL: BETTER_AUTH_SECRET is missing in production environment");
+        }
+
+        // Fallback for verification/build/dev steps where env might be missing
         console.warn("⚠️ BETTER_AUTH_SECRET is missing. Using default for build/dev.");
         return "default_build_secret_do_not_use_in_prod";
     })(),

@@ -1,6 +1,6 @@
 import { db } from "@repo/database";
 import { shiftAssignment, assignmentAuditEvent, location, shift } from "@repo/database/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { differenceInMinutes } from "date-fns";
 import { AppError } from "@repo/observability";
@@ -9,14 +9,20 @@ export class AssignmentService {
 
     // Integrity: Centralized Clock-In with Hardware Verification
     // Implements "Soft Fail": Records the punch but flags for review if outside geofence.
+    // Helper type for transaction
+    // In a real app we might export this from @repo/database
+    // Using any for now to avoid prolonged type gymnastics with Drizzle generics in this refactor
+    // equivalent to: PgTransaction<any, any, any>
     static async clockIn(
         actorId: string,
         shiftId: string,
         workerId: string,
         coordinates: { lat: number; lng: number; accuracy: number },
-        deviceMetadata: Record<string, any>
+        deviceMetadata: Record<string, any>,
+        tx?: any // Optional transaction context
     ) {
-        return await db.transaction(async (tx) => {
+        // Logic runner that takes a transaction (existing or new)
+        const execute = async (tx: any) => {
             // 1. Fetch Assignment & Shift details
             const assignment = await tx.query.shiftAssignment.findFirst({
                 where: and(
@@ -88,7 +94,11 @@ export class AssignmentService {
                 verified: isVerified,
                 message: isVerified ? "Clocked in successfully" : "Clocked in (Geofence Warning)"
             };
-        });
+        };
+
+        // If transaction provided, use it. Else start new one.
+        if (tx) return execute(tx);
+        return await db.transaction(execute);
     }
 
     // Integrity: Centralized Clock-Out
@@ -97,9 +107,10 @@ export class AssignmentService {
         shiftId: string,
         workerId: string,
         coordinates: { lat: number; lng: number; accuracy: number },
-        deviceMetadata: Record<string, any>
+        deviceMetadata: Record<string, any>,
+        tx?: any
     ) {
-        return await db.transaction(async (tx) => {
+        const execute = async (tx: any) => {
             const assignment = await tx.query.shiftAssignment.findFirst({
                 where: and(
                     eq(shiftAssignment.shiftId, shiftId),
@@ -152,7 +163,10 @@ export class AssignmentService {
             });
 
             return { success: true, timestamp: now };
-        });
+        };
+
+        if (tx) return execute(tx);
+        return await db.transaction(execute);
     }
 
     // Legacy/Admin Manual Update
@@ -162,42 +176,43 @@ export class AssignmentService {
         shiftId: string,
         workerId: string,
         data: { clockIn?: Date | null; clockOut?: Date | null; breakMinutes?: number },
-        actorRole: 'manager' | 'member' = 'member'
+        actorRole: 'manager' | 'member' = 'member',
+        tx?: any
     ) {
-        const assignment = await db.query.shiftAssignment.findFirst({
-            where: and(
-                eq(shiftAssignment.shiftId, shiftId),
-                eq(shiftAssignment.workerId, workerId)
-            )
-        });
+        const execute = async (tx: any) => {
+            const assignment = await tx.query.shiftAssignment.findFirst({
+                where: and(
+                    eq(shiftAssignment.shiftId, shiftId),
+                    eq(shiftAssignment.workerId, workerId)
+                )
+            });
 
-        if (!assignment) throw new Error("Assignment not found");
+            if (!assignment) throw new Error("Assignment not found");
 
-        const targetShift = await db.query.shift.findFirst({
-            where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
-            columns: { startTime: true }
-        });
+            const targetShift = await tx.query.shift.findFirst({
+                where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
+                columns: { startTime: true }
+            });
 
-        if (!targetShift) throw new Error("Shift not found");
+            if (!targetShift) throw new Error("Shift not found");
 
-        // Snapping Logic
-        let effectiveClockIn = data.clockIn;
-        if (data.clockIn) {
-            if (actorRole === 'member' && data.clockIn < targetShift.startTime) {
-                effectiveClockIn = targetShift.startTime;
-            } else {
-                effectiveClockIn = data.clockIn;
+            // Snapping Logic
+            let effectiveClockIn = data.clockIn;
+            if (data.clockIn) {
+                if (actorRole === 'member' && data.clockIn < targetShift.startTime) {
+                    effectiveClockIn = targetShift.startTime;
+                } else {
+                    effectiveClockIn = data.clockIn;
+                }
             }
-        }
 
-        // Calculate Duration (Minutes Only)
-        let totalWorkedMinutes = 0;
-        if (effectiveClockIn && data.clockOut) {
-            const diff = differenceInMinutes(data.clockOut, effectiveClockIn);
-            totalWorkedMinutes = Math.max(0, diff - (data.breakMinutes || 0));
-        }
+            // Calculate Duration (Minutes Only)
+            let totalWorkedMinutes = 0;
+            if (effectiveClockIn && data.clockOut) {
+                const diff = differenceInMinutes(data.clockOut, effectiveClockIn);
+                totalWorkedMinutes = Math.max(0, diff - (data.breakMinutes || 0));
+            }
 
-        await db.transaction(async (tx) => {
             await tx.update(shiftAssignment)
                 .set({
                     actualClockIn: data.clockIn,
@@ -221,7 +236,10 @@ export class AssignmentService {
                     timestamp: new Date()
                 });
             }
-        });
+        };
+
+        if (tx) return execute(tx);
+        return await db.transaction(execute);
     }
 
     static async verifyClockIn(
@@ -289,9 +307,10 @@ export class AssignmentService {
         actorId: string,
         assignmentId: string,
         status: string,
-        metadata: Record<string, any> = {}
+        metadata: Record<string, any> = {},
+        tx?: any
     ) {
-        return await db.transaction(async (tx) => {
+        const execute = async (tx: any) => {
             const current = await tx.query.shiftAssignment.findFirst({
                 where: eq(shiftAssignment.id, assignmentId)
             });
@@ -314,6 +333,9 @@ export class AssignmentService {
                 metadata,
                 timestamp: new Date()
             });
-        });
+        };
+
+        if (tx) return execute(tx);
+        return await db.transaction(execute);
     }
 }

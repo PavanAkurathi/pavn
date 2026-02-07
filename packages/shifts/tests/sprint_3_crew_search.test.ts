@@ -20,7 +20,7 @@ mock.module("@repo/database", () => ({
     }
 }));
 
-import { getCrewController } from "../src/controllers/get-crew"; // Import AFTER mocking
+import { getCrew } from "../src/services/get-crew"; // Import AFTER mocking
 
 describe("WH-116: Crew Search", () => {
     beforeEach(() => {
@@ -33,12 +33,12 @@ describe("WH-116: Crew Search", () => {
         // Ideally we'd test the 'whereClause' construction logic or use an integration test.
         // For now, let's just ensure the function runs without error and calls the DB.
 
-        await getCrewController("org_1", { search: "John", limit: 10, offset: 0 });
+        await getCrew("org_1", { search: "John", limit: 10, offset: 0 });
         expect(mockSelect).toHaveBeenCalled();
     });
 
     test("passes pagination params", async () => {
-        await getCrewController("org_1", { limit: 5, offset: 10 });
+        await getCrew("org_1", { limit: 5, offset: 10 });
         expect(mockSelect).toHaveBeenCalled();
     });
 });

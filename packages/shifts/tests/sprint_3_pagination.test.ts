@@ -16,7 +16,7 @@ mock.module("@repo/database", () => ({
 }));
 
 // 3. Import the controller AFTER mocking the module
-import { getHistoryShifts } from "../src/controllers/history";
+import { getHistoryShifts } from "../src/services/history";
 
 describe("WH-115: History Pagination", () => {
     beforeEach(() => {

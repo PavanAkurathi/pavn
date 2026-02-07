@@ -60,19 +60,23 @@ const DEFAULT_PREFERENCES: WorkerPreferences = {
 /**
  * Build notification schedule for a shift assignment
  */
+/**
+ * Build notification schedule for a shift assignment
+ */
 export async function buildNotificationSchedule(
     workerId: string,
     shiftId: string,
     organizationId: string,
     shiftStart: Date,
     shiftTitle: string,
-    venueName: string
+    venueName: string,
+    preFetchedPrefs?: WorkerPreferences // Optimization: Allow injection to avoid N+1
 ): Promise<ScheduledNotificationInsert[]> {
     const now = new Date();
     const notifications: ScheduledNotificationInsert[] = [];
 
-    // Fetch worker preferences (or use defaults)
-    const prefs = await getWorkerPreferences(workerId);
+    // Fetch worker preferences (or use injected)
+    const prefs = preFetchedPrefs || await getWorkerPreferences(workerId);
 
     // Define notification templates
     const templates: NotificationTemplate[] = [

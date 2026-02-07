@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach, spyOn } from "bun:test";
-import { approveShiftController } from "../src/controllers/approve";
+import { approveShift } from "../src/services/approve";
 
 // Mocks
 const mockQuery = mock(() => Promise.resolve<any>(null));
@@ -56,7 +56,7 @@ describe("Approve Shift - No Show Audit", () => {
         };
         mockQuery.mockResolvedValue(mockShift);
 
-        await approveShiftController("s1", "org1", "test_actor");
+        await approveShift("s1", "org1", "test_actor");
 
         // Verify Transaction
         expect(mockTransaction).toHaveBeenCalled();
