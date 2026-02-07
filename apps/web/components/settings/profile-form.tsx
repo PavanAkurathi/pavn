@@ -114,10 +114,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
                     <CardDescription>Update your personal details.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Form {...form}>
+                    <Form {...(form as any)}>
                         <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-6">
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
@@ -130,7 +130,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                 )}
                             />
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
@@ -143,7 +143,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                 )}
                             />
                             <FormField
-                                control={form.control}
+                                control={form.control as any}
                                 name="phoneNumber"
                                 render={({ field }) => (
                                     <FormItem>
@@ -205,10 +205,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                                 Enter your current password to set a new one.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <Form {...passwordForm}>
+                                        <Form {...(passwordForm as any)}>
                                             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 py-4">
                                                 <FormField
-                                                    control={passwordForm.control}
+                                                    control={passwordForm.control as any}
                                                     name="currentPassword"
                                                     render={({ field }) => (
                                                         <FormItem>
@@ -221,7 +221,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                                     )}
                                                 />
                                                 <FormField
-                                                    control={passwordForm.control}
+                                                    control={passwordForm.control as any}
                                                     name="newPassword"
                                                     render={({ field }) => (
                                                         <FormItem>
@@ -234,7 +234,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                                     )}
                                                 />
                                                 <FormField
-                                                    control={passwordForm.control}
+                                                    control={passwordForm.control as any}
                                                     name="confirmPassword"
                                                     render={({ field }) => (
                                                         <FormItem>

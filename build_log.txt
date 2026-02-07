@@ -1,0 +1,1371 @@
+$ next build
+⚠ Invalid next.config.js options detected: 
+⚠     Unrecognized key(s) in object: 'turbo' at "experimental"
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+- Experiments (use with caution):
+  · clientTraceMetadata
+  ? turbo (invalid experimental key)
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 62 errors:
+./packages/database/src/index.ts:3:1
+Module not found: Can't resolve './audit.js'
+[0m [90m 1 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./db.js"[39m[33m;[39m
+ [90m 2 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./schema.js"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./audit.js"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mexport[39m { eq[33m,[39m ne[33m,[39m and[33m,[39m or[33m,[39m desc[33m,[39m asc[33m,[39m relations[33m,[39m sql[33m,[39m inArray[33m,[39m isNull[33m,[39m not } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m[0m
+
+
+
+Import traces:
+  #1 [App Route]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/api/organizations/[orgId]/locations/route.ts
+
+  #2 [App Route]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/api/organizations/[orgId]/members/route.ts
+
+  #3 [Server Component]:
+    ./packages/database/src/index.ts
+    ./apps/web/actions/team.ts
+
+  #4 [Server Component]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./packages/database/src/index.ts:1:1
+Module not found: Can't resolve './db.js'
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./db.js"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./schema.js"[39m[33m;[39m
+ [90m 3 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./audit.js"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+
+
+Import traces:
+  #1 [App Route]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/api/organizations/[orgId]/locations/route.ts
+
+  #2 [App Route]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/api/organizations/[orgId]/members/route.ts
+
+  #3 [Server Component]:
+    ./packages/database/src/index.ts
+    ./apps/web/actions/team.ts
+
+  #4 [Server Component]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./packages/database/src/index.ts:2:1
+Module not found: Can't resolve './schema.js'
+[0m [90m 1 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./db.js"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./schema.js"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mexport[39m [33m*[39m [36mfrom[39m [32m"./audit.js"[39m[33m;[39m
+ [90m 4 |[39m
+ [90m 5 |[39m [36mexport[39m { eq[33m,[39m ne[33m,[39m and[33m,[39m or[33m,[39m desc[33m,[39m asc[33m,[39m relations[33m,[39m sql[33m,[39m inArray[33m,[39m isNull[33m,[39m not } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m[0m
+
+
+
+Import traces:
+  #1 [App Route]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/api/organizations/[orgId]/locations/route.ts
+
+  #2 [App Route]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/api/organizations/[orgId]/members/route.ts
+
+  #3 [Server Component]:
+    ./packages/database/src/index.ts
+    ./apps/web/actions/team.ts
+
+  #4 [Server Component]:
+    ./packages/database/src/index.ts
+    ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./apps/web/actions/billing.ts:7:1
+Export db doesn't exist in target module
+[0m [90m  5 |[39m [36mimport[39m { redirect } [36mfrom[39m [32m"next/navigation"[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { organization } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { eq } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m { auth } [36mfrom[39m [32m"@repo/auth"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./apps/web/actions/billing.ts
+    ./apps/web/app/(protected)/settings/[[...tab]]/page.tsx
+
+
+./apps/web/actions/invites.ts:5:1
+Export db doesn't exist in target module
+[0m [90m 3 |[39m [36mimport[39m { auth[33m,[39m sendSMS } [36mfrom[39m [32m"@repo/auth"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { member[33m,[39m user } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { revalidatePath } [36mfrom[39m [32m"next/cache"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/actions/organization.ts:5:1
+Export db doesn't exist in target module
+[0m [90m 3 |[39m [32m"use server"[39m[33m;[39m
+ [90m 4 |[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { organization } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { auth } [36mfrom[39m [32m"@repo/auth"[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/actions/team.ts:5:1
+Export db doesn't exist in target module
+[0m [90m 3 |[39m [36mimport[39m { auth[33m,[39m sendSMS } [36mfrom[39m [32m"@repo/auth"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 5 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 6 |[39m [36mimport[39m { member[33m,[39m user[33m,[39m organization[33m,[39m invitation[33m,[39m certification } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/app/(protected)/dashboard/schedule/create/page.tsx:7:1
+Export db doesn't exist in target module
+[0m [90m  5 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+ [90m  6 |[39m [36mimport[39m { redirect } [36mfrom[39m [32m"next/navigation"[39m[33m;[39m
+[31m[1m>[22m[39m[90m  7 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  8 |[39m [36mimport[39m { member[33m,[39m user } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m  9 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m ne } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 10 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/app/(protected)/layout.tsx:6:1
+Export db doesn't exist in target module
+[0m [90m 4 |[39m [36mimport[39m { auth } [36mfrom[39m [32m"@repo/auth"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m { organization[33m,[39m member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 8 |[39m [36mimport[39m { eq } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 9 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/app/(protected)/rosters/page.tsx:4:1
+Export db doesn't exist in target module
+[0m [90m 2 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { redirect } [36mfrom[39m [32m"next/navigation"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 4 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 5 |[39m [36mimport[39m { member[33m,[39m user[33m,[39m organization[33m,[39m certification } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m ne[33m,[39m inArray } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { [33mRosterTable[39m } [36mfrom[39m [32m"../../../components/roster/roster-table"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/app/(protected)/settings/[[...tab]]/page.tsx:6:1
+Export db doesn't exist in target module
+[0m [90m 4 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { redirect } [36mfrom[39m [32m"next/navigation"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 7 |[39m [36mimport[39m {
+ [90m 8 |[39m     organization [36mas[39m orgSchema[33m,[39m
+ [90m 9 |[39m     location [36mas[39m locSchema[33m,[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/app/api/organizations/[orgId]/locations/route.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m
+ [90m 2 |[39m [36mimport[39m { [33mNextRequest[39m[33m,[39m [33mNextResponse[39m } [36mfrom[39m [32m"next/server"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 6 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-route] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/app/api/organizations/[orgId]/members/route.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m
+ [90m 2 |[39m [36mimport[39m { [33mNextRequest[39m[33m,[39m [33mNextResponse[39m } [36mfrom[39m [32m"next/server"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { member[33m,[39m user } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m or } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 6 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-route] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./apps/web/app/api/webhooks/stripe/route.ts:4:1
+Export db doesn't exist in target module
+[0m [90m 2 |[39m [36mimport[39m { headers } [36mfrom[39m [32m"next/headers"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { [33mNextResponse[39m } [36mfrom[39m [32m"next/server"[39m[33m;[39m
+[31m[1m>[22m[39m[90m 4 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 5 |[39m [36mimport[39m { organization } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { eq } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m [33mStripe[39m [36mfrom[39m [32m"stripe"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-route] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+./packages/auth/src/auth.ts:9:1
+Export db doesn't exist in target module
+[0m [90m  7 |[39m [36mimport[39m [33mStripe[39m [36mfrom[39m [32m"stripe"[39m[33m;[39m
+ [90m  8 |[39m [36mimport[39m { expo } [36mfrom[39m [32m"@better-auth/expo"[39m[33m;[39m
+[31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 10 |[39m [36mimport[39m [33m*[39m [36mas[39m schema [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 11 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m
+ [90m 12 |[39m [36mimport[39m { sendOtp } [36mfrom[39m [32m"@repo/email"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-route] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  #1 [App Route]:
+    ./packages/auth/src/auth.ts
+    ./apps/web/app/api/auth/[...all]/route.ts
+
+  #2 [Server Component]:
+    ./packages/auth/src/auth.ts
+    ./apps/web/actions/team.ts
+
+  #3 [Server Component]:
+    ./packages/auth/src/auth.ts
+    ./apps/web/app/(protected)/rosters/page.tsx
+
+
+./packages/auth/src/auth.ts:9:1
+Export db doesn't exist in target module
+[0m [90m  7 |[39m [36mimport[39m [33mStripe[39m [36mfrom[39m [32m"stripe"[39m[33m;[39m
+ [90m  8 |[39m [36mimport[39m { expo } [36mfrom[39m [32m"@better-auth/expo"[39m[33m;[39m
+[31m[1m>[22m[39m[90m  9 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 10 |[39m [36mimport[39m [33m*[39m [36mas[39m schema [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 11 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m
+ [90m 12 |[39m [36mimport[39m { sendOtp } [36mfrom[39m [32m"@repo/email"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  #1 [App Route]:
+    ./packages/auth/src/auth.ts
+    ./apps/web/app/api/auth/[...all]/route.ts
+
+  #2 [Server Component]:
+    ./packages/auth/src/auth.ts
+    ./apps/web/actions/team.ts
+
+  #3 [Server Component]:
+    ./packages/auth/src/auth.ts
+    ./apps/web/app/(protected)/rosters/page.tsx
+
+
+./packages/geofence/src/services/clock-in.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/clock-in.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment[33m,[39m workerLocation[33m,[39m organization[33m,[39m location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/clock-in.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/clock-out.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/clock-out.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shiftAssignment[33m,[39m shift[33m,[39m workerLocation[33m,[39m location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m isNull[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/clock-out.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/flagged-timesheets.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/flagged-timesheets.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shiftAssignment[33m,[39m shift[33m,[39m timeCorrectionRequest } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m desc } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/flagged-timesheets.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/geocode-location.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/geocode-location.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m isNull[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { geocodeAddress } [36mfrom[39m [32m"../utils/geocode"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/geocode-location.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/ingest-location.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/ingest-location.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { workerLocation[33m,[39m shiftAssignment[33m,[39m shift[33m,[39m member[33m,[39m location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m inArray[33m,[39m desc[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/ingest-location.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/manager-override.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/manager-override.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shiftAssignment[33m,[39m shift[33m,[39m member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/manager-override.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/request-correction.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/request-correction.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { timeCorrectionRequest[33m,[39m shiftAssignment } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/request-correction.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/review-correction.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/geofence/src/services/review-correction.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { timeCorrectionRequest[33m,[39m shiftAssignment[33m,[39m member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m desc } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/review-correction.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/utils/audit.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { auditLog } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/utils/audit.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/utils/manager-notifications.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { member[33m,[39m managerNotificationPreferences[33m,[39m deviceToken } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m inArray } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { sendBatchNotifications } [36mfrom[39m [32m"@repo/notifications"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/utils/manager-notifications.ts
+    ./packages/geofence/src/services/clock-in.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/notifications/src/services/expo-push.ts:2:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [36mimport[39m { [33mExpo[39m[33m,[39m [33mExpoPushMessage[39m[33m,[39m [33mExpoPushTicket[39m } [36mfrom[39m [32m'expo-server-sdk'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { db } [36mfrom[39m [32m'@repo/database'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { deviceToken } [36mfrom[39m [32m'@repo/database/schema'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m inArray } [36mfrom[39m [32m'drizzle-orm'[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { [33mPushNotificationPayload[39m[33m,[39m [33mSendResult[39m } [36mfrom[39m [32m'../types'[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/notifications/src/services/expo-push.ts
+    ./packages/notifications/src/index.ts
+    ./packages/shifts/src/services/publish.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/notifications/src/services/scheduler.ts:2:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [36mimport[39m { subMinutes[33m,[39m subDays[33m,[39m setHours[33m,[39m setMinutes[33m,[39m isAfter[33m,[39m addMinutes } [36mfrom[39m [32m'date-fns'[39m[33m;[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { db } [36mfrom[39m [32m'@repo/database'[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { workerNotificationPreferences[33m,[39m scheduledNotification } [36mfrom[39m [32m'@repo/database/schema'[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m'drizzle-orm'[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m'nanoid'[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/notifications/src/services/scheduler.ts
+    ./packages/shifts/src/services/publish.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/observability/src/audit.ts:2:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { auditLog } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m
+ [90m 5 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/observability/src/audit.ts
+    ./packages/shifts/src/services/approve.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/approve.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/approve.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment[33m,[39m organization[33m,[39m member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m inArray[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { logAudit[33m,[39m [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/approve.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/assign.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m inArray } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/assign.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/assignments.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shiftAssignment[33m,[39m assignmentAuditEvent[33m,[39m location[33m,[39m shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m desc[33m,[39m sql[33m,[39m inArray[33m,[39m isNull } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/assignments.ts
+    ./packages/shifts/src/services/update-timesheet.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/cancel.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/cancel.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/create-location.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { geocodeAddress } [36mfrom[39m [32m"../services/geocoding"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  #1 [Server Component]:
+    ./packages/shifts/src/services/create-location.ts
+    ./apps/web/actions/locations.ts
+
+  #2 [Server Component]:
+    ./packages/shifts/src/services/create-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/deactivate-worker.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/deactivate-worker.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/delete-drafts.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/delete-drafts.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/delete-location.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  #1 [Server Component]:
+    ./packages/shifts/src/services/delete-location.ts
+    ./apps/web/actions/locations.ts
+
+  #2 [Server Component]:
+    ./packages/shifts/src/services/delete-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/drafts.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { and[33m,[39m eq[33m,[39m desc } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { mapShiftToDto } [36mfrom[39m [32m"../utils/mapper"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/drafts.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/export-timesheets.ts:4:1
+Export db doesn't exist in target module
+[0m [90m 2 |[39m [90m// Does not require 'exceljs' dependency but opens natively in Excel.[39m
+ [90m 3 |[39m
+[31m[1m>[22m[39m[90m 4 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 5 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment[33m,[39m user[33m,[39m location[33m,[39m organization } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m gte[33m,[39m lte[33m,[39m like[33m,[39m inArray[33m,[39m ilike[33m,[39m desc[33m,[39m asc } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 7 |[39m [36mimport[39m { differenceInMinutes[33m,[39m format[33m,[39m startOfWeek[33m,[39m endOfWeek[33m,[39m isSameWeek } [36mfrom[39m [32m"date-fns"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/export-timesheets.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-availability.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/get-availability.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { workerAvailability[33m,[39m member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m inArray[33m,[39m gte[33m,[39m lte } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-availability.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-by-id.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/get-by-id.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { mapShiftToDto } [36mfrom[39m [32m"../utils/mapper"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-by-id.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-crew.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { member[33m,[39m user } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m notInArray[33m,[39m and[33m,[39m ilike } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { getInitials } [36mfrom[39m [32m"../utils/formatting"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-crew.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-locations.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m desc } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-locations.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-report-filters.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift[33m,[39m location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m gte[33m,[39m lte } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-report-filters.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-settings.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { organization } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-settings.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-shift-group.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/get-shift-group.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-shift-group.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-timesheets-report.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment[33m,[39m user[33m,[39m location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m gte[33m,[39m lte[33m,[39m inArray[33m,[39m desc[33m,[39m asc[33m,[39m ilike } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { differenceInMinutes[33m,[39m format } [36mfrom[39m [32m"date-fns"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-timesheets-report.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/get-timesheets.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/get-timesheets.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { [33mTimesheetWorker[39m } [36mfrom[39m [32m"../types"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/get-timesheets.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/history.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/history.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { inArray[33m,[39m desc[33m,[39m and[33m,[39m eq } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { mapShiftToDto } [36mfrom[39m [32m"../utils/mapper"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/history.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/invite-worker.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { invitation[33m,[39m user[33m,[39m member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/invite-worker.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/overlap.ts:2:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { shiftAssignment[33m,[39m shift[33m,[39m workerAvailability } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m ne[33m,[39m lte[33m,[39m gte[33m,[39m or } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 5 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/overlap.ts
+    ./packages/shifts/src/services/assign.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/pending.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/pending.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { or[33m,[39m eq[33m,[39m and[33m,[39m inArray[33m,[39m lt[33m,[39m asc } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { mapShiftToDto } [36mfrom[39m [32m"../utils/mapper"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/pending.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/publish.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment[33m,[39m rateLimitState[33m,[39m idempotencyKey [36mas[39m idempotencyKeyTable[33m,[39m workerAvailability[33m,[39m scheduledNotification[33m,[39m location[33m,[39m workerNotificationPreferences } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m lt[33m,[39m gt[33m,[39m inArray[33m,[39m like[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { addMinutes[33m,[39m addDays } [36mfrom[39m [32m"date-fns"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/publish.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/reactivate-worker.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/reactivate-worker.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/set-availability.ts:3:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m [90m// packages/shifts/src/services/set-availability.ts[39m
+ [90m 2 |[39m
+[31m[1m>[22m[39m[90m 3 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 4 |[39m [36mimport[39m { workerAvailability } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m
+ [90m 6 |[39m [36mimport[39m { newId } [36mfrom[39m [32m"../utils/ids"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/set-availability.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/upcoming.ts:2:1
+Export db doesn't exist in target module
+[0m [90m 1 |[39m
+[31m[1m>[22m[39m[90m 2 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 3 |[39m [36mimport[39m { shift } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { inArray[33m,[39m asc[33m,[39m and[33m,[39m eq } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 5 |[39m [36mimport[39m { mapShiftToDto } [36mfrom[39m [32m"../utils/mapper"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/upcoming.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/update-location.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { location } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m [36mimport[39m { [33mLocationSchema[39m } [36mfrom[39m [32m"../schemas"[39m[33m;[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  #1 [Server Component]:
+    ./packages/shifts/src/services/update-location.ts
+    ./apps/web/actions/locations.ts
+
+  #2 [Server Component]:
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/update-settings.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { organization } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/update-settings.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/update-worker.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { member } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/update-worker.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/shifts/src/services/worker-shifts.ts:1:1
+Export db doesn't exist in target module
+[0m[31m[1m>[22m[39m[90m 1 |[39m [36mimport[39m { db } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m   |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 2 |[39m [36mimport[39m { shift[33m,[39m shiftAssignment[33m,[39m location[33m,[39m organization } [36mfrom[39m [32m"@repo/database/schema"[39m[33m;[39m
+ [90m 3 |[39m [36mimport[39m { eq[33m,[39m and[33m,[39m inArray[33m,[39m gte[33m,[39m lte[33m,[39m asc[33m,[39m desc[33m,[39m sql } [36mfrom[39m [32m"drizzle-orm"[39m[33m;[39m
+ [90m 4 |[39m[0m
+
+The export db was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import desc?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/shifts/src/services/worker-shifts.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/clock-in.ts:11:1
+Export logAudit doesn't exist in target module
+[0m [90m  9 |[39m [36mimport[39m { cancelNotificationByType } [36mfrom[39m [32m"@repo/notifications"[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m { notifyManagers } [36mfrom[39m [32m"../utils/manager-notifications"[39m[33m;[39m [90m// Ensure this util exists or is moved[39m
+[31m[1m>[22m[39m[90m 11 |[39m [36mimport[39m { logAudit } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m 12 |[39m [36mimport[39m { [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m
+ [90m 13 |[39m
+ [90m 14 |[39m [36mconst[39m [33mClockInSchema[39m [33m=[39m z[33m.[39mobject({[0m
+
+The export logAudit was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import or?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/clock-in.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+./packages/geofence/src/services/clock-out.ts:8:1
+Export logAudit doesn't exist in target module
+[0m [90m  6 |[39m [36mimport[39m { z } [36mfrom[39m [32m"zod"[39m[33m;[39m
+ [90m  7 |[39m [36mimport[39m { nanoid } [36mfrom[39m [32m"nanoid"[39m[33m;[39m
+[31m[1m>[22m[39m[90m  8 |[39m [36mimport[39m { logAudit } [36mfrom[39m [32m"@repo/database"[39m[33m;[39m
+ [90m    |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m
+ [90m  9 |[39m [36mimport[39m { applyClockOutRules[33m,[39m validateShiftTransition } [36mfrom[39m [32m"@repo/config"[39m[33m;[39m
+ [90m 10 |[39m [36mimport[39m { [33mAppError[39m } [36mfrom[39m [32m"@repo/observability"[39m[33m;[39m
+ [90m 11 |[39m[0m
+
+The export logAudit was not found in module [project]/packages/database/src/index.ts [app-rsc] (ecmascript).
+Did you mean to import or?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import trace:
+  Server Component:
+    ./packages/geofence/src/services/clock-out.ts
+    ./packages/geofence/src/index.ts
+    ./packages/shifts/src/services/geocoding.ts
+    ./packages/shifts/src/services/update-location.ts
+    ./packages/shifts/src/index.ts
+    ./apps/web/app/(protected)/dashboard/shifts/page.tsx
+
+
+    at <unknown> (./packages/database/src/index.ts:3:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./packages/database/src/index.ts:1:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./packages/database/src/index.ts:2:1)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (./apps/web/actions/billing.ts:7:1)
+    at <unknown> (./apps/web/actions/invites.ts:5:1)
+    at <unknown> (./apps/web/actions/organization.ts:5:1)
+    at <unknown> (./apps/web/actions/team.ts:5:1)
+    at <unknown> (./apps/web/app/(protected)/dashboard/schedule/create/page.tsx:7:1)
+    at <unknown> (./apps/web/app/(protected)/layout.tsx:6:1)
+    at <unknown> (./apps/web/app/(protected)/rosters/page.tsx:4:1)
+    at <unknown> (./apps/web/app/(protected)/settings/[[...tab]]/page.tsx:6:1)
+    at <unknown> (./apps/web/app/api/organizations/[orgId]/locations/route.ts:3:1)
+    at <unknown> (./apps/web/app/api/organizations/[orgId]/members/route.ts:3:1)
+    at <unknown> (./apps/web/app/api/webhooks/stripe/route.ts:4:1)
+    at <unknown> (./packages/auth/src/auth.ts:9:1)
+    at <unknown> (./packages/auth/src/auth.ts:9:1)
+    at <unknown> (./packages/geofence/src/services/clock-in.ts:3:1)
+    at <unknown> (./packages/geofence/src/services/clock-out.ts:3:1)
+    at <unknown> (./packages/geofence/src/services/flagged-timesheets.ts:3:1)
+    at <unknown> (./packages/geofence/src/services/geocode-location.ts:3:1)
+    at <unknown> (./packages/geofence/src/services/ingest-location.ts:3:1)
+    at <unknown> (./packages/geofence/src/services/manager-override.ts:3:1)
+    at <unknown> (./packages/geofence/src/services/request-correction.ts:3:1)
+    at <unknown> (./packages/geofence/src/services/review-correction.ts:3:1)
+    at <unknown> (./packages/geofence/src/utils/audit.ts:1:1)
+    at <unknown> (./packages/geofence/src/utils/manager-notifications.ts:1:1)
+    at <unknown> (./packages/notifications/src/services/expo-push.ts:2:1)
+    at <unknown> (./packages/notifications/src/services/scheduler.ts:2:1)
+    at <unknown> (./packages/observability/src/audit.ts:2:1)
+    at <unknown> (./packages/shifts/src/services/approve.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/assign.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/assignments.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/cancel.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/create-location.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/deactivate-worker.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/delete-drafts.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/delete-location.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/drafts.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/export-timesheets.ts:4:1)
+    at <unknown> (./packages/shifts/src/services/get-availability.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/get-by-id.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/get-crew.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/get-locations.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/get-report-filters.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/get-settings.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/get-shift-group.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/get-timesheets-report.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/get-timesheets.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/history.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/invite-worker.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/overlap.ts:2:1)
+    at <unknown> (./packages/shifts/src/services/pending.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/publish.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/reactivate-worker.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/set-availability.ts:3:1)
+    at <unknown> (./packages/shifts/src/services/upcoming.ts:2:1)
+    at <unknown> (./packages/shifts/src/services/update-location.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/update-settings.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/update-worker.ts:1:1)
+    at <unknown> (./packages/shifts/src/services/worker-shifts.ts:1:1)
+    at <unknown> (./packages/geofence/src/services/clock-in.ts:11:1)
+    at <unknown> (./packages/geofence/src/services/clock-out.ts:8:1)
+error: script "build" exited with code 1

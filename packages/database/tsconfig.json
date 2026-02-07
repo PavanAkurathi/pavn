@@ -4,8 +4,8 @@
         "lib": [
             "ESNext"
         ],
-        "module": "NodeNext",
-        "moduleResolution": "NodeNext",
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
         "target": "ESNext"
     },
     "include": [

@@ -1,12 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    experimental: {
-        turbo: {
-            resolveAlias: {
-                "zod/v4": "zod",
-            },
-        },
-    },
+    transpilePackages: ["@repo/database", "@repo/auth", "@repo/email", "@repo/shifts-service", "@repo/ui", "@repo/utils", "@repo/notifications", "@repo/observability"],
     webpack: (config) => {
         config.resolve.alias["zod/v4"] = "zod";
         return config;

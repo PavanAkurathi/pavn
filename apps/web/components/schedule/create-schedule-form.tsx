@@ -335,7 +335,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     return (
         <div className="max-w-5xl mx-auto py-6 space-y-8">
 
-            <Form {...form}>
+            <Form {...(form as any)}>
 
                 {/* SECTION 1: WORK LOCATION */}
                 <div className="space-y-4">
@@ -344,7 +344,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                         <CardContent className="pt-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="locationId"
                                     render={({ field }) => (
                                         <FormItem>
@@ -361,7 +361,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                                     )}
                                 />
                                 <FormField
-                                    control={form.control}
+                                    control={form.control as any}
                                     name="managerIds"
                                     render={({ field }) => (
                                         <FormItem>

@@ -36,11 +36,18 @@ const formSchema = z.object({
     type: z.enum(["unavailable", "preferred"]),
 });
 
+type FormValues = {
+    date: Date;
+    startTime: string;
+    endTime: string;
+    type: "unavailable" | "preferred";
+};
+
 export function SetAvailabilityForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             type: "unavailable",
@@ -49,7 +56,7 @@ export function SetAvailabilityForm() {
         },
     });
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values: FormValues) {
         setIsLoading(true);
         setMessage(null);
 
@@ -106,11 +113,11 @@ export function SetAvailabilityForm() {
     return (
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <h3 className="font-semibold leading-none tracking-tight mb-4">Set Availability</h3>
-            <Form {...form}>
+            <Form {...(form as any)}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
                     <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="type"
                         render={({ field }) => (
                             <FormItem>
@@ -132,7 +139,7 @@ export function SetAvailabilityForm() {
                     />
 
                     <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="date"
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
@@ -149,7 +156,7 @@ export function SetAvailabilityForm() {
 
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name="startTime"
                             render={({ field }) => (
                                 <FormItem>
@@ -162,7 +169,7 @@ export function SetAvailabilityForm() {
                             )}
                         />
                         <FormField
-                            control={form.control}
+                            control={form.control as any}
                             name="endTime"
                             render={({ field }) => (
                                 <FormItem>

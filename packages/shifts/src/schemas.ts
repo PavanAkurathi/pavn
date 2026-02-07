@@ -99,3 +99,11 @@ export const LocationSchema = z.object({
     radius: z.number().optional(),
 });
 
+
+export const createLocationSchema = z.object({
+    name: z.string().min(1).max(200),
+    address: z.string().min(5).max(500),
+    timezone: z.string().optional().default("UTC"),
+    geofenceRadius: z.number().min(50).max(1000).optional().default(150),
+    geofenceRadiusMeters: z.number().optional() // Backwards compatibility if FE sends old name
+});

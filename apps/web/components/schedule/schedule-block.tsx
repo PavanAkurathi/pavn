@@ -114,7 +114,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
             <CardContent className="space-y-6">
 
                 <FormField
-                    control={control}
+                    control={control as any}
                     name={`schedules.${index}.scheduleName`}
                     render={({ field }) => (
                         <FormItem>
@@ -131,7 +131,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <FormField
-                                control={control}
+                                control={control as any}
                                 name={`schedules.${index}.startDate`}
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
@@ -158,7 +158,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                 )}
                             />
                             <FormField
-                                control={control}
+                                control={control as any}
                                 name={`schedules.${index}.endDate`}
                                 render={({ field }) => (
                                     <FormItem className="flex flex-col">
@@ -192,7 +192,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
 
                         {/* Shift Days Selector */}
                         <FormField
-                            control={control}
+                            control={control as any}
                             name={`schedules.${index}.daysOfWeek`}
                             render={({ field }) => (
                                 <FormItem>
@@ -233,7 +233,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                 ) : (
                     // STANDARD MODE (Multi-select)
                     <FormField
-                        control={control}
+                        control={control as any}
                         name={`schedules.${index}.dates`}
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
@@ -306,7 +306,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                 {/* Section 2: Times */}
                 <div className="grid grid-cols-3 gap-4">
                     <FormField
-                        control={control}
+                        control={control as any}
                         name={`schedules.${index}.startTime`}
                         render={({ field }) => (
                             <FormItem>
@@ -321,7 +321,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     />
 
                     <FormField
-                        control={control}
+                        control={control as any}
                         name={`schedules.${index}.endTime`}
                         render={({ field }) => (
                             <FormItem>
@@ -336,7 +336,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     />
 
                     <FormField
-                        control={control}
+                        control={control as any}
                         name={`schedules.${index}.breakDuration`}
                         render={({ field }) => (
                             <FormItem>

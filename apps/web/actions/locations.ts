@@ -14,7 +14,7 @@ async function getSession() {
     });
 }
 
-export async function createLocation(data: z.infer<typeof createLocationSchema>) {
+export async function createLocation(data: z.input<typeof createLocationSchema>) {
     const session = await getSession();
     // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
     const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
@@ -33,7 +33,7 @@ export async function createLocation(data: z.infer<typeof createLocationSchema>)
     }
 }
 
-export async function updateLocation(id: string, data: z.infer<typeof createLocationSchema>) {
+export async function updateLocation(id: string, data: z.input<typeof createLocationSchema>) {
     const session = await getSession();
     // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
     const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
