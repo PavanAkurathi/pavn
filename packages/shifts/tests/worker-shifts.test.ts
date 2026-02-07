@@ -1,5 +1,5 @@
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { getWorkerShiftsController } from "../src/controllers/worker-shifts";
+import { getWorkerShifts } from "../src/services/worker-shifts";
 
 // --- Mocks ---
 
@@ -48,16 +48,16 @@ describe("GET /worker/shifts", () => {
     const TEST_ORG_ID = "ewwTgLz_yWUiuQiX4fS1E";
 
     test("returns 200 OK and empty array for unknown user", async () => {
-        const response = await getWorkerShiftsController("unknown_worker", "unknown_org", { status: 'upcoming' });
-        expect(response.status).toBe(200);
-        const data = await response.json() as any;
+        const response = await getWorkerShifts("unknown_worker", "unknown_org", { status: 'upcoming' });
+        
+        const data = response as any;
         expect(data.shifts).toEqual([]);
     });
 
     test("can fetch upcoming shifts", async () => {
-        const response = await getWorkerShiftsController(TEST_WORKER_ID, TEST_ORG_ID, { status: 'upcoming' });
-        expect(response.status).toBe(200);
-        const data = await response.json() as any;
+        const response = await getWorkerShifts(TEST_WORKER_ID, TEST_ORG_ID, { status: 'upcoming' });
+        
+        const data = response as any;
         expect(Array.isArray(data.shifts)).toBe(true);
         // If we have data, deeper checks:
         if (data.shifts.length > 0) {
@@ -69,9 +69,9 @@ describe("GET /worker/shifts", () => {
     });
 
     test("can fetch history shifts", async () => {
-        const response = await getWorkerShiftsController(TEST_WORKER_ID, TEST_ORG_ID, { status: 'history' });
-        expect(response.status).toBe(200);
-        const data = await response.json() as any;
+        const response = await getWorkerShifts(TEST_WORKER_ID, TEST_ORG_ID, { status: 'history' });
+        
+        const data = response as any;
         expect(Array.isArray(data.shifts)).toBe(true);
     });
 });

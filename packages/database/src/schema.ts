@@ -72,7 +72,10 @@ export const account = pgTable("account", {
     password: text("password"),
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
-});
+}, (table) => ({
+    accountUserIdx: index("account_user_idx").on(table.userId),
+    accountProviderIdx: index("account_provider_idx").on(table.providerId, table.accountId)
+}));
 
 export const session = pgTable("session", {
     id: text("id").primaryKey(),
@@ -267,6 +270,7 @@ export const shift = pgTable("shift", {
     shiftOrgStatusIdx: index("shift_org_status_idx").on(table.organizationId, table.status),
     shiftOrgTimeIdx: index("shift_org_time_idx").on(table.organizationId, table.startTime),
     shiftStatusTimeIdx: index("shift_status_time_idx").on(table.status, table.startTime).where(sql`status IN ('published', 'assigned', 'in-progress')`),
+    shiftLocationIdx: index("shift_location_idx").on(table.locationId),
 }));
 
 export const shiftAssignment = pgTable("shift_assignment", {
@@ -647,6 +651,7 @@ export const scheduledNotification = pgTable("scheduled_notifications", {
     pendingQueueIdx: index("idx_notifications_pending_queue").on(table.scheduledAt, table.status),
     shiftIdx: index("idx_notifications_shift").on(table.shiftId),
     workerIdx: index("idx_notifications_worker").on(table.workerId),
+    orgIdx: index("idx_notifications_org").on(table.organizationId),
 }));
 
 export const deviceToken = pgTable("device_tokens", {

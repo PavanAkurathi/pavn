@@ -1,0 +1,534 @@
+@repo/shifts-service test: bun test v1.3.4 (5eb2145b)
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/sprint_3_pagination.test.ts:
+@repo/shifts-service test: (pass) WH-115: History Pagination > passes limit and offset to database query [2.70ms]
+@repo/shifts-service test: (pass) WH-115: History Pagination > handles default/zero values correctly [0.08ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/publish.test.ts:
+@repo/shifts-service test: 63 |         .values({
+@repo/shifts-service test: 64 |             key: rateLimitKey,
+@repo/shifts-service test: 65 |             count: 1,
+@repo/shifts-service test: 66 |             windowStart: String(nowMs) // Store as string for decimal type
+@repo/shifts-service test: 67 |         })
+@repo/shifts-service test: 68 |         .onConflictDoUpdate({
+@repo/shifts-service test:               ^
+@repo/shifts-service test: TypeError: db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate is not a function. (In 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate({
+@repo/shifts-service test:     target: rateLimitState.key,
+@repo/shifts-service test:     set: {
+@repo/shifts-service test:       count: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN 1 
+@repo/shifts-service test:                     ELSE ${rateLimitState.count} + 1 
+@repo/shifts-service test:                 END`,
+@repo/shifts-service test:       windowStart: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN ${String(nowMs)} 
+@repo/shifts-service test:                     ELSE ${rateLimitState.windowStart} 
+@repo/shifts-service test:                 END`
+@repo/shifts-service test:     }
+@repo/shifts-service test:   })', 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate' is undefined)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:68:10)
+@repo/shifts-service test:       at publishSchedule (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:54:39)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:59:15)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:36:82)
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > creates ONE shift with MULTIPLE assignments for a multi-worker block [3.94ms]
+@repo/shifts-service test: 63 |         .values({
+@repo/shifts-service test: 64 |             key: rateLimitKey,
+@repo/shifts-service test: 65 |             count: 1,
+@repo/shifts-service test: 66 |             windowStart: String(nowMs) // Store as string for decimal type
+@repo/shifts-service test: 67 |         })
+@repo/shifts-service test: 68 |         .onConflictDoUpdate({
+@repo/shifts-service test:               ^
+@repo/shifts-service test: TypeError: db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate is not a function. (In 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate({
+@repo/shifts-service test:     target: rateLimitState.key,
+@repo/shifts-service test:     set: {
+@repo/shifts-service test:       count: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN 1 
+@repo/shifts-service test:                     ELSE ${rateLimitState.count} + 1 
+@repo/shifts-service test:                 END`,
+@repo/shifts-service test:       windowStart: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN ${String(nowMs)} 
+@repo/shifts-service test:                     ELSE ${rateLimitState.windowStart} 
+@repo/shifts-service test:                 END`
+@repo/shifts-service test:     }
+@repo/shifts-service test:   })', 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate' is undefined)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:68:10)
+@repo/shifts-service test:       at publishSchedule (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:54:39)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:126:15)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:103:57)
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > handles OPEN slots (null workers) correctly [0.10ms]
+@repo/shifts-service test: 160 | 
+@repo/shifts-service test: 161 |         try {
+@repo/shifts-service test: 162 |             await publishSchedule(req, orgId);
+@repo/shifts-service test: 163 |             expect(true).toBe(false); // Should not reach here
+@repo/shifts-service test: 164 |         } catch (e: any) {
+@repo/shifts-service test: 165 |             expect(e.statusCode).toBe(400);
+@repo/shifts-service test:                                        ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: 400
+@repo/shifts-service test: Received: undefined
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:165:34)
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > rejects empty dates array [0.32ms]
+@repo/shifts-service test: 187 | 
+@repo/shifts-service test: 188 |         try {
+@repo/shifts-service test: 189 |             await publishSchedule(req, orgId);
+@repo/shifts-service test: 190 |             expect(true).toBe(false);
+@repo/shifts-service test: 191 |         } catch (e: any) {
+@repo/shifts-service test: 192 |             expect(e.statusCode).toBe(400);
+@repo/shifts-service test:                                        ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: 400
+@repo/shifts-service test: Received: undefined
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:192:34)
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > rejects past dates [0.01ms]
+@repo/shifts-service test: 63 |         .values({
+@repo/shifts-service test: 64 |             key: rateLimitKey,
+@repo/shifts-service test: 65 |             count: 1,
+@repo/shifts-service test: 66 |             windowStart: String(nowMs) // Store as string for decimal type
+@repo/shifts-service test: 67 |         })
+@repo/shifts-service test: 68 |         .onConflictDoUpdate({
+@repo/shifts-service test:               ^
+@repo/shifts-service test: TypeError: db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate is not a function. (In 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate({
+@repo/shifts-service test:     target: rateLimitState.key,
+@repo/shifts-service test:     set: {
+@repo/shifts-service test:       count: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN 1 
+@repo/shifts-service test:                     ELSE ${rateLimitState.count} + 1 
+@repo/shifts-service test:                 END`,
+@repo/shifts-service test:       windowStart: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN ${String(nowMs)} 
+@repo/shifts-service test:                     ELSE ${rateLimitState.windowStart} 
+@repo/shifts-service test:                 END`
+@repo/shifts-service test:     }
+@repo/shifts-service test:   })', 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate' is undefined)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:68:10)
+@repo/shifts-service test:       at publishSchedule (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:54:39)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:228:27)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:199:46)
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > expands recurring dates (weekly) [0.12ms]
+@repo/shifts-service test: 63 |         .values({
+@repo/shifts-service test: 64 |             key: rateLimitKey,
+@repo/shifts-service test: 65 |             count: 1,
+@repo/shifts-service test: 66 |             windowStart: String(nowMs) // Store as string for decimal type
+@repo/shifts-service test: 67 |         })
+@repo/shifts-service test: 68 |         .onConflictDoUpdate({
+@repo/shifts-service test:               ^
+@repo/shifts-service test: TypeError: db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate is not a function. (In 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate({
+@repo/shifts-service test:     target: rateLimitState.key,
+@repo/shifts-service test:     set: {
+@repo/shifts-service test:       count: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN 1 
+@repo/shifts-service test:                     ELSE ${rateLimitState.count} + 1 
+@repo/shifts-service test:                 END`,
+@repo/shifts-service test:       windowStart: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN ${String(nowMs)} 
+@repo/shifts-service test:                     ELSE ${rateLimitState.windowStart} 
+@repo/shifts-service test:                 END`
+@repo/shifts-service test:     }
+@repo/shifts-service test:   })', 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate' is undefined)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:68:10)
+@repo/shifts-service test:       at publishSchedule (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:54:39)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:261:27)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/publish.test.ts:236:47)
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > expands recurring dates (on_date) [0.09ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/calculations.test.ts:
+@repo/shifts-service test: (pass) calculateShiftPay > calculates pay for exact hours
+@repo/shifts-service test: (pass) calculateShiftPay > calculates pay for partial hours (rounding up preference) [0.06ms]
+@repo/shifts-service test: (pass) calculateShiftPay > handles partial cents correctly (ceil)
+@repo/shifts-service test: (pass) calculateShiftPay > returns 0 for zero or negative time
+@repo/shifts-service test: (pass) calculateShiftPay > returns 0 for zero rate [0.01ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/upcoming.test.ts:
+@repo/shifts-service test: (pass) GET /shifts/upcoming > returns 200 OK [0.21ms]
+@repo/shifts-service test: (pass) GET /shifts/upcoming > returns only active shifts (not completed/cancelled) [0.26ms]
+@repo/shifts-service test: (pass) GET /shifts/upcoming > sorts by startTime ascending [0.38ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/middleware.test.ts:
+@repo/shifts-service test: (pass) Middleware Verification > WH-113: Adds X-Request-ID header [4.98ms]
+@repo/shifts-service test: 18 |         const app = new Hono();
+@repo/shifts-service test: 19 |         app.use("*", requestId());
+@repo/shifts-service test: 20 |         app.onError((err, c) => errorHandler(err, c)); // Fix type mismatch if needs cast?
+@repo/shifts-service test: 21 | 
+@repo/shifts-service test: 22 |         app.get("/error", () => {
+@repo/shifts-service test: 23 |             throw new AppError("Test Error", "TEST_CODE", 400, { foo: "bar" });
+@repo/shifts-service test:                        ^
+@repo/shifts-service test: AppError: Test Error
+@repo/shifts-service test:  statusCode: 400,
+@repo/shifts-service test:     details: {
+@repo/shifts-service test:   foo: "bar",
+@repo/shifts-service test: },
+@repo/shifts-service test:        code: "TEST_CODE"
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/middleware.test.ts:23:19)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:22:23)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:6:32)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/observability/src/index.ts:74:11)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/observability/src/index.ts:69:39)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:22:23)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:6:32)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/hono-base.js:301:31)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/hono-base.js:299:13)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/middleware.test.ts:26:31)
+@repo/shifts-service test: 
+@repo/shifts-service test: 25 | 
+@repo/shifts-service test: 26 |         const res = await app.request("/error");
+@repo/shifts-service test: 27 |         expect(res.status).toBe(400);
+@repo/shifts-service test: 28 | 
+@repo/shifts-service test: 29 |         const body = res as any;
+@repo/shifts-service test: 30 |         expect(body.success).toBe(false);
+@repo/shifts-service test:                                   ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: false
+@repo/shifts-service test: Received: undefined
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/middleware.test.ts:30:30)
+@repo/shifts-service test: (fail) Middleware Verification > WH-112: Standardizes AppError response [1.69ms]
+@repo/shifts-service test: 38 |         const app = new Hono();
+@repo/shifts-service test: 39 |         app.use("*", requestId());
+@repo/shifts-service test: 40 |         app.onError((err, c) => errorHandler(err, c));
+@repo/shifts-service test: 41 | 
+@repo/shifts-service test: 42 |         app.get("/panic", () => {
+@repo/shifts-service test: 43 |             throw new Error("Something exploded");
+@repo/shifts-service test:                            ^
+@repo/shifts-service test: error: Something exploded
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/middleware.test.ts:43:23)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:22:23)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:6:32)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/observability/src/index.ts:74:11)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/observability/src/index.ts:69:39)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:22:23)
+@repo/shifts-service test:       at dispatch (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/compose.js:6:32)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/hono-base.js:301:31)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/node_modules/.bun/hono@4.11.7/node_modules/hono/dist/hono-base.js:299:13)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/middleware.test.ts:46:31)
+@repo/shifts-service test: 
+@repo/shifts-service test: 44 |         });
+@repo/shifts-service test: 45 | 
+@repo/shifts-service test: 46 |         const res = await app.request("/panic");
+@repo/shifts-service test: 47 |         expect(res.status).toBe(500);
+@repo/shifts-service test: 48 |         const body = res as any;
+@repo/shifts-service test: 49 |         expect(body.code).toBe("INTERNAL_SERVER_ERROR");
+@repo/shifts-service test:                                ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: "INTERNAL_SERVER_ERROR"
+@repo/shifts-service test: Received: undefined
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/middleware.test.ts:49:27)
+@repo/shifts-service test: (fail) Middleware Verification > WH-112: Catch generic Error as 500 [0.20ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/history.test.ts:
+@repo/shifts-service test: (pass) GET /shifts/history > returns history shifts response [0.09ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/sprint_3_ghost_shifts.test.ts:
+@repo/shifts-service test: (pass) WH-114: Ghost Shift Tuning > 4h shift uses 2h minimum buffer [0.26ms]
+@repo/shifts-service test: (pass) WH-114: Ghost Shift Tuning > 12h shift uses 3h buffer (25%) [0.12ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/state-machine.test.ts:
+@repo/shifts-service test: (pass) Shift State Machine > allows valid normal flow [0.51ms]
+@repo/shifts-service test: (pass) Shift State Machine > allows cancellation from almost anywhere [0.01ms]
+@repo/shifts-service test: 16 |     });
+@repo/shifts-service test: 17 | 
+@repo/shifts-service test: 18 |     it("prevents skipping steps", () => {
+@repo/shifts-service test: 19 |         expect(() => validateShiftTransition('published', 'in-progress')).toThrow();
+@repo/shifts-service test: 20 |         expect(() => validateShiftTransition('assigned', 'completed')).toThrow();
+@repo/shifts-service test: 21 |         expect(() => validateShiftTransition('assigned', 'approved')).toThrow();
+@repo/shifts-service test:                                                                            ^
+@repo/shifts-service test: error: expect(received).toThrow()
+@repo/shifts-service test: 
+@repo/shifts-service test: Received function did not throw
+@repo/shifts-service test: Received value: undefined
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/state-machine.test.ts:21:71)
+@repo/shifts-service test: (fail) Shift State Machine > prevents skipping steps [0.02ms]
+@repo/shifts-service test: (pass) Shift State Machine > prevents back-flow [0.02ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/sprint_3_timesheet_status.test.ts:
+@repo/shifts-service test: (pass) WH-117: Timesheet Status Mapping > maps 'active' and 'assigned' to 'rostered' [0.25ms]
+@repo/shifts-service test: (pass) WH-117: Timesheet Status Mapping > maps 'completed' to 'submitted' [0.17ms]
+@repo/shifts-service test: (pass) WH-117: Timesheet Status Mapping > maps 'approved' to 'approved' [0.07ms]
+@repo/shifts-service test: 64 |             { id: "5", status: "cancelled", worker: { name: "E" } },
+@repo/shifts-service test: 65 |             { id: "6", status: "no_show", worker: { name: "F" } }
+@repo/shifts-service test: 66 |         ]);
+@repo/shifts-service test: 67 |         const res = await getShiftTimesheets("shift_1", "org_1");
+@repo/shifts-service test: 68 |         const data = res as TimesheetWorker[];
+@repo/shifts-service test: 69 |         expect(data[0]!.status).toBe("blocked");
+@repo/shifts-service test:                                      ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: "blocked"
+@repo/shifts-service test: Received: "cancelled"
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_3_timesheet_status.test.ts:69:33)
+@repo/shifts-service test: (fail) WH-117: Timesheet Status Mapping > maps 'cancelled' and 'no_show' to 'blocked' [0.52ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/sprint_4_overlap.test.ts:
+@repo/shifts-service test: 63 | 
+@repo/shifts-service test: 64 |         try {
+@repo/shifts-service test: 65 |             await publishSchedule(createRequest(body), "org1");
+@repo/shifts-service test: 66 |             expect(true).toBe(false); // Should have thrown
+@repo/shifts-service test: 67 |         } catch (e: any) {
+@repo/shifts-service test: 68 |             expect(e.name).toBe("AppError");
+@repo/shifts-service test:                                 ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: "AppError"
+@repo/shifts-service test: Received: "TypeError"
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_4_overlap.test.ts:68:28)
+@repo/shifts-service test: (fail) Publish Schedule - Overlap Detection > throws if DB conflict found [0.25ms]
+@repo/shifts-service test:  96 | 
+@repo/shifts-service test:  97 |         try {
+@repo/shifts-service test:  98 |             await publishSchedule(createRequest(body), "org1");
+@repo/shifts-service test:  99 |             expect(true).toBe(false); // Should have thrown
+@repo/shifts-service test: 100 |         } catch (e: any) {
+@repo/shifts-service test: 101 |             expect(e.name).toBe("AppError");
+@repo/shifts-service test:                                  ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: "AppError"
+@repo/shifts-service test: Received: "TypeError"
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_4_overlap.test.ts:101:28)
+@repo/shifts-service test: (fail) Publish Schedule - Overlap Detection > throws if In-Memory conflict found (Double Booking) [0.08ms]
+@repo/shifts-service test: 57 |     const rateLimitKey = `publish_schedule:${headerOrgId}`;
+@repo/shifts-service test: 58 |     const windowMs = RATE_LIMIT_WINDOW;
+@repo/shifts-service test: 59 |     const nowMs = Date.now();
+@repo/shifts-service test: 60 | 
+@repo/shifts-service test: 61 |     const [limitState] = await db
+@repo/shifts-service test: 62 |         .insert(rateLimitState)
+@repo/shifts-service test:               ^
+@repo/shifts-service test: TypeError: db.insert is not a function. (In 'db.insert(rateLimitState)', 'db.insert' is undefined)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:62:10)
+@repo/shifts-service test:       at publishSchedule (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:54:39)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_4_overlap.test.ts:129:27)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_4_overlap.test.ts:107:36)
+@repo/shifts-service test: (fail) Publish Schedule - Overlap Detection > succeeds if no overlap [0.01ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/sprint_3_crew_search.test.ts:
+@repo/shifts-service test: (pass) WH-116: Crew Search > passes search term to DB query [0.22ms]
+@repo/shifts-service test: (pass) WH-116: Crew Search > passes pagination params [0.07ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/sprint_4_audit_no_show.test.ts:
+@repo/shifts-service test: (pass) Approve Shift - No Show Audit > logs audit event when worker is marked as no_show [0.92ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/pending.test.ts:
+@repo/shifts-service test: (pass) GET /shifts/pending-approval > returns pending shifts response
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/worker-shifts.test.ts:
+@repo/shifts-service test: (pass) GET /worker/shifts > returns 200 OK and empty array for unknown user [0.37ms]
+@repo/shifts-service test: (pass) GET /worker/shifts > can fetch upcoming shifts [0.10ms]
+@repo/shifts-service test: (pass) GET /worker/shifts > can fetch history shifts [0.03ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/sprint_2_features.test.ts:
+@repo/shifts-service test: 10 | 
+@repo/shifts-service test: 11 | export const approveShift = async (shiftId: string, orgId: string, actorId: string) => {
+@repo/shifts-service test: 12 |     // 1. Get Shift & Assignments
+@repo/shifts-service test: 13 |     const result = await db.transaction(async (tx) => {
+@repo/shifts-service test: 14 |         // [SEC-003] Internal Actor Permission Validation
+@repo/shifts-service test: 15 |         const memberRecord = await tx.query.member.findFirst({
+@repo/shifts-service test:                                                  ^
+@repo/shifts-service test: TypeError: undefined is not an object (evaluating 'tx.query.member.findFirst')
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:15:45)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:13:48)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:13:29)
+@repo/shifts-service test:       at approveShift (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:11:36)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_2_features.test.ts:98:15)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_2_features.test.ts:51:74)
+@repo/shifts-service test: (fail) Sprint 2 Features (Unit) > approves shift and applies Sprint 2 business rules correctly [0.49ms]
+@repo/shifts-service test: 63 |         .values({
+@repo/shifts-service test: 64 |             key: rateLimitKey,
+@repo/shifts-service test: 65 |             count: 1,
+@repo/shifts-service test: 66 |             windowStart: String(nowMs) // Store as string for decimal type
+@repo/shifts-service test: 67 |         })
+@repo/shifts-service test: 68 |         .onConflictDoUpdate({
+@repo/shifts-service test:               ^
+@repo/shifts-service test: TypeError: db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate is not a function. (In 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate({
+@repo/shifts-service test:     target: rateLimitState.key,
+@repo/shifts-service test:     set: {
+@repo/shifts-service test:       count: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN 1 
+@repo/shifts-service test:                     ELSE ${rateLimitState.count} + 1 
+@repo/shifts-service test:                 END`,
+@repo/shifts-service test:       windowStart: sql`CASE 
+@repo/shifts-service test:                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN ${String(nowMs)} 
+@repo/shifts-service test:                     ELSE ${rateLimitState.windowStart} 
+@repo/shifts-service test:                 END`
+@repo/shifts-service test:     }
+@repo/shifts-service test:   })', 'db.insert(rateLimitState).values({
+@repo/shifts-service test:     key: rateLimitKey,
+@repo/shifts-service test:     count: 1,
+@repo/shifts-service test:     windowStart: String(nowMs)
+@repo/shifts-service test:   }).onConflictDoUpdate' is undefined)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:68:10)
+@repo/shifts-service test:       at publishSchedule (/Users/av/Documents/pavn/packages/shifts/src/services/publish.ts:54:39)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/sprint_2_features.test.ts:149:27)
+@repo/shifts-service test: (fail) Sprint 2 Features (Unit) > prevents duplicate publishing with idempotency key [0.22ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/wh126_break_enforcement.test.ts:
+@repo/shifts-service test: 78 | 
+@repo/shifts-service test: 79 |         await approveShift("s1", "org1", "test_actor");
+@repo/shifts-service test: 80 | 
+@repo/shifts-service test: 81 |         const setCall = (mockSet.mock.calls as any)[0];
+@repo/shifts-service test: 82 |         const updatePayload = setCall[0];
+@repo/shifts-service test: 83 |         expect(updatePayload.grossPayCents).toBe(8000);
+@repo/shifts-service test:                                                  ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: 8000
+@repo/shifts-service test: Received: undefined
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/wh126_break_enforcement.test.ts:83:45)
+@repo/shifts-service test: (fail) WH-126 Break Enforcement Removal > should use manager-specified break time (0 min) instead of enforcing rules [0.52ms]
+@repo/shifts-service test: 105 |         };
+@repo/shifts-service test: 106 |         mockQuery.mockResolvedValue(mockShift);
+@repo/shifts-service test: 107 | 
+@repo/shifts-service test: 108 |         await approveShift("s1", "org1", "test_actor");
+@repo/shifts-service test: 109 |         const updatePayload = (mockSet.mock.calls as any)[0][0];
+@repo/shifts-service test: 110 |         expect(updatePayload.grossPayCents).toBe(7750);
+@repo/shifts-service test:                                                   ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: 7750
+@repo/shifts-service test: Received: undefined
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/wh126_break_enforcement.test.ts:110:45)
+@repo/shifts-service test: (fail) WH-126 Break Enforcement Removal > should use manager-specified break time (15 min) even if 'illegal' [0.07ms]
+@repo/shifts-service test: 134 |         // Expect controller to throw AppError
+@repo/shifts-service test: 135 |         try {
+@repo/shifts-service test: 136 |             await approveShift("s1", "org1", "test_actor");
+@repo/shifts-service test: 137 |             expect(true).toBe(false); // Should have thrown
+@repo/shifts-service test: 138 |         } catch (e: any) {
+@repo/shifts-service test: 139 |             expect(e).toBeInstanceOf(MockAppError);
+@repo/shifts-service test:                             ^
+@repo/shifts-service test: error: expect(received).toBeInstanceOf(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected constructor: [class MockAppError extends Error]
+@repo/shifts-service test: Received value: 132 |         mockQuery.mockResolvedValue(mockShift);
+@repo/shifts-service test: 133 | 
+@repo/shifts-service test: 134 |         // Expect controller to throw AppError
+@repo/shifts-service test: 135 |         try {
+@repo/shifts-service test: 136 |             await approveShift("s1", "org1", "test_actor");
+@repo/shifts-service test: 137 |             expect(true).toBe(false); // Should have thrown
+@repo/shifts-service test:                                ^
+@repo/shifts-service test: error: expect(received).toBe(expected)
+@repo/shifts-service test: 
+@repo/shifts-service test: Expected: false
+@repo/shifts-service test: Received: true
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/wh126_break_enforcement.test.ts:137:26)
+@repo/shifts-service test: 
+@repo/shifts-service test: 
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/wh126_break_enforcement.test.ts:139:23)
+@repo/shifts-service test: (fail) WH-126 Break Enforcement Removal > should block negative break minutes [0.02ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: tests/approve-race.test.ts:
+@repo/shifts-service test: 10 | 
+@repo/shifts-service test: 11 | export const approveShift = async (shiftId: string, orgId: string, actorId: string) => {
+@repo/shifts-service test: 12 |     // 1. Get Shift & Assignments
+@repo/shifts-service test: 13 |     const result = await db.transaction(async (tx) => {
+@repo/shifts-service test: 14 |         // [SEC-003] Internal Actor Permission Validation
+@repo/shifts-service test: 15 |         const memberRecord = await tx.query.member.findFirst({
+@repo/shifts-service test:                                                  ^
+@repo/shifts-service test: TypeError: undefined is not an object (evaluating 'tx.query.member.findFirst')
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:15:45)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:13:48)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:13:29)
+@repo/shifts-service test:       at approveShift (/Users/av/Documents/pavn/packages/shifts/src/services/approve.ts:11:36)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/approve-race.test.ts:58:32)
+@repo/shifts-service test:       at <anonymous> (/Users/av/Documents/pavn/packages/shifts/tests/approve-race.test.ts:34:73)
+@repo/shifts-service test: (fail) approveShift Race Condition > successfully approves a 'completed' shift (Fixed SHIFT-001) [0.08ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: src/utils/recurrence.test.ts:
+@repo/shifts-service test: (pass) expandRecurringDates > should return base dates if recurrence is disabled
+@repo/shifts-service test: (pass) expandRecurringDates > should expand weekly recurrence for fixed weeks [1.09ms]
+@repo/shifts-service test: (pass) expandRecurringDates > should expand biweekly recurrence [0.06ms]
+@repo/shifts-service test: (pass) expandRecurringDates > should respect end date [0.09ms]
+@repo/shifts-service test: (pass) expandRecurringDates > should generate multiple days per week [0.12ms]
+@repo/shifts-service test: 
+@repo/shifts-service test: 19 tests failed:
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > creates ONE shift with MULTIPLE assignments for a multi-worker block [3.94ms]
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > handles OPEN slots (null workers) correctly [0.10ms]
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > rejects empty dates array [0.32ms]
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > rejects past dates [0.01ms]
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > expands recurring dates (weekly) [0.12ms]
+@repo/shifts-service test: (fail) Publish  (WH-131 Fix) > expands recurring dates (on_date) [0.09ms]
+@repo/shifts-service test: (fail) Middleware Verification > WH-112: Standardizes AppError response [1.69ms]
+@repo/shifts-service test: (fail) Middleware Verification > WH-112: Catch generic Error as 500 [0.20ms]
+@repo/shifts-service test: (fail) Shift State Machine > prevents skipping steps [0.02ms]
+@repo/shifts-service test: (fail) WH-117: Timesheet Status Mapping > maps 'cancelled' and 'no_show' to 'blocked' [0.52ms]
+@repo/shifts-service test: (fail) Publish Schedule - Overlap Detection > throws if DB conflict found [0.25ms]
+@repo/shifts-service test: (fail) Publish Schedule - Overlap Detection > throws if In-Memory conflict found (Double Booking) [0.08ms]
+@repo/shifts-service test: (fail) Publish Schedule - Overlap Detection > succeeds if no overlap [0.01ms]
+@repo/shifts-service test: (fail) Sprint 2 Features (Unit) > approves shift and applies Sprint 2 business rules correctly [0.49ms]
+@repo/shifts-service test: (fail) Sprint 2 Features (Unit) > prevents duplicate publishing with idempotency key [0.22ms]
+@repo/shifts-service test: (fail) WH-126 Break Enforcement Removal > should use manager-specified break time (0 min) instead of enforcing rules [0.52ms]
+@repo/shifts-service test: (fail) WH-126 Break Enforcement Removal > should use manager-specified break time (15 min) even if 'illegal' [0.07ms]
+@repo/shifts-service test: (fail) WH-126 Break Enforcement Removal > should block negative break minutes [0.02ms]
+@repo/shifts-service test: (fail) approveShift Race Condition > successfully approves a 'completed' shift (Fixed SHIFT-001) [0.08ms]
+@repo/shifts-service test: 
+@repo/shifts-service test:  32 pass
+@repo/shifts-service test:  19 fail
+@repo/shifts-service test:  67 expect() calls
+@repo/shifts-service test: Ran 51 tests across 18 files. [276.00ms]
+@repo/shifts-service test: Exited with code 1
