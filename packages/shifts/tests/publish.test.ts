@@ -5,32 +5,71 @@ import { nanoid } from "nanoid";
 
 // --- Mocks ---
 // We need to capture what is inserted to verify the structure
-const mockInsertValues = mock(() => Promise.resolve());
-const mockInsert = mock(() => ({ values: mockInsertValues }));
+// For fluent API: db.insert().values().onConflictDoUpdate().returning()
+const mockReturning = mock(() => Promise.resolve([{ count: 1, windowStart: String(Date.now()) }]));
+const mockOnConflict = mock(() => ({ returning: mockReturning }));
 
+// This mock needs to handle both:
+// 1. .values(...).onConflictDoUpdate(...).returning() [Rate Limit]
+// 2. .values(...) [Regular Insert - actually in Drizzle values() returns a promise-like object if awaited, or builder if chained]
+// In publish.ts:
+// await tx.insert(shift).values(...) -> returns Promise
+// await db.insert(rateLimitState).values(...).onConflictDoUpdate(...).returning() -> returns Promise
+
+const mockValuesChain = {
+    onConflictDoUpdate: mockOnConflict,
+    then: (resolve: any) => resolve([]), // Make it thenable for await
+};
+
+const mockInsertValues = mock(() => mockValuesChain);
+
+// Create a mock builder that returns itself for chainable methods
 const mockBuilder: any = {
-    insert: mockInsert,
+    insert: mock(() => ({
+        values: mockInsertValues
+    })),
     transaction: mock((cb) => cb(mockBuilder)), // Exec callback immediately
     query: {
         shift: { findFirst: mock(() => Promise.resolve(null)) },
-    }
+        workerAvailability: { findMany: mock(() => Promise.resolve([])) },
+        location: { findFirst: mock(() => Promise.resolve({ name: 'Test Venue' })) },
+        workerNotificationPreferences: { findMany: mock(() => Promise.resolve([])) },
+        idempotencyKey: { findFirst: mock(() => Promise.resolve(null)) }
+    },
+    select: mock(() => ({
+        from: mock(() => ({
+            innerJoin: mock(() => ({
+                where: mock(() => Promise.resolve([]))
+            }))
+        }))
+    }))
 };
 
 mock.module("@repo/database", () => ({
     db: mockBuilder,
     shift: { $inferInsert: {} },
-    shiftAssignment: { $inferInsert: {} }
+    shiftAssignment: { $inferInsert: {} },
+    rateLimitState: {},
+    idempotencyKey: {},
+    scheduledNotification: {},
+    workerAvailability: {},
+    location: {},
+    workerNotificationPreferences: {}
 }));
 
 mock.module("../src/services/overlap", () => ({
     findOverlappingAssignment: mock(() => Promise.resolve(null))
 }));
 
-describe.skip("Publish  (WH-131 Fix)", () => {
+mock.module("@repo/notifications", () => ({
+    buildNotificationSchedule: mock(() => Promise.resolve([]))
+}));
+
+
+describe("Publish  (WH-131 Fix)", () => {
 
     beforeEach(() => {
         mockInsertValues.mockClear();
-        mockInsert.mockClear();
     });
 
     test("creates ONE shift with MULTIPLE assignments for a multi-worker block", async () => {
@@ -56,34 +95,25 @@ describe.skip("Publish  (WH-131 Fix)", () => {
             })
         });
 
-        await publishSchedule(req, orgId);
+        const res = await publishSchedule(await req.json(), orgId); // Pass parsed body
 
         // Analyze calls to db.insert(table).values(...)
-        // We expect 2 insert calls: one for shifts, one for assignments
-        // But strictly checking the arguments passed to 'values'
+        // We expect inserts for rate limit, shifts, assignments, notifications, idempotency key (if enabled)
 
-        // mockInsert is called twice (once for shift, once for shiftAssignment)
-        // We need to check the data arrays passed to values()
-
-        // mockInsertValues is a mock function, calls are stored in .mock.calls
         const calls = mockInsertValues.mock.calls as any[];
-        const firstInsertCall = calls[0];
-        const secondInsertCall = calls[1];
+        // Filter out rate limit insert (count check)
+        // Rate limit insert values: { key: ..., count: ... }
+        // Shift insert values: [ { id: ... } ]
 
-        // Flatten all inserted items to find shifts and assignments
-        // The controller does: await tx.insert(shift).values(shiftsToInsert);
-        // Then: await tx.insert(shiftAssignment).values(assignmentsToInsert);
+        const shiftAndAssignmentCalls = calls.filter(args => Array.isArray(args[0]));
 
-        // We don't easily know which is which without checking the object shape or mock implementation details
-        // But we know shifts have 'capacityTotal' and assignments have 'workerId'
+        const allInserts: any[] = [];
+        for (const call of shiftAndAssignmentCalls) {
+            allInserts.push(...call[0]);
+        }
 
-        const allInserts = [
-            ...(firstInsertCall ? firstInsertCall[0] : []),
-            ...(secondInsertCall ? secondInsertCall[0] : [])
-        ];
-
-        const shifts = allInserts.filter((i: any) => i.title !== undefined); // Shifts have titles
-        const assignments = allInserts.filter((i: any) => i.workerId !== undefined); // Assignments have workerId
+        const shifts = allInserts.filter((i: any) => i.capacityTotal !== undefined); // Shifts have capacityTotal
+        const assignments = allInserts.filter((i: any) => i.workerId !== undefined && i.status === 'active'); // Assignments
 
         // EXPECTATION FOR WH-131:
         // 1 Shift created
@@ -123,15 +153,18 @@ describe.skip("Publish  (WH-131 Fix)", () => {
             })
         });
 
-        await publishSchedule(req, orgId);
+        await publishSchedule(await req.json(), orgId);
 
         const calls = mockInsertValues.mock.calls as any[];
-        const call1 = calls[0]?.[0] || [];
-        const call2 = calls[1]?.[0] || [];
+        const shiftAndAssignmentCalls = calls.filter(args => Array.isArray(args[0]));
 
-        const allInserts = [...call1, ...call2];
-        const shifts = allInserts.filter((i: any) => i.title !== undefined);
-        const assignments = allInserts.filter((i: any) => i.workerId !== undefined);
+        const allInserts: any[] = [];
+        for (const call of shiftAndAssignmentCalls) {
+            allInserts.push(...call[0]);
+        }
+
+        const shifts = allInserts.filter((i: any) => i.capacityTotal !== undefined);
+        const assignments = allInserts.filter((i: any) => i.workerId !== undefined && i.status === 'active');
 
         expect(shifts.length).toBe(1);
         expect(shifts[0].capacityTotal).toBe(3); // 1 worker + 2 open = 3 capacity
@@ -142,24 +175,21 @@ describe.skip("Publish  (WH-131 Fix)", () => {
 
     test("rejects empty dates array", async () => {
         const orgId = "org_123";
-        const req = new Request("http://localhost/api/shifts/publish", {
-            method: "POST",
-            body: JSON.stringify({
-                organizationId: orgId,
-                locationId: "loc_1",
-                timezone: "UTC",
-                schedules: [{
-                    startTime: "09:00",
-                    endTime: "17:00",
-                    dates: [], // Empty
-                    scheduleName: "Test",
-                    positions: []
-                }]
-            })
-        });
+        const body = {
+            organizationId: orgId,
+            locationId: "loc_1",
+            timezone: "UTC",
+            schedules: [{
+                startTime: "09:00",
+                endTime: "17:00",
+                dates: [], // Empty
+                scheduleName: "Test",
+                positions: []
+            }]
+        };
 
         try {
-            await publishSchedule(req, orgId);
+            await publishSchedule(body, orgId);
             expect(true).toBe(false); // Should not reach here
         } catch (e: any) {
             expect(e.statusCode).toBe(400);
@@ -169,24 +199,21 @@ describe.skip("Publish  (WH-131 Fix)", () => {
 
     test("rejects past dates", async () => {
         const orgId = "org_123";
-        const req = new Request("http://localhost/api/shifts/publish", {
-            method: "POST",
-            body: JSON.stringify({
-                organizationId: orgId,
-                locationId: "loc_1",
-                timezone: "UTC",
-                schedules: [{
-                    startTime: "09:00",
-                    endTime: "17:00",
-                    dates: ["1999-01-01"], // Definitely past
-                    scheduleName: "Past Test",
-                    positions: []
-                }]
-            })
-        });
+        const body = {
+            organizationId: orgId,
+            locationId: "loc_1",
+            timezone: "UTC",
+            schedules: [{
+                startTime: "09:00",
+                endTime: "17:00",
+                dates: ["1999-01-01"], // Definitely past
+                scheduleName: "Past Test",
+                positions: []
+            }]
+        };
 
         try {
-            await publishSchedule(req, orgId);
+            await publishSchedule(body, orgId);
             expect(true).toBe(false);
         } catch (e: any) {
             expect(e.statusCode).toBe(400);
@@ -199,68 +226,57 @@ describe.skip("Publish  (WH-131 Fix)", () => {
     test("expands recurring dates (weekly)", async () => {
         const orgId = "org_123";
         // Start on a Sunday (2026-06-01 is a Monday)
-        const req = new Request("http://localhost/api/shifts/publish", {
-            method: "POST",
-            body: JSON.stringify({
-                organizationId: orgId,
-                locationId: "loc_1",
-                timezone: "UTC",
-                recurrence: {
-                    enabled: true,
-                    pattern: 'weekly',
-                    daysOfWeek: [1, 3], // Mon, Wed
-                    endType: 'after_weeks',
-                    endAfter: 2 // 2 weeks
-                },
-                schedules: [{
-                    startTime: "09:00",
-                    endTime: "17:00",
-                    dates: ["2026-06-01"], // Monday
-                    scheduleName: "Recurring Test",
-                    positions: [{
-                        roleName: "Server",
-                        workerIds: ["w1"]
-                    }]
+        const body = {
+            organizationId: orgId,
+            locationId: "loc_1",
+            timezone: "UTC",
+            recurrence: {
+                enabled: true,
+                pattern: 'weekly',
+                daysOfWeek: [1, 3], // Mon, Wed
+                endType: 'after_weeks',
+                endAfter: 2 // 2 weeks
+            },
+            schedules: [{
+                startTime: "09:00",
+                endTime: "17:00",
+                dates: ["2026-06-01"], // Monday
+                scheduleName: "Recurring Test",
+                positions: [{
+                    roleName: "Server",
+                    workerIds: ["w1"]
                 }]
-            })
-        });
+            }]
+        };
 
-        const res = await publishSchedule(req, orgId);
-        const data: any = res;
-
-        expect(res.status).toBe(201);
+        const res = await publishSchedule(body, orgId);
         // Expect 2 weeks * 2 days = 4 shifts
-        expect(data.count).toBe(4);
+        expect(res.count).toBe(4);
     });
 
     test("expands recurring dates (on_date)", async () => {
         const orgId = "org_123";
-        const req = new Request("http://localhost/api/shifts/publish", {
-            method: "POST",
-            body: JSON.stringify({
-                organizationId: orgId,
-                locationId: "loc_1",
-                timezone: "UTC",
-                recurrence: {
-                    enabled: true,
-                    pattern: 'weekly',
-                    daysOfWeek: [5], // Friday
-                    endType: 'on_date',
-                    endDate: '2026-06-15' // Should include June 5, June 12. Skip June 19.
-                },
-                schedules: [{
-                    startTime: "09:00",
-                    endTime: "17:00",
-                    dates: ["2026-06-05"], // Friday
-                    scheduleName: "Recurring Test",
-                    positions: [{ roleName: "Cook", workerIds: ["w1"] }]
-                }]
-            })
-        });
+        const body = {
+            organizationId: orgId,
+            locationId: "loc_1",
+            timezone: "UTC",
+            recurrence: {
+                enabled: true,
+                pattern: 'weekly',
+                daysOfWeek: [5], // Friday
+                endType: 'on_date',
+                endDate: '2026-06-15' // Should include June 5, June 12. Skip June 19.
+            },
+            schedules: [{
+                startTime: "09:00",
+                endTime: "17:00",
+                dates: ["2026-06-05"], // Friday
+                scheduleName: "Recurring Test",
+                positions: [{ roleName: "Cook", workerIds: ["w1"] }]
+            }]
+        };
 
-        const res = await publishSchedule(req, orgId);
-        const data: any = res;
-        expect(res.status).toBe(201);
-        expect(data.count).toBe(2); // June 5, June 12
+        const res = await publishSchedule(body, orgId);
+        expect(res.count).toBe(2); // June 5, June 12
     });
 });

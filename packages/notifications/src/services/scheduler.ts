@@ -1,4 +1,4 @@
-import { subMinutes, subDays, setHours, setMinutes, isAfter, addMinutes } from 'date-fns';
+import { subMinutes, subDays, setHours, setMinutes, isAfter, addMinutes, format } from 'date-fns';
 import { db } from '@repo/database';
 import { workerNotificationPreferences, scheduledNotification } from '@repo/database/schema';
 import { eq, and } from 'drizzle-orm';
@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import { PushNotificationPayload } from '../types';
 
 export type NotificationType =
+    | 'assignment_created'
     | 'night_before'
     | '60_min'
     | '15_min'
@@ -32,7 +33,7 @@ interface NotificationTemplate {
     title: string;
     body: string;
     getScheduledTime: (shiftStart: Date) => Date;
-    preferenceKey: keyof WorkerPreferences;
+    preferenceKey?: keyof WorkerPreferences;
 }
 
 interface WorkerPreferences {
@@ -60,9 +61,6 @@ const DEFAULT_PREFERENCES: WorkerPreferences = {
 /**
  * Build notification schedule for a shift assignment
  */
-/**
- * Build notification schedule for a shift assignment
- */
 export async function buildNotificationSchedule(
     workerId: string,
     shiftId: string,
@@ -81,6 +79,13 @@ export async function buildNotificationSchedule(
     // Define notification templates
     const templates: NotificationTemplate[] = [
         {
+            type: 'assignment_created',
+            title: 'New Shift Scheduled',
+            body: `You've been scheduled for ${shiftTitle} at ${venueName} on ${format(shiftStart, "MMM d")} at ${format(shiftStart, "h:mm a")}`,
+            getScheduledTime: () => addMinutes(new Date(), 1), // Scheduling 1 min in future ensures it passes "isAfter(now)" check
+            // No preference key = Always send (Transactional)
+        },
+        {
             type: 'night_before',
             title: 'Shift Tomorrow',
             body: `You have a ${shiftTitle} shift at ${venueName} tomorrow. Get some rest!`,
@@ -90,7 +95,7 @@ export async function buildNotificationSchedule(
         {
             type: '60_min',
             title: 'Shift in 1 Hour',
-            body: `Your ${shiftTitle} shift at ${venueName} starts in 1 hour. Head out soon!`,
+            body: `Your shift starts in 1 hour at ${venueName}`,
             getScheduledTime: (start) => subMinutes(start, 60),
             preferenceKey: 'sixtyMinEnabled',
         },
@@ -103,29 +108,29 @@ export async function buildNotificationSchedule(
         },
         {
             type: 'shift_start',
-            title: 'Shift Started',
-            body: `Your ${shiftTitle} shift at ${venueName} has started. Clock in now.`,
+            title: 'You need to arrive',
+            body: `Arrived at ${venueName}? Clock in when ready`,
             getScheduledTime: (start) => start,
             preferenceKey: 'shiftStartEnabled',
         },
         {
             type: 'late_warning',
-            title: 'Clock In Reminder',
-            body: `You haven't clocked in yet. Contact your manager if there's an issue.`,
-            getScheduledTime: (start) => addMinutes(start, 10),
+            title: 'Forgot to Clock In?',
+            body: `Looks like you forgot to clock in for ${shiftTitle} at ${venueName}. Clock in now or contact your manager`,
+            getScheduledTime: (start) => addMinutes(start, 30),
             preferenceKey: 'lateWarningEnabled',
         },
     ];
 
     for (const template of templates) {
-        // Check if preference enabled
-        if (!prefs[template.preferenceKey]) {
+        // Check if preference enabled (if key exists)
+        if (template.preferenceKey && !prefs[template.preferenceKey]) {
             continue;
         }
 
         const scheduledAt = template.getScheduledTime(shiftStart);
 
-        // Skip if in the past
+        // Skip if in the past (Allow assignment_created to proceed even if close to boundary, but addMinutes(1) handles it)
         if (!isAfter(scheduledAt, now)) {
             continue;
         }
@@ -136,7 +141,7 @@ export async function buildNotificationSchedule(
             if (template.type === 'night_before') {
                 continue;
             }
-            // For shift-critical notifications (15_min, shift_start, late_warning), send anyway
+            // For shift-critical notifications (assignment_created, 15_min, shift_start, late_warning), send anyway
             // For 60_min, skip if in quiet hours (non-critical reminder)
             if (template.type === '60_min') {
                 continue;

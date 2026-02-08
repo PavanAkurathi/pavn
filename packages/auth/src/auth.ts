@@ -178,7 +178,7 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
                 apiVersion: "2025-12-15.clover" as any, // Match SDK version
             }),
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "whsec_placeholder",
-            createCustomerOnSignUp: true,
+            createCustomerOnSignUp: !(process.env.STRIPE_SECRET_KEY || "placeholder").includes("placeholder"),
             subscription: {
                 enabled: true,
                 plans: [

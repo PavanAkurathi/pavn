@@ -21,7 +21,7 @@ mock.module("@repo/database", () => ({
     }
 }));
 
-describe.skip("WH-117: Timesheet Status Mapping", () => {
+describe("WH-117: Timesheet Status Mapping", () => {
     beforeEach(() => {
         mockFindMany.mockClear();
         // Reset to empty array by default
@@ -66,7 +66,7 @@ describe.skip("WH-117: Timesheet Status Mapping", () => {
         ]);
         const res = await getShiftTimesheets("shift_1", "org_1");
         const data = res as TimesheetWorker[];
-        expect(data[0]!.status).toBe("blocked");
-        expect(data[1]!.status).toBe("blocked");
+        expect(data[0]!.status).toBe("cancelled");
+        expect(data[1]!.status).toBe("no-show");
     });
 });

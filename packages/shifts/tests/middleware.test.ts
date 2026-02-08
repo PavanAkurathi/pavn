@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { Hono } from "hono";
 import { requestId, errorHandler, AppError } from "@repo/observability";
 
-describe.skip("Middleware Verification", () => {
+describe("Middleware Verification", () => {
     test("WH-113: Adds X-Request-ID header", async () => {
         const app = new Hono();
         app.use("*", requestId());
@@ -26,7 +26,7 @@ describe.skip("Middleware Verification", () => {
         const res = await app.request("/error");
         expect(res.status).toBe(400);
 
-        const body = res as any;
+        const body = await res.json() as any;
         expect(body.success).toBe(false);
         expect(body.error).toBe("Test Error");
         expect(body.code).toBe("TEST_CODE");
@@ -45,7 +45,7 @@ describe.skip("Middleware Verification", () => {
 
         const res = await app.request("/panic");
         expect(res.status).toBe(500);
-        const body = res as any;
+        const body = await res.json() as any;
         expect(body.code).toBe("INTERNAL_SERVER_ERROR");
         expect(body.requestId).toBeDefined();
     });

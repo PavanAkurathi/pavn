@@ -1,0 +1,14 @@
+
+name: Submit iOS App
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  submit_ios:
+    name: Submit iOS
+    type: submit
+    params:
+      platform: ios
+      profile: production

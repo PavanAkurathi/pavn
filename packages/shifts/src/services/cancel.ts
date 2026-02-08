@@ -1,11 +1,11 @@
-import { db } from "@repo/database";
+import { db, TxOrDb } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { AppError } from "@repo/observability";
 
-export const cancelShift = async (shiftId: string, orgId: string, userId: string) => {
+export const cancelShift = async (shiftId: string, orgId: string, userId: string, tx: TxOrDb = db) => {
     // 1. Verify Shift Exists & Ownership
-    const existingShift = await db.query.shift.findFirst({
+    const existingShift = await tx.query.shift.findFirst({
         where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
         columns: { id: true, status: true }
     });
@@ -19,13 +19,13 @@ export const cancelShift = async (shiftId: string, orgId: string, userId: string
     }
 
     // 2. Update Shift Status
-    await db.update(shift)
+    await tx.update(shift)
         .set({ status: 'cancelled' })
         .where(eq(shift.id, shiftId));
 
     // 3. Update Assignments
     // We update all assignments for this shift to 'cancelled'
-    await db.update(shiftAssignment)
+    await tx.update(shiftAssignment)
         .set({ status: 'cancelled' })
         .where(eq(shiftAssignment.shiftId, shiftId));
 

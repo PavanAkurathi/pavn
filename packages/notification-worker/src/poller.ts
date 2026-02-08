@@ -1,5 +1,5 @@
 import { db } from '@repo/database';
-import { scheduledNotification } from '@repo/database/schema';
+import { scheduledNotification, shiftAssignment } from '@repo/database/schema';
 import { eq, and, lte, sql, inArray } from 'drizzle-orm';
 import { sendBatchNotifications } from '@repo/notifications';
 
@@ -33,7 +33,7 @@ export async function processNotifications() {
                 LIMIT ${BATCH_SIZE}
                 FOR UPDATE SKIP LOCKED
             )
-            RETURNING id, worker_id, title, body, data
+            RETURNING id, worker_id, title, body, data, type, shift_id
         `);
 
         // Drizzle .execute returns array of rows directly? Or dependent on driver?
@@ -45,7 +45,9 @@ export async function processNotifications() {
             worker_id: string;
             title: string;
             body: string;
-            data: unknown
+            data: unknown;
+            type: string;
+            shift_id: string;
         }>;
 
         if (rows.length === 0) {
@@ -54,9 +56,53 @@ export async function processNotifications() {
 
         console.log(`[WORKER] Processing ${rows.length} notifications`);
 
+        const validRows: typeof rows = [];
+        const skippedIds: string[] = [];
+
+        // Validation Loop
+        for (const row of rows) {
+            // WH-Notifications: "Forgot Clock-in" Validation
+            if (row.type === 'late_warning') {
+                // Check if worker has already clocked in
+                // We need to check the assignment status for this shift + worker
+                // shift_id is in the row directly now
+
+                const assignment = await db.query.shiftAssignment.findFirst({
+                    where: and(
+                        eq(shiftAssignment.shiftId, row.shift_id),
+                        eq(shiftAssignment.workerId, row.worker_id)
+                    ),
+                    columns: { status: true }
+                });
+
+                // If assignment is NOT active (meaning in-progress, completed, approved), they have clocked in.
+                // Status 'active' means they are assigned but haven't started.
+                if (assignment && assignment.status !== 'active') {
+                    console.log(`[WORKER] Skipping late_warning for ${row.worker_id}: Status is ${assignment.status}`);
+                    skippedIds.push(row.id);
+                    continue;
+                }
+            }
+
+            validRows.push(row);
+        }
+
+        // Mark Skipped as Cancelled
+        if (skippedIds.length > 0) {
+            await db.update(scheduledNotification)
+                .set({
+                    status: 'cancelled',
+                    updatedAt: new Date(),
+                    lastError: 'Skipped: Condition not met (already clocked in)'
+                })
+                .where(inArray(scheduledNotification.id, skippedIds));
+        }
+
+        if (validRows.length === 0) return;
+
         // 2. Send Batch
         const results = await sendBatchNotifications(
-            rows.map(r => ({
+            validRows.map(r => ({
                 id: r.id,
                 workerId: r.worker_id,
                 title: r.title,

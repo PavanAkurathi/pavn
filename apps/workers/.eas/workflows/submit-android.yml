@@ -1,0 +1,14 @@
+
+name: Submit Android App
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  submit_android:
+    name: Submit Android
+    type: submit
+    params:
+      platform: android
+      profile: production

@@ -39,8 +39,8 @@ export function LoginForm() {
             },
             onSuccess: () => {
                 // Track login
-                posthog.identify(email);
-                posthog.capture('login_completed', { method: 'email' });
+                // posthog.identify(email);
+                // posthog.capture('login_completed', { method: 'email' });
 
                 toast.success("Welcome back!");
                 router.push("/dashboard");

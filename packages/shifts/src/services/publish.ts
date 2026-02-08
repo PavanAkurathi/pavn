@@ -1,4 +1,4 @@
-import { db } from "@repo/database";
+import { db, TxOrDb } from "@repo/database";
 import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences } from "@repo/database/schema";
 import { eq, and, lt, gt, inArray, like, sql } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
@@ -51,7 +51,7 @@ const PublishSchema = z.object({
     }))
 });
 
-export const publishSchedule = async (body: any, headerOrgId: string) => {
+export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrDb) => {
     // WH-111: Rate Limiting
     // WH-111 / WH-140 [ARCH-005]: Persistent Rate Limiting
     const rateLimitKey = `publish_schedule:${headerOrgId}`;
@@ -374,7 +374,7 @@ export const publishSchedule = async (body: any, headerOrgId: string) => {
     const venueName = locationRecord?.name || 'the venue';
 
     // 2. Execute Batch Inserts (Atomic Transaction)
-    await db.transaction(async (tx) => {
+    const execute = async (tx: TxOrDb) => {
         if (shiftsToInsert.length > 0) {
             await tx.insert(shift).values(shiftsToInsert);
         }
@@ -464,7 +464,10 @@ export const publishSchedule = async (body: any, headerOrgId: string) => {
                 console.log(`[PUBLISH] Scheduled ${notificationsToInsert.length} notifications`);
             }
         }
-    });
+    };
+
+    if (tx) await execute(tx);
+    else await db.transaction(execute);
 
     return {
         success: true,

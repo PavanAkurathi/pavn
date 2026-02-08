@@ -17,7 +17,7 @@ mock.module("@repo/database", () => ({
     }
 }));
 
-describe.skip("WH-114: Ghost Shift Tuning", () => {
+describe("WH-114: Ghost Shift Tuning", () => {
     beforeEach(() => {
         mockFindMany.mockClear();
         shifts.length = 0;

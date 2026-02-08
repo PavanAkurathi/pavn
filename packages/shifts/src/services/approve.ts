@@ -1,6 +1,6 @@
 // packages/shifts/src/services/approve.ts
 
-import { db } from "@repo/database";
+import { db, TxOrDb } from "@repo/database";
 import { shift, shiftAssignment, organization, member } from "@repo/database/schema";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { logAudit, AppError } from "@repo/observability";
@@ -8,9 +8,9 @@ import { differenceInMinutes, addMinutes } from "date-fns";
 import { calculateShiftPay } from "../utils/calculations";
 import { validateShiftTransition, ShiftStatus } from "@repo/config";
 
-export const approveShift = async (shiftId: string, orgId: string, actorId: string) => {
+export const approveShift = async (shiftId: string, orgId: string, actorId: string, tx?: TxOrDb) => {
     // 1. Get Shift & Assignments
-    const result = await db.transaction(async (tx) => {
+    const execute = async (tx: TxOrDb) => {
         // [SEC-003] Internal Actor Permission Validation
         const memberRecord = await tx.query.member.findFirst({
             where: and(
@@ -257,7 +257,8 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
         }
 
         return { success: true };
-    });
+    };
 
-    return result;
+    if (tx) return execute(tx);
+    return db.transaction(execute);
 };

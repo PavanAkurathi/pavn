@@ -70,7 +70,7 @@ export const requestId = () => async (c: Context, next: Next) => {
     const existingId = c.req.header("x-request-id");
     const id = existingId || nanoid();
     c.set("requestId", id);
-    c.res.headers.set("X-Request-ID", id);
+    c.header("X-Request-ID", id);
     await next();
 };
 

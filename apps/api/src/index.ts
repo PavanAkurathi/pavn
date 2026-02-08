@@ -120,8 +120,14 @@ app.onError((err, c) => errorHandler(err, c));
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 // Auth routes (Better Auth handles these)
-app.on(["POST", "GET"], "/api/auth/*", (c) => {
-    return auth.handler(c.req.raw);
+app.on(["POST", "GET"], "/api/auth/*", async (c) => {
+    try {
+        console.log(`[AUTH DEBUG] Request: ${c.req.method} ${c.req.url}`);
+        return await auth.handler(c.req.raw);
+    } catch (error) {
+        console.error("[AUTH CRITICAL ERROR]", error);
+        return c.json({ error: "Internal Auth Error", details: String(error) }, 500);
+    }
 });
 
 // =============================================================================

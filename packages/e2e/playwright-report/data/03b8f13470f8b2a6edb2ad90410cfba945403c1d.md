@@ -1,0 +1,67 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - main [ref=e4]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - heading "Work Location" [level=2] [ref=e9]
+          - generic [ref=e12]:
+            - generic [ref=e14]:
+              - text: Work Location
+              - combobox [ref=e15]:
+                - text: Select work location
+                - img
+            - generic [ref=e17]:
+              - text: Onsite Managers
+              - combobox [ref=e18]:
+                - generic [ref=e20]: Select onsite managers
+                - img
+        - generic [ref=e21]:
+          - generic [ref=e22]:
+            - heading "Build your schedule" [level=2] [ref=e23]
+            - generic [ref=e24]:
+              - generic [ref=e25]: Recurring schedule
+              - switch "Recurring schedule" [ref=e26] [cursor=pointer]
+              - checkbox
+          - generic [ref=e27]:
+            - generic [ref=e30]: Date & Times
+            - generic [ref=e31]:
+              - textbox "Schedule name (optional)" [ref=e33]
+              - button "Select date(s)" [ref=e35]:
+                - generic [ref=e36]: Select date(s)
+                - img
+              - generic [ref=e37]:
+                - generic [ref=e38]:
+                  - combobox [ref=e39]:
+                    - generic: Start time
+                    - img
+                  - combobox [ref=e40]
+                - generic [ref=e41]:
+                  - combobox [ref=e42]:
+                    - generic: End time
+                    - img
+                  - combobox [ref=e43]
+                - generic [ref=e44]:
+                  - combobox [ref=e45]:
+                    - img
+                  - combobox [ref=e46]
+              - generic [ref=e47]:
+                - text: "Expected breaks: None"
+                - img [ref=e48]
+              - generic [ref=e51]:
+                - heading "Positions" [level=3] [ref=e52]
+                - button "Add position" [ref=e53]:
+                  - img
+                  - text: Add position
+          - button "+ Add Schedule" [ref=e54]:
+            - img
+            - generic [ref=e55]: + Add Schedule
+        - generic [ref=e56]:
+          - button "Cancel" [ref=e57]
+          - button "Review & Publish" [ref=e58]
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e64] [cursor=pointer]:
+    - img [ref=e65]
+```

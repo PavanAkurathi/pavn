@@ -26,3 +26,10 @@ export const db = new Proxy({} as Database, {
         return dbInstance[prop as keyof Database];
     },
 });
+
+import { ExtractTablesWithRelations } from "drizzle-orm";
+import { PgTransaction } from "drizzle-orm/pg-core";
+
+export type TxOrDb =
+    | Database
+    | PgTransaction<any, typeof schema, ExtractTablesWithRelations<typeof schema>>;

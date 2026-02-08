@@ -1,0 +1,54 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - link "Test Organization Workers Hive" [ref=e7] [cursor=pointer]:
+              - /url: /dashboard/shifts
+              - img [ref=e9]
+              - generic [ref=e13]:
+                - generic [ref=e14]: Test Organization
+                - generic [ref=e15]: Workers Hive
+            - navigation [ref=e16]:
+              - link "Shifts" [ref=e17] [cursor=pointer]:
+                - /url: /dashboard/shifts
+              - link "Rosters" [ref=e18] [cursor=pointer]:
+                - /url: /rosters
+              - link "Reports" [ref=e19] [cursor=pointer]:
+                - /url: /reports
+              - link "Availability" [ref=e20] [cursor=pointer]:
+                - /url: /dashboard/availability
+          - generic [ref=e21]:
+            - link "Create a schedule" [ref=e22] [cursor=pointer]:
+              - /url: /dashboard/schedule/create
+              - button "Create a schedule" [ref=e23]:
+                - img
+                - text: Create a schedule
+            - button "Notifications" [ref=e26]:
+              - img
+              - generic [ref=e27]: Notifications
+            - button "TE Test Admin" [ref=e28]:
+              - generic [ref=e30]: TE
+              - generic [ref=e31]: Test Admin
+              - img
+      - main [ref=e32]
+    - region "Notifications alt+T"
+  - generic [ref=e37] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e38]:
+      - img [ref=e39]
+    - generic [ref=e42]:
+      - button "Open issues overlay" [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]: "1"
+          - generic [ref=e46]: "2"
+        - generic [ref=e47]:
+          - text: Issue
+          - generic [ref=e48]: s
+      - button "Collapse issues badge" [ref=e49]:
+        - img [ref=e50]
+  - alert [ref=e52]
+```

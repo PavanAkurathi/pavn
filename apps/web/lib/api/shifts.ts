@@ -35,6 +35,10 @@ const getSecureOrgId = async (providedOrgId?: string) => {
     return activeOrgId || providedOrgId || "org_default";
 };
 
+// apps/web/lib/api/shifts.ts
+
+// apps/web/lib/api/shifts.ts
+
 export const getShifts = async ({ view, orgId }: { view: string; orgId?: string }) => {
     try {
         const activeOrgId = await getSecureOrgId(orgId);
@@ -71,7 +75,8 @@ export const getShifts = async ({ view, orgId }: { view: string; orgId?: string 
             return [];
         }
 
-        return res.json();
+        const data = await res.json();
+        return data.dateGroups || data;
     } catch (error) {
         console.error("Error fetching shifts:", error);
         return [];

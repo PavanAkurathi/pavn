@@ -33,7 +33,12 @@ mock.module("@repo/config", () => ({
 }));
 
 mock.module("@repo/observability", () => ({
-    logAudit: mockLogAudit
+    logAudit: mockLogAudit,
+    AppError: class extends Error {
+        constructor(public message: string, public code: string, public statusCode: number, public data?: any) {
+            super(message);
+        }
+    }
 }));
 
 describe("Approve Shift - No Show Audit", () => {

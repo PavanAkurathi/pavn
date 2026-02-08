@@ -98,13 +98,13 @@ export default defineConfig({
     /* Run local dev servers before starting the tests */
     webServer: [
         {
-            command: 'cd ../.. && bun run dev --filter=api',
+            command: 'cd ../.. && bun --env-file=.env run dev --filter=api',
             url: 'http://localhost:4005/health',
             reuseExistingServer: !process.env.CI,
             timeout: 120 * 1000,
         },
         {
-            command: 'cd ../../apps/web && bun run dev',
+            command: 'cd ../../apps/web && bun --env-file=../../.env run dev',
             url: 'http://localhost:3000',
             reuseExistingServer: !process.env.CI,
             timeout: 120 * 1000,

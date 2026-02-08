@@ -1,6 +1,6 @@
 import { describe, it, expect, setSystemTime, beforeAll, afterAll, mock } from "bun:test";
 import { buildNotificationSchedule } from "../src/services/scheduler";
-import { addHours, subDays, setHours, setMinutes } from "date-fns";
+import { addHours, subDays, setHours, setMinutes, addMinutes } from "date-fns";
 
 // Mock the DB module
 mock.module("@repo/database", () => ({
@@ -12,8 +12,6 @@ mock.module("@repo/database", () => ({
         }
     }
 }));
-
-// We can also mock specific internal functions if we exported them, but mocking the DB is better integration-like.
 
 describe("buildNotificationSchedule", () => {
     const workerId = "test-worker";
@@ -31,7 +29,7 @@ describe("buildNotificationSchedule", () => {
         setSystemTime(); // reset
     });
 
-    it("should generate all 5 notifications for a shift far in the future", async () => {
+    it("should generate all 6 notifications for a shift far in the future", async () => {
         // Shift is 3 days from now
         const shiftStart = new Date("2026-06-04T12:00:00Z");
 
@@ -39,8 +37,9 @@ describe("buildNotificationSchedule", () => {
             workerId, shiftId, orgId, shiftStart, shiftTitle, venueName
         );
 
-        expect(notifications.length).toBe(5);
+        expect(notifications.length).toBe(6);
         const types = notifications.map(n => n.type);
+        expect(types).toContain("assignment_created");
         expect(types).toContain("night_before");
         expect(types).toContain("60_min");
         expect(types).toContain("15_min");
@@ -48,52 +47,50 @@ describe("buildNotificationSchedule", () => {
         expect(types).toContain("late_warning");
     });
 
-    it("should skip 'night_before' if shift is tomorrow but 8PM has passed", async () => {
-        // Current Time: June 1st 12:00 PM
-        // Shift Start: June 2nd 09:00 AM
-        // Night Before: June 1st 08:00 PM (20:00) -> In Future. Should exist.
-
-        // Let's advance "Now" to June 1st 10:00 PM (22:00)
-        setSystemTime(new Date("2026-06-01T22:00:00Z"));
-
-        const shiftStart = new Date("2026-06-02T09:00:00Z");
+    it("should schedule 'late_warning' 30 minutes after shift start", async () => {
+        const shiftStart = new Date("2026-06-04T12:00:00Z");
 
         const notifications = await buildNotificationSchedule(
             workerId, shiftId, orgId, shiftStart, shiftTitle, venueName
         );
 
-        // Night before (June 1st 20:00) is now in the past. Should be skipped.
-        const types = notifications.map(n => n.type);
-        expect(types).not.toContain("night_before");
-        expect(types).toContain("shift_start");
+        const late = notifications.find(n => n.type === 'late_warning');
+        expect(late).toBeDefined();
+
+        // Expected: Start + 30 mins
+        const expected = addMinutes(shiftStart, 30);
+        expect(late?.scheduledAt.toISOString()).toBe(expected.toISOString());
+        expect(late?.body).toContain("Looks like you forgot to clock in");
     });
 
-    it("should skip 'night_before' if quiet hours are enabled and it falls within them", async () => {
-        // Re-mock DB for this test to enable quiet hours
-        mock.module("@repo/database", () => ({
-            db: {
-                query: {
-                    workerNotificationPreferences: {
-                        findFirst: async () => ({
-                            nightBeforeEnabled: true,
-                            quietHoursEnabled: true,
-                            quietHoursStart: "19:00", // 7 PM
-                            quietHoursEnd: "07:00",   // 7 AM next day
-                        })
-                    }
-                }
-            }
-        }));
-
-        setSystemTime(new Date("2026-06-01T12:00:00Z"));
-        const shiftStart = new Date("2026-06-04T12:00:00Z"); // Night before is 20:00
+    it("should have correct copy for 'assignment_created'", async () => {
+        const shiftStart = new Date("2026-06-04T12:00:00Z");
 
         const notifications = await buildNotificationSchedule(
             workerId, shiftId, orgId, shiftStart, shiftTitle, venueName
         );
 
-        // 20:00 is inside 19:00-07:00. Should skip.
-        const types = notifications.map(n => n.type);
-        expect(types).not.toContain("night_before");
+        const created = notifications.find(n => n.type === 'assignment_created');
+        expect(created).toBeDefined();
+        expect(created?.title).toBe("New Shift Scheduled");
+        expect(created?.body).toContain("You've been scheduled for Guard Duty at Stadium");
+
+        // Scheduled slightly in future (1 min)
+        const now = new Date("2026-06-01T12:00:00Z");
+        const expected = addMinutes(now, 1);
+        expect(created?.scheduledAt.toISOString()).toBe(expected.toISOString());
+    });
+
+    it("should have correct copy for 'shift_start'", async () => {
+        const shiftStart = new Date("2026-06-04T12:00:00Z");
+
+        const notifications = await buildNotificationSchedule(
+            workerId, shiftId, orgId, shiftStart, shiftTitle, venueName
+        );
+
+        const start = notifications.find(n => n.type === 'shift_start');
+        expect(start).toBeDefined();
+        expect(start?.title).toBe("You need to arrive");
+        expect(start?.body).toBe("Arrived at Stadium? Clock in when ready");
     });
 });

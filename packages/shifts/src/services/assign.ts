@@ -1,4 +1,4 @@
-import { db } from "@repo/database";
+import { db, TxOrDb } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { AppError } from "@repo/observability";
@@ -10,7 +10,7 @@ const AssignSchema = z.object({
     workerIds: z.array(z.string()).min(1)
 });
 
-export const assignWorker = async (body: any, shiftId: string, orgId: string) => {
+export const assignWorker = async (body: any, shiftId: string, orgId: string, tx: TxOrDb = db) => {
     const parseResult = AssignSchema.safeParse(body);
 
     if (!parseResult.success) {
@@ -20,7 +20,7 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string) =>
     const { workerIds } = parseResult.data;
 
     // 1. Verify Shift Exists & Ownership
-    const existingShift = await db.query.shift.findFirst({
+    const existingShift = await tx.query.shift.findFirst({
         where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
         columns: {
             id: true,
@@ -41,7 +41,7 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string) =>
     }
 
     // 2. Check for existing assignments (to avoid duplicates)
-    const existingAssignments = await db.select({ workerId: shiftAssignment.workerId })
+    const existingAssignments = await tx.select({ workerId: shiftAssignment.workerId })
         .from(shiftAssignment)
         .where(and(
             eq(shiftAssignment.shiftId, shiftId),
@@ -82,7 +82,7 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string) =>
         hourlyRateSnapshot: existingShift.price
     }));
 
-    await db.insert(shiftAssignment).values(values);
+    await tx.insert(shiftAssignment).values(values);
 
     // TODO: Notify workers
 

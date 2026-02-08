@@ -2,7 +2,7 @@ import { describe, expect, test, mock } from "bun:test";
 import { getPendingShifts } from "../src/services/pending";
 
 // --- Mocks ---
-const mockFindMany = mock(() => Promise.resolve([]));
+const mockFindMany = mock(() => Promise.resolve([] as any[]));
 
 mock.module("@repo/database", () => ({
     db: {
@@ -18,13 +18,15 @@ mock.module("@repo/database", () => ({
 
 import { Shift } from "../src/types";
 
-describe.skip("GET /shifts/pending-approval", () => {
-    // Tests disabled as they rely on mock-db which was replaced by Drizzle.
-    // Real integration tests require DB seeding.
 
+describe("GET /shifts/pending-approval", () => {
     test("returns pending shifts response", async () => {
+        mockFindMany.mockResolvedValueOnce([
+            { id: "s1", status: "completed", startTime: new Date(), endTime: new Date(), organizationId: "test_org" }
+        ]);
+
         const response = await getPendingShifts("test_org");
-        
-        // Unable to verify content without seeding
+        expect(response.length).toBe(1);
+        expect(response[0]!.id).toBe("s1");
     });
 });

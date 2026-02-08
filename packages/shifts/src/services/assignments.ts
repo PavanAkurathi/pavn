@@ -1,4 +1,4 @@
-import { db } from "@repo/database";
+import { db, TxOrDb } from "@repo/database";
 import { shiftAssignment, assignmentAuditEvent, location, shift } from "@repo/database/schema";
 import { eq, and, desc, sql, inArray, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -19,10 +19,10 @@ export class AssignmentService {
         workerId: string,
         coordinates: { lat: number; lng: number; accuracy: number },
         deviceMetadata: Record<string, any>,
-        tx?: any // Optional transaction context
+        tx?: TxOrDb // Optional transaction context
     ) {
         // Logic runner that takes a transaction (existing or new)
-        const execute = async (tx: any) => {
+        const execute = async (tx: TxOrDb) => {
             // 1. Fetch Assignment & Shift details
             const assignment = await tx.query.shiftAssignment.findFirst({
                 where: and(
@@ -108,9 +108,9 @@ export class AssignmentService {
         workerId: string,
         coordinates: { lat: number; lng: number; accuracy: number },
         deviceMetadata: Record<string, any>,
-        tx?: any
+        tx?: TxOrDb
     ) {
-        const execute = async (tx: any) => {
+        const execute = async (tx: TxOrDb) => {
             const assignment = await tx.query.shiftAssignment.findFirst({
                 where: and(
                     eq(shiftAssignment.shiftId, shiftId),
@@ -177,9 +177,9 @@ export class AssignmentService {
         workerId: string,
         data: { clockIn?: Date | null; clockOut?: Date | null; breakMinutes?: number },
         actorRole: 'manager' | 'member' = 'member',
-        tx?: any
+        tx?: TxOrDb
     ) {
-        const execute = async (tx: any) => {
+        const execute = async (tx: TxOrDb) => {
             const assignment = await tx.query.shiftAssignment.findFirst({
                 where: and(
                     eq(shiftAssignment.shiftId, shiftId),
@@ -308,9 +308,9 @@ export class AssignmentService {
         assignmentId: string,
         status: string,
         metadata: Record<string, any> = {},
-        tx?: any
+        tx?: TxOrDb
     ) {
-        const execute = async (tx: any) => {
+        const execute = async (tx: TxOrDb) => {
             const current = await tx.query.shiftAssignment.findFirst({
                 where: eq(shiftAssignment.id, assignmentId)
             });

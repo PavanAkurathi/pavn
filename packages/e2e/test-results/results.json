@@ -1,0 +1,1602 @@
+{
+  "config": {
+    "configFile": "/Users/av/Documents/pavn/packages/e2e/playwright.config.ts",
+    "rootDir": "/Users/av/Documents/pavn/packages/e2e/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 4
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "api",
+        "name": "api",
+        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/api",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "web",
+        "name": "web",
+        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "web-firefox",
+        "name": "web-firefox",
+        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "web-safari",
+        "name": "web-safari",
+        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 4
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.1",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "web/web.spec.ts",
+      "file": "web/web.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Authentication UI",
+          "file": "web/web.spec.ts",
+          "line": 30,
+          "column": 6,
+          "specs": [
+            {
+              "title": "sign in page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 3142,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:49:38.475Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-7477da9093ff824c7883",
+              "file": "web/web.spec.ts",
+              "line": 31,
+              "column": 9
+            },
+            {
+              "title": "sign up page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 3191,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:49:38.430Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-4d7a09f630b1451c3c99",
+              "file": "web/web.spec.ts",
+              "line": 39,
+              "column": 9
+            },
+            {
+              "title": "successful sign in redirects to dashboard",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 30575,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/.*dashboard.*/\u001b[39m\nReceived string:  \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/.*dashboard.*/\u001b[39m\nReceived string:  \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:49:28",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 28,
+                          "line": 49
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 47 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 48 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 49 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/.*dashboard.*/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 50 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 51 |\u001b[39m\n \u001b[90m 52 |\u001b[39m     test(\u001b[32m'invalid credentials shows error'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 28,
+                            "line": 49
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveURL\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/.*dashboard.*/\u001b[39m\nReceived string:  \u001b[31m\"\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveURL\" with timeout 5000ms\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n\n\u001b[0m \u001b[90m 47 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 48 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 49 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/.*dashboard.*/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                            \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 50 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 51 |\u001b[39m\n \u001b[90m 52 |\u001b[39m     test(\u001b[32m'invalid credentials shows error'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:49:28\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:49:38.445Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Authentication-UI-succ-464ea-n-in-redirects-to-dashboard-web/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 28,
+                        "line": 49
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-3252407307f54afc8541",
+              "file": "web/web.spec.ts",
+              "line": 46,
+              "column": 9
+            },
+            {
+              "title": "invalid credentials shows error",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 8560,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/invalid|error|failed/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/invalid|error|failed/i)\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/invalid|error|failed/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/invalid|error|failed/i)\u001b[22m\n\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:59:63",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 63,
+                          "line": 59
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m         \u001b[90m// Should show error message\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 59 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[35m/invalid|error|failed/i\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 60 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 61 |\u001b[39m\n \u001b[90m 62 |\u001b[39m     test(\u001b[32m'sign out works'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 63,
+                            "line": 59
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/invalid|error|failed/i)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/invalid|error|failed/i)\u001b[22m\n\n\n\u001b[0m \u001b[90m 57 |\u001b[39m\n \u001b[90m 58 |\u001b[39m         \u001b[90m// Should show error message\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 59 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[35m/invalid|error|failed/i\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible({ timeout\u001b[33m:\u001b[39m \u001b[35m5000\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 60 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 61 |\u001b[39m\n \u001b[90m 62 |\u001b[39m     test(\u001b[32m'sign out works'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:59:63\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:49:38.459Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Authentication-UI-invalid-credentials-shows-error-web/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Authentication-UI-invalid-credentials-shows-error-web/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 63,
+                        "line": 59
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-050ade5d770da14697a4",
+              "file": "web/web.spec.ts",
+              "line": 52,
+              "column": 9
+            },
+            {
+              "title": "sign out works",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30205,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 20,
+                            "line": 66
+                          },
+                          "message": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"user-menu\"]')\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\u001b[2m    - navigated to \"http://localhost:3000/dashboard/shifts\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 64 |\u001b[39m\n \u001b[90m 65 |\u001b[39m         \u001b[90m// Find and click sign out\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 66 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'[data-testid=\"user-menu\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 67 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'[data-testid=\"sign-out\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 68 |\u001b[39m\n \u001b[90m 69 |\u001b[39m         \u001b[90m// Should redirect to sign in\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:66:20\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:49:42.195Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Authentication-UI-sign-out-works-web/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Authentication-UI-sign-out-works-web/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-b749e801ee48fc0d7d6b",
+              "file": "web/web.spec.ts",
+              "line": 62,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Dashboard",
+          "file": "web/web.spec.ts",
+          "line": 78,
+          "column": 6,
+          "specs": [
+            {
+              "title": "dashboard shows organization name",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 27367,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-testid=\"org-name\"]')\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"org-name\"]')\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-testid=\"org-name\"]')\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"org-name\"]')\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:85:64",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 64,
+                          "line": 85
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 83 |\u001b[39m     test(\u001b[32m'dashboard shows organization name'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 84 |\u001b[39m         \u001b[90m// Should display org name somewhere\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 85 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid=\"org-name\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 86 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 87 |\u001b[39m\n \u001b[90m 88 |\u001b[39m     test(\u001b[32m'dashboard shows navigation'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 64,
+                            "line": 85
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-testid=\"org-name\"]')\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\"org-name\"]')\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n\n\u001b[0m \u001b[90m 83 |\u001b[39m     test(\u001b[32m'dashboard shows organization name'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 84 |\u001b[39m         \u001b[90m// Should display org name somewhere\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 85 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'[data-testid=\"org-name\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 86 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 87 |\u001b[39m\n \u001b[90m 88 |\u001b[39m     test(\u001b[32m'dashboard shows navigation'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:85:64\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:49:42.238Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Dashboard-dashboard-shows-organization-name-web/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 64,
+                        "line": 85
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-47e5743c2f86be4fd94c",
+              "file": "web/web.spec.ts",
+              "line": 83,
+              "column": 9
+            },
+            {
+              "title": "dashboard shows navigation",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 20819,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('link', { name: /schedule/i })\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /schedule/i })\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('link', { name: /schedule/i })\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /schedule/i })\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:90:69",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 69,
+                          "line": 90
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 88 |\u001b[39m     test(\u001b[32m'dashboard shows navigation'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 89 |\u001b[39m         \u001b[90m// Check main navigation items\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 90 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'link'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/schedule/i\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 91 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'link'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/crew|workers/i\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 92 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'link'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/timesheets/i\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 69,
+                            "line": 90
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('link', { name: /schedule/i })\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('link', { name: /schedule/i })\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n\n\u001b[0m \u001b[90m 88 |\u001b[39m     test(\u001b[32m'dashboard shows navigation'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 89 |\u001b[39m         \u001b[90m// Check main navigation items\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 90 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'link'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/schedule/i\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 91 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'link'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/crew|workers/i\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 92 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByRole(\u001b[32m'link'\u001b[39m\u001b[33m,\u001b[39m { name\u001b[33m:\u001b[39m \u001b[35m/timesheets/i\u001b[39m }))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m 93 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:90:69\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:49:49.432Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Dashboard-dashboard-shows-navigation-web/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Dashboard-dashboard-shows-navigation-web/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 69,
+                        "line": 90
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-81e20c839a94b4476107",
+              "file": "web/web.spec.ts",
+              "line": 88,
+              "column": 9
+            },
+            {
+              "title": "dashboard shows upcoming shifts widget",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 17028,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByText(/upcoming/i)\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/upcoming/i)\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByText(/upcoming/i)\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/upcoming/i)\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:96:51",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 51,
+                          "line": 96
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 94 |\u001b[39m\n \u001b[90m 95 |\u001b[39m     test(\u001b[32m'dashboard shows upcoming shifts widget'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 96 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[35m/upcoming/i\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 97 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 98 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 99 |\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 51,
+                            "line": 96
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByText(/upcoming/i)\nExpected: visible\nReceived: undefined\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/upcoming/i)\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n\n\u001b[0m \u001b[90m 94 |\u001b[39m\n \u001b[90m 95 |\u001b[39m     test(\u001b[32m'dashboard shows upcoming shifts widget'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 96 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mgetByText(\u001b[35m/upcoming/i\u001b[39m))\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 97 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 98 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 99 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:96:51\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:14.662Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Dashboard-dashboard-shows-upcoming-shifts-widget-web/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Dashboard-dashboard-shows-upcoming-shifts-widget-web/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 51,
+                        "line": 96
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-1f563c26e19b393e8602",
+              "file": "web/web.spec.ts",
+              "line": 95,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Schedule Management",
+          "file": "web/web.spec.ts",
+          "line": 104,
+          "column": 6,
+          "specs": [
+            {
+              "title": "schedule page loads",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 1,
+                      "status": "passed",
+                      "duration": 30275,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:14.593Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-f6b33e7daf5f68107f62",
+              "file": "web/web.spec.ts",
+              "line": 110,
+              "column": 9
+            },
+            {
+              "title": "can create new shift",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 3,
+                      "status": "timedOut",
+                      "duration": 31165,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 20,
+                            "line": 116
+                          },
+                          "message": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"create-shift\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 114 |\u001b[39m     test(\u001b[32m'can create new shift'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 115 |\u001b[39m         \u001b[90m// Click create shift button\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 116 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'[data-testid=\"create-shift\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 117 |\u001b[39m\n \u001b[90m 118 |\u001b[39m         \u001b[90m// Fill shift form\u001b[39m\n \u001b[90m 119 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"title\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'E2E Test Shift'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:116:20\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:15.814Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Schedule-Management-can-create-new-shift-web/test-failed-1.png"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Schedule-Management-can-create-new-shift-web/error-context.md"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-d29fc8676ebe78fc91a4",
+              "file": "web/web.spec.ts",
+              "line": 114,
+              "column": 9
+            },
+            {
+              "title": "can view shift details",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 27945,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:17.149Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-4c0bca77474bcbc9dec5",
+              "file": "web/web.spec.ts",
+              "line": 132,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Roster Management",
+          "file": "web/web.spec.ts",
+          "line": 147,
+          "column": 6,
+          "specs": [
+            {
+              "title": "roster page loads",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 9,
+                      "parallelIndex": 2,
+                      "status": "timedOut",
+                      "duration": 40253,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:148:10",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 10,
+                          "line": 148
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 146 |\u001b[39m\n \u001b[90m 147 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Roster Management'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m     |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 10,
+                            "line": 148
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n\u001b[0m \u001b[90m 146 |\u001b[39m\n \u001b[90m 147 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Roster Management'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m     |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:148:10\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:34.979Z",
+                      "annotations": [],
+                      "attachments": [],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 10,
+                        "line": 148
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-3c2115b5042a9c83a858",
+              "file": "web/web.spec.ts",
+              "line": 153,
+              "column": 9
+            },
+            {
+              "title": "can search roster members",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 1,
+                      "status": "timedOut",
+                      "duration": 35723,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:148:10",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 10,
+                          "line": 148
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 146 |\u001b[39m\n \u001b[90m 147 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Roster Management'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m     |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 10,
+                            "line": 148
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n\u001b[0m \u001b[90m 146 |\u001b[39m\n \u001b[90m 147 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Roster Management'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m     |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:148:10\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 20,
+                            "line": 150
+                          },
+                          "message": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href*=\"rosters\"]')\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n\n\u001b[0m \u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 152 |\u001b[39m\n \u001b[90m 153 |\u001b[39m     test(\u001b[32m'roster page loads'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:150:20\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:45.715Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Roster-Management-can-search-roster-members-web/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 10,
+                        "line": 148
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-7afd880744c9fe490c85",
+              "file": "web/web.spec.ts",
+              "line": 157,
+              "column": 9
+            },
+            {
+              "title": "can invite new worker",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 8,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 35595,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:148:10",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 10,
+                          "line": 148
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 146 |\u001b[39m\n \u001b[90m 147 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Roster Management'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m     |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 10,
+                            "line": 148
+                          },
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n\u001b[0m \u001b[90m 146 |\u001b[39m\n \u001b[90m 147 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Roster Management'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m     |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n \u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:148:10\u001b[22m"
+                        },
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 20,
+                            "line": 150
+                          },
+                          "message": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href*=\"rosters\"]')\u001b[22m\n\u001b[2m    - waiting for\" http://localhost:3000/dashboard/shifts\" navigation to finish...\u001b[22m\n\n\n\u001b[0m \u001b[90m 148 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 149 |\u001b[39m         \u001b[36mawait\u001b[39m signIn(page)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 150 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"rosters\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 151 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 152 |\u001b[39m\n \u001b[90m 153 |\u001b[39m     test(\u001b[32m'roster page loads'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:150:20\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:46.030Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Roster-Management-can-invite-new-worker-web/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 10,
+                        "line": 148
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-8346d6fbfdc79e30ab15",
+              "file": "web/web.spec.ts",
+              "line": 167,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Timesheets",
+          "file": "web/web.spec.ts",
+          "line": 182,
+          "column": 6,
+          "specs": [
+            {
+              "title": "timesheets page loads",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 10,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 28820,
+                      "error": {
+                        "message": "Error: page.waitForURL: net::ERR_ABORTED; maybe frame was detached?\n=========================== logs ===========================\nwaiting for navigation to \"**/dashboard**\" until \"load\"\n============================================================",
+                        "stack": "Error: page.waitForURL: net::ERR_ABORTED; maybe frame was detached?\n=========================== logs ===========================\nwaiting for navigation to \"**/dashboard**\" until \"load\"\n============================================================\n    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:23:16)\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:184:9",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 16,
+                          "line": 23
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 21 |\u001b[39m\n \u001b[90m 22 |\u001b[39m     \u001b[90m// Wait for redirect to dashboard\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 23 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[32m'**/dashboard**'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 24 |\u001b[39m }\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m \u001b[90m// ============================================================================\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 16,
+                            "line": 23
+                          },
+                          "message": "Error: page.waitForURL: net::ERR_ABORTED; maybe frame was detached?\n=========================== logs ===========================\nwaiting for navigation to \"**/dashboard**\" until \"load\"\n============================================================\n\n\u001b[0m \u001b[90m 21 |\u001b[39m\n \u001b[90m 22 |\u001b[39m     \u001b[90m// Wait for redirect to dashboard\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 23 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForURL(\u001b[32m'**/dashboard**'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 24 |\u001b[39m }\n \u001b[90m 25 |\u001b[39m\n \u001b[90m 26 |\u001b[39m \u001b[90m// ============================================================================\u001b[39m\u001b[0m\n\u001b[2m    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:23:16)\u001b[22m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:184:9\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:50:53.224Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Timesheets-timesheets-page-loads-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 16,
+                        "line": 23
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-46bb524822132f652ce3",
+              "file": "web/web.spec.ts",
+              "line": 188,
+              "column": 9
+            },
+            {
+              "title": "can filter by date range",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 11,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 2594,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_ABORTED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_ABORTED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:184:15",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 16,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 16,
+                            "line": 17
+                          },
+                          "message": "Error: page.goto: net::ERR_ABORTED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\u001b[22m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:184:15\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:18.926Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Timesheets-can-filter-by-date-range-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 16,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-6f597aaba0e32a4ed721",
+              "file": "web/web.spec.ts",
+              "line": 192,
+              "column": 9
+            },
+            {
+              "title": "can export timesheets",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 12,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 608,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:184:15",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 16,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 16,
+                            "line": 17
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\u001b[22m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:184:15\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:26.723Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Timesheets-can-export-timesheets-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 16,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-42163dff03f550b059fe",
+              "file": "web/web.spec.ts",
+              "line": 202,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Settings",
+          "file": "web/web.spec.ts",
+          "line": 220,
+          "column": 6,
+          "specs": [
+            {
+              "title": "can access organization settings",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 13,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 612,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:222:15",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 16,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 16,
+                            "line": 17
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\u001b[22m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:222:15\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:26.743Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Settings-can-access-organization-settings-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 16,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-d995a27031f9622326aa",
+              "file": "web/web.spec.ts",
+              "line": 225,
+              "column": 9
+            },
+            {
+              "title": "can access billing settings",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 14,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 682,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:222:15",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 16,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 16,
+                            "line": 17
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\u001b[22m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:222:15\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:26.765Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Settings-can-access-billing-settings-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 16,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-311fb101b3744c8c1d74",
+              "file": "web/web.spec.ts",
+              "line": 231,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Mobile Responsiveness",
+          "file": "web/web.spec.ts",
+          "line": 243,
+          "column": 6,
+          "specs": [
+            {
+              "title": "mobile navigation works",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 15,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 680,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:247:15",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 16,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 16,
+                            "line": 17
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\u001b[22m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:247:15\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:26.844Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Mobile-Responsiveness-mobile-navigation-works-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 16,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-3aae48ec914a7fd6846c",
+              "file": "web/web.spec.ts",
+              "line": 246,
+              "column": 9
+            },
+            {
+              "title": "forms are usable on mobile",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 17,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 470,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:261:20",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 20,
+                          "line": 261
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 259 |\u001b[39m\n \u001b[90m 260 |\u001b[39m     test(\u001b[32m'forms are usable on mobile'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 261 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 262 |\u001b[39m\n \u001b[90m 263 |\u001b[39m         \u001b[90m// Form should be fully visible\u001b[39m\n \u001b[90m 264 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"email\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeInViewport()\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 20,
+                            "line": 261
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 259 |\u001b[39m\n \u001b[90m 260 |\u001b[39m     test(\u001b[32m'forms are usable on mobile'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 261 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 262 |\u001b[39m\n \u001b[90m 263 |\u001b[39m         \u001b[90m// Form should be fully visible\u001b[39m\n \u001b[90m 264 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"email\"]'\u001b[39m))\u001b[33m.\u001b[39mtoBeInViewport()\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:261:20\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:30.199Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Mobile-Responsiveness-forms-are-usable-on-mobile-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 20,
+                        "line": 261
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-73bfc663238d2761ad88",
+              "file": "web/web.spec.ts",
+              "line": 260,
+              "column": 9
+            }
+          ]
+        },
+        {
+          "title": "Accessibility",
+          "file": "web/web.spec.ts",
+          "line": 273,
+          "column": 6,
+          "specs": [
+            {
+              "title": "sign in page has proper labels",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 16,
+                      "parallelIndex": 1,
+                      "status": "failed",
+                      "duration": 486,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:275:20",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 20,
+                          "line": 275
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 273 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Accessibility'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 274 |\u001b[39m     test(\u001b[32m'sign in page has proper labels'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 275 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 276 |\u001b[39m\n \u001b[90m 277 |\u001b[39m         \u001b[90m// Check for accessible labels\u001b[39m\n \u001b[90m 278 |\u001b[39m         \u001b[36mconst\u001b[39m emailInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"email\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 20,
+                            "line": 275
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 273 |\u001b[39m test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Accessibility'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n \u001b[90m 274 |\u001b[39m     test(\u001b[32m'sign in page has proper labels'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 275 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 276 |\u001b[39m\n \u001b[90m 277 |\u001b[39m         \u001b[90m// Check for accessible labels\u001b[39m\n \u001b[90m 278 |\u001b[39m         \u001b[36mconst\u001b[39m emailInput \u001b[33m=\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m'input[name=\"email\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:275:20\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:30.204Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Accessibility-sign-in-page-has-proper-labels-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 20,
+                        "line": 275
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-3e2800758672dfbd439e",
+              "file": "web/web.spec.ts",
+              "line": 274,
+              "column": 9
+            },
+            {
+              "title": "navigation is keyboard accessible",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [
+                    {
+                      "workerIndex": 18,
+                      "parallelIndex": 2,
+                      "status": "failed",
+                      "duration": 477,
+                      "error": {
+                        "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n",
+                        "stack": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\n    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:286:15",
+                        "location": {
+                          "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                          "column": 16,
+                          "line": 17
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                            "column": 16,
+                            "line": 17
+                          },
+                          "message": "Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:3000/auth/login\", waiting until \"load\"\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m \u001b[90m */\u001b[39m\n \u001b[90m 16 |\u001b[39m \u001b[36masync\u001b[39m \u001b[36mfunction\u001b[39m signIn(page\u001b[33m:\u001b[39m \u001b[33mPage\u001b[39m\u001b[33m,\u001b[39m credentials \u001b[33m=\u001b[39m \u001b[33mTEST_ADMIN\u001b[39m) {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m'/auth/login'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39memail)\u001b[33m;\u001b[39m\n \u001b[90m 19 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"password\"]'\u001b[39m\u001b[33m,\u001b[39m credentials\u001b[33m.\u001b[39mpassword)\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at signIn (/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:17:16)\u001b[22m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:286:15\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-08T03:51:30.191Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Accessibility-navigation-is-keyboard-accessible-web/test-failed-1.png"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
+                        "column": 16,
+                        "line": 17
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "2948388c6448a8e5345d-e4e2ab2505b77c58c267",
+              "file": "web/web.spec.ts",
+              "line": 285,
+              "column": 9
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-02-08T03:49:30.182Z",
+    "duration": 120931.376,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 19,
+    "flaky": 0
+  }
+}

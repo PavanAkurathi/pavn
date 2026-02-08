@@ -71,7 +71,7 @@ export function AddWorkerDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm">
+                <Button size="sm" data-testid="invite-worker">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Worker
                 </Button>
@@ -89,6 +89,7 @@ export function AddWorkerDialog() {
                             <Label htmlFor="name">Full Name</Label>
                             <Input
                                 id="name"
+                                name="name"
                                 required
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -99,6 +100,7 @@ export function AddWorkerDialog() {
                             <Label htmlFor="email">Email</Label>
                             <Input
                                 id="email"
+                                name="email"
                                 type="email"
                                 required
                                 value={formData.email}

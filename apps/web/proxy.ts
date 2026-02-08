@@ -41,17 +41,17 @@ export default async function proxy(request: NextRequest) {
         });
 
         const session = await response.json();
-        console.log("[Proxy] Session check result:", session ? "Authenticated" : "No Session", session?.user?.email);
+        // console.log("[Proxy] Session check result:", session ? "Authenticated" : "No Session", session?.user?.email);
 
         if (!session) {
-            console.log("[Proxy] No session found, redirecting to login");
+            // console.log("[Proxy] No session found, redirecting to login");
             return NextResponse.redirect(new URL("/auth/login", request.url));
         }
 
         // 2. Enforce Email Verification
         // If user is logged in but not verified, force them to verification page
         if (!session.user.emailVerified) {
-            console.log("[Proxy] Email not verified, redirecting to verify");
+            // console.log("[Proxy] Email not verified, redirecting to verify");
             return NextResponse.redirect(new URL("/auth/verify-email", request.url));
         }
 

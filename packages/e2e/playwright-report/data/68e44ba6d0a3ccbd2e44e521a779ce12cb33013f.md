@@ -1,0 +1,45 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - heading "The OS for Modern Hospitality" [level=2] [ref=e6]
+        - paragraph [ref=e7]: Join thousands of venues managing their workforce smarter, faster, and more fairly with Workers Hive.
+      - generic [ref=e10]:
+        - banner [ref=e11]:
+          - link "Workers Hive" [ref=e12] [cursor=pointer]:
+            - /url: /
+            - img [ref=e14]
+            - text: Workers Hive
+        - generic [ref=e18]:
+          - generic [ref=e19]:
+            - heading "Welcome back" [level=2] [ref=e20]
+            - paragraph [ref=e21]:
+              - text: Don't have an account?
+              - link "Start free trial" [ref=e22] [cursor=pointer]:
+                - /url: /auth/signup
+          - generic [ref=e25]:
+            - generic [ref=e26]:
+              - generic [ref=e27]: Email address
+              - textbox "Email address" [ref=e28]:
+                - /placeholder: name@venue.com
+                - text: invalid@test.com
+            - generic [ref=e29]:
+              - generic [ref=e30]: Password
+              - textbox "Password" [ref=e31]: wrongpassword
+            - generic [ref=e32]:
+              - generic [ref=e33]:
+                - checkbox "Remember me" [ref=e34]
+                - checkbox
+                - generic [ref=e35]: Remember me
+              - link "Forgot password?" [ref=e37] [cursor=pointer]:
+                - /url: /auth/forgot-password
+            - button [disabled]:
+              - img
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e43] [cursor=pointer]:
+    - img [ref=e44]
+  - alert [ref=e47]
+```
