@@ -1,6 +1,6 @@
 import { fetch } from "bun";
 import { db, eq } from "@repo/database";
-import { user } from "@repo/database/schema";
+import { user, member } from "@repo/database/schema";
 
 const API_URL = process.env.API_URL || "http://localhost:4005";
 const ADMIN = {
@@ -50,6 +50,59 @@ async function seed() {
                 .set({ emailVerified: true })
                 .where(eq(user.id, userId));
             console.log("✅ Email verified successfully");
+
+            // Find Organization ID
+            const adminMember = await db.query.member.findFirst({
+                where: eq(member.userId, userId),
+                with: {
+                    organization: true
+                }
+            });
+
+            if (adminMember?.organizationId) {
+                const orgId = adminMember.organizationId;
+                console.log(`Found Organization: ${orgId}`);
+
+                // Seed Worker
+                const WORKER_EMAIL = "worker@test.workershive.com";
+                const existingWorker = await db.query.user.findFirst({
+                    where: eq(user.email, WORKER_EMAIL)
+                });
+
+                let workerId = existingWorker?.id;
+
+                if (!existingWorker) {
+                    console.log("Seeding worker user...");
+                    workerId = crypto.randomUUID();
+
+                    await db.insert(user).values({
+                        id: workerId,
+                        name: "Test Worker",
+                        email: WORKER_EMAIL,
+                        emailVerified: true,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    });
+
+                    // Add to Organization
+                    await db.insert(member).values({
+                        id: crypto.randomUUID(),
+                        userId: workerId,
+                        organizationId: orgId,
+                        role: "member",
+                        status: "active",
+                        hourlyRate: 2000, // $20.00
+                        jobTitle: "General Staff",
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    });
+                    console.log("✅ Worker seeded successfully");
+                } else {
+                    console.log("Worker already exists");
+                }
+            } else {
+                console.error("❌ Could not find organization for admin user");
+            }
         }
 
     } catch (error) {

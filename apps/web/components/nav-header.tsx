@@ -50,7 +50,7 @@ export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
                             )}
                         </div>
                         <div className="flex flex-col justify-center">
-                            <span className="font-bold text-sm tracking-tight text-slate-900 leading-none mb-0.5">
+                            <span className="font-bold text-sm tracking-tight text-slate-900 leading-none mb-0.5" data-testid="org-name">
                                 {activeOrg?.name || "Workers Hive"}
                             </span>
                             {activeOrg && (
@@ -86,7 +86,7 @@ export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
                 {/* Right: CTA & User */}
                 <div className="flex items-center gap-4">
                     <Link href="/dashboard/schedule/create">
-                        <Button className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white gap-2 font-medium" size="sm">
+                        <Button className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white gap-2 font-medium" size="sm" data-testid="create-shift">
                             <Plus className="w-4 h-4" />
                             Create a schedule
                         </Button>

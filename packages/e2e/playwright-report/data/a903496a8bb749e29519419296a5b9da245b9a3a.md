@@ -16,37 +16,33 @@
             - generic [ref=e17]:
               - text: Onsite Managers
               - combobox [ref=e18]:
-                - generic [ref=e20]: Select onsite managers
+                - generic [ref=e19]:
+                  - generic [ref=e22]: TA
+                  - generic [ref=e23]: Test Admin
                 - img
-        - generic [ref=e21]:
-          - generic [ref=e22]:
-            - heading "Build your schedule" [level=2] [ref=e23]
-            - generic [ref=e24]:
-              - generic [ref=e25]: Recurring schedule
-              - switch "Recurring schedule" [ref=e26] [cursor=pointer]
-              - checkbox
-          - generic [ref=e27]:
-            - generic [ref=e30]: Date & Times
-            - generic [ref=e31]:
-              - textbox "Schedule name (optional)" [ref=e33]
-              - button "Select date(s)" [ref=e35]:
-                - generic [ref=e36]: Select date(s)
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - heading "Build your schedule" [level=2] [ref=e26]
+            - generic [ref=e27]:
+              - generic [ref=e28]: Recurring schedule
+              - switch "Recurring schedule" [ref=e29] [cursor=pointer]
+          - generic [ref=e30]:
+            - generic [ref=e33]: Date & Times
+            - generic [ref=e34]:
+              - textbox "Schedule name (optional)" [ref=e36]
+              - button "Select date(s)" [ref=e38]:
+                - generic [ref=e39]: Select date(s)
                 - img
-              - generic [ref=e37]:
-                - generic [ref=e38]:
-                  - combobox [ref=e39]:
-                    - generic: Start time
-                    - img
-                  - combobox [ref=e40]
-                - generic [ref=e41]:
-                  - combobox [ref=e42]:
-                    - generic: End time
-                    - img
-                  - combobox [ref=e43]
-                - generic [ref=e44]:
-                  - combobox [ref=e45]:
-                    - img
-                  - combobox [ref=e46]
+              - generic [ref=e40]:
+                - combobox [ref=e42]:
+                  - generic: Start time
+                  - img
+                - combobox [ref=e44]:
+                  - generic: End time
+                  - img
+                - combobox [ref=e46]:
+                  - generic: Total unpaid break
+                  - img
               - generic [ref=e47]:
                 - text: "Expected breaks: None"
                 - img [ref=e48]
@@ -64,4 +60,5 @@
     - region "Notifications alt+T"
   - button "Open Next.js Dev Tools" [ref=e64] [cursor=pointer]:
     - img [ref=e65]
+  - alert [ref=e68]
 ```

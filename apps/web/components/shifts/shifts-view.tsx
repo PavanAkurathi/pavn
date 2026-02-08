@@ -178,7 +178,7 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                     <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-6">
                         <TabsContent value="upcoming" className="space-y-6 mt-0">
                             <div className="space-y-4 max-w-4xl">
-                                <h2 className="text-xl font-bold text-foreground">Upcoming Shifts</h2>
+                                <h2 className="text-xl font-bold text-foreground" data-testid="upcoming-shifts-widget">Upcoming Shifts</h2>
                                 <ShiftList
                                     shifts={filterActiveShifts(filteredShifts)}
                                     isLoading={false}

@@ -242,6 +242,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                         <FormControl>
                                             <Button
                                                 variant={"outline"}
+                                                data-testid="dates-trigger"
                                                 className={cn(
                                                     "w-full pl-3 text-left font-normal min-h-12 h-auto py-2 flex justify-between items-center",
                                                     (!field.value || field.value.length === 0) && "text-muted-foreground"
@@ -380,6 +381,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                         variant="outline"
                         className="w-full sm:w-auto h-12 border-2 border-primary text-primary hover:bg-primary/5 hover:text-primary transition-colors font-medium px-8"
                         onClick={() => setIsPositionDialogOpen(true)}
+                        data-testid="add-position"
                     >
                         <Plus className="mr-2 h-4 w-4" />
                         Add position

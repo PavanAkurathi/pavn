@@ -451,6 +451,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                     <Button
                         type="button"
                         onClick={handleReview}
+                        data-testid="review-publish"
                         className="bg-indigo-600 hover:bg-indigo-700 min-w-[200px]"
                     >
                         Review & Publish

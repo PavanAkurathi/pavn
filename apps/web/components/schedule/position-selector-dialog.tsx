@@ -135,6 +135,7 @@ export function PositionSelectorDialog({
                                         workerAvatar: worker.avatar,
                                         workerInitials: worker.initials
                                     })}
+                                    data-testid="position-item"
                                 >
                                     <div className="flex items-center gap-3 min-w-0">
                                         <Avatar className="h-9 w-9 shrink-0">
@@ -205,7 +206,7 @@ export function PositionSelectorDialog({
 
                 <DialogFooter className="p-6 border-t">
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
-                    <Button onClick={handleConfirm} disabled={selectedItems.length === 0}>
+                    <Button onClick={handleConfirm} disabled={selectedItems.length === 0} data-testid="confirm-positions">
                         Done ({selectedItems.length})
                     </Button>
                 </DialogFooter>

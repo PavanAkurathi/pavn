@@ -156,7 +156,7 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
                     <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
                         Cancel
                     </Button>
-                    <Button onClick={onConfirm} disabled={isSubmitting || stats.totalShifts === 0}>
+                    <Button onClick={onConfirm} disabled={isSubmitting || stats.totalShifts === 0} data-testid="confirm-publish">
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirm & Publish
                     </Button>

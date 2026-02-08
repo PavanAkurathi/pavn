@@ -35,7 +35,7 @@ export function NavUser() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-auto py-1.5 rounded-full hover:bg-slate-100 data-[state=open]:bg-slate-100">
+                <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-auto py-1.5 rounded-full hover:bg-slate-100 data-[state=open]:bg-slate-100" data-testid="user-menu">
                     <Avatar className="h-8 w-8 border border-slate-200">
                         <AvatarImage src={session.user.image || undefined} />
                         <AvatarFallback className="bg-slate-100 text-slate-600 font-medium">
@@ -65,7 +65,7 @@ export function NavUser() {
                     Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={handleSignOut}>
+                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={handleSignOut} data-testid="sign-out">
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out
                 </DropdownMenuItem>
