@@ -141,7 +141,7 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.58.1",
-    "workers": 1,
+    "workers": 4,
     "webServer": null
   },
   "suites": [
@@ -153,306 +153,18 @@
       "specs": [],
       "suites": [
         {
-          "title": "Authentication UI",
-          "file": "web/web.spec.ts",
-          "line": 35,
-          "column": 6,
-          "specs": [
-            {
-              "title": "sign in page loads",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1006,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:13.783Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-7477da9093ff824c7883",
-              "file": "web/web.spec.ts",
-              "line": 36,
-              "column": 9
-            },
-            {
-              "title": "sign up page loads",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 620,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:15.349Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-4d7a09f630b1451c3c99",
-              "file": "web/web.spec.ts",
-              "line": 44,
-              "column": 9
-            },
-            {
-              "title": "successful sign in redirects to dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6491,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:15.989Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-3252407307f54afc8541",
-              "file": "web/web.spec.ts",
-              "line": 51,
-              "column": 9
-            },
-            {
-              "title": "invalid credentials shows error",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1978,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:22.503Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-050ade5d770da14697a4",
-              "file": "web/web.spec.ts",
-              "line": 57,
-              "column": 9
-            },
-            {
-              "title": "sign out works",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 8055,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:24.496Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-b749e801ee48fc0d7d6b",
-              "file": "web/web.spec.ts",
-              "line": 67,
-              "column": 9
-            }
-          ]
-        },
-        {
-          "title": "Dashboard",
-          "file": "web/web.spec.ts",
-          "line": 83,
-          "column": 6,
-          "specs": [
-            {
-              "title": "dashboard shows organization name",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5233,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:32.561Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-47e5743c2f86be4fd94c",
-              "file": "web/web.spec.ts",
-              "line": 88,
-              "column": 9
-            },
-            {
-              "title": "dashboard shows navigation",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 7490,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:37.810Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-81e20c839a94b4476107",
-              "file": "web/web.spec.ts",
-              "line": 93,
-              "column": 9
-            },
-            {
-              "title": "dashboard shows upcoming shifts widget",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5202,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:45.320Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-1f563c26e19b393e8602",
-              "file": "web/web.spec.ts",
-              "line": 100,
-              "column": 9
-            }
-          ]
-        },
-        {
           "title": "Schedule Management",
           "file": "web/web.spec.ts",
-          "line": 109,
+          "line": 110,
           "column": 6,
           "specs": [
             {
-              "title": "schedule page loads",
+              "title": "can create new shift",
               "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 60000,
+                  "timeout": 120000,
                   "annotations": [],
                   "expectedStatus": "passed",
                   "projectId": "web",
@@ -462,691 +174,296 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 7628,
+                      "duration": 13843,
                       "errors": [],
-                      "stdout": [],
+                      "stdout": [
+                        {
+                          "text": "BROWSER LOG: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [HMR] connected\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [Fast Refresh] rebuilding\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [Fast Refresh] done in 121ms\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: %o\n\n%s Error: Connection closed.\n    at close (http://localhost:3000/_next/static/chunks/30792_next_dist_compiled_react-server-dom-turbopack_a393abdb._.js:2567:41)\n    at progress (http://localhost:3000/_next/static/chunks/30792_next_dist_compiled_react-server-dom-turbopack_a393abdb._.js:2640:36) The above error occurred in the <ProtectedLayout> component. It was handled by the <ErrorBoundaryHandler> error boundary.\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Error: Connection closed.\n    at close (http://localhost:3000/_next/static/chunks/30792_next_dist_compiled_react-server-dom-turbopack_a393abdb._.js:2567:41)\n    at progress (http://localhost:3000/_next/static/chunks/30792_next_dist_compiled_react-server-dom-turbopack_a393abdb._.js:2640:36)\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Error: Connection closed.\n    at close (http://localhost:3000/_next/static/chunks/30792_next_dist_compiled_react-server-dom-turbopack_a393abdb._.js:2567:41)\n    at progress (http://localhost:3000/_next/static/chunks/30792_next_dist_compiled_react-server-dom-turbopack_a393abdb._.js:2640:36)\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [Fast Refresh] rebuilding\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [Fast Refresh] done in 455ms\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [HMR] connected\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"15:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"15:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 0\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: DEBUG: handleReview clicked\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: DEBUG: form.trigger() result: true\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: DEBUG: Setting isReviewOpen = true\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Confirm button is enabled. Clicking...\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: DEBUG: Calling publishSchedule API {locationId: TWKlbreXeMwBEnADWdpgV, organizationId: 9NEq3_s7PPBpIfsDhSioX, contactId: RWLt9UH5RXTApFBTsJjG6591TtyoeHyO, timezone: America/New_York, status: published}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: Clicked Confirm.\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [Fast Refresh] rebuilding\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: [Fast Refresh] done in 121ms\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: DEBUG: publishSchedule API success\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: DEBUG: Calling router.push\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: DEBUG: router.push called\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-09T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-09\"\n  ],\n  \"estimatedCost\": 160\n}\n"
+                        },
+                        {
+                          "text": "REQUEST FAILED: http://localhost:3000/dashboard/shifts?_rsc=odrtj - net::ERR_ABORTED\n"
+                        }
+                      ],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-08T15:24:50.540Z",
+                      "startTime": "2026-02-10T04:03:56.933Z",
                       "annotations": [],
                       "attachments": []
                     }
                   ],
                   "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-f6b33e7daf5f68107f62",
-              "file": "web/web.spec.ts",
-              "line": 115,
-              "column": 9
-            },
-            {
-              "title": "can create new shift",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "timedOut",
-                      "duration": 60088,
-                      "error": {
-                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
-                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                      },
-                      "errors": [
-                        {
-                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                        },
-                        {
-                          "location": {
-                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                            "column": 20,
-                            "line": 121
-                          },
-                          "message": "Error: page.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"create-shift\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 119 |\u001b[39m     test(\u001b[32m'can create new shift'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 120 |\u001b[39m         \u001b[90m// Click create shift button\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 121 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'[data-testid=\"create-shift\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 122 |\u001b[39m\n \u001b[90m 123 |\u001b[39m         \u001b[90m// 1. Select Date (Standard Mode)\u001b[39m\n \u001b[90m 124 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'[data-testid=\"dates-trigger\"]'\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:121:20\u001b[22m"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:24:58.188Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Schedule-Management-can-create-new-shift-web/test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Schedule-Management-can-create-new-shift-web/error-context.md"
-                        }
-                      ]
-                    }
-                  ],
-                  "status": "unexpected"
                 }
               ],
               "id": "2948388c6448a8e5345d-d29fc8676ebe78fc91a4",
               "file": "web/web.spec.ts",
-              "line": 119,
-              "column": 9
-            },
-            {
-              "title": "can view shift details",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6895,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:25:59.281Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-4c0bca77474bcbc9dec5",
-              "file": "web/web.spec.ts",
-              "line": 161,
-              "column": 9
-            }
-          ]
-        },
-        {
-          "title": "Roster Management",
-          "file": "web/web.spec.ts",
-          "line": 176,
-          "column": 6,
-          "specs": [
-            {
-              "title": "roster page loads",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5476,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:26:06.477Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-3c2115b5042a9c83a858",
-              "file": "web/web.spec.ts",
-              "line": 182,
-              "column": 9
-            },
-            {
-              "title": "can search roster members",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6262,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:26:11.972Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-7afd880744c9fe490c85",
-              "file": "web/web.spec.ts",
-              "line": 186,
-              "column": 9
-            },
-            {
-              "title": "can invite new worker",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 0,
-                      "status": "timedOut",
-                      "duration": 60061,
-                      "error": {
-                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
-                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                      },
-                      "errors": [
-                        {
-                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                        },
-                        {
-                          "location": {
-                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                            "column": 20,
-                            "line": 200
-                          },
-                          "message": "Error: page.fill: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('input[name=\"name\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 198 |\u001b[39m\n \u001b[90m 199 |\u001b[39m         \u001b[36mconst\u001b[39m randomEmail \u001b[33m=\u001b[39m \u001b[32m`newworker-${Date.now()}@test.com`\u001b[39m\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 200 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"name\"]'\u001b[39m\u001b[33m,\u001b[39m \u001b[32m'New Worker'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 201 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mfill(\u001b[32m'input[name=\"email\"]'\u001b[39m\u001b[33m,\u001b[39m randomEmail)\u001b[33m;\u001b[39m\n \u001b[90m 202 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[data-testid=\"submit-worker\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 203 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:200:20\u001b[22m"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:26:18.247Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Roster-Management-can-invite-new-worker-web/test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Roster-Management-can-invite-new-worker-web/error-context.md"
-                        }
-                      ]
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-8346d6fbfdc79e30ab15",
-              "file": "web/web.spec.ts",
-              "line": 196,
-              "column": 9
-            }
-          ]
-        },
-        {
-          "title": "Timesheets",
-          "file": "web/web.spec.ts",
-          "line": 212,
-          "column": 15,
-          "specs": [
-            {
-              "title": "timesheets page loads",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                        "line": 212,
-                        "column": 15
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:27:18.340Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                            "line": 212,
-                            "column": 15
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-46bb524822132f652ce3",
-              "file": "web/web.spec.ts",
-              "line": 218,
-              "column": 9
-            },
-            {
-              "title": "can filter by date range",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                        "line": 212,
-                        "column": 15
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:27:18.342Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                            "line": 212,
-                            "column": 15
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-6f597aaba0e32a4ed721",
-              "file": "web/web.spec.ts",
-              "line": 222,
-              "column": 9
-            },
-            {
-              "title": "can export timesheets",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                        "line": 212,
-                        "column": 15
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:27:18.343Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                            "line": 212,
-                            "column": 15
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-42163dff03f550b059fe",
-              "file": "web/web.spec.ts",
-              "line": 232,
-              "column": 9
-            }
-          ]
-        },
-        {
-          "title": "Settings",
-          "file": "web/web.spec.ts",
-          "line": 250,
-          "column": 6,
-          "specs": [
-            {
-              "title": "can access organization settings",
-              "ok": false,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 0,
-                      "status": "timedOut",
-                      "duration": 60098,
-                      "error": {
-                        "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
-                        "stack": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                      },
-                      "errors": [
-                        {
-                          "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
-                        },
-                        {
-                          "location": {
-                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                            "column": 20,
-                            "line": 256
-                          },
-                          "message": "Error: page.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('a[href*=\"settings\"]')\u001b[22m\n\n\n\u001b[0m \u001b[90m 254 |\u001b[39m\n \u001b[90m 255 |\u001b[39m     test(\u001b[32m'can access organization settings'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 256 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'a[href*=\"settings\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                    \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 257 |\u001b[39m\n \u001b[90m 258 |\u001b[39m         \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/.*settings.*/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 259 |\u001b[39m     })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts:256:20\u001b[22m"
-                        }
-                      ],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:27:19.288Z",
-                      "annotations": [],
-                      "attachments": [
-                        {
-                          "name": "screenshot",
-                          "contentType": "image/png",
-                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Settings-can-access-organization-settings-web/test-failed-1.png"
-                        },
-                        {
-                          "name": "error-context",
-                          "contentType": "text/markdown",
-                          "path": "/Users/av/Documents/pavn/packages/e2e/test-results/web-Settings-can-access-organization-settings-web/error-context.md"
-                        }
-                      ]
-                    }
-                  ],
-                  "status": "unexpected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-d995a27031f9622326aa",
-              "file": "web/web.spec.ts",
-              "line": 255,
-              "column": 9
-            },
-            {
-              "title": "can access billing settings",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 8043,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:28:20.826Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-311fb101b3744c8c1d74",
-              "file": "web/web.spec.ts",
-              "line": 261,
-              "column": 9
-            }
-          ]
-        },
-        {
-          "title": "Mobile Responsiveness",
-          "file": "web/web.spec.ts",
-          "line": 273,
-          "column": 6,
-          "specs": [
-            {
-              "title": "mobile navigation works",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [
-                    {
-                      "type": "skip",
-                      "location": {
-                        "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                        "line": 276,
-                        "column": 10
-                      }
-                    }
-                  ],
-                  "expectedStatus": "skipped",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": -1,
-                      "parallelIndex": -1,
-                      "status": "skipped",
-                      "duration": 0,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:28:29.181Z",
-                      "annotations": [
-                        {
-                          "type": "skip",
-                          "location": {
-                            "file": "/Users/av/Documents/pavn/packages/e2e/tests/web/web.spec.ts",
-                            "line": 276,
-                            "column": 10
-                          }
-                        }
-                      ],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "skipped"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-3aae48ec914a7fd6846c",
-              "file": "web/web.spec.ts",
-              "line": 276,
-              "column": 10
-            },
-            {
-              "title": "forms are usable on mobile",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1188,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:28:29.186Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-73bfc663238d2761ad88",
-              "file": "web/web.spec.ts",
-              "line": 292,
-              "column": 9
-            }
-          ]
-        },
-        {
-          "title": "Accessibility",
-          "file": "web/web.spec.ts",
-          "line": 305,
-          "column": 6,
-          "specs": [
-            {
-              "title": "sign in page has proper labels",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 737,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:28:30.392Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-3e2800758672dfbd439e",
-              "file": "web/web.spec.ts",
-              "line": 306,
-              "column": 9
-            },
-            {
-              "title": "navigation is keyboard accessible",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4861,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-02-08T15:28:31.147Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "2948388c6448a8e5345d-e4e2ab2505b77c58c267",
-              "file": "web/web.spec.ts",
-              "line": 318,
+              "line": 121,
               "column": 9
             }
           ]
@@ -1156,11 +473,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-02-08T15:24:09.881Z",
-    "duration": 266190.737,
-    "expected": 16,
-    "skipped": 4,
-    "unexpected": 3,
+    "startTime": "2026-02-10T04:03:55.950Z",
+    "duration": 15392.126,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
     "flaky": 0
   }
 }

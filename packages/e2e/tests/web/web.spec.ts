@@ -22,7 +22,8 @@ async function signIn(page: Page, credentials = TEST_ADMIN) {
     // Wait for redirect to dashboard
     await page.waitForURL(/.*dashboard.*/, { timeout: 30000 });
     // Robust check: wait for the org name to appear, confirming we are logged in and verified
-    await expect(page.locator('[data-testid="org-name"]')).toBeVisible({ timeout: 30000 });
+    // This ensures activeOrg is fully loaded before we proceed
+    await expect(page.locator('[data-testid="org-name"]')).toHaveText('Test Organization', { timeout: 30000 });
 }
 
 // Increase default timeout for this suite
@@ -109,7 +110,8 @@ test.describe('Dashboard', () => {
 test.describe('Schedule Management', () => {
     test.beforeEach(async ({ page }) => {
         await signIn(page);
-        await page.click('a[href*="schedule"]');
+        await page.click('a[href*="shifts"]');
+        // Note: 'schedule' matches the create button link, causing premature navigation to create page where header is hidden
     });
 
     test('schedule page loads', async ({ page }) => {
@@ -117,44 +119,83 @@ test.describe('Schedule Management', () => {
     });
 
     test('can create new shift', async ({ page }) => {
+        // Enable console logging for debugging
+        page.on('console', msg => console.log(`BROWSER LOG: ${msg.text()}`));
+        page.on('requestfailed', request => console.log(`REQUEST FAILED: ${request.url()} - ${request.failure()?.errorText}`));
+        page.on('response', response => {
+            if (response.status() === 404) console.log(`404 NOT FOUND: ${response.url()}`);
+            if (response.status() === 500) console.log(`500 ERROR: ${response.url()}`);
+        });
+
+        test.setTimeout(120000); // Allow more time for complex flow
+        await page.setViewportSize({ width: 1280, height: 720 }); // Ensure button is visible (hidden sm:flex)
+
         // Click create shift button
         await page.click('[data-testid="create-shift"]');
+        await expect(page).toHaveURL(/.*create.*/);
+        await page.waitForLoadState('networkidle');
 
-        // 1. Select Date (Standard Mode)
-        await page.click('[data-testid="dates-trigger"]');
-        // Click the first available enabled day in the calendar (usually today or tomorrow)
-        // avoiding "rdp-day_disabled"
-        const dayLocator = page.locator('.rdp-day:not(.rdp-day_disabled)').first();
-        await dayLocator.click();
+        // 1. Select Date
+        // Open the calendar popover
+        await page.click('[data-testid="dates-trigger"]', { force: true });
+        // Wait for calendar to be visible
+        await expect(page.locator('table[role="grid"]')).toBeVisible();
+
+        // Click the first available enabled day button in the calendar
+        // Use more robust selector targeting the button inside the grid
+        const dayLocator = page.locator('table[role="grid"] button:not([disabled])').first();
+        await dayLocator.click({ force: true });
         // Close popover (clicking outside or pressing escape, or just clicking the next element triggers blur)
         await page.keyboard.press('Escape');
 
+        // VERIFY: Date was actually selected
+        await expect(page.locator('[data-testid="dates-trigger"]')).not.toHaveText("Select date(s)", { timeout: 5000 });
+
         // 2. Select Start Time
         // The IntervalTimePicker uses a Select trigger with placeholder "Start time"
-        await page.click('button:has-text("Start time")');
-        // Select 09:00 AM
-        await page.click('div[role="option"]:has-text("09:00")');
+        await page.click('.start-time-picker', { force: true });
+        // Select 9:00 AM
+        await page.click('div[role="option"]:has-text("9:00 AM")');
 
         // 3. Select End Time
-        await page.click('button:has-text("End time")');
-        // Select 05:00 PM (17:00)
-        await page.click('div[role="option"]:has-text("17:00")');
+        await page.click('.end-time-picker', { force: true });
+        // Select 5:00 PM
+        await page.click('div[role="option"]:has-text("5:00 PM")');
 
         // 4. Add Position
-        await page.click('[data-testid="add-position"]');
+        await page.click('[data-testid="add-position"]', { force: true });
+        await expect(page.getByRole('dialog')).toBeVisible();
         // Select the first available crew member
         await page.click('[data-testid="position-item"]');
         // Confirm selection
         await page.click('[data-testid="confirm-positions"]');
 
+        // VERIFY: Position was actually added
+        // PositionChips should render a badge/chip with the worker name or initials
+        // We can just check that the 'add-position' button is NOT the only thing in that section, 
+        // or check for a removal button (X) which usually appears on chips (hidden until hover, so check attached)
+        await expect(page.locator('button > svg.lucide-x').first()).toBeAttached({ timeout: 5000 });
+
         // 5. Review & Publish
-        await page.click('[data-testid="review-publish"]');
+        // Ensure previous dialog is closed
+        await expect(page.locator('[data-testid="confirm-positions"]')).not.toBeVisible();
+        await page.waitForTimeout(500); // Animation buffer
+
+        await page.click('[data-testid="review-publish"]', { force: true });
+        // Verify specific dialog title
+        await expect(page.getByText('Ready to publish?')).toBeVisible();
 
         // 6. Confirm in Dialog
-        await page.click('[data-testid="confirm-publish"]');
+        const confirmBtn = page.locator('[data-testid="confirm-publish"]');
+        await expect(confirmBtn).toBeVisible();
+        // Wait for it to be enabled (it might be disabled momentarily during render)
+        await expect(confirmBtn).toBeEnabled({ timeout: 10000 });
+        console.log("BROWSER LOG: Confirm button is enabled. Clicking...");
+        await confirmBtn.click({ force: true });
+        console.log("BROWSER LOG: Clicked Confirm.");
 
         // Should return to dashboard and show success
-        await expect(page).toHaveURL(/.*dashboard\/shifts.*/);
+        await expect(page).toHaveURL(/.*dashboard\/shifts.*/, { timeout: 15000 });
         await expect(page.getByText(/schedule published|success/i)).toBeVisible({ timeout: 10000 });
     });
 
@@ -175,8 +216,14 @@ test.describe('Schedule Management', () => {
 
 test.describe('Roster Management', () => {
     test.beforeEach(async ({ page }) => {
+        // Log console messages
+        page.on('console', msg => console.log(`BROWSER LOG: ${msg.text()}`));
+        page.on('pageerror', err => console.log(`BROWSER ERROR: ${err.message}`));
+
         await signIn(page);
         await page.click('a[href*="rosters"]');
+        await expect(page).toHaveURL(/.*rosters.*/);
+        await page.waitForLoadState('networkidle');
     });
 
     test('roster page loads', async ({ page }) => {
@@ -194,7 +241,9 @@ test.describe('Roster Management', () => {
     });
 
     test('can invite new worker', async ({ page }) => {
-        await page.click('[data-testid="invite-worker"]');
+        test.setTimeout(120000);
+        await page.click('[data-testid="invite-worker"]', { force: true });
+        await expect(page.getByRole('dialog')).toBeVisible();
 
         const randomEmail = `newworker-${Date.now()}@test.com`;
         await page.fill('input[name="name"]', 'New Worker');

@@ -29,6 +29,7 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
 
     // Calculate Stats
     const stats = useMemo(() => {
+        console.log("ReviewScheduleDialog Data:", JSON.stringify(data, null, 2));
         let totalShifts = 0;
         let totalAssigned = 0;
         let totalOpen = 0;
@@ -88,6 +89,8 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
             estimatedCost
         };
     }, [data]);
+
+    console.log("ReviewScheduleDialog Stats:", JSON.stringify(stats, null, 2));
 
     const formattedDates = stats.uniqueDates.map(d => format(new Date(d + "T00:00:00"), "EEEE, MMM d"));
 

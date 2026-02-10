@@ -80,6 +80,16 @@ export type AppContext = {
 // Create main app
 const app = new OpenAPIHono<AppContext>();
 
+import * as fs from 'fs';
+
+app.use('*', async (c, next) => {
+    try {
+        fs.appendFileSync('/tmp/pavn_api.log', `[API REQUEST] ${c.req.method} ${c.req.url}\n`);
+    } catch (e) { }
+    console.log(`[API REQUEST] ${c.req.method} ${c.req.url}`);
+    await next();
+});
+
 // =============================================================================
 // OPENAPI & SWAGGER
 // =============================================================================

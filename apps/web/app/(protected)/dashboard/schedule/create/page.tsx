@@ -60,7 +60,8 @@ export default async function CreateSchedulePage() {
     const prefetchedCrew = workersResult
         .filter(r => r.user !== null)
         .map(r => ({
-            id: r.id,
+            id: r.user!.id,
+            memberId: r.id,
             name: r.user!.name,
             avatar: r.user!.image || "",
             initials: r.user!.name.charAt(0).toUpperCase(),

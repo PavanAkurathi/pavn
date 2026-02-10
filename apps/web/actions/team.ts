@@ -40,120 +40,134 @@ interface AddMemberInput {
 }
 
 export async function addMember(input: AddMemberInput) {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
 
-    if (!session) {
-        throw new Error("Unauthorized");
-    }
+        if (!session) {
+            throw new Error("Unauthorized");
+        }
 
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    const activeOrgId = (session.session as any).activeOrganizationId as string || undefined;
-    if (!activeOrgId) {
-        throw new Error("No active organization");
-    }
+        // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
+        let activeOrgId = (session.session as any).activeOrganizationId as string || undefined;
 
-    // Verify permission (must be admin/owner of the org)
-    const currentMember = await db.select()
-        .from(member)
-        .where(and(
-            eq(member.userId, session.user.id),
-            eq(member.organizationId, activeOrgId)
-        ))
-        .limit(1);
+        if (!activeOrgId) {
+            // Fallback: Check DB for membership (First org found)
+            const defaultOrg = await db.select().from(member).where(eq(member.userId, session.user.id)).limit(1);
+            if (defaultOrg[0]) {
+                activeOrgId = defaultOrg[0].organizationId;
+            }
+        }
 
-    if (!currentMember[0] || (currentMember[0].role !== "admin" && currentMember[0].role !== "owner")) {
-        throw new Error("Permission denied");
-    }
+        if (!activeOrgId) {
+            throw new Error("No active organization");
+        }
 
-    const { name, email, phoneNumber, role, hourlyRate, jobTitle, invites, image, emergencyContact, address, certifications } = input;
-
-    // 1. Check if user exists
-    let targetUserId: string;
-    const existingUser = await db.select().from(user).where(eq(user.email, email)).limit(1);
-
-    if (existingUser[0]) {
-        targetUserId = existingUser[0].id;
-        // Check if already a member
-        const existingMember = await db.select()
+        // Verify permission (must be admin/owner of the org)
+        const currentMember = await db.select()
             .from(member)
             .where(and(
-                eq(member.userId, targetUserId),
+                eq(member.userId, session.user.id),
                 eq(member.organizationId, activeOrgId)
             ))
             .limit(1);
 
-        if (existingMember[0]) {
-            return { error: "User is already a member of this organization" };
+        if (!currentMember[0] || (currentMember[0].role !== "admin" && currentMember[0].role !== "owner")) {
+            throw new Error("Permission denied");
         }
 
-        // TODO: Update existing user profile if needed?
-        // For now, we only update if they are just being created to avoid overwriting existing user data
-    } else {
-        // 2. Create Shadow User
-        targetUserId = nanoid();
-        await db.insert(user).values({
-            id: targetUserId,
-            name: name,
-            email: email,
-            emailVerified: false,
-            phoneNumber: phoneNumber || null,
-            image: image || null,
-            emergencyContact: emergencyContact || null,
-            address: address || null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-    }
+        const { name, email, phoneNumber, role, hourlyRate, jobTitle, invites, image, emergencyContact, address, certifications } = input;
 
-    // 3. Add to Organization
-    await db.insert(member).values({
-        id: nanoid(),
-        organizationId: activeOrgId,
-        userId: targetUserId,
-        role: role,
-        hourlyRate: hourlyRate || null,
-        jobTitle: jobTitle || null,
-        createdAt: new Date(),
-    });
+        // 1. Check if user exists
+        let targetUserId: string;
+        const existingUser = await db.select().from(user).where(eq(user.email, email)).limit(1);
 
-    // 4. Add Certifications
-    if (certifications && certifications.length > 0) {
-        for (const cert of certifications) {
-            await db.insert(certification).values({
-                id: nanoid(),
-                workerId: targetUserId,
-                name: cert.name,
-                issuer: cert.issuer,
-                expiresAt: cert.expiresAt,
-                status: "valid",
+        if (existingUser[0]) {
+            targetUserId = existingUser[0].id;
+            // Check if already a member
+            const existingMember = await db.select()
+                .from(member)
+                .where(and(
+                    eq(member.userId, targetUserId),
+                    eq(member.organizationId, activeOrgId)
+                ))
+                .limit(1);
+
+            if (existingMember[0]) {
+                return { error: "User is already a member of this organization" };
+            }
+
+            // TODO: Update existing user profile if needed?
+            // For now, we only update if they are just being created to avoid overwriting existing user data
+        } else {
+            // 2. Create Shadow User
+            targetUserId = nanoid();
+            await db.insert(user).values({
+                id: targetUserId,
+                name: name,
+                email: email,
+                emailVerified: false,
+                phoneNumber: phoneNumber || null,
+                image: image || null,
+                emergencyContact: emergencyContact || null,
+                address: address || null,
                 createdAt: new Date(),
                 updatedAt: new Date(),
             });
         }
-    }
 
-    // 5. Handle Invitations (Stub for now)
-    if (invites.email) {
-        // TODO: Send Email Invite via Resend
-        console.log(`[Mock] Sending email invite to ${email}`);
-    }
-    if (invites.sms && phoneNumber) {
-        try {
-            // In a real app, this link would be dynamic or point to the app store
-            const downloadLink = "exp://pavn.link/invite";
-            const message = `You've been invited to join ${activeOrgId}'s team on Pavn! Download the app to get started: ${downloadLink}`;
-            await sendSMS(phoneNumber, message);
-            console.log(`[Team] Sent SMS invite to ${phoneNumber}`);
-        } catch (error) {
-            console.error(`[Team] Failed to send SMS invite to ${phoneNumber}:`, error);
-            // We don't throw here to avoid failing the whole member addition just because SMS failed
+        // 3. Add to Organization
+        await db.insert(member).values({
+            id: nanoid(),
+            organizationId: activeOrgId,
+            userId: targetUserId,
+            role: role,
+            hourlyRate: hourlyRate || null,
+            jobTitle: jobTitle || null,
+            createdAt: new Date(),
+        });
+
+        // 4. Add Certifications
+        if (certifications && certifications.length > 0) {
+            for (const cert of certifications) {
+                await db.insert(certification).values({
+                    id: nanoid(),
+                    workerId: targetUserId,
+                    name: cert.name,
+                    issuer: cert.issuer,
+                    expiresAt: cert.expiresAt,
+                    status: "valid",
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                });
+            }
         }
-    }
 
-    revalidatePath("/settings/team");
-    return { success: true };
+        // 5. Handle Invitations (Stub for now)
+        if (invites.email) {
+            // TODO: Send Email Invite via Resend
+            console.log(`[Mock] Sending email invite to ${email}`);
+        }
+        if (invites.sms && phoneNumber) {
+            try {
+                // In a real app, this link would be dynamic or point to the app store
+                const downloadLink = "exp://pavn.link/invite";
+                const message = `You've been invited to join ${activeOrgId}'s team on Pavn! Download the app to get started: ${downloadLink}`;
+                await sendSMS(phoneNumber, message);
+                console.log(`[Team] Sent SMS invite to ${phoneNumber}`);
+            } catch (error) {
+                console.error(`[Team] Failed to send SMS invite to ${phoneNumber}:`, error);
+                // We don't throw here to avoid failing the whole member addition just because SMS failed
+            }
+        }
+
+        revalidatePath("/settings/team");
+        return { success: true };
+    } catch (e: any) {
+        console.error("SERVER ACTION ERROR:", e);
+        return { error: e.message || "Failed to add member" };
+    }
 }
 
 interface BulkImportWorker {

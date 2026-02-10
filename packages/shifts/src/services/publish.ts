@@ -2,6 +2,10 @@ import { db, TxOrDb } from "@repo/database";
 import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences } from "@repo/database/schema";
 import { eq, and, lt, gt, inArray, like, sql } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
+import { z } from "zod";
+
+
+
 import { fromZonedTime } from "date-fns-tz";
 import { AppError } from "@repo/observability";
 import { newId } from "../utils/ids";
@@ -9,15 +13,12 @@ import { expandRecurringDates, RecurrenceConfig } from "../utils/recurrence";
 import { createHash } from "crypto";
 import { buildNotificationSchedule } from "@repo/notifications";
 
-import { z } from "zod";
-
 // Rate Limiting
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 10;
-// const rateLimitMap = new Map<string, { count: number; windowStart: number }>(); // Removed [ARCH-005]
 
 const PublishSchema = z.object({
-    idempotencyKey: z.string().optional(), // WH-110: Allow client to pass unique key
+    idempotencyKey: z.string().optional(),
     locationId: z.string(),
     contactId: z.string().optional(),
     organizationId: z.string(),
@@ -53,8 +54,9 @@ const PublishSchema = z.object({
 
 export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrDb) => {
     // WH-111: Rate Limiting
-    // WH-111 / WH-140 [ARCH-005]: Persistent Rate Limiting
     const rateLimitKey = `publish_schedule:${headerOrgId}`;
+
+
     const windowMs = RATE_LIMIT_WINDOW;
     const nowMs = Date.now();
 
@@ -63,14 +65,11 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
         .values({
             key: rateLimitKey,
             count: 1,
-            windowStart: String(nowMs) // Store as string for decimal type
+            windowStart: String(nowMs)
         })
         .onConflictDoUpdate({
             target: rateLimitState.key,
             set: {
-                // If window expired (diff > windowMs), reset count to 1 and update windowStart.
-                // Else increment count.
-                // Note: Drizzle `sql` helper needed for atomic logic inside update
                 count: sql`CASE 
                     WHEN (${nowMs} - CAST(${rateLimitState.windowStart} AS NUMERIC)) > ${windowMs} THEN 1 
                     ELSE ${rateLimitState.count} + 1 
@@ -99,22 +98,31 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
     const { idempotencyKey, locationId, contactId, organizationId, timezone, status, schedules, recurrence } = parseResult.data;
 
-    console.log("DEBUG: publishSchedule received:", { status, schedulesCount: schedules.length, activeOrgId: headerOrgId, recurrenceEnabled: recurrence?.enabled });
+
+
 
     // Security Check: Header vs Body
     if (organizationId && organizationId !== headerOrgId) {
+
         throw new AppError("Organization mismatch", "FORBIDDEN", 403);
     }
     // Force use of header-derived orgId
     const activeOrgId = headerOrgId;
 
+
     // WH-140: Robust Idempotency with Payload Hashing
     // Generate a deterministic hash of the critical payload configuration
     // We include schedules and recurrence settings.
+
     const payloadString = JSON.stringify({ schedules, recurrence, locationId, organizationId });
+
+
+
     const payloadHash = createHash('sha256').update(payloadString).digest('hex');
 
+
     // WH-110: Idempotency Check [ARCH-007: Decoupled Table]
+
     if (idempotencyKey) {
         const existingKey = await db.query.idempotencyKey.findFirst({
             where: and(
@@ -196,6 +204,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
         const searchStart = combineDateTimeTz(minDateStr, "00:00", timezone);
         const searchEnd = addDays(combineDateTimeTz(maxDateStr, "23:59", timezone), 2);
 
+
         const [existing, availabilityRecords] = await Promise.all([
             db.select({
                 workerId: shiftAssignment.workerId,
@@ -244,6 +253,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
     const assignmentsToInsert: typeof shiftAssignment.$inferInsert[] = [];
 
     // LOOP A: Iterate through Schedule Blocks
+
     for (const block of schedules) {
 
         // GROUPING: Generate a Layout Intent ID for this block ("Batch Context")
@@ -367,6 +377,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
     }
 
     // WH-204: Fetch location name for notification body
+
     const locationRecord = await db.query.location.findFirst({
         where: eq(location.id, locationId),
         columns: { name: true }
@@ -374,13 +385,29 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
     const venueName = locationRecord?.name || 'the venue';
 
     // 2. Execute Batch Inserts (Atomic Transaction)
+
+    // 2. Execute Batch Inserts (Atomic Transaction)
     const execute = async (tx: TxOrDb) => {
+
         if (shiftsToInsert.length > 0) {
             await tx.insert(shift).values(shiftsToInsert);
+
         }
 
         if (assignmentsToInsert.length > 0) {
-            await tx.insert(shiftAssignment).values(assignmentsToInsert);
+
+            try {
+
+                await tx.insert(shiftAssignment).values(assignmentsToInsert);
+
+            } catch (e: any) {
+
+
+
+
+
+                throw e;
+            }
         }
 
         // [ARCH-007] Record Idempotency Key
@@ -391,10 +418,12 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                 hash: payloadHash,
                 expiresAt: addDays(new Date(), 7) // 7 day retention for keys
             });
+
         }
 
         // WH-204: Schedule Notifications
         if (status === 'published' && assignmentsToInsert.length > 0) {
+
 
             // OPTIMIZATION: Bulk fetch preferences to avoid N+1 inside loop
             // Optimization for N+1: Collect all worker IDs
@@ -403,9 +432,11 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             const preferencesMap = new Map<string, any>(); // Using any to match the shape expected by buildNotificationSchedule which matches schema
 
             if (workerIdsForNotifs.length > 0) {
+
                 const prefs = await db.query.workerNotificationPreferences.findMany({
                     where: inArray(workerNotificationPreferences.workerId, workerIdsForNotifs)
                 });
+
 
                 for (const p of prefs) {
                     preferencesMap.set(p.workerId, {
@@ -451,23 +482,35 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                     userPrefs // INJECTED
                 );
 
+
                 notificationsToInsert.push(...schedule);
             }
+
 
             if (notificationsToInsert.length > 0) {
                 // Batch insert in chunks of 100
                 const CHUNK_SIZE = 100;
                 for (let i = 0; i < notificationsToInsert.length; i += CHUNK_SIZE) {
                     const chunk = notificationsToInsert.slice(i, i + CHUNK_SIZE);
+
                     await tx.insert(scheduledNotification).values(chunk);
                 }
-                console.log(`[PUBLISH] Scheduled ${notificationsToInsert.length} notifications`);
+
             }
         }
+
     };
 
-    if (tx) await execute(tx);
-    else await db.transaction(execute);
+    try {
+        if (tx) await execute(tx);
+        else await db.transaction(execute);
+    } catch (error) {
+
+        if (error instanceof Error) {
+
+        }
+        throw error;
+    }
 
     return {
         success: true,

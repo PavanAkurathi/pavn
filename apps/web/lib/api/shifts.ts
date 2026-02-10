@@ -142,7 +142,7 @@ export const deleteDrafts = async (orgId?: string) => {
 
 export const publishSchedule = async (payload: any, orgId?: string) => {
     const activeOrgId = await getSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/schedules/publish`, {
+    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/publish`, {
         method: "POST",
         headers: {
             "x-org-id": activeOrgId,

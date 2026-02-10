@@ -47,6 +47,7 @@ export function AddWorkerDialog() {
             });
 
             if (result && 'error' in result) {
+                console.error("Worker Add Error:", result.error);
                 toast.error(result.error);
             } else {
                 toast.success("Worker added successfully");

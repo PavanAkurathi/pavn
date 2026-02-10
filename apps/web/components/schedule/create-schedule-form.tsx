@@ -180,11 +180,15 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     }, [contacts, currentUserId, form]);
 
     const handleReview = async () => {
+        console.log("DEBUG: handleReview clicked");
         const isValid = await form.trigger();
+        console.log(`DEBUG: form.trigger() result: ${isValid}`);
         if (isValid) {
+            console.log("DEBUG: Setting isReviewOpen = true");
             setIsReviewOpen(true);
         } else {
             const errors = form.formState.errors;
+            console.error("VALIDATION ERROR:", JSON.stringify(errors, null, 2));
             const missingFields = Object.keys(errors).map(key => key).join(", ");
             toast.error(`Please check missing fields.`);
         }
@@ -266,7 +270,9 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                 schedules: apiSchedules
             };
 
+            console.log("DEBUG: Calling publishSchedule API", payload);
             await publishSchedule(payload, activeOrganizationId);
+            console.log("DEBUG: publishSchedule API success");
 
             // Track schedule publish
             posthog.capture('schedule_published', {
@@ -277,7 +283,10 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
 
             toast.success(status === 'published' ? "Schedule published successfully!" : "Draft saved successfully!");
             localStorage.removeItem("schedule-layout-draft");
+
+            console.log("DEBUG: Calling router.push");
             router.push("/dashboard/shifts");
+            console.log("DEBUG: router.push called");
         } catch (error) {
             console.error("Publish error:", error);
             toast.error("Failed to publish schedule.");

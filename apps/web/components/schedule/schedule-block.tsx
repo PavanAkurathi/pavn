@@ -289,6 +289,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                     months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full justify-center",
                                                 }}
                                                 min={1}
+                                                disabled={{ before: new Date() }}
                                             />
                                             {field.value?.length > 0 && (
                                                 <div className="p-2 border-t flex justify-end">
@@ -315,6 +316,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                     value={field.value}
                                     onChange={field.onChange}
                                     placeholder="Start time"
+                                    className="start-time-picker"
                                 />
                                 <FormMessage />
                             </FormItem>
@@ -329,7 +331,8 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                 <IntervalTimePicker
                                     value={field.value}
                                     onChange={field.onChange}
-                                    placeholder="End time"
+                                    placeholder="End Time"
+                                    className="end-time-picker"
                                 />
                                 <FormMessage />
                             </FormItem>

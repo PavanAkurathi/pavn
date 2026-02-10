@@ -149,6 +149,7 @@ interface IntervalTimePickerProps {
     onChange?: (value: string) => void;
     placeholder?: string;
     className?: string;
+    testId?: string;
 }
 
 // Generate time options in 15-minute intervals
@@ -166,7 +167,7 @@ const generateTimeOptions = () => {
 
 const TIME_OPTIONS = generateTimeOptions();
 
-export function IntervalTimePicker({ value, onChange, placeholder = "Select time", className }: IntervalTimePickerProps) {
+export function IntervalTimePicker({ value, onChange, placeholder = "Select time", className, testId }: IntervalTimePickerProps) {
 
     // Helper to format display label
     const formatLabel = (date: Date) => format(date, "h:mm a");
@@ -178,7 +179,7 @@ export function IntervalTimePicker({ value, onChange, placeholder = "Select time
 
     return (
         <Select value={value} onValueChange={handleValueChange}>
-            <SelectTrigger className={cn("w-full h-11 rounded-full", className)}>
+            <SelectTrigger className={cn("w-full h-11 rounded-full", className)} data-testid={testId}>
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent className="h-[200px]" position="popper">

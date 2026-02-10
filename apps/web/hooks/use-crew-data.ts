@@ -5,7 +5,8 @@ export interface Role {
 }
 
 export interface CrewMember {
-    id: string;
+    id: string; // Worker User ID
+    memberId?: string; // Member ID
     name: string;
     avatar: string;
     roles: string[];
@@ -36,28 +37,11 @@ export function useCrewData() {
     const orgId = useOrganizationId();
 
     // 2. SWR Fetch
-    // We need an endpoint in Shift Service to get schedulable crew
-    // GET /organizations/:id/crew
-    const shouldFetch = orgId ? `${API_BASE}/organizations/${orgId}/crew` : null;
+    // Use Next.js Internal API
+    const shouldFetch = orgId ? `/api/organizations/${orgId}/crew` : null;
 
-    // Custom fetcher with headers
-    const fetcherWithHeaders = async (url: string) => {
-        const res = await fetch(url, {
-            headers: {
-                'x-org-id': orgId || ''
-            },
-            credentials: 'include'
-        });
-        if (!res.ok) {
-            const error = new Error('An error occurred while fetching the data.');
-            (error as any).info = await res.json();
-            (error as any).status = res.status;
-            throw error;
-        }
-        return res.json();
-    };
-
-    const { data, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcherWithHeaders);
+    // Standard fetcher is fine for internal API
+    const { data, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcher);
 
 
 
