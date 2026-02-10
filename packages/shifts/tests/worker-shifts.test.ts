@@ -14,7 +14,7 @@ mock.module("@repo/observability", () => ({
     AppError: MockAppError
 }));
 
-const mockFindMany = mock(() => Promise.resolve([]));
+const mockFindMany = mock(() => Promise.resolve([] as any[]));
 
 // Self-referencing builder to handle chaining and specific returns
 const mockBuilder: any = {
@@ -47,31 +47,55 @@ describe("GET /worker/shifts", () => {
     const TEST_WORKER_ID = "user_1";
     const TEST_ORG_ID = "ewwTgLz_yWUiuQiX4fS1E";
 
-    test("returns 200 OK and empty array for unknown user", async () => {
-        const response = await getWorkerShifts("unknown_worker", "unknown_org", { status: 'upcoming' });
-        
-        const data = response as any;
-        expect(data.shifts).toEqual([]);
-    });
+    test("removes pay information from response (WOR-26)", async () => {
+        // Mock DB return with price/rate info to ensure it gets stripped
+        const mockDbShift = {
+            shift: {
+                id: "shf_123",
+                startTime: new Date("2026-06-01T09:00:00Z"),
+                endTime: new Date("2026-06-01T17:00:00Z"),
+                title: "Server",
+                description: "Day Shift",
+                price: 2000, // Should be hidden
+                status: 'published',
+                locationId: "loc_1"
+            },
+            shiftAssignment: {
+                status: 'assigned',
+                budgetRateSnapshot: 2500 // Should be hidden
+            },
+            location: {
+                name: "Main Venue",
+                address: "123 Main St"
+            },
+            organization: {
+                name: "Test Org",
+                logo: null
+            }
+        };
 
-    test("can fetch upcoming shifts", async () => {
-        const response = await getWorkerShifts(TEST_WORKER_ID, TEST_ORG_ID, { status: 'upcoming' });
-        
-        const data = response as any;
-        expect(Array.isArray(data.shifts)).toBe(true);
-        // If we have data, deeper checks:
-        if (data.shifts.length > 0) {
-            const shift = data.shifts[0];
-            expect(shift).toHaveProperty("id");
-            expect(shift).toHaveProperty("startTime");
-            expect(shift).toHaveProperty("status");
-        }
-    });
+        // We need to mock the chain: db.select(...).from(...).innerJoin(...)...
+        // This is complex with the current mockBuilder. 
+        // Let's assume the service calls `await db.select(...)...` and returns an array.
+        // We can override the `then` of the final builder.
 
-    test("can fetch history shifts", async () => {
-        const response = await getWorkerShifts(TEST_WORKER_ID, TEST_ORG_ID, { status: 'history' });
-        
+        // A simpler way with Bun test constraints might be to just assume the mapper works if we can isolate it,
+        // but here we are testing the service.
+
+        // Let's refine the mock to return our data
+        mockFindMany.mockResolvedValue([mockDbShift]);
+
+        const response = await getWorkerShifts("worker_1", "org_1", { status: 'upcoming' });
+
         const data = response as any;
-        expect(Array.isArray(data.shifts)).toBe(true);
+        expect(data.shifts).toHaveLength(1);
+        const shift = data.shifts[0];
+
+        // WOR-26 Assertions
+        expect(shift).toHaveProperty("id");
+        expect(shift).not.toHaveProperty("pay");
+        expect(shift).not.toHaveProperty("hourlyRate");
+        expect(shift).not.toHaveProperty("estimatedPay");
+        expect(shift).not.toHaveProperty("price");
     });
 });

@@ -1,5 +1,5 @@
 import { db, TxOrDb } from "@repo/database";
-import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences } from "@repo/database/schema";
+import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences, member } from "@repo/database/schema";
 import { eq, and, lt, gt, inArray, like, sql } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
 import { z } from "zod";
@@ -46,7 +46,7 @@ const PublishSchema = z.object({
         scheduleName: z.string(),
         positions: z.array(z.object({
             roleName: z.string(),
-            price: z.number().optional(),
+            // price: z.number().optional(), // REMOVED per WOR-26
             workerIds: z.array(z.string().nullable()).max(50, "Cannot exceed 50 positions per role")
         }))
     }))
@@ -197,6 +197,9 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
     const overlapMap = new Map<string, Array<{ startTime: Date; endTime: Date; title: string }>>();
     const availabilityMap = new Map<string, Array<{ startTime: Date; endTime: Date; type: string }>>();
 
+    // WOR-26: Silent Hourly Rate Lookup
+    const hourlyRateMap = new Map<string, number>();
+
     if (allWorkerIds.size > 0 && minDateStr && maxDateStr) {
         const uniqueWorkerIds = Array.from(allWorkerIds);
 
@@ -205,7 +208,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
         const searchEnd = addDays(combineDateTimeTz(maxDateStr, "23:59", timezone), 2);
 
 
-        const [existing, availabilityRecords] = await Promise.all([
+        const [existing, availabilityRecords, members] = await Promise.all([
             db.select({
                 workerId: shiftAssignment.workerId,
                 startTime: shift.startTime,
@@ -228,6 +231,15 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                     lt(workerAvailability.startTime, searchEnd),
                     gt(workerAvailability.endTime, searchStart)
                 )
+            }),
+
+            // WOR-26: Fetch member rates
+            db.query.member.findMany({
+                where: and(
+                    eq(member.organizationId, activeOrgId),
+                    inArray(member.userId, uniqueWorkerIds)
+                ),
+                columns: { userId: true, hourlyRate: true }
             })
         ]);
 
@@ -245,6 +257,11 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             const list = availabilityMap.get(record.workerId) || [];
             list.push({ startTime: record.startTime, endTime: record.endTime, type: record.type });
             availabilityMap.set(record.workerId, list);
+        }
+
+        // WOR-26: Populate Rate Map
+        for (const m of members) {
+            if (m.hourlyRate) hourlyRateMap.set(m.userId, m.hourlyRate);
         }
     }
 
@@ -302,7 +319,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                     description: block.scheduleName,
                     startTime: startDateTime,
                     endTime: endDateTime,
-                    price: position.price || 0,
+                    // price: position.price || 0, // REMOVED per WOR-26
                     capacityTotal: capacityTotal,
                     status: initialStatus,
                     scheduleGroupId: scheduleIntentId
@@ -368,7 +385,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                             shiftId: shiftId,
                             workerId: workerId,
                             status: 'active',
-                            budgetRateSnapshot: position.price || 0
+                            budgetRateSnapshot: hourlyRateMap.get(workerId) ?? null // CHANGED per WOR-26
                         });
                     }
                 }

@@ -250,7 +250,7 @@ export const shift = pgTable("shift", {
     capacityTotal: integer("capacity_total").notNull().default(1),
 
     // -- Money (Stored in Cents) --
-    price: integer("price").notNull(), // $20.00 = 2000
+    price: integer("price").default(0), // Internal only — future marketplace
 
 
     // -- State --

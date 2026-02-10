@@ -112,11 +112,11 @@ interface WorkerShiftDto {
         clockOut?: string;
         breakMinutes: number;
     };
-    pay: {
+    /* pay: {  // REMOVED per WOR-26
         hourlyRate: number;
         estimatedPay?: number;
         grossPayCents?: number;
-    };
+    }; */
 }
 
 const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
@@ -147,15 +147,17 @@ const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
             clockOut: assignment.clockOut?.toISOString(),
             breakMinutes: assignment.breakMinutes || 0
         },
-        pay: {
+        /* pay: { // REMOVED per WOR-26
             hourlyRate: s.price || 0,
             estimatedPay: calculateEstimatedPay(s.startTime, s.endTime, s.price),
             grossPayCents: assignment.grossPayCents
-        }
+        } */
     };
 };
 
+/* // REMOVED per WOR-26
 const calculateEstimatedPay = (start: Date, end: Date, rate: number): number => {
     const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     return Math.round(hours * rate);
 };
+*/

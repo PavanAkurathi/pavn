@@ -246,8 +246,8 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                 });
                 const formattedPositions = Object.entries(roleGroups).map(([roleName, workerIds]) => ({
                     roleName,
-                    workerIds,
-                    price: 0
+                    workerIds
+                    // price: 0 // REMOVED per WOR-26
                 }));
 
                 // Push ONE payload item

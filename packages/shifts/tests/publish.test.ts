@@ -34,7 +34,8 @@ const mockBuilder: any = {
         workerAvailability: { findMany: mock(() => Promise.resolve([])) },
         location: { findFirst: mock(() => Promise.resolve({ name: 'Test Venue' })) },
         workerNotificationPreferences: { findMany: mock(() => Promise.resolve([])) },
-        idempotencyKey: { findFirst: mock(() => Promise.resolve(null)) }
+        idempotencyKey: { findFirst: mock(() => Promise.resolve(null)) },
+        member: { findMany: mock(() => Promise.resolve([])) }
     },
     select: mock(() => ({
         from: mock(() => ({
@@ -54,7 +55,8 @@ mock.module("@repo/database", () => ({
     scheduledNotification: {},
     workerAvailability: {},
     location: {},
-    workerNotificationPreferences: {}
+    workerNotificationPreferences: {},
+    member: {}
 }));
 
 mock.module("../src/services/overlap", () => ({
@@ -278,5 +280,48 @@ describe("Publish  (WH-131 Fix)", () => {
 
         const res = await publishSchedule(body, orgId);
         expect(res.count).toBe(2); // June 5, June 12
+    });
+    test("captures silent hourly rate snapshot (WOR-26)", async () => {
+        const orgId = "org_123";
+        const workerId = "worker_rate_test";
+        const hourlyRate = 2500; // $25.00
+
+        // Mock member lookup to return rate
+        mockBuilder.query.member.findMany = mock(() => Promise.resolve([
+            { userId: workerId, hourlyRate: hourlyRate }
+        ]));
+
+        const body = {
+            organizationId: orgId,
+            locationId: "loc_1",
+            timezone: "UTC",
+            schedules: [{
+                startTime: "09:00",
+                endTime: "17:00",
+                dates: ["2026-06-05"],
+                scheduleName: "Rate Test",
+                positions: [{
+                    roleName: "Server",
+                    workerIds: [workerId]
+                }]
+            }]
+        };
+
+        await publishSchedule(body, orgId);
+
+        const calls = mockInsertValues.mock.calls as any[];
+        const shiftAndAssignmentCalls = calls.filter(args => Array.isArray(args[0]));
+
+        const allInserts: any[] = [];
+        for (const call of shiftAndAssignmentCalls) {
+            allInserts.push(...call[0]);
+        }
+
+        const assignment = allInserts.find((i: any) => i.workerId === workerId && i.status === 'active');
+
+        expect(assignment).toBeDefined();
+        // create-schedule-form sends 0, but backend lookup should override or fill it
+        // Actually, frontend no longer sends price. publish.ts looks it up.
+        expect(assignment.budgetRateSnapshot).toBe(hourlyRate);
     });
 });

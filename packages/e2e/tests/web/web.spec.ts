@@ -141,9 +141,9 @@ test.describe('Schedule Management', () => {
         // Wait for calendar to be visible
         await expect(page.locator('table[role="grid"]')).toBeVisible();
 
-        // Click the first available enabled day button in the calendar
+        // Click the 6th available enabled day button in the calendar to avoid overlap with previous test runs
         // Use more robust selector targeting the button inside the grid
-        const dayLocator = page.locator('table[role="grid"] button:not([disabled])').first();
+        const dayLocator = page.locator('table[role="grid"] button:not([disabled])').nth(5);
         await dayLocator.click({ force: true });
         // Close popover (clicking outside or pressing escape, or just clicking the next element triggers blur)
         await page.keyboard.press('Escape');

@@ -61,7 +61,8 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
 
             totalShifts += shiftCountForBlock;
 
-            // Cost Calculation (Mock: $20/hr * duration * shifts)
+            // Cost Calculation REMOVED per WOR-26
+            /*
             const startH = parseInt(schedule.startTime.split(':')[0] || "0");
             const endH = parseInt(schedule.endTime.split(':')[0] || "0");
             const breakM = parseInt(schedule.breakDuration || "0");
@@ -73,6 +74,7 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
             if (durationHours > 0) {
                 estimatedCost += (durationHours * 20 * shiftCountForBlock);
             }
+            */
 
             // Positions * Occurrences
             schedule.positions.forEach(pos => {
@@ -86,7 +88,7 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
             totalAssigned,
             totalOpen,
             uniqueDates: Array.from(uniqueDates).sort(),
-            estimatedCost
+            // estimatedCost // REMOVED per WOR-26
         };
     }, [data]);
 
@@ -129,6 +131,7 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
                                 {stats.totalAssigned} Assigned • {stats.totalOpen} Open
                             </div>
                         </div>
+                        {/* 
                         <div className="space-y-1">
                             <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                                 <DollarSign className="h-4 w-4" />
@@ -140,7 +143,8 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
                             <div className="text-xs text-muted-foreground pl-6">
                                 Based on $20/hr avg
                             </div>
-                        </div>
+                        </div> 
+                        */}
                     </div>
 
                     {/* 3. Warning */}
@@ -159,7 +163,7 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
                     <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
                         Cancel
                     </Button>
-                    <Button onClick={onConfirm} disabled={isSubmitting || stats.totalShifts === 0} data-testid="confirm-publish">
+                    <Button onClick={() => onConfirm()} disabled={isSubmitting || stats.totalShifts === 0} data-testid="confirm-publish">
                         {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Confirm & Publish
                     </Button>

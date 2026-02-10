@@ -183,6 +183,13 @@
       "when": 1770434979802,
       "tag": "0025_gray_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1770698637995,
+      "tag": "0026_wide_fallen_one",
+      "breakpoints": true
     }
   ]
 }

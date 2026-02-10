@@ -50,7 +50,13 @@
           "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
           "isIosBackgroundLocationEnabled": true
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "@sentry/react-native",
+      "expo-asset",
+      "expo-font",
+      "expo-router",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {
