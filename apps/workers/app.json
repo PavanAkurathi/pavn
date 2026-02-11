@@ -17,11 +17,14 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "location",
+          "fetch",
+          "location",
           "fetch"
         ],
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track shift attendance.",
         "NSLocationWhenInUseUsageDescription": "We need your location to track shift attendance."
-      }
+      },
+      "bundleIdentifier": "com.avpavan.workers"
     },
     "android": {
       "package": "com.avpavan.workers",
