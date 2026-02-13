@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { DraftBanner } from "@/components/dashboard/draft-banner";
-import { AVAILABLE_LOCATIONS } from "@repo/shifts-service";
+import { getLocations } from "@repo/shifts-service";
 import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
@@ -51,11 +51,20 @@ export default async function ShiftsPage(props: {
 
     const orgId = activeOrgId;
 
-    const [shifts, pendingCount, draftCount] = await Promise.all([
+    const [shifts, pendingCount, draftCount, locations] = await Promise.all([
         getShifts({ view, orgId }),
         getPendingShiftsCount(orgId),
-        getDraftShiftsCount(orgId)
+        getDraftShiftsCount(orgId),
+        getLocations(orgId),
     ]);
+
+    // Fix: Map DB locations to Frontend Location type (handle null address)
+    const mappedLocations = locations.map(l => ({
+        id: l.id,
+        name: l.name,
+        address: l.address || "",
+        timezone: l.timezone || undefined, // Ensure compatible type
+    }));
 
     return (
         <div className="space-y-6">
@@ -72,7 +81,7 @@ export default async function ShiftsPage(props: {
             <ShiftsView
                 key={view}
                 initialShifts={shifts}
-                availableLocations={AVAILABLE_LOCATIONS}
+                availableLocations={mappedLocations}
                 defaultTab={view}
                 pendingCount={pendingCount}
             />
