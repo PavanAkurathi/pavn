@@ -3,7 +3,7 @@
 import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
-import { mapShiftToDto } from "../utils/mapper";
+import { mapShiftToDto } from "../../utils/mapper";
 import { AppError } from "@repo/observability";
 
 export const getShiftById = async (id: string, orgId: string) => {

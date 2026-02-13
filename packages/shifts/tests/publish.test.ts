@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { publishSchedule } from "../src/services/publish";
+import { publishSchedule } from "../src/modules/shifts/publish";
 import { nanoid } from "nanoid";
 
 // --- Mocks ---
@@ -59,7 +59,7 @@ mock.module("@repo/database", () => ({
     member: {}
 }));
 
-mock.module("../src/services/overlap", () => ({
+mock.module("../src/modules/time-tracking/overlap", () => ({
     findOverlappingAssignment: mock(() => Promise.resolve(null))
 }));
 

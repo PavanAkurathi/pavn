@@ -3,7 +3,7 @@
 import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
 import { or, eq, and, inArray, lt, asc } from "drizzle-orm";
-import { mapShiftToDto } from "../utils/mapper";
+import { mapShiftToDto } from "../../utils/mapper";
 
 export const getPendingShifts = async (orgId: string) => {
     const now = Date.now();

@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
-import { getUpcomingShifts } from "../src/services/upcoming";
+import { getUpcomingShifts } from "../src/modules/shifts/upcoming";
 
 // --- Mocks ---
 const mockFindMany = mock(() => Promise.resolve([

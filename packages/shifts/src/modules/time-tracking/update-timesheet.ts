@@ -1,6 +1,6 @@
 // packages/shifts/src/services/update-timesheet.ts
 
-import { AssignmentService } from "../services/assignments";
+import { AssignmentService } from "./service";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
 

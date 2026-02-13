@@ -4,7 +4,7 @@ import { eq, and, inArray } from "drizzle-orm";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
 import { OverlapService } from "./overlap";
-import { newId } from "../utils/ids";
+import { newId } from "../../utils/ids";
 
 const AssignSchema = z.object({
     workerIds: z.array(z.string()).min(1)

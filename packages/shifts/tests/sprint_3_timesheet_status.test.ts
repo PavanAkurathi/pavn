@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { getShiftTimesheets } from "../src/services/get-timesheets";
+import { getShiftTimesheets } from "../src/modules/time-tracking/get-timesheets";
 import { TimesheetWorker } from "../src/types";
 
 // Mock DB

@@ -18,8 +18,8 @@ interface ShiftSummaryHeaderProps {
 export function ShiftSummaryHeader({
     title,
     role,
-    // rate, // REMOVED per TICKET-005/008
-    date, location,
+    date,
+    location,
     timeRange,
     breakDuration,
     createdBy,

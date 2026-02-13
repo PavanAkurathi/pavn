@@ -18,7 +18,6 @@ interface ShiftApprovalFooterProps {
     workerCount: number;
     filledCount: number;
     totalHours: string;
-    totalCost: string;
     hasErrors: boolean;
     isApproved?: boolean;
     onApprove: () => void;
@@ -28,7 +27,6 @@ export function ShiftApprovalFooter({
     workerCount,
     filledCount,
     totalHours,
-    totalCost,
     hasErrors,
     isApproved = false,
     onApprove,
@@ -50,10 +48,6 @@ export function ShiftApprovalFooter({
                     </div>
 
                     <div className="flex items-center gap-8">
-                        <div className="hidden flex-col md:flex md:text-right">
-                            <span className="text-xs text-muted-foreground">Final Cost</span>
-                            <span className="font-mono font-medium">{totalCost}</span>
-                        </div>
                         <Button variant="outline" className="rounded-full pointer-events-none opacity-80">
                             Archived
                         </Button>
@@ -96,10 +90,6 @@ export function ShiftApprovalFooter({
                         <span className="text-xs text-muted-foreground">Total Hours</span>
                         <span className="font-mono font-medium">{totalHours}</span>
                     </div>
-                    <div className="flex flex-col md:text-right">
-                        <span className="text-xs text-muted-foreground">Est. Cost</span>
-                        <span className="font-mono font-medium">{totalCost}</span>
-                    </div>
 
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -119,7 +109,7 @@ export function ShiftApprovalFooter({
                                 <AlertDialogTitle>Approve Shift Timesheet?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This will finalize the timesheets for {workerCount} workers.
-                                    Total estimated cost is {totalCost}. This action cannot be undone.
+                                    This action cannot be undone.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

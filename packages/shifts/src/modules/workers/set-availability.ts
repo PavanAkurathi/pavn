@@ -3,7 +3,7 @@
 import { db } from "@repo/database";
 import { workerAvailability } from "@repo/database/schema";
 import { AppError } from "@repo/observability";
-import { newId } from "../utils/ids";
+import { newId } from "../../utils/ids";
 import { z } from "zod";
 
 const SetAvailabilitySchema = z.object({

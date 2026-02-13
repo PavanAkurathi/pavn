@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { publishSchedule } from "../src/services/publish";
+import { publishSchedule } from "../src/modules/shifts/publish";
 
 // --- Mocks ---
 // We need to capture what is inserted to verify the structure
@@ -60,7 +60,7 @@ mock.module("@repo/notifications", () => ({
 
 // Mock Overlap Service
 const mockFindOverlappingAssignment = mock(() => Promise.resolve<any>(null));
-mock.module("../src/services/overlap", () => ({
+mock.module("../src/modules/time-tracking/overlap", () => ({
     findOverlappingAssignment: mockFindOverlappingAssignment
 }));
 

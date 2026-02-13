@@ -3,8 +3,8 @@
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
-import { TimesheetWorker } from "../types";
-import { getInitials } from "../utils/formatting";
+import { TimesheetWorker } from "../../types";
+import { getInitials } from "../../utils/formatting";
 import { AppError } from "@repo/observability";
 
 export const getShiftTimesheets = async (shiftId: string, orgId: string) => {

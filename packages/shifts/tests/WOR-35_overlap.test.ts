@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { publishSchedule } from "../src/services/publish";
+import { publishSchedule } from "../src/modules/shifts/publish";
 import { eq, and, ne, lte, gte } from "drizzle-orm";
 
 // Mock Database

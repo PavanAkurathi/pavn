@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
-import { getHistoryShifts } from "../src/services/history";
+import { getHistoryShifts } from "../src/modules/shifts/history";
 import { Shift } from "../src/types";
 
 

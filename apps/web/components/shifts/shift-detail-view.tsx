@@ -39,6 +39,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     clockOut: ts.clockOut ? format(new Date(ts.clockOut), "hh:mm a") : "",
                     breakDuration: `${ts.breakMinutes} min`,
                     rating: 0,
+                    jobTitle: "Event Staff", // Default or derive from shift role
                 };
             }
             return {
@@ -51,6 +52,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 clockOut: "",
                 breakDuration: "0 min",
                 rating: 0,
+                jobTitle: "Event Staff",
             };
         });
     }, [shift.assignedWorkers, timesheets]);
@@ -116,7 +118,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
     // Mock totals
     const totalHours = "19 hrs, 34 mins";
-    const totalCost = "~ $1,250.00";
 
     const isApproved = shift.status === 'approved';
     const isCancelled = shift.status === 'cancelled';
@@ -269,7 +270,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             <ShiftSummaryHeader
                 title={shift.title}
                 role="Event Staff" // Derive from shift or role data
-                // rate={`$${shift.price}`} // REMOVED per TICKET-005/008
+
                 date={format(new Date(shift.startTime), "EEE, MMM d, yyyy")}
                 location={shift.locationName}
                 timeRange={`${format(new Date(shift.startTime), "h:mm a")} - ${format(new Date(shift.endTime), "h:mm a")}`}
@@ -308,7 +309,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         workerCount={workerCount}
                         filledCount={filledCount}
                         totalHours={totalHours}
-                        totalCost={totalCost}
+
                         hasErrors={hasErrors}
                         isApproved={isApproved}
                         onApprove={() => onApprove?.()}

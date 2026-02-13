@@ -1,7 +1,7 @@
 import { db } from "@repo/database";
 import { member, user } from "@repo/database/schema";
 import { eq, notInArray, and, ilike } from "drizzle-orm";
-import { getInitials } from "../utils/formatting";
+import { getInitials } from "../../utils/formatting";
 
 export const getCrew = async (orgId: string, options: { search?: string, limit?: number, offset?: number } = {}) => {
     const { search, limit = 50, offset = 0 } = options;

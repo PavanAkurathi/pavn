@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach, setSystemTime } from "bun:test";
-import { getPendingShifts } from "../src/services/pending";
+import { getPendingShifts } from "../src/modules/shifts/pending";
 
 // Mock Data
 const shifts = [] as any[];

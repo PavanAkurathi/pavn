@@ -19,7 +19,7 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
         const { eventType, region } = data as { eventType: Location.GeofencingEventType, region: Location.LocationRegion };
 
         const type = eventType === Location.GeofencingEventType.Enter ? 'ENTER' : 'EXIT';
-        console.log(`[GEOFENCE] ${type}: ${region.identifier}`);
+
 
         try {
             await AsyncStorage.setItem(`geofence_log_${Date.now()}`, JSON.stringify({
@@ -49,7 +49,7 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
  */
 export async function syncGeofences() {
     try {
-        console.log('[GEOFENCE] Syncing...');
+
 
         // 1. Fetch upcoming shifts
         const shifts = await api.shifts.getUpcomingWithLocation();
@@ -80,9 +80,9 @@ export async function registerGeofences(shifts: WorkerShift[]) {
         const limitedRegions = regions.slice(0, 20);
 
         await Location.startGeofencingAsync(GEOFENCE_TASK_NAME, limitedRegions);
-        console.log(`[GEOFENCE] Monitoring ${limitedRegions.length} regions`);
+
     } else {
         await Location.stopGeofencingAsync(GEOFENCE_TASK_NAME);
-        console.log('[GEOFENCE] No active regions, stopped monitoring.');
+
     }
 }

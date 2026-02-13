@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { approveShift } from "../src/services/approve";
+import { approveShift } from "../src/modules/time-tracking/approve";
 import { nanoid } from "nanoid";
 import { addMinutes, addHours } from "date-fns";
 

@@ -18,7 +18,7 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
 
         // Log locally for now (WH-209 Requirement)
         // In future tickets, this will POST to backend
-        console.log('[LOCATION] Background update received:', locations.length);
+
 
         try {
             // Optional: Store last location for debug
@@ -41,24 +41,24 @@ TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
  */
 export async function startLocationTracking() {
     try {
-        console.log('[LOCATION] Requesting permissions...');
+
 
         // 1. Foreground Permission
         const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
         if (fgStatus !== 'granted') {
-            console.log('[LOCATION] Foreground permission denied');
+            console.warn('[LOCATION] Foreground permission denied');
             return false;
         }
 
         // 2. Background Permission
         const { status: bgStatus } = await Location.requestBackgroundPermissionsAsync();
         if (bgStatus !== 'granted') {
-            console.log('[LOCATION] Background permission denied');
+            console.warn('[LOCATION] Background permission denied');
             return false;
         }
 
         // 3. Start Tracking
-        console.log('[LOCATION] Starting background updates...');
+        // console.log('[LOCATION] Starting background updates...');
         await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
             accuracy: Location.Accuracy.Balanced,
             distanceInterval: 50, // Update every 50 meters
@@ -72,7 +72,7 @@ export async function startLocationTracking() {
             }
         });
 
-        console.log('[LOCATION] Verified started: ', await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME));
+
         return true;
 
     } catch (error) {
@@ -89,7 +89,7 @@ export async function stopLocationTracking() {
         const isTracking = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
         if (isTracking) {
             await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
-            console.log('[LOCATION] Stopped tracking');
+
         }
     } catch (error) {
         console.error('[LOCATION] Failed to stop tracking:', error);

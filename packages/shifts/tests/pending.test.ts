@@ -1,5 +1,5 @@
 import { describe, expect, test, mock } from "bun:test";
-import { getPendingShifts } from "../src/services/pending";
+import { getPendingShifts } from "../src/modules/shifts/pending";
 
 // --- Mocks ---
 const mockFindMany = mock(() => Promise.resolve([] as any[]));

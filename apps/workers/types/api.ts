@@ -28,7 +28,7 @@ export interface Organization {
     name: string;
 }
 
-// ShiftPay removed per TICKET-007
+
 
 export interface Timesheet {
     clockIn?: string;
@@ -48,7 +48,6 @@ export interface WorkerShift {
     status: ShiftStatus;
     location: Location;
     organization: Organization;
-    // pay: ShiftPay; // REMOVED per TICKET-007
     timesheet: Timesheet;
     assignmentId?: string;
     notes?: string;

@@ -29,7 +29,7 @@ export default function AddCertificationScreen() {
 
     const handleSave = () => {
         // Here we would normally upload the image and save the data
-        console.log("Saving certification:", { ...form, image });
+
         router.back();
     };
 

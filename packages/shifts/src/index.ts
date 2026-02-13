@@ -1,71 +1,29 @@
-// packages/shifts/src/index.ts
-// Shifts Package - Business Logic Library (NO SERVER)
 
-// =============================================================================
-// TYPES
-// =============================================================================
-export type { Shift, ShiftStatus, TimesheetWorker } from "./types";
+// Export modules
+export * from "./types";
 export * from "./schemas";
+export * from "./modules/shifts/publish";
+export * from "./modules/shifts/drafts";
+export * from "./modules/shifts/upcoming";
+export * from "./modules/shifts/history";
+export * from "./modules/shifts/get-by-id";
+export * from "./modules/shifts/cancel";
 
-// =============================================================================
-// SERVICES (Business Logic)
-// =============================================================================
+export * from "./modules/time-tracking/approve";
+export * from "./modules/time-tracking/assign";
+export * from "./modules/time-tracking/service"; // Was assignments.ts
+export * from "./modules/time-tracking/worker-shifts";
 
-// Shift listing
-export { getUpcomingShifts } from "./services/upcoming";
-export { getPendingShifts } from "./services/pending";
-export { getHistoryShifts } from "./services/history";
-export { getDraftShifts } from "./services/drafts";
-export { deleteDrafts } from "./services/delete-drafts";
+export * from "./modules/workers/invite-worker";
+export * from "./modules/workers/get-crew";
+export * from "./modules/workers/get-availability";
+export * from "./modules/workers/set-availability";
 
-// Single shift operations
-export { getShiftById } from "./services/get-by-id";
-export { getShiftGroup } from "./services/get-shift-group";
-export { approveShift } from "./services/approve";
-export { cancelShift } from "./services/cancel";
-export { assignWorker } from "./services/assign";
+export * from "./modules/locations/get-locations";
+export * from "./modules/locations/create-location";
+export * from "./modules/locations/update-location";
 
-// Timesheets
-export { getShiftTimesheets } from "./services/get-timesheets";
-export { updateTimesheet } from "./services/update-timesheet";
-export { getTimesheetsReport } from "./services/get-timesheets-report";
-export { getReportFilters } from "./services/get-report-filters";
-export { exportTimesheets } from "./services/export-timesheets";
+export * from "./modules/reporting/export-timesheets";
+export * from "./modules/reporting/get-timesheets-report";
 
-// Publishing
-export { publishSchedule } from "./services/publish";
-
-// Crew & Organization
-export { getCrew } from "./services/get-crew";
-export { createLocation } from "./services/create-location";
-
-// Availability
-export { getAvailability } from "./services/get-availability";
-export { setAvailability } from "./services/set-availability";
-
-// Worker shifts
-export { getWorkerShifts } from "./services/worker-shifts";
-
-// Organization & Locations
-export { getLocations } from "./services/get-locations";
-export { updateLocation } from "./services/update-location";
-export { deleteLocation } from "./services/delete-location";
-
-// Worker Management
-export { inviteWorker } from "./services/invite-worker";
-export { updateWorker } from "./services/update-worker";
-export { deactivateWorker } from "./services/deactivate-worker";
-export { reactivateWorker } from "./services/reactivate-worker";
-
-// Settings
-export { getSettings } from "./services/get-settings";
-export { updateSettings } from "./services/update-settings";
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-export const AVAILABLE_LOCATIONS = [
-    { id: "loc-1", name: "Main Office", address: "123 Main St" },
-    { id: "loc-2", name: "Downtown Branch", address: "456 Downtown Ave" },
-    { id: "loc-3", name: "Airport Hub", address: "789 Airport Rd" }
-];
+export * from "./modules/org/get-settings";

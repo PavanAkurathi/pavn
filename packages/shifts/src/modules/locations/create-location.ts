@@ -1,14 +1,13 @@
 import { db } from "@repo/database";
 import { location } from "@repo/database/schema";
 import { sql } from "drizzle-orm";
-import { geocodeAddress } from "../services/geocoding";
 import { z } from "zod";
 
 import { AppError } from "@repo/observability";
 
-import { newId } from "../utils/ids";
-
-import { createLocationSchema } from "../schemas";
+import { geocodeAddress } from "./geocoding";
+import { newId } from "../../utils/ids";
+import { createLocationSchema } from "../../schemas";
 
 export const createLocation = async (body: any, orgId: string) => {
     const parsed = createLocationSchema.safeParse(body);

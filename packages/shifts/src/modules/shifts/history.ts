@@ -3,7 +3,7 @@
 import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
 import { inArray, desc, and, eq } from "drizzle-orm";
-import { mapShiftToDto } from "../utils/mapper";
+import { mapShiftToDto } from "../../utils/mapper";
 
 export const getHistoryShifts = async (orgId: string, pagination: { limit: number, offset: number }) => {
     const { limit, offset } = pagination;

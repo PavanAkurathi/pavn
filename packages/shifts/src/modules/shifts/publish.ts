@@ -8,8 +8,8 @@ import { z } from "zod";
 
 import { fromZonedTime } from "date-fns-tz";
 import { AppError } from "@repo/observability";
-import { newId } from "../utils/ids";
-import { expandRecurringDates, RecurrenceConfig } from "../utils/recurrence";
+import { newId } from "../../utils/ids";
+import { expandRecurringDates, RecurrenceConfig } from "../../utils/recurrence";
 import { createHash } from "crypto";
 import { buildNotificationSchedule } from "@repo/notifications";
 

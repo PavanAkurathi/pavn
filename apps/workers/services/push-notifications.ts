@@ -13,7 +13,7 @@ const PUSH_TOKEN_KEY = 'push_token_registered';
  */
 export async function registerForPushNotifications(): Promise<string | null> {
     if (!Device.isDevice) {
-        console.log('[PUSH] Must use physical device for push notifications');
+        console.warn('[PUSH] Must use physical device for push notifications');
         return null;
     }
 
@@ -27,7 +27,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     if (finalStatus !== 'granted') {
-        console.log('[PUSH] Permission denied');
+        console.warn('[PUSH] Permission denied');
         return null;
     }
 
@@ -42,7 +42,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     // Check if already registered
     const lastRegistered = await AsyncStorage.getItem(PUSH_TOKEN_KEY);
     if (lastRegistered === pushToken) {
-        console.log('[PUSH] Token already registered');
+
         return pushToken;
     }
 
@@ -57,7 +57,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
         });
 
         await AsyncStorage.setItem(PUSH_TOKEN_KEY, pushToken);
-        console.log('[PUSH] Token registered:', pushToken.substring(0, 20) + '...');
+
 
         return pushToken;
     } catch (error) {

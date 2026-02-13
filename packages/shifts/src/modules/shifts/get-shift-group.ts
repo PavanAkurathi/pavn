@@ -4,7 +4,7 @@ import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { AppError } from "@repo/observability";
-import { getInitials } from "../utils/formatting";
+import { getInitials } from "../../utils/formatting";
 
 export const getShiftGroup = async (groupId: string, orgId: string) => {
     // 1. Fetch all shifts in the group

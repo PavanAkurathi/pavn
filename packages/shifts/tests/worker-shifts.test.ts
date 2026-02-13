@@ -1,5 +1,5 @@
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { getWorkerShifts } from "../src/services/worker-shifts";
+import { getWorkerShifts } from "../src/modules/time-tracking/worker-shifts";
 
 // --- Mocks ---
 

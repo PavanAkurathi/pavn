@@ -1,7 +1,7 @@
 import { db } from "@repo/database";
 import { location } from "@repo/database/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { LocationSchema } from "../schemas";
+import { LocationSchema } from "../../schemas";
 import { geocodeAddress } from "./geocoding";
 import { AppError } from "@repo/observability";
 

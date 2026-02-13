@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach, spyOn } from "bun:test";
-import { approveShift } from "../src/services/approve";
+import { approveShift } from "../src/modules/time-tracking/approve";
 
 // Mocks
 const mockQuery = mock(() => Promise.resolve<any>(null));

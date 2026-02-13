@@ -1,6 +1,6 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { AssignmentService } from "../src/services/assignments";
+import { AssignmentService } from "../src/modules/time-tracking/service";
 import { addHours } from "date-fns";
 
 // --- Mocks ---

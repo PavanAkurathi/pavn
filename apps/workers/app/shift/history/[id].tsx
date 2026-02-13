@@ -23,9 +23,7 @@ export default function PastShiftDetailScreen() {
         role: "Bartender",
         venue: isRecent ? "NYE Gala" : "Tech Conf",
         date: isRecent ? "Yesterday, Jan 7" : "Nov 15, 2025",
-        earnings: isRecent ? "$400.00" : "$360.00",
         hours: isRecent ? "8.0" : "8.0",
-        rate: isRecent ? "$50/hr" : "$45/hr",
         clockIn: "7:00 PM",
         clockOut: "3:00 AM",
         break: "30m (Paid)"
@@ -70,13 +68,10 @@ export default function PastShiftDetailScreen() {
 
             <ScrollView style={styles.content}>
                 {/* HERO: Earnings */}
+                {/* HERO: Completed */}
                 <View style={styles.heroSection}>
-                    <Text style={styles.heroLabel}>Total Earnings</Text>
-                    <Text style={styles.heroAmount}>{shiftData.earnings}</Text>
-                    <View style={styles.heroBadge}>
-                        <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />
-                        <Text style={styles.heroBadgeText}>COMPLETED</Text>
-                    </View>
+                    <Ionicons name="checkmark-circle" size={64} color="#4CAF50" />
+                    <Text style={[styles.heroBadgeText, { marginTop: 16, fontSize: 18 }]}>COMPLETED</Text>
                 </View>
 
                 <View style={styles.divider} />
@@ -122,10 +117,7 @@ export default function PastShiftDetailScreen() {
                         <Text style={styles.detailLabel}>Date</Text>
                         <Text style={styles.detailValue}>{shiftData.date}</Text>
                     </View>
-                    <View style={styles.detailRow}>
-                        <Text style={styles.detailLabel}>Rate</Text>
-                        <Text style={styles.detailValue}>{shiftData.rate}</Text>
-                    </View>
+
                 </View>
             </ScrollView>
 

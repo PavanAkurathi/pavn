@@ -20,7 +20,7 @@ mock.module("@repo/database", () => ({
     }
 }));
 
-import { getCrew } from "../src/services/get-crew"; // Import AFTER mocking
+import { getCrew } from "../src/modules/workers/get-crew"; // Import AFTER mocking
 
 describe("WH-116: Crew Search", () => {
     beforeEach(() => {

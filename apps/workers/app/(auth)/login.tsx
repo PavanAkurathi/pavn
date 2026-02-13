@@ -36,7 +36,7 @@ export default function LoginScreen() {
 
         const formattedPhone = result.data; // e.g., +1781...
         setLoading(true);
-        console.log(`[Login] Sending OTP to: ${formattedPhone}`);
+
 
         try {
             // Send OTP
@@ -54,7 +54,7 @@ export default function LoginScreen() {
                 return;
             }
 
-            console.log("[Login] OTP Sent successfully");
+
             setStep('otp');
             Toast.show({
                 type: 'success',
@@ -92,7 +92,7 @@ export default function LoginScreen() {
 
         const formattedPhone = phoneResult.data;
         setLoading(true);
-        console.log(`[Login] Verifying OTP: ${otp} for ${formattedPhone}`);
+
 
         try {
             // Verify OTP & Login
@@ -113,7 +113,7 @@ export default function LoginScreen() {
             }
 
             // Success
-            console.log("[Login] Verification Success! Redirecting...");
+
             router.replace("/(tabs)");
 
         } catch (err: any) {

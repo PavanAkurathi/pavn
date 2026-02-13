@@ -1,7 +1,7 @@
 import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
 import { and, eq, desc } from "drizzle-orm";
-import { mapShiftToDto } from "../utils/mapper";
+import { mapShiftToDto } from "../../utils/mapper";
 
 export const getDraftShifts = async (orgId: string) => {
     // 1. Query DB for drafts
