@@ -112,11 +112,6 @@ interface WorkerShiftDto {
         clockOut?: string;
         breakMinutes: number;
     };
-    /* pay: {  // REMOVED per WOR-26
-        hourlyRate: number;
-        estimatedPay?: number;
-        grossPayCents?: number;
-    }; */
 }
 
 const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
@@ -146,12 +141,7 @@ const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
             clockIn: assignment.clockIn?.toISOString(),
             clockOut: assignment.clockOut?.toISOString(),
             breakMinutes: assignment.breakMinutes || 0
-        },
-        /* pay: { // REMOVED per WOR-26
-            hourlyRate: s.price || 0,
-            estimatedPay: calculateEstimatedPay(s.startTime, s.endTime, s.price),
-            grossPayCents: assignment.grossPayCents
-        } */
+        }
     };
 };
 

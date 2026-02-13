@@ -1,6 +1,6 @@
 // packages/database/src/schema.ts
 
-import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType, jsonb, time, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType, jsonb, time, uniqueIndex, bigint } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
 // PostGIS Geometry Type Helper
@@ -302,7 +302,8 @@ export const shiftAssignment = pgTable("shift_assignment", {
 
     // -- Financial Snapshot (Budgeting) --
     budgetRateSnapshot: integer("budget_rate_snapshot"), // Was hourlyRateSnapshot
-    estimatedCostCents: integer("estimated_cost_cents").default(0), // Was grossPayCents
+    payoutAmountCents: bigint("payout_amount_cents", { mode: 'number' }), // Renamed from estimatedCostCents (TICKET-001)
+    totalDurationMinutes: integer("total_duration_minutes").default(0), // Added (TICKET-001)
 
     // -- Clock In Verification --
     clockInPosition: geography("clock_in_position"),

@@ -168,7 +168,6 @@ export default function ShiftDetailScreen() {
                         <View style={styles.badge}>
                             <Text style={styles.badgeText}>{shift.status.toUpperCase()}</Text>
                         </View>
-                        <Text style={styles.rateText}>${shift.pay.hourlyRate}/hr</Text>
                     </View>
                     <Text style={styles.role}>{shift.title}</Text>
                     <Text style={styles.venue}>{shift.location.name}</Text>
@@ -258,7 +257,6 @@ const styles = StyleSheet.create({
     badgeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     badge: { backgroundColor: '#333', padding: 6, borderRadius: 4 },
     badgeText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-    rateText: { color: '#4CAF50', fontSize: 16, fontWeight: 'bold' },
     role: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
     venue: { fontSize: 16, color: '#ccc' },
     subtitle: { fontSize: 14, color: '#888', marginTop: 4 },

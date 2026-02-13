@@ -20,7 +20,6 @@ interface TeamListProps {
         name: string;
         email: string;
         image?: string | null;
-        hourlyRate?: number | null;
         jobTitle?: string | null;
         status?: "active" | "invited";
     }>;

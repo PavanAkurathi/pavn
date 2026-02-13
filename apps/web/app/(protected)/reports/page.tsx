@@ -40,15 +40,13 @@ interface TimesheetRow {
         actualEnd: string | null;
         breakMinutes: number;
         totalHours: number;
-        hourlyRate: number;
-        totalPay: number;
     };
     status: string;
 }
 
 interface ReportData {
     data: TimesheetRow[];
-    summary: { totalWorkers: number; totalHours: number; totalPay: number };
+    summary: { totalWorkers: number; totalHours: number; };
     pagination: { hasMore: boolean };
 }
 
@@ -202,7 +200,6 @@ export default function ReportsPage() {
                                     <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Location</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Date</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Hours</th>
-                                    <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase">Pay</th>
                                     <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase">Status</th>
                                 </tr>
                             </thead>
@@ -216,7 +213,6 @@ export default function ReportsPage() {
                                             <td className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                                             <td className="px-4 py-3"><Skeleton className="h-4 w-20" /></td>
                                             <td className="px-4 py-3"><Skeleton className="h-4 w-12" /></td>
-                                            <td className="px-4 py-3"><Skeleton className="h-4 w-16" /></td>
                                             <td className="px-4 py-3"><Skeleton className="h-5 w-16 mx-auto" /></td>
                                         </tr>
                                     ))
@@ -242,7 +238,6 @@ export default function ReportsPage() {
                                             <td className="px-4 py-3 text-sm text-muted-foreground">{row.location?.name || '—'}</td>
                                             <td className="px-4 py-3 text-sm">{format(new Date(row.shift.date), 'MMM d, yyyy')}</td>
                                             <td className="px-4 py-3 text-sm text-right font-medium">{row.timesheet.totalHours.toFixed(2)}h</td>
-                                            <td className="px-4 py-3 text-sm text-right font-medium">${row.timesheet.totalPay.toFixed(2)}</td>
                                             <td className="px-4 py-3 text-center">
                                                 <Badge variant={row.status === 'completed' ? 'default' : 'secondary'} className="capitalize">
                                                     {row.status}
@@ -263,8 +258,6 @@ export default function ReportsPage() {
                     <span><strong className="text-foreground">{reportData.summary.totalWorkers}</strong> workers</span>
                     <span>•</span>
                     <span><strong className="text-foreground">{reportData.summary.totalHours.toFixed(1)}</strong> total hours</span>
-                    <span>•</span>
-                    <span><strong className="text-foreground">${reportData.summary.totalPay.toFixed(2)}</strong> total pay</span>
                 </div>
             )}
         </div>

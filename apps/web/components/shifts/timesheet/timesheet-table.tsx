@@ -168,7 +168,6 @@ export function TimesheetTable({
                                     workerName={worker.name}
                                     workerAvatar={worker.avatar}
                                     shiftDuration={worker.shiftDuration}
-                                    hourlyRate={worker.hourlyRate}
                                     clockIn={worker.clockIn}
                                     clockOut={worker.clockOut}
                                     breakDuration={worker.breakDuration}

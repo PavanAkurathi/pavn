@@ -208,7 +208,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
         const searchEnd = addDays(combineDateTimeTz(maxDateStr, "23:59", timezone), 2);
 
 
-        const [existing, availabilityRecords, members] = await Promise.all([
+        const [existing, availabilityRecords] = await Promise.all([
             db.select({
                 workerId: shiftAssignment.workerId,
                 startTime: shift.startTime,
@@ -233,7 +233,8 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                 )
             }),
 
-            // WOR-26: Fetch member rates
+            // WOR-26: Fetch member rates - REMOVED per TICKET-006
+            /*
             db.query.member.findMany({
                 where: and(
                     eq(member.organizationId, activeOrgId),
@@ -241,6 +242,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                 ),
                 columns: { userId: true, hourlyRate: true }
             })
+            */
         ]);
 
         // Group by Worker
@@ -259,10 +261,12 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             availabilityMap.set(record.workerId, list);
         }
 
-        // WOR-26: Populate Rate Map
+        // WOR-26: Populate Rate Map - REMOVED per TICKET-006
+        /*
         for (const m of members) {
             if (m.hourlyRate) hourlyRateMap.set(m.userId, m.hourlyRate);
         }
+        */
     }
 
     // 1. Prepare Data in Memory (Batch Strategy)
@@ -339,7 +343,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
                         if (dbConflict) {
                             throw new AppError(
-                                `Worker ${workerId} has overlapping shift: ${dbConflict.title} (${dbConflict.startTime.toISOString()})`,
+                                `Worker ${workerId} has an overlapping shift during this time.`,
                                 "OVERLAP_CONFLICT",
                                 409
                             );
@@ -370,7 +374,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                                 if (siblingShift) {
                                     if (siblingShift.startTime < endDateTime && siblingShift.endTime > startDateTime) {
                                         throw new AppError(
-                                            `Worker ${workerId} is double-booked in this request: ${siblingShift.title}`,
+                                            `Worker ${workerId} is double-booked in this request.`,
                                             "OVERLAP_CONFLICT",
                                             409
                                         );
@@ -385,13 +389,14 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                             shiftId: shiftId,
                             workerId: workerId,
                             status: 'active',
-                            budgetRateSnapshot: hourlyRateMap.get(workerId) ?? null // CHANGED per WOR-26
+                            budgetRateSnapshot: null // CHANGED per TICKET-006 (was hourlyRateMap check)
                         });
                     }
                 }
             }
         }
     }
+
 
     // WH-204: Fetch location name for notification body
 

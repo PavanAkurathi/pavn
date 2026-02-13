@@ -5,7 +5,6 @@ import { shift, shiftAssignment, organization, member } from "@repo/database/sch
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { logAudit, AppError } from "@repo/observability";
 import { differenceInMinutes, addMinutes } from "date-fns";
-import { calculateShiftPay } from "../utils/calculations";
 import { validateShiftTransition, ShiftStatus } from "@repo/config";
 
 export const approveShift = async (shiftId: string, orgId: string, actorId: string, tx?: TxOrDb) => {
@@ -53,8 +52,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
         const updates: {
             id: string;
             status: "no_show" | "completed";
-            estimatedCostCents: number;
-            budgetRateSnapshot: number | null;
+            totalDurationMinutes: number; // Only time
             breakMinutes: number;
             workerId: string; // Needed for audit
             effectiveClockIn?: Date;
@@ -68,8 +66,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                 updates.push({
                     id: assign.id,
                     status: 'no_show',
-                    estimatedCostCents: 0,
-                    budgetRateSnapshot: null,
+                    totalDurationMinutes: 0,
                     breakMinutes: 0,
                     workerId: assign.workerId
                 });
@@ -83,11 +80,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                 updates.push({
                     id: assign.id,
                     status: 'completed',
-                    estimatedCostCents: calculateShiftPay(
-                        Math.max(0, differenceInMinutes(scheduledEnd, new Date(assign.actualClockIn)) - (assign.breakMinutes || 0)),
-                        shiftRecord.price || 0
-                    ),
-                    budgetRateSnapshot: shiftRecord.price || 0,
+                    totalDurationMinutes: Math.max(0, differenceInMinutes(scheduledEnd, new Date(assign.actualClockIn)) - (assign.breakMinutes || 0)),
                     breakMinutes: assign.breakMinutes || 0,
                     workerId: assign.workerId,
                     effectiveClockIn: assign.actualClockIn,
@@ -111,28 +104,17 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                 const effectiveStart = useScheduledStart ? scheduledStart : actualClockIn;
 
                 // [FIN-004] Symmetric Grace Period for Clock Out
-                // If worker clocks out slightly early (within 5 mins of end), pay them until scheduled end.
-                // Logic: if actualClockOut >= (scheduledEnd - 5m) -> effectiveEnd = scheduledEnd
-                // Note: We also cap at scheduledEnd usually? Or do we pay OT? 
-                // Current logic seems to just use difference.
-                // Requirement says "Snap effectiveEnd to scheduledEnd if worker clocks out within the grace window".
-                // Assuming this means "snap UP" to scheduled end.
                 const earlyGraceThreshold = addMinutes(scheduledEnd, -END_GRACE_PERIOD);
                 const useScheduledEnd = actualClockOut >= earlyGraceThreshold; // If they left within 5 mins of end (or later)
 
-                const effectiveEnd = useScheduledEnd ? scheduledEnd : actualClockOut;
-
-                // If they stayed LATE, effectiveEnd is scheduledEnd per "snap" logic? 
-                // User requirement: "Snap effectiveEnd to scheduledEnd if the worker clocks out within the grace window"
-                // Usually this means "don't penalize early leave". But if they stay late, we usually pay them (OT).
-                // Let's refine: The request specifically says "payroll logic... docks pay for actualClockOut even if it is 1 minute early".
-                // So we want to PREVENT docking.
-                // Case 1: 5:00 PM end. Clock out 4:58 PM. -> Pay until 5:00 PM.
-                // Case 2: 5:00 PM end. Clock out 5:15 PM. -> Pay until 5:15 PM (unless specific overtime rules, but base requirement implies fixing the early penalty).
-                // If useScheduledEnd is true, we snap to scheduledEnd.
-                // Wait: if actualClockOut is 5:15 PM, that is > earlyGraceThreshold (4:55). So useScheduledEnd=true -> Snap to 5:00 PM.
-                // This would effectively KILL overtime pay if we blindly snap.
-                // We should only snap if `actualClockOut < scheduledEnd`.
+                // Snap logic: if checked out >= 4:55 for a 5:00 shift, we snap to 5:00 IF accurate.
+                // But we also want to avoid overpaying if they left WAY later?
+                // Logic: If they left >= 4:55 AND <= 5:00 -> Snap to 5:00.
+                // If they left > 5:00 -> Use actual (pay OT).
+                // Wait, previous logic was: if actualClockOut >= earlyGraceThreshold -> useScheduledEnd -> effectiveEnd = scheduledEnd.
+                // If actualClockOut is 5:30, useScheduledEnd is TRUE. effectiveEnd becomes 5:00. This KILLS OT.
+                // Let's preserve the logic I analyzed in planning:
+                // Only snap to scheduledEnd if actualClockOut < scheduledEnd.
 
                 let calculatedEnd = actualClockOut;
                 if (actualClockOut < scheduledEnd && actualClockOut >= earlyGraceThreshold) {
@@ -155,16 +137,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
 
                 const billableMinutes = Math.max(0, totalMinutes - breakMinutes);
 
-                // [FIN-002] Rate Lock: Use snapshot, fallback to shift price
-                let rate = assign.budgetRateSnapshot;
-                if (rate === null || rate === undefined) {
-                    // Log warning (using console for now, or logAudit if possible, but keep it simple)
-                    console.warn(`[RateLock] Missing snapshot for assignment ${assign.id}. Fallback to shift price.`);
-                    rate = shiftRecord.price || 0;
-                }
-
-                // WH-137: Centralized Pay Calculation
-                const pay = calculateShiftPay(billableMinutes, rate);
+                // REMOVED: Rate validation and Cost Calculation (TICKET-003)
 
                 let note: string | null = null;
                 // scheduledEnd already defined above
@@ -175,8 +148,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                 updates.push({
                     id: assign.id,
                     status: 'completed',
-                    estimatedCostCents: pay,
-                    budgetRateSnapshot: rate,
+                    totalDurationMinutes: billableMinutes,
                     breakMinutes: breakMinutes,
                     workerId: assign.workerId,
                     effectiveClockIn: effectiveStart,
@@ -192,20 +164,16 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
 
         // 5. Commit Changes (WH-139: Batch Operations)
         if (updates.length > 0) {
-            // Option 1: Promise.all for concurrency (Drizzle doesn't support bulk update with different values easily yet without CASE)
-            // For readability and safety, Promise.all inside transaction is efficient enough vs sequential wait
             await Promise.all(updates.map(u =>
                 tx.update(shiftAssignment)
                     .set({
                         status: u.status,
-                        estimatedCostCents: u.estimatedCostCents,
-                        budgetRateSnapshot: u.budgetRateSnapshot,
+                        totalDurationMinutes: u.totalDurationMinutes,
+                        // REMOVED: payoutAmountCents, budgetRateSnapshot (TICKET-003)
                         breakMinutes: u.breakMinutes,
                         ...(u.effectiveClockIn ? { effectiveClockIn: u.effectiveClockIn } : {}),
                         ...(u.effectiveClockOut ? { effectiveClockOut: u.effectiveClockOut } : {}),
-                        // Note: actualClockIn/Out are NOT updated here (they are source)
-                        // Note: managerVerifiedIn/Out are NOT updated here (requires manual manager override, this is systematic approval)
-                        updatedAt: new Date() // Add updated_at here or ensure default updates
+                        updatedAt: new Date()
                     })
                     .where(eq(shiftAssignment.id, u.id))
             ));
@@ -231,13 +199,11 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
             userId: actorId,
             metadata: {
                 approvedAssignmentsCount: updates.length,
-                totalCostCents: updates.reduce((acc, u) => acc + u.estimatedCostCents, 0)
+                // REMOVED: totalCostCents (TICKET-003)
             }
         });
 
         // Batch Audit: No Shows
-        // Collecting No Shows for a single batch log or looping (Audit service might not support batch yet)
-        // Keeping loop for No Show audits as they are rare entities, but preventing N+1 for the main flow
         const noShows = updates.filter(u => u.status === 'no_show');
         if (noShows.length > 0) {
             await Promise.all(noShows.map(u =>

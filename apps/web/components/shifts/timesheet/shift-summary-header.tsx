@@ -6,7 +6,7 @@ import { Button } from "@repo/ui/components/ui/button";
 interface ShiftSummaryHeaderProps {
     title: string;
     role: string;
-    rate: string;
+    // rate: string; // REMOVED per TICKET-005/008
     date: string;
     location: string;
     timeRange: string;
@@ -18,9 +18,8 @@ interface ShiftSummaryHeaderProps {
 export function ShiftSummaryHeader({
     title,
     role,
-    rate,
-    date,
-    location,
+    // rate, // REMOVED per TICKET-005/008
+    date, location,
     timeRange,
     breakDuration,
     createdBy,
@@ -31,7 +30,7 @@ export function ShiftSummaryHeader({
             <div className="flex items-start justify-between">
                 <div className="space-y-1">
                     <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-                    <div className="text-muted-foreground">{role} - {rate}</div>
+                    <div className="text-muted-foreground">{role}</div>
                 </div>
                 <Button variant="outline" className="text-zinc-700 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900">
                     Book again

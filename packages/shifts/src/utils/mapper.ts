@@ -33,7 +33,7 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
         startTime: dbShift.startTime.toISOString(),
         endTime: dbShift.endTime.toISOString(),
         status: dbShift.status as ApiShift['status'],
-        price: dbShift.price || 0, // Ensure number
+        // price: dbShift.price || 0, // REMOVED per TICKET-005
         capacity: {
             filled: filled,
             total: dbShift.capacityTotal

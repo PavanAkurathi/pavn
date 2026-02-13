@@ -23,7 +23,6 @@ export function AddMemberDialog() {
         email: "",
         phoneNumber: "",
         role: "member" as "admin" | "member",
-        hourlyRate: "",
         jobTitle: "",
         inviteEmail: true,
         inviteSms: false
@@ -34,15 +33,11 @@ export function AddMemberDialog() {
         setLoading(true);
 
         try {
-            // Convert hourly rate to cents
-            const rateInCents = formData.hourlyRate ? Math.round(parseFloat(formData.hourlyRate) * 100) : undefined;
-
             const result = await addMember({
                 name: formData.name,
                 email: formData.email,
                 phoneNumber: formData.phoneNumber,
                 role: formData.role,
-                hourlyRate: rateInCents,
                 jobTitle: formData.jobTitle,
                 invites: {
                     email: formData.inviteEmail,
@@ -60,7 +55,6 @@ export function AddMemberDialog() {
                     email: "",
                     phoneNumber: "",
                     role: "member",
-                    hourlyRate: "",
                     jobTitle: "",
                     inviteEmail: true,
                     inviteSms: false
@@ -141,30 +135,15 @@ export function AddMemberDialog() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="jobTitle">Job Title</Label>
-                            <Input
-                                id="jobTitle"
-                                value={formData.jobTitle}
-                                onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                                placeholder="Security Guard"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="hourlyRate">Hourly Rate ($)</Label>
-                            <Input
-                                id="hourlyRate"
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={formData.hourlyRate}
-                                onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
-                                placeholder="25.00"
-                            />
-                        </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="jobTitle">Job Title</Label>
+                        <Input
+                            id="jobTitle"
+                            value={formData.jobTitle}
+                            onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
+                            placeholder="Security Guard"
+                        />
                     </div>
-
                     <div className="space-y-3 pt-2">
                         <Label>Invitation Methods</Label>
                         <div className="flex items-center gap-6">
@@ -193,8 +172,8 @@ export function AddMemberDialog() {
                             Create Member
                         </Button>
                     </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                </form >
+            </DialogContent >
+        </Dialog >
     );
 }

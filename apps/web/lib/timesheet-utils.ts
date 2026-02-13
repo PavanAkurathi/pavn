@@ -19,7 +19,7 @@ export interface TimesheetViewModel {
     avatar?: string;
     initials?: string;
     shiftDuration: string;
-    hourlyRate: string;
+    jobTitle: string;
     clockIn: string;
     clockOut: string;
     breakDuration: string;

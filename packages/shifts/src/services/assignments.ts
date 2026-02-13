@@ -139,8 +139,9 @@ export class AssignmentService {
                     clockOutPosition: sql`ST_SetSRID(ST_MakePoint(${coordinates.lng}, ${coordinates.lat}), 4326)`,
                     clockOutMethod: 'geofence',
 
-                    // STORE DURATION (Minutes) in estimatedCostCents as per instruction
-                    estimatedCostCents: totalWorkedMinutes,
+                    // STORE DURATION (Minutes) in totalDurationMinutes (TICKET-001)
+                    totalDurationMinutes: totalWorkedMinutes,
+                    payoutAmountCents: null, // Reset pay until approved
 
                     updatedAt: now
                 })
@@ -219,7 +220,8 @@ export class AssignmentService {
                     effectiveClockIn: effectiveClockIn,
                     effectiveClockOut: data.clockOut,
                     breakMinutes: data.breakMinutes || 0,
-                    estimatedCostCents: totalWorkedMinutes, // STORING MINUTES
+                    totalDurationMinutes: totalWorkedMinutes, // STORING MINUTES (TICKET-001)
+                    payoutAmountCents: null,
                     status: 'completed',
                     updatedAt: new Date()
                 })

@@ -21,10 +21,6 @@ export interface WorkerShift {
         id: string;
         name: string;
     };
-    pay: {
-        estimatedPay?: number;
-        hourlyRate: number;
-    };
     timesheet: {
         clockIn?: string;
         clockOut?: string;

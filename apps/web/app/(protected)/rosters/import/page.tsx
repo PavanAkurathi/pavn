@@ -21,7 +21,6 @@ interface WorkerRow {
     email: string;
     phone: string;
     role: "member";
-    hourlyRate: string;
     jobTitle: string;
     // Profile Extensions
     image: string;
@@ -117,7 +116,6 @@ export default function BulkImportPage() {
             email: getValue("email") || getValue("e-mail") || getValue("mail"),
             phone: getValue("phone") || getValue("mobile") || getValue("cell"),
             role: "member" as const,
-            hourlyRate: getValue("rate") || getValue("hourly") || getValue("pay"),
             jobTitle: getValue("title") || getValue("job") || getValue("position"),
             // Profile Extensions
             image: getValue("avatar") || getValue("image") || getValue("photo") || getValue("picture"),
@@ -167,7 +165,6 @@ export default function BulkImportPage() {
                 email: r.email,
                 phoneNumber: r.phone || undefined,
                 role: r.role,
-                hourlyRate: r.hourlyRate ? Math.round(parseFloat(r.hourlyRate.replace(/[^0-9.]/g, '')) * 100) : undefined,
                 jobTitle: r.jobTitle || undefined,
                 image: r.image || undefined,
                 emergencyContact: (r.emergencyName || r.emergencyPhone) ? {
@@ -225,7 +222,7 @@ export default function BulkImportPage() {
                         <Button>Select File</Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-4">
-                        Supported columns: Name, Email, Phone, Hourly Rate, Job Title
+                        Supported columns: Name, Email, Phone, Job Title
                     </p>
                 </Card>
             )}
@@ -258,7 +255,6 @@ export default function BulkImportPage() {
                                             <TableHead>Name</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Phone</TableHead>
-                                            <TableHead>Rate ($)</TableHead>
                                             <TableHead>Title</TableHead>
                                             <TableHead>Emergency</TableHead>
                                             <TableHead>Cert</TableHead>
@@ -296,14 +292,6 @@ export default function BulkImportPage() {
                                                         className="h-8 bg-transparent border-transparent hover:border-input focus:bg-background"
                                                         value={row.phone}
                                                         onChange={(e) => updateRow(row.id, "phone", e.target.value)}
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Input
-                                                        className="h-8 w-20 bg-transparent border-transparent hover:border-input focus:bg-background"
-                                                        value={row.hourlyRate}
-                                                        onChange={(e) => updateRow(row.id, "hourlyRate", e.target.value)}
-                                                        placeholder="25.00"
                                                     />
                                                 </TableCell>
                                                 <TableCell>

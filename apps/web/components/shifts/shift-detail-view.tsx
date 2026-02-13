@@ -35,7 +35,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     avatar: assigned.avatarUrl || `https://github.com/shadcn.png`,
                     initials: ts.avatarInitials || assigned.initials,
                     shiftDuration: "6 hrs",
-                    hourlyRate: `$${ts.hourlyRate}/hr`,
                     clockIn: ts.clockIn ? format(new Date(ts.clockIn), "hh:mm a") : "",
                     clockOut: ts.clockOut ? format(new Date(ts.clockOut), "hh:mm a") : "",
                     breakDuration: `${ts.breakMinutes} min`,
@@ -48,7 +47,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 avatar: assigned.avatarUrl || `https://github.com/shadcn.png`,
                 initials: assigned.initials,
                 shiftDuration: "-",
-                hourlyRate: "$0/hr",
                 clockIn: "",
                 clockOut: "",
                 breakDuration: "0 min",
@@ -267,10 +265,11 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 </Button>
             )}
             {/* Shift Summary Header */}
+            {/* Shift Summary Header */}
             <ShiftSummaryHeader
                 title={shift.title}
                 role="Event Staff" // Derive from shift or role data
-                rate={`$${shift.price}`} // Assuming price is total or rate, usually rate needs explicit field
+                // rate={`$${shift.price}`} // REMOVED per TICKET-005/008
                 date={format(new Date(shift.startTime), "EEE, MMM d, yyyy")}
                 location={shift.locationName}
                 timeRange={`${format(new Date(shift.startTime), "h:mm a")} - ${format(new Date(shift.endTime), "h:mm a")}`}

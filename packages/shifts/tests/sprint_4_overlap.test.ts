@@ -29,7 +29,8 @@ const mockBuilder: any = {
         workerAvailability: { findMany: mock(() => Promise.resolve([])) },
         location: { findFirst: mock(() => Promise.resolve({ name: 'Test Venue' })) },
         workerNotificationPreferences: { findMany: mock(() => Promise.resolve([])) },
-        idempotencyKey: { findFirst: mock(() => Promise.resolve(null)) }
+        idempotencyKey: { findFirst: mock(() => Promise.resolve(null)) },
+        member: { findMany: mock(() => Promise.resolve([])) }
     },
     select: mock(() => ({
         from: mock(() => ({
@@ -49,7 +50,8 @@ mock.module("@repo/database", () => ({
     scheduledNotification: {},
     workerAvailability: {},
     location: {},
-    workerNotificationPreferences: {}
+    workerNotificationPreferences: {},
+    member: {}
 }));
 
 mock.module("@repo/notifications", () => ({

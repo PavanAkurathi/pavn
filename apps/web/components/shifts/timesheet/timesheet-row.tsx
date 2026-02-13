@@ -19,7 +19,7 @@ interface TimesheetRowProps {
     workerName: string;
     workerAvatar?: string;
     shiftDuration: string;
-    hourlyRate: string;
+    jobTitle: string;
     clockIn: string; // "05:00 PM"
     clockOut: string; // "11:35 PM"
     breakDuration: string; // "0 min"
@@ -54,7 +54,7 @@ export function TimesheetRow({
     workerName,
     workerAvatar,
     shiftDuration,
-    hourlyRate,
+    jobTitle,
     clockIn,
     clockOut,
     breakDuration,
@@ -86,7 +86,7 @@ export function TimesheetRow({
                 </Avatar>
                 <div className="flex flex-col">
                     <span className="font-medium">{workerName}</span>
-                    <span className="text-sm text-muted-foreground">{shiftDuration}, {hourlyRate}</span>
+                    <span className="text-sm text-muted-foreground">{shiftDuration}</span>
                 </div>
             </div>
 

@@ -190,6 +190,13 @@
       "when": 1770698637995,
       "tag": "0026_wide_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1770867342620,
+      "tag": "0027_daily_apocalypse",
+      "breakpoints": true
     }
   ]
 }

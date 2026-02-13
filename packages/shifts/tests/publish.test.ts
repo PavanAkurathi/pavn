@@ -320,8 +320,7 @@ describe("Publish  (WH-131 Fix)", () => {
         const assignment = allInserts.find((i: any) => i.workerId === workerId && i.status === 'active');
 
         expect(assignment).toBeDefined();
-        // create-schedule-form sends 0, but backend lookup should override or fill it
-        // Actually, frontend no longer sends price. publish.ts looks it up.
-        expect(assignment.budgetRateSnapshot).toBe(hourlyRate);
+        // TICKET-006: budgetRateSnapshot is now NULL
+        expect(assignment.budgetRateSnapshot).toBeNull();
     });
 });

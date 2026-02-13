@@ -36,7 +36,7 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
             avatarUrl: a.worker?.image || undefined,
             avatarInitials: getInitials(workerName),
             role: "Worker", // Not in schema yet
-            hourlyRate: 0,  // Not in schema yet
+            // hourlyRate: 0,  // REMOVED per TICKET-005/008
             clockIn: (a.effectiveClockIn || a.actualClockIn) ? (a.effectiveClockIn || a.actualClockIn)!.toISOString() : undefined,
             clockOut: (a.effectiveClockOut || a.actualClockOut) ? (a.effectiveClockOut || a.actualClockOut)!.toISOString() : undefined,
             breakMinutes: a.breakMinutes || 0,

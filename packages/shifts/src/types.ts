@@ -16,7 +16,7 @@ export interface Shift {
     endTime: string;   // ISO string
     status: ShiftStatus;
     workerId?: string;
-    price?: number;
+    // price?: number; // REMOVED per TICKET-005
     capacity?: {
         filled: number;
         total: number;
@@ -35,7 +35,7 @@ export interface TimesheetWorker {
     avatarUrl?: string;
     avatarInitials: string;
     role: string;
-    hourlyRate: number;
+    // hourlyRate: number; // REMOVED per TICKET-005/008
     clockIn?: string; // ISO string
     clockOut?: string; // ISO string
     breakMinutes: number;

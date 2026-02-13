@@ -72,7 +72,8 @@ export async function exportTimesheets(
             clockIn: shiftAssignment.effectiveClockIn,
             clockOut: shiftAssignment.effectiveClockOut,
             breakMinutes: shiftAssignment.breakMinutes,
-            grossPayCents: shiftAssignment.estimatedCostCents,
+            totalDurationMinutes: shiftAssignment.totalDurationMinutes,
+            grossPayCents: shiftAssignment.payoutAmountCents,
             hourlyRateSnapshot: shiftAssignment.budgetRateSnapshot,
             assignmentStatus: shiftAssignment.status,
         })
@@ -91,13 +92,22 @@ export async function exportTimesheets(
     for (const row of results) {
         if (!row.clockIn || !row.clockOut) continue;
 
-        const totalMinutes = Math.max(0, differenceInMinutes(row.clockOut, row.clockIn) - (row.breakMinutes || 0));
-        let regularMinutes = totalMinutes;
+        // TICKET-004: Use stored totalDurationMinutes (source of truth from Approval)
+        // If approval hasn't happened or it's 0, verify logic? 
+        // Ticket says "Ensure Regular Hours and Overtime Hours are calculated based on totalDurationMinutes".
+        // row.totalDurationMinutes is from shiftAssignment.totalDurationMinutes.
+        const durationMins = row.totalDurationMinutes || 0;
+
+        // Fallback for verification/safety if needed: 
+        // const calculatedMins = Math.max(0, differenceInMinutes(row.clockOut, row.clockIn) - (row.breakMinutes || 0));
+        // But we should trust the stored value as it went through approval "Snapping".
+
+        let regularMinutes = durationMins;
         let overtimeMinutes = 0;
 
         if (overtimePolicy === 'daily_8') {
-            overtimeMinutes = calculateDailyOvertimeMinutes(totalMinutes, 'daily_8');
-            regularMinutes = totalMinutes - overtimeMinutes;
+            overtimeMinutes = calculateDailyOvertimeMinutes(durationMins, 'daily_8');
+            regularMinutes = durationMins - overtimeMinutes;
         } else if (overtimePolicy === 'weekly_40') {
             const weekKey = format(startOfWeek(row.scheduledStart), 'yyyy-MM-dd');
 
@@ -108,43 +118,33 @@ export async function exportTimesheets(
             }
 
             const currentTotal = workerRecord[weekKey] || 0;
-
-            // Re-calc logic:
-            // This is a simplified sequential sweep. It assumes we processing in chronological order per worker.
-            // If previous shifts already filled the bucket, this whole shift might be OT.
-
             const limit = 40 * 60; // 2400 mins
 
             if (currentTotal >= limit) {
                 // Already over limit, all is overtime
                 regularMinutes = 0;
-                overtimeMinutes = totalMinutes;
-            } else if (currentTotal + totalMinutes > limit) {
+                overtimeMinutes = durationMins;
+            } else if (currentTotal + durationMins > limit) {
                 // Split
-                regularMinutes = limit - currentTotal;
-                overtimeMinutes = totalMinutes - regularMinutes;
+                const remainingRegular = Math.max(0, limit - currentTotal);
+                regularMinutes = remainingRegular;
+                overtimeMinutes = durationMins - remainingRegular;
             }
 
             // Update bucket
-            workerRecord[weekKey] = currentTotal + totalMinutes;
+            workerRecord[weekKey] = currentTotal + durationMins;
         }
 
-        const hourlyRate = (row.hourlyRateSnapshot || row.shiftPrice || 0) / 100;
         const regularHours = regularMinutes / 60;
         const overtimeHours = overtimeMinutes / 60;
-
-        // Calculate Pay
-        const regularPay = regularHours * hourlyRate;
-        const overtimePay = overtimeHours * hourlyRate * 1.5;
-        const totalPay = regularPay + overtimePay;
+        const totalHours = durationMins / 60;
 
         processedRows.push({
             ...row,
-            totalMinutes,
+            totalDurationMinutes: durationMins,
             regularHours,
             overtimeHours,
-            hourlyRate,
-            totalPay
+            totalHours
         });
     }
 
@@ -162,24 +162,24 @@ export async function exportTimesheets(
     <Cell><Data ss:Type="String">Worker Name</Data></Cell>
     <Cell><Data ss:Type="String">Email</Data></Cell>
     <Cell><Data ss:Type="String">Date</Data></Cell>
-    <Cell><Data ss:Type="String">Total Minutes</Data></Cell>
+    <Cell><Data ss:Type="String">Start Time</Data></Cell>
+    <Cell><Data ss:Type="String">End Time</Data></Cell>
     <Cell><Data ss:Type="String">Break (min)</Data></Cell>
     <Cell><Data ss:Type="String">Regular Hours</Data></Cell>
     <Cell><Data ss:Type="String">Overtime Hours</Data></Cell>
-    <Cell><Data ss:Type="String">Hourly Rate</Data></Cell>
-    <Cell><Data ss:Type="String">Total Pay</Data></Cell>
+    <Cell><Data ss:Type="String">Total Hours</Data></Cell>
    </Row>
    ${processedRows.map(row => `
    <Row>
     <Cell><Data ss:Type="String">${escapeXml(row.workerName)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(row.workerEmail)}</Data></Cell>
     <Cell><Data ss:Type="String">${format(row.scheduledStart, 'yyyy-MM-dd')}</Data></Cell>
-    <Cell><Data ss:Type="Number">${row.totalMinutes}</Data></Cell>
+    <Cell><Data ss:Type="String">${formatInTimeZone(row.clockIn!, 'UTC', 'HH:mm')}</Data></Cell>
+    <Cell><Data ss:Type="String">${formatInTimeZone(row.clockOut!, 'UTC', 'HH:mm')}</Data></Cell>
     <Cell><Data ss:Type="Number">${row.breakMinutes || 0}</Data></Cell>
     <Cell><Data ss:Type="Number">${row.regularHours.toFixed(2)}</Data></Cell>
     <Cell><Data ss:Type="Number">${row.overtimeHours.toFixed(2)}</Data></Cell>
-    <Cell><Data ss:Type="Number">${row.hourlyRate.toFixed(2)}</Data></Cell>
-    <Cell><Data ss:Type="Number">${row.totalPay.toFixed(2)}</Data></Cell>
+    <Cell><Data ss:Type="Number">${row.totalHours.toFixed(2)}</Data></Cell>
    </Row>`).join('')}
   </Table>
  </Worksheet>

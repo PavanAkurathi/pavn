@@ -77,7 +77,8 @@ export async function getTimesheetsReport(
             clockIn: shiftAssignment.effectiveClockIn,
             clockOut: shiftAssignment.effectiveClockOut,
             breakMinutes: shiftAssignment.breakMinutes,
-            grossPayCents: shiftAssignment.estimatedCostCents,
+            totalDurationMinutes: shiftAssignment.totalDurationMinutes,
+            grossPayCents: shiftAssignment.payoutAmountCents,
             shiftPrice: shift.price,
             assignmentStatus: shiftAssignment.status,
         })

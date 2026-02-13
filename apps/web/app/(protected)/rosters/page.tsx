@@ -38,7 +38,6 @@ export default async function RostersPage() {
         id: member.id,
         role: member.role,
         joinedAt: member.createdAt,
-        hourlyRate: member.hourlyRate,
         jobTitle: member.jobTitle,
         user: {
             id: user.id,
@@ -89,7 +88,6 @@ export default async function RostersPage() {
             id: r.id,
             role: r.role,
             joinedAt: r.joinedAt,
-            hourlyRate: r.hourlyRate,
             jobTitle: r.jobTitle,
             name: r.user!.name,
             email: r.user!.email,

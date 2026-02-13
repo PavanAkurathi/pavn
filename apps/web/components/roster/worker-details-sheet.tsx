@@ -22,7 +22,6 @@ export interface WorkerDetails {
     phone?: string | null;
     role: string;
     jobTitle?: string | null;
-    hourlyRate?: number | null;
     joinedAt: Date;
     status: "active" | "invited";
     emergencyContact?: {

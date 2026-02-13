@@ -78,8 +78,9 @@ describe("WH-126 Break Enforcement Removal", () => {
         await approveShift("s1", "org1", "test_actor");
 
         const updatePayload = (mockUpdateSet.mock.calls as any)[0][0];
-        // 8 hours = 480 mins. 480 * (1000/60) = 8000 cents.
-        expect(updatePayload.estimatedCostCents).toBe(8000);
+        // 8 hours = 480 mins.
+        expect(updatePayload.totalDurationMinutes).toBe(480);
+        expect(updatePayload.payoutAmountCents).toBeUndefined();
         expect(updatePayload.breakMinutes).toBe(0);
     });
 

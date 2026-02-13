@@ -5,13 +5,13 @@
 // SHIFT TYPES
 // =============================================================================
 
-export type ShiftStatus = 
-    | 'draft' 
-    | 'published' 
-    | 'assigned' 
-    | 'in-progress' 
-    | 'completed' 
-    | 'approved' 
+export type ShiftStatus =
+    | 'draft'
+    | 'published'
+    | 'assigned'
+    | 'in-progress'
+    | 'completed'
+    | 'approved'
     | 'cancelled';
 
 export interface Location {
@@ -28,10 +28,7 @@ export interface Organization {
     name: string;
 }
 
-export interface ShiftPay {
-    estimatedPay?: number;
-    hourlyRate: number;
-}
+// ShiftPay removed per TICKET-007
 
 export interface Timesheet {
     clockIn?: string;
@@ -51,7 +48,7 @@ export interface WorkerShift {
     status: ShiftStatus;
     location: Location;
     organization: Organization;
-    pay: ShiftPay;
+    // pay: ShiftPay; // REMOVED per TICKET-007
     timesheet: Timesheet;
     assignmentId?: string;
     notes?: string;
@@ -135,7 +132,7 @@ export interface WorkerPreferences {
     shiftStartEnabled: boolean;
     lateWarningEnabled: boolean;
     geofenceAlertsEnabled: boolean;
-    
+
     // Quiet hours
     quietHoursEnabled: boolean;
     quietHoursStart?: string;

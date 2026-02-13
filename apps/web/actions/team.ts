@@ -13,7 +13,6 @@ interface AddMemberInput {
     email: string;
     phoneNumber?: string;
     role: "admin" | "member";
-    hourlyRate?: number; // In cents
     jobTitle?: string;
     // Profile Extensions
     image?: string;
@@ -77,7 +76,7 @@ export async function addMember(input: AddMemberInput) {
             throw new Error("Permission denied");
         }
 
-        const { name, email, phoneNumber, role, hourlyRate, jobTitle, invites, image, emergencyContact, address, certifications } = input;
+        const { name, email, phoneNumber, role, jobTitle, invites, image, emergencyContact, address, certifications } = input;
 
         // 1. Check if user exists
         let targetUserId: string;
@@ -123,7 +122,6 @@ export async function addMember(input: AddMemberInput) {
             organizationId: activeOrgId,
             userId: targetUserId,
             role: role,
-            hourlyRate: hourlyRate || null,
             jobTitle: jobTitle || null,
             createdAt: new Date(),
         });
@@ -175,7 +173,6 @@ interface BulkImportWorker {
     email: string;
     phoneNumber?: string;
     role: "admin" | "member";
-    hourlyRate?: number;
     jobTitle?: string;
     image?: string;
     emergencyContact?: {
