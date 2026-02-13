@@ -13,7 +13,7 @@ import { AddWorkerDialog } from "./add-worker-dialog";
 import { Shift, TimesheetWorker } from "@/lib/types";
 import { format } from "date-fns";
 import { toast } from "sonner";
-import { getWorkerStatus, parseTimeStringToIso, UpdateTimesheetPayload } from "@/lib/timesheet-utils";
+import { getWorkerStatus, parseTimeStringToIso, UpdateTimesheetPayload, TimesheetViewModel } from "@/lib/timesheet-utils";
 
 interface ShiftDetailViewProps {
     onBack: () => void;
@@ -24,7 +24,7 @@ interface ShiftDetailViewProps {
 
 export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftDetailViewProps) {
     // Helper to merge data (extracted for reuse)
-    const getWorkersFromProps = React.useCallback(() => {
+    const getWorkersFromProps = React.useCallback((): TimesheetViewModel[] => {
         const allWorkers = shift.assignedWorkers || [];
         return allWorkers.map((assigned) => {
             const ts = timesheets.find(t => t.id === assigned.id);
@@ -58,7 +58,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     }, [shift.assignedWorkers, timesheets]);
 
     // Initialize state
-    const [workers, setWorkers] = React.useState(getWorkersFromProps);
+    const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(getWorkersFromProps);
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
     const [isCancelConfirmOpen, setIsCancelConfirmOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
