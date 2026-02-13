@@ -133,7 +133,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
         if (existingKey) {
             if (existingKey.hash === payloadHash) {
-                console.log(`Idempotency hit for key: ${idempotencyKey}`);
+                // console.log(`Idempotency hit for key: ${idempotencyKey}`);
                 // Return cached response logic could go here if we stored it
                 return {
                     success: true,

@@ -167,6 +167,7 @@ export function TimesheetTable({
                                     key={worker.id}
                                     workerName={worker.name}
                                     workerAvatar={worker.avatar}
+                                    jobTitle={worker.jobTitle}
                                     shiftDuration={worker.shiftDuration}
                                     clockIn={worker.clockIn}
                                     clockOut={worker.clockOut}
@@ -182,10 +183,10 @@ export function TimesheetTable({
                                     // Pass save handler for onBlur events
                                     onSave={(field, val) => onSaveWorker(worker.id, field, val)}
                                     onRatingChange={(r) => onUpdateWorker(worker.id, "rating", r)}
-                                    onWriteUp={() => console.log("Write Up", worker.name)}
-                                    onAddToRoster={() => console.log("Add", worker.name)}
-                                    onReturn={() => console.log("Return", worker.name)}
-                                    onBlock={() => console.log("Block", worker.name)}
+                                    onWriteUp={() => { }}
+                                    onAddToRoster={() => { }}
+                                    onReturn={() => { }}
+                                    onBlock={() => { }}
                                 />
                             );
                         })

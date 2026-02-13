@@ -21,8 +21,7 @@ const MOCK_HISTORY_SHIFTS: Shift[] = [
             { id: "w1", initials: "JD", avatarUrl: "https://github.com/shadcn.png" },
             { id: "w2", initials: "AB" },
             { id: "w3", initials: "CK" },
-        ],
-        price: 120
+        ]
     },
     {
         id: "h2",
@@ -37,8 +36,7 @@ const MOCK_HISTORY_SHIFTS: Shift[] = [
         assignedWorkers: [
             { id: "w4", initials: "MK" },
             { id: "w5", initials: "SL" }
-        ],
-        price: 150
+        ]
     },
     {
         id: "h3",
@@ -49,8 +47,7 @@ const MOCK_HISTORY_SHIFTS: Shift[] = [
         startTime: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(), // 1 week ago
         endTime: new Date(new Date().setDate(new Date().getDate() - 7)).toISOString(),
         status: "open" as ShiftStatus, // Was never filled
-        capacity: { filled: 0, total: 2 },
-        price: 180
+        capacity: { filled: 0, total: 2 }
     }
 ];
 
@@ -80,7 +77,7 @@ export default function HistoryPage() {
             <HistoryList
                 shifts={[]}
                 isLoading={false}
-                onShiftClick={(shift) => console.log("Clicked history shift", shift.id)}
+                onShiftClick={(shift) => { }}
             />
         </div>
     );
