@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Slider } from '@repo/ui/components/ui/slider';
+import { PRICING } from '@repo/config';
 import { Card } from '@repo/ui/components/ui/card';
 import { cn } from '@repo/ui/lib/utils';
 
@@ -11,7 +12,7 @@ export function ROICalculator() {
 
     // Market average calculations
     const competitorCost = count * 6;
-    const hiveCost = 25;
+    const hiveCost = PRICING.MONTHLY_PER_LOCATION;
     const monthlySavings = competitorCost - hiveCost;
     const yearlySavings = monthlySavings * 12;
 
@@ -29,7 +30,7 @@ export function ROICalculator() {
                             <span className="text-destructive">Stop paying the "Headcount Tax".</span>
                         </h2>
                         <p className="text-zinc-400 text-lg leading-relaxed">
-                            Other platforms punish you for growing. They charge $4–$6 for every new busser or barback you hire. We charge a flat $25. Period.
+                            Other platforms punish you for growing. They charge $4–$6 for every new busser or barback you hire. We charge a flat ${PRICING.MONTHLY_PER_LOCATION}. Period.
                         </p>
 
                         <div className="pt-8 p-6 bg-zinc-900/50 rounded-2xl border border-white/10">

@@ -1,7 +1,9 @@
 import { Metadata } from 'next';
-import { ShieldCheck, Zap, Users, Smartphone, Clock, PieChart } from 'lucide-react';
-import { Button } from '@repo/ui/components/ui/button';
+import Image from 'next/image';
 import Link from 'next/link';
+import { ShieldCheck, Zap, Users, Smartphone, Clock, PieChart, Check } from 'lucide-react';
+import { Button } from '@repo/ui/components/ui/button';
+import { PRICING } from '@repo/config';
 
 export const metadata: Metadata = {
     title: 'Features | Workers Hive',
@@ -60,7 +62,7 @@ export default function FeaturesPage() {
                 <h2 className="text-3xl font-bold mb-6">Ready to optimize your workforce?</h2>
                 <Link href="/auth/signup">
                     <Button className="bg-red-600 hover:bg-red-700 text-white font-bold h-12 px-8">
-                        Start Free Trial
+                        Start {PRICING.TRIAL_DAYS}-Day Free Trial
                     </Button>
                 </Link>
             </section>

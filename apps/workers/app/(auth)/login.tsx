@@ -13,7 +13,9 @@ import Toast from 'react-native-toast-message';
 import { useRouter } from "expo-router";
 import { authClient } from "../../lib/auth-client";
 import { validate, phoneSchema, otpSchema } from "../../lib/validation";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons as IoniconsVector } from "@expo/vector-icons";
+// Cast to any to avoid "cannot be used as a JSX component" error due to React 18/19 type conflict
+const Ionicons = IoniconsVector as any;
 
 export default function LoginScreen() {
     const router = useRouter();

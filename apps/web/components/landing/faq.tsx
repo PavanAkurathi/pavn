@@ -5,7 +5,8 @@ import {
     AccordionContent,
     AccordionItem,
     AccordionTrigger,
-} from "@repo/ui/components/ui/accordion"
+} from "@repo/ui/components/ui/accordion";
+import { PRICING } from "@repo/config";
 
 export function FAQ() {
     return (
@@ -16,9 +17,9 @@ export function FAQ() {
                 <Accordion type="single" collapsible className="w-full space-y-4">
 
                     <AccordionItem value="item-1" className="border border-border bg-card rounded-lg px-4">
-                        <AccordionTrigger className="text-lg font-medium text-card-foreground">Is it really unlimited staff for $20?</AccordionTrigger>
+                        <AccordionTrigger className="text-lg font-medium text-card-foreground">Is it really unlimited staff for ${PRICING.MONTHLY_PER_LOCATION}?</AccordionTrigger>
                         <AccordionContent className="text-muted-foreground pb-4">
-                            Yes. Whether you have 5 employees or 500, the price is $20/month per location. We believe software shouldn't tax your growth.
+                            Yes. Whether you have 5 employees or 500, the price is ${PRICING.MONTHLY_PER_LOCATION}/month per location. We believe software shouldn't tax your growth.
                         </AccordionContent>
                     </AccordionItem>
 

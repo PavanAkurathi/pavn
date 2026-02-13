@@ -1,6 +1,7 @@
 'use client';
 
-import { Check, X } from 'lucide-react';
+import { Check, X, MoveRight } from "lucide-react";
+import { PRICING } from "@repo/config";
 
 export function ComparisonTable() {
     return (

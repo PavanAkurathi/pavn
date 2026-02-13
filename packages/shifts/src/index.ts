@@ -27,6 +27,8 @@ export * from "./modules/workers/set-availability";
 export * from "./modules/workers/deactivate-worker";
 export * from "./modules/workers/reactivate-worker";
 export * from "./modules/workers/update-worker";
+export * from "./modules/workers/import-parser";
+export * from "./modules/workers/bulk-import";
 
 export * from "./modules/locations/get-locations";
 export * from "./modules/locations/create-location";

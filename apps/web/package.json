@@ -17,6 +17,7 @@
     "@better-auth/stripe": "^1.4.17",
     "@hookform/resolvers": "^4.1.0",
     "@repo/auth": "workspace:*",
+    "@repo/config": "workspace:*",
     "@repo/database": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/shifts-service": "workspace:*",

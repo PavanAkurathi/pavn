@@ -84,6 +84,7 @@
         "@better-auth/stripe": "^1.4.17",
         "@hookform/resolvers": "^4.1.0",
         "@repo/auth": "workspace:*",
+        "@repo/config": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/shifts-service": "workspace:*",
@@ -404,12 +405,14 @@
         "drizzle-orm": "0.45.1",
         "hono": "4.11.7",
         "nanoid": "^5.1.6",
+        "xlsx": "^0.18.5",
         "zod": "^4.3.6",
       },
       "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
         "@types/node": "^20.11.0",
+        "@types/xlsx": "^0.0.36",
         "typescript": "^5.3.3",
       },
     },
@@ -1712,6 +1715,8 @@
     "@types/tough-cookie": ["@types/tough-cookie@4.0.5", "", {}, "sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA=="],
 
     "@types/trusted-types": ["@types/trusted-types@2.0.7", "", {}, "sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw=="],
+
+    "@types/xlsx": ["@types/xlsx@0.0.36", "", { "dependencies": { "xlsx": "*" } }, "sha512-mvfrKiKKMErQzLMF8ElYEH21qxWCZtN59pHhWGmWCWFJStYdMWjkDSAy6mGowFxHXaXZWe5/TW7pBUiWclIVOw=="],
 
     "@types/yargs": ["@types/yargs@17.0.35", "", { "dependencies": { "@types/yargs-parser": "*" } }, "sha512-qUHkeCyQFxMXg79wQfTtfndEC+N9ZZg76HJftDJp+qH2tV7Gj4OJi7l+PiWwJ+pWtW8GwSmqsDj/oymhrTWXjg=="],
 
