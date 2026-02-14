@@ -1,0 +1,18 @@
+appId: com.pavam.workers
+---
+- launchApp
+
+# Login Flow
+- tapOn: "input-phone"
+- inputText: "5555555555"
+- tapOn: "button-send-code"
+
+# Wait for OTP screen
+- assertVisible: "input-otp"
+- tapOn: "input-otp"
+- inputText: "123456" # Mock OTP if supported, or valid test OTP
+- tapOn: "button-verify"
+
+# Verify success (assuming navigation to tabs or similar)
+# You might need to add a testID to a home screen element to assert success
+# - assertVisible: "home-screen-content"

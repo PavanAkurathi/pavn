@@ -158,12 +158,14 @@ export default function LoginScreen() {
                             keyboardType="phone-pad"
                             value={phoneNumber}
                             onChangeText={setPhoneNumber}
+                            testID="input-phone"
                         />
 
                         <TouchableOpacity
                             style={styles.button}
                             onPress={handleSendOtp}
                             disabled={loading}
+                            testID="button-send-code"
                         >
                             {loading ? (
                                 <ActivityIndicator color="#000" />
@@ -182,12 +184,14 @@ export default function LoginScreen() {
                             maxLength={6}
                             value={otp}
                             onChangeText={setOtp}
+                            testID="input-otp"
                         />
 
                         <TouchableOpacity
                             style={styles.button}
                             onPress={handleVerify}
                             disabled={loading}
+                            testID="button-verify"
                         >
                             {loading ? (
                                 <ActivityIndicator color="#000" />
