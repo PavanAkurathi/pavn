@@ -145,6 +145,15 @@ app.on(["POST", "GET"], "/api/auth/*", async (c) => {
 // =============================================================================
 
 app.use("*", async (c, next) => {
+    // Debug headers
+    if (c.req.path.startsWith("/api") && !c.req.path.startsWith("/api/auth")) {
+        const authHeader = c.req.header("authorization");
+        const cookieHeader = c.req.header("cookie");
+        console.log(`[API MIDDLEWARE] ${c.req.method} ${c.req.path}`);
+        console.log(`[API MIDDLEWARE] Auth Header: ${authHeader ? (authHeader.substring(0, 15) + "...") : "MISSING"}`);
+        console.log(`[API MIDDLEWARE] Cookie Header: ${cookieHeader ? "PRESENT" : "MISSING"}`);
+        console.log(`[API MIDDLEWARE] User-Agent: ${c.req.header("user-agent")}`);
+    }
     // Skip public routes
     if (c.req.path === "/health" || c.req.path.startsWith("/api/auth") || c.req.path === "/docs" || c.req.path === "/openapi.json" || c.req.path === "/") {
         await next();

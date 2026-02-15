@@ -25,12 +25,16 @@ const trustedOrigins = [
     vercelUrl ? `https://${vercelUrl}` : undefined,
     "exp://",
     "myapp://",
+    "workers://",
+    "http://10.0.0.38:8081",
+    "exp://10.0.0.38:8081",
     "exp://**"
 ].filter(Boolean) as string[];
 
 console.log("[AUTH DEBUG] Allowed Origins Env:", allowedOriginsEnv);
 console.log("[AUTH DEBUG] Vercel URL Env:", vercelUrl);
 console.log("[AUTH DEBUG] Final Trusted Origins:", trustedOrigins);
+console.log("[AUTH DEBUG] Request Origin Validation Enabled");
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
     appName: "Antigravity SaaS",
@@ -79,25 +83,30 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
         user: {
             create: {
                 before: async (user) => {
-                    const params = user as any;
-                    if (params.phoneNumber) {
-                        const phone = params.phoneNumber as string;
-                        if (!isValidPhoneNumber(phone)) {
-                            throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
+                    try {
+                        const params = user as any;
+                        if (params.phoneNumber) {
+                            const phone = params.phoneNumber as string;
+                            if (!isValidPhoneNumber(phone)) {
+                                throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
+                            }
+                            params.phoneNumber = normalizePhoneNumber(phone);
                         }
-                        params.phoneNumber = normalizePhoneNumber(phone);
+                        return { data: user };
+                    } catch (e) {
+                        console.error("[HOOK ERROR] User create before hook failed:", e);
+                        throw e;
                     }
-                    return { data: user };
                 },
                 after: async (user, ctx) => {
-                    if (ctx?.body?.companyName) {
-                        const companyName = ctx.body.companyName as string;
-                        console.log(`[HOOK] Creating organization "${companyName}" for user ${user.id}`);
+                    try {
+                        if (ctx?.body?.companyName) {
+                            const companyName = ctx.body.companyName as string;
+                            console.log(`[HOOK] Creating organization "${companyName}" for user ${user.id}`);
 
-                        const orgId = nanoid();
-                        const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + nanoid(4);
+                            const orgId = nanoid();
+                            const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + nanoid(4);
 
-                        try {
                             await db.insert(schema.organization).values({
                                 id: orgId,
                                 name: companyName,
@@ -115,23 +124,29 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
                             });
 
                             console.log(`[HOOK] Successfully created Org "${companyName}" (${orgId})`);
-                        } catch (e) {
-                            console.error("[HOOK] Failed to create organization:", e);
                         }
+                    } catch (e) {
+                        console.error("[HOOK ERROR] User create after hook failed:", e);
+                        // Do not throw here to allow user creation to succeed even if org creation fails
                     }
                 }
             },
             update: {
                 before: async (user) => {
-                    const params = user as any;
-                    if (params.phoneNumber) {
-                        const phone = params.phoneNumber as string;
-                        if (!isValidPhoneNumber(phone)) {
-                            throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
+                    try {
+                        const params = user as any;
+                        if (params.phoneNumber) {
+                            const phone = params.phoneNumber as string;
+                            if (!isValidPhoneNumber(phone)) {
+                                throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
+                            }
+                            params.phoneNumber = normalizePhoneNumber(phone);
                         }
-                        params.phoneNumber = normalizePhoneNumber(phone);
+                        return { data: user };
+                    } catch (e) {
+                        console.error("[HOOK ERROR] User update before hook failed:", e);
+                        throw e;
                     }
-                    return { data: user };
                 }
             }
         }

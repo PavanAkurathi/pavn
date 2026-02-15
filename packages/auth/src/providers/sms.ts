@@ -19,6 +19,11 @@ const getTwilioClient = () => {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
 
+    console.log("[SMS DEBUG] Loading Credentials...");
+    console.log(`[SMS DEBUG] SID Present: ${!!accountSid}`);
+    console.log(`[SMS DEBUG] Token Present: ${!!authToken}`);
+    console.log(`[SMS DEBUG] Phone Present: ${!!process.env.TWILIO_PHONE_NUMBER}`);
+
     if (!accountSid || !authToken) {
         if (process.env.NODE_ENV === "production") {
             throw new Error("Missing Twilio credentials in production");

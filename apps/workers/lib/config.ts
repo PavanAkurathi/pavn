@@ -7,7 +7,7 @@ const getLocalUrl = (port: number) => {
         const ip = Constants.expoConfig.hostUri.split(':')[0];
         return `http://${ip}:${port}`;
     }
-    return `http://localhost:${port}`;
+    return `http://10.0.0.38:${port}`;
 };
 
 export const CONFIG = {

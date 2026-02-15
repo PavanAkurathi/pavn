@@ -50,7 +50,11 @@ interface AuthHeaders {
 // Helper for headers
 async function getAuthHeaders(): Promise<AuthHeaders> {
     const token = await SecureStore.getItemAsync("better-auth.session_token");
+    console.log("[API DEBUG] Helper Token:", token ? (token.substring(0, 10) + "...") : "NULL");
+
     const session = await authClient.getSession();
+    console.log("[API DEBUG] Helper Session:", session.data ? "PRESENT" : "NULL", session.error ? session.error : "NO ERROR");
+
     const activeOrgId = session.data?.session?.activeOrganizationId;
 
     if (!activeOrgId) {

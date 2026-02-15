@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --bun src/index.ts",
+    "dev": "bun --env-file=../../.env --bun src/index.ts",
     "build": "node build.mjs",
     "start": "bun ./dist/index.js",
     "typecheck": "tsc --noEmit"
