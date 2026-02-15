@@ -1,44 +1,24 @@
-# @repo/auth
+# Pavn Auth (`@repo/auth`)
 
-Shared authentication package for the Antigravity SaaS monorepo. Built on top of [Better Auth](https://www.better-auth.com/) and integrated with [Drizzle ORM](https://orm.drizzle.team/).
+Authentication logic and configuration using **Better Auth**.
 
 ## Features
-
--   **Better Auth**: Robust authentication logic.
--   **Drizzle Adapter**: Persists sessions and users to Neon Postgres via `@repo/database`.
--   **Email Integration**: Sends OTPs and magic links using `@repo/email`.
--   **Client & Server**: Exports utilities for both server-side (`.`) and client-side (`./client`) usage.
-
-## Installation
-
-```bash
-npm install @repo/auth
-# or
-bun add @repo/auth
-```
+- **Core Auth**: Session management, cookies, and tokens.
+- **Plugins**:
+    - **SMS OTP**: Initialized with Twilio credentials.
+    - **Expo**: Mobile app authentication support.
+    - **Organization**: Multi-tenant organization support.
 
 ## Usage
 
-### Server-Side
+Import the auth instance in your API or Server Actions:
 
-```ts
+```typescript
 import { auth } from "@repo/auth";
-import { headers } from "next/headers";
-
-const session = await auth.api.getSession({
-    headers: await headers()
-});
 ```
 
-### Client-Side
-
-```ts
-import { createAuthClient } from "@repo/auth/client";
-
-const authClient = createAuthClient();
-
-const { data, error } = await authClient.signIn.email({
-    email,
-    password
-});
-```
+## Configuration
+The main configuration is located in `src/auth.ts`.
+It defines:
+- **Trusted Origins**: Domains allowed to authenticate (Web, Mobile URL Schemes).
+- **Database Hooks**: Logic to run on user creation (e.g., creating a default organization).

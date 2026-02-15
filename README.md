@@ -1,54 +1,70 @@
-# Antigravity SaaS (Pavn)
+# Pavn (WorkersHive)
 
-- [Notification & Tracking Service](./docs/NOTIFICATIONS.md)
-Monorepo for the Antigravity SaaS platform, built with [Turborepo](https://turbo.build/repo).
+Pavn is a comprehensive workforce management platform designed to streamline shift scheduling, geofencing, and worker management.
 
-## Apps & Packages
+## Project Structure
 
-### Applications
+This is a monorepo managed by [Turbo](https://turbo.build/).
 
--   [`apps/web`](./apps/web): Main SaaS application (Next.js 16).
--   [`apps/docs`](./apps/docs): Documentation site (Next.js 16).
+### Apps
+- **`apps/web`**: The main web application (Next.js) for business admins and managers.
+- **`apps/workers`**: The mobile application (Expo/React Native) for gig workers.
+- **`apps/api`**: The backend API server (Hono) handling authentication, shifts, and logic.
+- **`apps/docs`**: Documentation site (Next.js).
 
-### Shared Packages
-
--   [`@repo/auth`](./packages/auth): Authentication logic (Better Auth + Drizzle).
--   [`@repo/database`](./packages/database): Database schema and connection (Neon Postgres + Drizzle).
--   [`@repo/email`](./packages/email): Transactional email service (Resend).
--   [`@repo/shifts`](./packages/shifts): Shift management domain logic.
--   [`@repo/ui`](./packages/ui): Shared UI component library (Shadcn UI).
--   [`@repo/eslint-config`](./packages/eslint-config): Shared ESLint configurations.
--   [`@repo/typescript-config`](./packages/typescript-config): Shared TSConfig bases.
+### Packages (`@repo/*`)
+- **`auth`**: Authentication logic using Better Auth.
+- **`database`**: Database schema, Drizzle ORM setup, and migrations.
+- **`ui`**: Shared UI component library.
+- **`email`**: Transactional email templates and logic.
+- **`notifications`**: Push notification services.
+- **`geofence`**: Geofencing and location verification logic.
+- **`shifts-service`**: Core shift management logic.
+- **`config`**: Shared configuration files.
+- **`utils`**: Common utility functions.
 
 ## Getting Started
 
-1.  **Install dependencies:**
+### Prerequisites
+- [Bun](https://bun.sh/) (Runtime & Package Manager)
+- [Docker](https://www.docker.com/) (For local database, optional if using Neon)
+- [PostgreSQL](https://www.postgresql.org/) (Database)
 
+### Installation
+
+```bash
+# Install dependencies
+bun install
+```
+
+### Development
+
+To start the development environment:
+
+1.  **Backend & Web**:
     ```bash
-    npm install
-    # or
-    bun install
-    ```
-
-2.  **Environment Setup:**
-
-    Copy `.env.example` to `.env` in the root and relevant package directories (`apps/web`, `packages/database`, etc.) and populate the required keys.
-
-3.  **Run Development Server:**
-
-    ```bash
-    npm run dev
-    # or
     bun run dev
     ```
+    This starts the API server (`localhost:4005`), Web App (`localhost:3000`), and other services.
 
-    -   Web App: [http://localhost:3000](http://localhost:3000)
-    -   Docs App: [http://localhost:3001](http://localhost:3001)
+2.  **Mobile App**:
+    Open a *separate* terminal:
+    ```bash
+    cd apps/workers
+    npx expo start
+    ```
+    Press `i` for iOS Simulator or `a` for Android Emulator.
 
-## Development workflow
+### Environment Variables
 
-This repo uses [Turborepo](https://turbo.build/repo) for task orchestration.
+Copy the example environment file and fill in your credentials:
 
--   **Build all**: `npm run build`
--   **Lint all**: `npm run lint`
--   **Type check all**: `npm run check-types`
+```bash
+cp .env.example .env
+```
+
+**Critical Variables:**
+- `DATABASE_URL`: Connection string for PostgreSQL (Neon).
+- `BETTER_AUTH_SECRET`: Secret for authentication sessions.
+- `TWILIO_*`: Credentials for SMS OTP.
+- `NEXT_PUBLIC_APP_URL`: URL of the web application.

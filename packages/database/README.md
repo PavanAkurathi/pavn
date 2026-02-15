@@ -1,32 +1,30 @@
-# @repo/database
+# Pavn Database (`@repo/database`)
 
-Shared database package providing the ORM client and schema definitions for the Antigravity SaaS platform. Connects to [Neon Postgres](https://neon.tech) using [Drizzle ORM](https://orm.drizzle.team/).
+Shared database package handling schema definitions, migrations, and connection management.
 
-## Features
+## Tech Stack
+- **PostgreSQL**: Production database (Neon).
+- **Drizzle ORM**: TypeScript ORM and Query Builder.
 
--   **Type-Safe Schema**: All database tables defined in TypeScript.
--   **Serverless Driver**: Uses `@neondatabase/serverless` for efficient connection pooling.
--   **Migration Tools**: Includes Drizzle Kit configuration for schema updates.
+## Directory Structure
+- **`src/schema.ts`**: All table definitions.
+- **`src/index.ts`**: Exports for `db` instance and schema.
+- **`drizzle/`**: Migration SQL files.
 
-## Exports
+## Commands
 
--   `@repo/database`: Main entry point exporting the `db` instance.
--   `@repo/database/schema`: Exports all table definitions (`user`, `session`, `organization`, etc.).
+Run these from the root directory or inside `packages/database`:
 
-## Scripts
+```bash
+# Generate migration files after changing schema.ts
+bun run db:generate
 
-Run these from the root using `turbo` or inside the package directory:
+# Push changes directly to the database (Local Dev)
+bun run db:push
 
--   `npm run generate`: Generate SQL migration files.
--   `npm run push`: Push schema changes directly to the database (prototyping).
--   `npm run studio`: Open Drizzle Studio to browse data.
-
-## Usage
-
-```ts
-import { db } from "@repo/database";
-import { user } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
-
-const users = await db.select().from(user).where(eq(user.email, "alice@example.com"));
+# View database with Drizzle Studio
+bun run db:studio
 ```
+
+## Connection
+The package exports a singleton `db` instance that automatically connects using the `DATABASE_URL` environment variable.

@@ -1,17 +1,16 @@
-# @repo/shifts
+# Pavn Package (`@repo/*`)
 
-Domain-specific package for Shift Management logic in the Antigravity SaaS platform.
-
-## Features
-
--   **Service Layer**: `shiftService` for fetching and managing shifts/timesheets.
--   **Types**: Shared interface definitions for `Shift`, `TimesheetWorker`, etc.
--   **Mock Data**: Development data for testing UI scenarios.
+This is a shared internal package for the Pavn monorepo.
 
 ## Usage
 
-```ts
-import { shiftService } from "@repo/shifts";
+Import this package in your application:
 
-const shifts = await shiftService.getShifts({ view: 'upcoming' });
+```typescript
+import { ... } from "@repo/package-name";
 ```
+
+## Development
+
+- Run `bun run build` to compile.
+- Run `bun run lint` to check for code issues.
