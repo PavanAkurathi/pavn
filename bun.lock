@@ -513,6 +513,7 @@
     "drizzle-orm": "0.45.1",
     "expo-network": "~7.0.5",
     "expo-router": "~4.0.22",
+    "react-native": "0.76.6",
     "zod": "4.3.6",
   },
   "packages": {
