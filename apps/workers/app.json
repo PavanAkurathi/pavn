@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "workers",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -64,6 +65,9 @@
           "android": {
             "kotlinVersion": "1.9.25",
             "usesCleartextTraffic": true
+          },
+          "ios": {
+            "newArchEnabled": true
           }
         }
       ]

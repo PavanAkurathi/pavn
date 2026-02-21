@@ -36,7 +36,7 @@ export const getOpenShifts = async (orgId: string) => {
     );
 
     return openShifts.map(s => ({
-        ...mapShiftToDto(s),
+        ...mapShiftToDto(s as any),
         capacityFilled: s.assignments?.length || 0,
         capacityTotal: s.capacityTotal,
         spotsRemaining: s.capacityTotal - (s.assignments?.length || 0),

@@ -1,5 +1,5 @@
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { ingestLocationController } from "../src/controllers/ingest-location";
+import { ingestLocation as ingestLocationController } from "../src/services/ingest-location";
 
 // Mocks
 const mockSendSMS = mock(() => Promise.resolve());
@@ -115,11 +115,11 @@ describe("Ingest Location Controller - Departure", () => {
         // User is now FAR AWAY
         const req = mockRequest({ latitude: "41.000", longitude: "-74.000" });
 
-        const res = await ingestLocationController(req, "u1", "org1");
-        const json = await res.json();
+        const payload = await req.json();
+        const res = await ingestLocationController(payload, "u1", "org1") as any;
 
-        expect(json.success).toBe(true);
-        expect(json.data.eventType).toBe('departure');
+        expect(res.success).toBe(true);
+        expect(res.data.eventType).toBe('departure');
         expect(mockSendSMS).toHaveBeenCalledTimes(1);
         // Cast to any to bypass strict tuple checks on mock.calls
         const calls = mockSendSMS.mock.calls as any[];
@@ -167,10 +167,9 @@ describe("Ingest Location Controller - Departure", () => {
             })
         }));
 
-        // User is now FAR AWAY
         const req = mockRequest({ latitude: "41.000", longitude: "-74.000" });
-
-        await ingestLocationController(req, "u1", "org1");
+        const payload = await req.json();
+        await ingestLocationController(payload, "u1", "org1");
 
         expect(mockSendSMS).not.toHaveBeenCalled();
     });

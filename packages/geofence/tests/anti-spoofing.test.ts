@@ -1,7 +1,7 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { clockInController } from "../src/controllers/clock-in";
-import { clockOutController } from "../src/controllers/clock-out";
+import { clockIn as clockInController } from "../src/services/clock-in";
+import { clockOut as clockOutController } from "../src/services/clock-out";
 
 // Mock DB
 const mockQuery = mock(() => Promise.resolve<any>(null));
@@ -77,8 +77,15 @@ describe("Anti-Spoofing Validation", () => {
             })
         });
 
-        const res = await clockInController(req, "w1", "org1");
-        const json = await res.json();
+        const payload = await req.json();
+        let res: any, json: any;
+        try {
+            res = await clockInController(payload, "w1", "org1");
+            json = res as any;
+        } catch (e: any) {
+            res = { status: e.statusCode || 400 };
+            json = { code: e.code };
+        }
 
         expect(res.status).toBe(400);
         expect(json.code).toBe("REPLAY_DETECTED");
@@ -96,8 +103,15 @@ describe("Anti-Spoofing Validation", () => {
             })
         });
 
-        const res = await clockInController(req, "w1", "org1");
-        const json = await res.json();
+        const payload = await req.json();
+        let res: any, json: any;
+        try {
+            res = await clockInController(payload, "w1", "org1");
+            json = res as any;
+        } catch (e: any) {
+            res = { status: e.statusCode || 400 };
+            json = { code: e.code };
+        }
 
         expect(res.status).toBe(400);
         expect(json.code).toBe("LOW_ACCURACY");

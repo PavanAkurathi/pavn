@@ -253,6 +253,10 @@ workerRouter.openapi(updateProfileRoute, async (c) => {
         .where(eq(userTable.id, user.id))
         .returning();
 
+    if (!updated) {
+        return c.json({ error: "Failed to update profile" }, 400);
+    }
+
     return c.json({
         id: updated.id,
         name: updated.name,

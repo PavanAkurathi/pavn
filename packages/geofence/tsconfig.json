@@ -7,9 +7,10 @@
             "ESNext",
             "DOM"
         ],
+        "jsx": "react-jsx",
         "target": "ESNext",
         "types": [
-            "bun-types"
+            "bun"
         ]
     },
     "include": [

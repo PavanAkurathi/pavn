@@ -131,12 +131,12 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
     const clockInResult = applyClockInRules(now, scheduledStart);
 
     // 5. Transaction
+    const effectiveStart = now < scheduledStart ? scheduledStart : now;
+
     await db.transaction(async (tx) => {
         // A. Update Assignment
         // Worker self clock-in: effectiveClockIn snaps to scheduled start (never earlier)
         // If worker is late, effective = actual (they don't get credit for time they weren't here)
-        const effectiveStart = now < scheduledStart ? scheduledStart : now;
-
         await tx.update(shiftAssignment)
             .set({
                 actualClockIn: clockInResult.recordedTime,

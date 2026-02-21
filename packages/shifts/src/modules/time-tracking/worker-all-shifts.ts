@@ -107,6 +107,9 @@ export const getWorkerAllShifts = async (
             for (let j = i + 1; j < shifts.length; j++) {
                 const a = shifts[i];
                 const b = shifts[j];
+
+                if (!a || !b) continue;
+
                 const aStart = new Date(a.startTime);
                 const aEnd = new Date(a.endTime);
                 const bStart = new Date(b.startTime);

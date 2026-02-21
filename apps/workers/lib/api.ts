@@ -122,6 +122,12 @@ async function getAuthHeaders(includeOrg: boolean = true): Promise<AuthHeaders> 
 
 async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
     const response = await fetch(url, opts);
+
+    if (response.status === 401) {
+        await SecureStore.deleteItemAsync("better-auth.session_token");
+        // Optionally, we could still throw here so the rejecting promise cascades to the caller
+    }
+
     if (!response.ok) {
         let errMsg: string;
         try {
