@@ -9,12 +9,14 @@ import { isRunningInExpoGo } from 'expo';
 
 import { ErrorBoundary } from "../components/ErrorBoundary";
 
-// Initialize Sentry
-Sentry.init({
-    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-    // Enable debug in dev (optional)
-    debug: __DEV__,
-});
+// Initialize Sentry conditionally
+if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
+    Sentry.init({
+        dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+        // Enable debug in dev (optional)
+        debug: __DEV__,
+    });
+}
 
 function RootLayout() {
 

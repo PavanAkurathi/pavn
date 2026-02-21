@@ -8,7 +8,9 @@ import { authClient } from './auth-client';
 // CONFIGURATION
 // =============================================================================
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4005';
+import { CONFIG } from './config';
+
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || CONFIG.API_URL;
 
 const DEFAULT_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
@@ -43,11 +45,11 @@ interface RequestConfig {
 
 class ApiClient {
     private baseUrl: string;
-    
+
     constructor(baseUrl: string) {
         this.baseUrl = baseUrl;
     }
-    
+
     /**
      * Get authentication headers
      */
@@ -55,22 +57,22 @@ class ApiClient {
         const token = await SecureStore.getItemAsync('better-auth.session_token');
         const session = await authClient.getSession();
         const orgId = session.data?.session?.activeOrganizationId;
-        
+
         const headers: Record<string, string> = {
             'Content-Type': 'application/json',
         };
-        
+
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         if (orgId) {
             headers['x-org-id'] = orgId;
         }
-        
+
         return headers;
     }
-    
+
     /**
      * Make an API request with retry logic
      */
@@ -85,20 +87,20 @@ class ApiClient {
             retries = MAX_RETRIES,
             skipAuth = false,
         } = config;
-        
+
         const url = `${this.baseUrl}${endpoint}`;
-        
+
         // Get headers
-        const headers = skipAuth 
+        const headers = skipAuth
             ? { 'Content-Type': 'application/json' }
             : await this.getAuthHeaders();
-        
+
         // Create abort controller for timeout
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
-        
+
         let lastError: Error | null = null;
-        
+
         for (let attempt = 0; attempt < retries; attempt++) {
             try {
                 const response = await fetch(url, {
@@ -107,17 +109,17 @@ class ApiClient {
                     body: body ? JSON.stringify(body) : undefined,
                     signal: controller.signal,
                 });
-                
+
                 clearTimeout(timeoutId);
-                
+
                 // Parse response
                 const contentType = response.headers.get('content-type');
                 let data: T | ApiError | null = null;
-                
+
                 if (contentType?.includes('application/json')) {
                     data = await response.json();
                 }
-                
+
                 // Handle errors
                 if (!response.ok) {
                     const apiError = data as ApiError;
@@ -131,35 +133,35 @@ class ApiClient {
                         status: response.status,
                     };
                 }
-                
+
                 return {
                     data: data as T,
                     error: null,
                     status: response.status,
                 };
-                
+
             } catch (error) {
                 lastError = error as Error;
-                
+
                 // Don't retry on abort (timeout)
                 if ((error as Error).name === 'AbortError') {
                     break;
                 }
-                
+
                 // Don't retry on 4xx errors
                 if (lastError.message.includes('HTTP_4')) {
                     break;
                 }
-                
+
                 // Wait before retry (exponential backoff)
                 if (attempt < retries - 1) {
                     await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
                 }
             }
         }
-        
+
         clearTimeout(timeoutId);
-        
+
         return {
             data: null,
             error: {
@@ -169,20 +171,20 @@ class ApiClient {
             status: 0,
         };
     }
-    
+
     // Convenience methods
     async get<T>(endpoint: string, config?: Omit<RequestConfig, 'method' | 'body'>) {
         return this.request<T>(endpoint, { ...config, method: 'GET' });
     }
-    
+
     async post<T>(endpoint: string, body?: Record<string, unknown>, config?: Omit<RequestConfig, 'method'>) {
         return this.request<T>(endpoint, { ...config, method: 'POST', body });
     }
-    
+
     async patch<T>(endpoint: string, body?: Record<string, unknown>, config?: Omit<RequestConfig, 'method'>) {
         return this.request<T>(endpoint, { ...config, method: 'PATCH', body });
     }
-    
+
     async delete<T>(endpoint: string, config?: Omit<RequestConfig, 'method' | 'body'>) {
         return this.request<T>(endpoint, { ...config, method: 'DELETE' });
     }

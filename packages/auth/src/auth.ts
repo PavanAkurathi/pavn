@@ -14,9 +14,11 @@ import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/s
 
 const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || "";
 const vercelUrl = process.env.VERCEL_URL;
-const trustedOrigins = [
+
+const baseTrustedOrigins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:8081",
     ...(allowedOriginsEnv.split(',').map(o => {
         const origin = o.trim();
         if (origin.startsWith('http')) return origin;
@@ -26,14 +28,12 @@ const trustedOrigins = [
     "exp://",
     "myapp://",
     "workers://",
-    "http://10.0.0.38:8081",
-    "exp://10.0.0.38:8081",
     "exp://**"
 ].filter(Boolean) as string[];
 
 console.log("[AUTH DEBUG] Allowed Origins Env:", allowedOriginsEnv);
 console.log("[AUTH DEBUG] Vercel URL Env:", vercelUrl);
-console.log("[AUTH DEBUG] Final Trusted Origins:", trustedOrigins);
+console.log("[AUTH DEBUG] Base Trusted Origins:", baseTrustedOrigins);
 console.log("[AUTH DEBUG] Request Origin Validation Enabled");
 
 export const auth: ReturnType<typeof betterAuth> = betterAuth({
@@ -53,7 +53,13 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     baseURL: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
 
     // Crucial for Next.js 15+ / Server Actions environment
-    trustedOrigins: trustedOrigins,
+    trustedOrigins: async (request) => {
+        const origin = request?.headers.get("origin");
+        if (process.env.NODE_ENV === "development" && origin && origin.startsWith("http://192.168.")) {
+            return [...baseTrustedOrigins, origin];
+        }
+        return baseTrustedOrigins;
+    },
 
     database: drizzleAdapter(db, {
         provider: "pg",
