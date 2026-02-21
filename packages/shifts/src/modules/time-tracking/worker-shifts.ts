@@ -110,12 +110,23 @@ interface WorkerShiftDto {
     timesheet: {
         clockIn?: string;
         clockOut?: string;
+        effectiveClockIn?: string;
+        effectiveClockOut?: string;
         breakMinutes: number;
+        totalDurationMinutes?: number;
+    };
+    timesheetFlags: {
+        missingClockIn: boolean;
+        missingClockOut: boolean;
+        needsReview: boolean;
+        reviewReason?: string;
     };
 }
 
 const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
     const s = assignment.shift;
+    const shiftEnded = new Date(s.endTime) < new Date();
+
     return {
         id: s.id,
         assignmentId: assignment.id,
@@ -131,17 +142,27 @@ const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
             address: s.location?.address,
             latitude: s.location?.latitude ? Number(s.location.latitude) : undefined,
             longitude: s.location?.longitude ? Number(s.location.longitude) : undefined,
-            geofenceRadius: s.location?.geofenceRadius || 150 // [UX-008] Default 150m (Matched)
+            geofenceRadius: s.location?.geofenceRadius || 150
         },
         organization: {
             id: s.organization?.id || 'unknown',
             name: s.organization?.name || 'Unknown'
         },
         timesheet: {
-            clockIn: assignment.clockIn?.toISOString(),
-            clockOut: assignment.clockOut?.toISOString(),
-            breakMinutes: assignment.breakMinutes || 0
-        }
+            clockIn: assignment.actualClockIn?.toISOString() ?? undefined,
+            clockOut: assignment.actualClockOut?.toISOString() ?? undefined,
+            effectiveClockIn: assignment.effectiveClockIn?.toISOString() ?? undefined,
+            effectiveClockOut: assignment.effectiveClockOut?.toISOString() ?? undefined,
+            breakMinutes: assignment.breakMinutes || 0,
+            totalDurationMinutes: assignment.totalDurationMinutes ?? undefined,
+        },
+        // Flags for UI: show ⚠️ warning icons next to missing times
+        timesheetFlags: {
+            missingClockIn: !assignment.actualClockIn && shiftEnded,
+            missingClockOut: !!assignment.actualClockIn && !assignment.actualClockOut && shiftEnded,
+            needsReview: assignment.needsReview || false,
+            reviewReason: assignment.reviewReason ?? undefined,
+        },
     };
 };
 

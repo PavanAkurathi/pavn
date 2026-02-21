@@ -1,5 +1,4 @@
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -12,20 +11,24 @@ export default function TabsLayout() {
                 headerShown: false,
                 tabBarStyle: {
                     backgroundColor: "#000",
-                    borderTopColor: "#333",
-                    height: 60 + insets.bottom, // Base height + safe area
-                    paddingBottom: insets.bottom + 4, // Safe area + slight padding
-                    paddingTop: 8,
+                    borderTopColor: "#1A1A1A",
+                    borderTopWidth: 1,
+                    height: 56 + insets.bottom,
+                    paddingBottom: insets.bottom + 2,
+                    paddingTop: 6,
                 },
-                tabBarActiveTintColor: "#fff",
+                tabBarActiveTintColor: "#3B82F6",
                 tabBarInactiveTintColor: "#666",
+                tabBarLabelStyle: {
+                    fontSize: 11,
+                    fontWeight: "500",
+                },
             }}
         >
             <Tabs.Screen
                 name="index"
                 options={{
                     title: "Schedule",
-                    tabBarLabel: "Schedule",
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="calendar-outline" size={size} color={color} />
                     ),
@@ -35,7 +38,6 @@ export default function TabsLayout() {
                 name="profile"
                 options={{
                     title: "Profile",
-                    tabBarLabel: "Profile",
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="person-outline" size={size} color={color} />
                     ),

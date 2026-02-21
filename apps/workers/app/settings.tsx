@@ -1,142 +1,91 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Linking } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import Constants from "expo-constants";
+import { authClient } from "../lib/auth-client";
 
 export default function SettingsScreen() {
     const router = useRouter();
 
+    const handleSignOut = async () => {
+        try {
+            await authClient.signOut();
+            router.replace("/(auth)/login");
+        } catch (e) {
+            console.error("Sign out failed", e);
+        }
+    };
+
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <SafeAreaView style={s.container} edges={["top"]}>
+            <View style={s.header}>
+                <TouchableOpacity onPress={() => router.back()}>
                     <Ionicons name="arrow-back" size={24} color="#fff" />
                 </TouchableOpacity>
-                <Text style={styles.title}>Settings</Text>
+                <Text style={s.title}>Settings</Text>
+                <View style={{ width: 24 }} />
             </View>
 
-            <ScrollView style={styles.content}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+                <SettingsRow icon="person-outline" label="Account information" onPress={() => router.push("/personal-info")} />
+                <SettingsRow icon="notifications-outline" label="Notifications" onPress={() => router.push("/preferences")} />
+                <SettingsRow icon="calendar-outline" label="My availability" onPress={() => router.push("/availability")} />
+                <SettingsRow icon="ribbon-outline" label="Certifications" onPress={() => router.push("/certifications")} />
+                <SettingsRow icon="help-circle-outline" label="Contact support" onPress={() => Linking.openURL("mailto:support@workershive.com")} />
 
-                {/* Availability Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>SCHEDULE</Text>
-                    <TouchableOpacity style={styles.row}>
-                        <View style={styles.rowIcon}>
-                            <Ionicons name="calendar-outline" size={20} color="#fff" />
-                        </View>
-                        <View style={styles.rowContent}>
-                            <Text style={styles.rowTitle}>Availability</Text>
-                            <Text style={styles.rowSubtitle}>Set your preferred working hours</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color="#666" />
-                    </TouchableOpacity>
+                <TouchableOpacity style={s.logoutBtn} onPress={handleSignOut}>
+                    <Text style={s.logoutText}>Log out</Text>
+                </TouchableOpacity>
+
+                <View style={s.footer}>
+                    <View style={s.legalRow}>
+                        <TouchableOpacity onPress={() => Linking.openURL("https://workershive.com/privacy")}>
+                            <Text style={s.legalLink}>Privacy Policy</Text>
+                        </TouchableOpacity>
+                        <Text style={s.legalSep}>|</Text>
+                        <TouchableOpacity onPress={() => Linking.openURL("https://workershive.com/terms")}>
+                            <Text style={s.legalLink}>Terms of Use</Text>
+                        </TouchableOpacity>
+                    </View>
+                    <Text style={s.version}>{Constants.expoConfig?.version || "1.0.0"}</Text>
                 </View>
-
-                {/* Certifications Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>COMPLIANCE</Text>
-                    <TouchableOpacity style={styles.row}>
-                        <View style={styles.rowIcon}>
-                            <Ionicons name="ribbon-outline" size={20} color="#fff" />
-                        </View>
-                        <View style={styles.rowContent}>
-                            <Text style={styles.rowTitle}>Certifications</Text>
-                            <Text style={styles.rowSubtitle}>ServSafe, TIPS, etc.</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={20} color="#666" />
-                    </TouchableOpacity>
-                </View>
-
-                <View style={styles.infoBox}>
-                    <Ionicons name="information-circle-outline" size={20} color="#888" />
-                    <Text style={styles.infoText}>
-                        Expired certifications will prevent you from being scheduled.
-                    </Text>
-                </View>
-
             </ScrollView>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#000",
-    },
+function SettingsRow({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
+    return (
+        <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.6}>
+            <Ionicons name={icon as any} size={20} color="#999" />
+            <Text style={s.rowLabel}>{label}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#444" />
+        </TouchableOpacity>
+    );
+}
+
+const s = StyleSheet.create({
+    container: { flex: 1, backgroundColor: "#0A0A0A" },
     header: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: "#222",
+        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+        paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#1A1A1A",
     },
-    backButton: {
-        marginRight: 16,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#fff",
-    },
-    content: {
-        flex: 1,
-    },
-    section: {
-        marginTop: 24,
-    },
-    sectionHeader: {
-        fontSize: 12,
-        fontWeight: "600",
-        color: "#666",
-        paddingHorizontal: 16,
-        marginBottom: 8,
-        letterSpacing: 1,
-    },
+    title: { fontSize: 18, fontWeight: "700", color: "#fff" },
     row: {
-        flexDirection: "row",
-        alignItems: "center",
-        paddingVertical: 16,
-        paddingHorizontal: 16,
-        backgroundColor: "#111",
-        marginBottom: 1,
+        flexDirection: "row", alignItems: "center", gap: 14,
+        paddingVertical: 16, paddingHorizontal: 20,
+        borderBottomWidth: 1, borderBottomColor: "#141414",
     },
-    rowIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: "#222",
-        alignItems: "center",
-        justifyContent: "center",
-        marginRight: 16,
+    rowLabel: { flex: 1, fontSize: 16, color: "#fff" },
+    logoutBtn: {
+        marginTop: 32, marginHorizontal: 20, paddingVertical: 14,
+        borderRadius: 10, borderWidth: 1, borderColor: "#333", alignItems: "center",
     },
-    rowContent: {
-        flex: 1,
-    },
-    rowTitle: {
-        fontSize: 16,
-        color: "#fff",
-        fontWeight: "500",
-    },
-    rowSubtitle: {
-        fontSize: 13,
-        color: "#888",
-        marginTop: 2,
-    },
-    infoBox: {
-        flexDirection: "row",
-        alignItems: "center",
-        margin: 16,
-        padding: 12,
-        backgroundColor: "#1A1A1A",
-        borderRadius: 8,
-    },
-    infoText: {
-        flex: 1,
-        color: "#888",
-        fontSize: 12,
-        marginLeft: 12,
-        lineHeight: 18,
-    },
+    logoutText: { fontSize: 16, fontWeight: "600", color: "#EF4444" },
+    footer: { alignItems: "center", marginTop: 24 },
+    legalRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    legalLink: { fontSize: 13, color: "#666" },
+    legalSep: { color: "#444" },
+    version: { fontSize: 12, color: "#444", marginTop: 8 },
 });

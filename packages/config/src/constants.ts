@@ -14,3 +14,8 @@ export const PRICING = {
     MONTHLY_PER_LOCATION: 30,
     TRIAL_DAYS: 15,
 } as const;
+
+// Plan limits — enforced server-side in actions
+export const PLAN_LIMITS = {
+    MAX_LOCATIONS: 5,
+} as const;

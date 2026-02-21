@@ -26,10 +26,14 @@ export function SecurityForm({ sessions, accounts }: SecurityFormProps) {
     };
 
     const handleSignOutSession = async (token: string) => {
-        // Implementation for revoking specific session would go here
-        // Currently Better Auth client might not expose "revoke other session" directly easily
-        // So we will just show a toast for now as a placeholder for the logic
-        toast.info("Session revocation coming soon");
+        try {
+            await authClient.revokeSession({ token });
+            toast.success("Session revoked");
+            router.refresh();
+        } catch {
+            // If revokeSession isn't available in this auth version, disable gracefully
+            toast.error("Unable to revoke session. Try signing out from that device.");
+        }
     };
 
     return (

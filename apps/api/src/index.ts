@@ -66,7 +66,7 @@ import { organizationsRouter } from "./routes/organizations.js";
 import { geofenceRouter } from "./routes/geofence.js";
 
 // Types
-export type Role = "owner" | "admin" | "manager" | "member";
+export type Role = "admin" | "member";
 
 export type AppContext = {
     Variables: {
@@ -79,16 +79,6 @@ export type AppContext = {
 
 // Create main app
 const app = new OpenAPIHono<AppContext>();
-
-import * as fs from 'fs';
-
-app.use('*', async (c, next) => {
-    try {
-        fs.appendFileSync('/tmp/pavn_api.log', `[API REQUEST] ${c.req.method} ${c.req.url}\n`);
-    } catch (e) { }
-    console.log(`[API REQUEST] ${c.req.method} ${c.req.url}`);
-    await next();
-});
 
 // =============================================================================
 // OPENAPI & SWAGGER
@@ -132,11 +122,10 @@ app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOStri
 // Auth routes (Better Auth handles these)
 app.on(["POST", "GET"], "/api/auth/*", async (c) => {
     try {
-        console.log(`[AUTH DEBUG] Request: ${c.req.method} ${c.req.url}`);
         return await auth.handler(c.req.raw);
     } catch (error) {
-        console.error("[AUTH CRITICAL ERROR]", error);
-        return c.json({ error: "Internal Auth Error", details: String(error) }, 500);
+        console.error("[AUTH ERROR]", error);
+        return c.json({ error: "Internal Auth Error" }, 500);
     }
 });
 
@@ -145,15 +134,6 @@ app.on(["POST", "GET"], "/api/auth/*", async (c) => {
 // =============================================================================
 
 app.use("*", async (c, next) => {
-    // Debug headers
-    if (c.req.path.startsWith("/api") && !c.req.path.startsWith("/api/auth")) {
-        const authHeader = c.req.header("authorization");
-        const cookieHeader = c.req.header("cookie");
-        console.log(`[API MIDDLEWARE] ${c.req.method} ${c.req.path}`);
-        console.log(`[API MIDDLEWARE] Auth Header: ${authHeader ? (authHeader.substring(0, 15) + "...") : "MISSING"}`);
-        console.log(`[API MIDDLEWARE] Cookie Header: ${cookieHeader ? "PRESENT" : "MISSING"}`);
-        console.log(`[API MIDDLEWARE] User-Agent: ${c.req.header("user-agent")}`);
-    }
     // Skip public routes
     if (c.req.path === "/health" || c.req.path.startsWith("/api/auth") || c.req.path === "/docs" || c.req.path === "/openapi.json" || c.req.path === "/") {
         await next();
@@ -170,6 +150,18 @@ app.use("*", async (c, next) => {
     c.set("session", session.session);
 
     // Validate tenant context
+    // Some worker routes are cross-org (no x-org-id needed)
+    const ORG_FREE_PATHS = ['/worker/all-shifts', '/worker/organizations'];
+    const isOrgFree = ORG_FREE_PATHS.some(p => c.req.path.endsWith(p));
+
+    if (isOrgFree) {
+        // Cross-org route: authenticated by session only, no org context
+        c.set("orgId", "");
+        c.set("userRole", "member" as Role);
+        await next();
+        return;
+    }
+
     const orgId = c.req.header("x-org-id");
     if (!orgId) {
         return c.json({ error: "Missing organization context", code: "ORG_REQUIRED" }, 401);
@@ -204,6 +196,7 @@ import { requireManager } from "./middleware/index.js";
 import { devicesRouter } from "./routes/devices.js";
 import { preferencesRouter } from "./routes/preferences.js";
 import { managerPreferencesRouter } from "./routes/manager-preferences.js";
+import { notificationsRouter } from "./routes/notifications.js";
 
 app.route("/shifts", shiftsRouter);
 app.route("/worker", workerRouter);
@@ -215,6 +208,7 @@ app.route("/geofence", geofenceRouter);
 app.route("/devices", devicesRouter);
 app.route("/preferences", preferencesRouter);
 app.route("/manager-preferences", managerPreferencesRouter);
+app.route("/notifications", notificationsRouter);
 
 // Legacy routes for backwards compatibility
 app.route("/schedules", shiftsRouter);

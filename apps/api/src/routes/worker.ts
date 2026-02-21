@@ -15,6 +15,7 @@ import type { AppContext } from "../index";
 // Import services
 import {
     getWorkerShifts,
+    getWorkerAllShifts,
     setAvailability,
     getAvailability,
     UpcomingShiftsResponseSchema,
@@ -24,6 +25,7 @@ import {
 
 import {
     requestCorrection,
+    getWorkerCorrections,
     CorrectionRequestSchema
 } from "@repo/geofence";
 
@@ -173,11 +175,9 @@ workerRouter.openapi(getAdjustmentsRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    // Helper logic or service call for getting own adjustments
-    // Assuming getPendingCorrections is manager facing? 
-    // We might need getWorkerCorrections(userId, orgId).
-    // For now, returning empty array as placeholder logic if service doesn't exist
-    return c.json([] as any, 200);
+    const orgId = c.get("orgId");
+    const result = await getWorkerCorrections(user.id, orgId);
+    return c.json(result as any, 200);
 });
 
 // =============================================================================
@@ -204,13 +204,15 @@ workerRouter.openapi(getProfileRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
+    const userRole = c.get("userRole");
+
     return c.json({
         id: user.id,
         name: user.name,
         email: user.email,
         image: user.image,
-        role: "worker", // mock
-        status: "active" // mock
+        role: userRole || "member",
+        status: "active"
     } as any, 200);
 });
 
@@ -232,8 +234,103 @@ workerRouter.openapi(updateProfileRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    // TODO: Implement profile update
-    return c.json({ error: "Not yet implemented" } as any, 501);
+    const body = await c.req.json();
+
+    // Only allow updating safe fields
+    const allowedFields: Record<string, any> = {};
+    if (body.name && typeof body.name === 'string') allowedFields.name = body.name;
+    if (body.image && typeof body.image === 'string') allowedFields.image = body.image;
+
+    if (Object.keys(allowedFields).length === 0) {
+        return c.json({ error: "No valid fields to update" }, 400);
+    }
+
+    const { db, eq } = await import("@repo/database");
+    const { user: userTable } = await import("@repo/database/schema");
+
+    const [updated] = await db.update(userTable)
+        .set({ ...allowedFields, updatedAt: new Date() })
+        .where(eq(userTable.id, user.id))
+        .returning();
+
+    return c.json({
+        id: updated.id,
+        name: updated.name,
+        email: updated.email,
+        image: updated.image,
+        role: "member",
+        status: "active"
+    } as any, 200);
 });
 
 export default workerRouter;
+
+// =============================================================================
+// CROSS-ORG ROUTES (no x-org-id required — query all memberships)
+// =============================================================================
+
+const allShiftsRoute = createRoute({
+    method: 'get',
+    path: '/all-shifts',
+    summary: 'Get All Shifts (Cross-Org)',
+    description: 'Get worker shifts across ALL organizations they belong to. Includes conflict detection for overlapping shifts.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shifts from all orgs' },
+        401: { description: 'Unauthorized' }
+    }
+});
+
+workerRouter.openapi(allShiftsRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const status = (c.req.query("status") || 'upcoming') as 'upcoming' | 'history' | 'in-progress' | 'all';
+    const orgId = c.req.query("orgId") || undefined;
+    const limit = parseInt(c.req.query("limit") || '50');
+    const offset = parseInt(c.req.query("offset") || '0');
+
+    const result = await getWorkerAllShifts(user.id, { status, orgId, limit, offset });
+    return c.json(result as any, 200);
+});
+
+const workerOrgsRoute = createRoute({
+    method: 'get',
+    path: '/organizations',
+    summary: 'Get Worker Organizations',
+    description: 'List all organizations the worker belongs to.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.any() } }, description: 'Organization memberships' },
+        401: { description: 'Unauthorized' }
+    }
+});
+
+workerRouter.openapi(workerOrgsRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const { db, eq, and } = await import("@repo/database");
+    const { member, organization } = await import("@repo/database/schema");
+
+    const memberships = await db
+        .select({
+            orgId: member.organizationId,
+            role: member.role,
+            orgName: organization.name,
+            orgLogo: organization.logo,
+        })
+        .from(member)
+        .innerJoin(organization, eq(member.organizationId, organization.id))
+        .where(and(
+            eq(member.userId, user.id),
+            eq(member.status, 'active')
+        ));
+
+    return c.json({
+        organizations: memberships.map(m => ({
+            id: m.orgId,
+            name: m.orgName,
+            logo: m.orgLogo,
+            role: m.role,
+        }))
+    } as any, 200);
+});

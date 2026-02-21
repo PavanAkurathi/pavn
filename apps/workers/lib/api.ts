@@ -2,35 +2,76 @@ import { CONFIG } from './config';
 import * as SecureStore from 'expo-secure-store';
 import { authClient } from './auth-client';
 
-// Interfaces
+// =============================================================================
+// TYPES
+// =============================================================================
+
+export interface ShiftHours {
+    scheduled: number;    // hours (e.g. 8.5)
+    worked: number | null; // null if not yet clocked out
+    breakMinutes: number;
+}
+
+export interface ShiftLocation {
+    id: string;
+    name: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    geofenceRadius?: number;
+}
+
+export interface ShiftOrganization {
+    id: string;
+    name: string;
+}
+
 export interface WorkerShift {
     id: string;
+    assignmentId: string;
     title: string;
+    description?: string;
     startTime: string;
     endTime: string;
     status: string;
-    location: {
-        id: string;
-        name: string;
-        address?: string;
-        latitude?: number;
-        longitude?: number;
-        geofenceRadius?: number;
-    };
-    organization: {
-        id: string;
-        name: string;
-    };
+    assignmentStatus: string;
+    organization: ShiftOrganization;
+    location: ShiftLocation;
+    hours: ShiftHours;
     timesheet: {
         clockIn?: string;
         clockOut?: string;
-    }
+        effectiveClockIn?: string;
+        effectiveClockOut?: string;
+        breakMinutes: number;
+        totalDurationMinutes?: number;
+    };
+    timesheetFlags: {
+        missingClockIn: boolean;
+        missingClockOut: boolean;
+        needsReview: boolean;
+        reviewReason?: string;
+    };
+}
+
+export interface ConflictInfo {
+    shiftId: string;
+    overlapsWithShiftId: string;
+    overlapsWithTitle: string;
+    overlapsWithOrg: string;
+}
+
+export interface WorkerOrg {
+    id: string;
+    name: string;
+    logo?: string;
+    role: string;
 }
 
 export interface ClockInRequest {
     shiftId: string;
-    latitude: string;
-    longitude: string;
+    latitude: number;
+    longitude: number;
     accuracyMeters?: number;
     deviceTimestamp: string;
 }
@@ -43,187 +84,6 @@ export interface CreateAdjustmentRequest {
     requestedBreakMinutes?: number;
 }
 
-interface AuthHeaders {
-    [key: string]: string;
-}
-
-// Helper for headers
-async function getAuthHeaders(): Promise<AuthHeaders> {
-    const token = await SecureStore.getItemAsync("better-auth.session_token");
-    console.log("[API DEBUG] Helper Token:", token ? (token.substring(0, 10) + "...") : "NULL");
-
-    const session = await authClient.getSession();
-    console.log("[API DEBUG] Helper Session:", session.data ? "PRESENT" : "NULL", session.error ? session.error : "NO ERROR");
-
-    const activeOrgId = session.data?.session?.activeOrganizationId;
-
-    if (!activeOrgId) {
-        console.warn("[API] No active organization ID found in session.");
-    }
-
-    return {
-        'x-org-id': activeOrgId || "",
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
-}
-
-// API Routes
-export const api = {
-    shifts: {
-        list: async (status: 'upcoming' | 'history' | 'all' = 'upcoming', limit = 20, offset = 0): Promise<WorkerShift[]> => {
-            const headers = await getAuthHeaders();
-            const url = `${CONFIG.SHIFTS_API_URL}/worker/shifts?status=${status}&limit=${limit}&offset=${offset}`;
-
-            const response = await fetch(url, { headers });
-
-            if (!response.ok) {
-                throw new Error(await response.text() || "Failed to fetch shifts");
-            }
-
-            const data = await response.json();
-            return data.shifts;
-        },
-
-        getUpcoming: async () => {
-            return api.shifts.list('upcoming');
-        },
-
-        getHistory: async () => {
-            return api.shifts.list('history');
-        },
-
-        getById: async (id: string): Promise<WorkerShift> => {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${CONFIG.SHIFTS_API_URL}/shifts/${id}`, { headers });
-            if (!response.ok) throw new Error(await response.text());
-            return await response.json();
-        },
-
-        // WH-210: Fetch shifts with geofence data
-        getUpcomingWithLocation: async (): Promise<WorkerShift[]> => {
-            const headers = await getAuthHeaders();
-            // This hits the new Hono endpoint /shifts/upcoming
-            const response = await fetch(`${CONFIG.API_URL}/shifts/upcoming`, { headers });
-
-            if (!response.ok) {
-                throw new Error(await response.text() || "Failed to fetch upcoming shifts");
-            }
-
-            const data = await response.json();
-            return data.shifts;
-        }
-    },
-
-    geofence: {
-        clockIn: async (data: ClockInRequest) => {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${CONFIG.GEOFENCE_API_URL}/clock-in`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) {
-                // Try to parse JSON error
-                try {
-                    const errJson = await response.json();
-                    throw new Error(errJson.error || "Clock-in failed");
-                } catch (e) {
-                    if (e instanceof Error && e.message !== "Clock-in failed") throw e;
-                    throw new Error(await response.text() || "Clock-in failed");
-                }
-            }
-            return await response.json();
-        },
-
-        clockOut: async (data: ClockInRequest) => { // Reusing request type as data shape is similar
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${CONFIG.GEOFENCE_API_URL}/clock-out`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) {
-                try {
-                    const errJson = await response.json();
-                    throw new Error(errJson.error || "Clock-out failed");
-                } catch (e) {
-                    if (e instanceof Error && e.message !== "Clock-out failed") throw e;
-                    throw new Error(await response.text() || "Clock-out failed");
-                }
-            }
-            return await response.json();
-        }
-    },
-
-    adjustments: {
-        create: async (data: CreateAdjustmentRequest) => {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${CONFIG.SHIFTS_API_URL}/worker/adjustments`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) {
-                try {
-                    const errJson = await response.json();
-                    throw new Error(errJson.error || "Failed to submit adjustment");
-                } catch (e) {
-                    if (e instanceof Error && e.message !== "Failed to submit adjustment") throw e;
-                    throw new Error(await response.text() || "Failed to submit adjustment");
-                }
-            }
-            return await response.json();
-        }
-    },
-
-    preferences: {
-        get: async () => {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${CONFIG.API_URL}/preferences`, { headers });
-            if (!response.ok) throw new Error(await response.text());
-            const data = await response.json();
-            return data.preferences;
-        },
-        update: async (data: Partial<WorkerPreferences>) => {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${CONFIG.API_URL}/preferences`, {
-                method: 'PATCH',
-                headers,
-                body: JSON.stringify(data)
-            });
-            if (!response.ok) throw new Error(await response.text());
-            const resData = await response.json();
-            return resData.preferences;
-        }
-    },
-    devices: {
-        register: async (data: any) => {
-            const headers = await getAuthHeaders();
-            const response = await fetch(`${CONFIG.API_URL}/devices/register`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify(data)
-            });
-
-            if (!response.ok) {
-                // Try to parse JSON error
-                try {
-                    const errJson = await response.json();
-                    throw new Error(errJson.error || "Device registration failed");
-                } catch (e) {
-                    if (e instanceof Error && e.message !== "Device registration failed") throw e;
-                    throw new Error(await response.text() || "Device registration failed");
-                }
-            }
-            return await response.json();
-        }
-    }
-};
-
 export interface WorkerPreferences {
     nightBeforeEnabled: boolean;
     sixtyMinEnabled: boolean;
@@ -235,3 +95,191 @@ export interface WorkerPreferences {
     quietHoursStart?: string;
     quietHoursEnd?: string;
 }
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+interface AuthHeaders { [key: string]: string; }
+
+async function getAuthHeaders(includeOrg: boolean = true): Promise<AuthHeaders> {
+    const token = await SecureStore.getItemAsync("better-auth.session_token");
+    const headers: AuthHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+    };
+
+    if (includeOrg) {
+        const session = await authClient.getSession();
+        const activeOrgId = session.data?.session?.activeOrganizationId;
+        if (activeOrgId) {
+            headers['x-org-id'] = activeOrgId;
+        }
+    }
+
+    return headers;
+}
+
+async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
+    const response = await fetch(url, opts);
+    if (!response.ok) {
+        let errMsg: string;
+        try {
+            const errJson = await response.json();
+            errMsg = errJson.error || errJson.message || response.statusText;
+        } catch {
+            errMsg = await response.text() || response.statusText;
+        }
+        throw new Error(errMsg);
+    }
+    return response.json();
+}
+
+// =============================================================================
+// API
+// =============================================================================
+
+export const api = {
+    // -------------------------------------------------------------------------
+    // CROSS-ORG (no x-org-id needed)
+    // -------------------------------------------------------------------------
+    worker: {
+        /** Get shifts from ALL orgs the worker belongs to */
+        getAllShifts: async (
+            status: 'upcoming' | 'history' | 'in-progress' | 'all' = 'upcoming',
+            orgId?: string,
+            limit = 50,
+        ): Promise<{ shifts: WorkerShift[]; conflicts: ConflictInfo[]; organizations: WorkerOrg[] }> => {
+            const headers = await getAuthHeaders(false); // no x-org-id
+            const params = new URLSearchParams({ status, limit: String(limit) });
+            if (orgId) params.set('orgId', orgId);
+            return fetchJson(`${CONFIG.API_URL}/worker/all-shifts?${params}`, { headers });
+        },
+
+        /** Get all orgs the worker belongs to */
+        getOrganizations: async (): Promise<{ organizations: WorkerOrg[] }> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/organizations`, { headers });
+        },
+
+        /** Get worker's own correction requests */
+        getAdjustments: async (): Promise<any[]> => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/worker/adjustments`, { headers });
+        },
+
+        /** Get profile */
+        getProfile: async () => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/worker/profile`, { headers });
+        },
+
+        /** Update profile */
+        updateProfile: async (data: { name?: string; image?: string }) => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/worker/profile`, {
+                method: 'PATCH', headers, body: JSON.stringify(data),
+            });
+        },
+    },
+
+    // -------------------------------------------------------------------------
+    // SHIFTS (org-scoped, backwards compat)
+    // -------------------------------------------------------------------------
+    shifts: {
+        getById: async (id: string): Promise<WorkerShift> => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/shifts/${id}`, { headers });
+        },
+
+        /** Legacy: single-org upcoming shifts */
+        getUpcoming: async (): Promise<WorkerShift[]> => {
+            const headers = await getAuthHeaders();
+            const data = await fetchJson<any>(`${CONFIG.API_URL}/worker/shifts?status=upcoming`, { headers });
+            return data.shifts;
+        },
+
+        getHistory: async (): Promise<WorkerShift[]> => {
+            const headers = await getAuthHeaders();
+            const data = await fetchJson<any>(`${CONFIG.API_URL}/worker/shifts?status=history`, { headers });
+            return data.shifts;
+        },
+    },
+
+    // -------------------------------------------------------------------------
+    // GEOFENCE / CLOCK
+    // -------------------------------------------------------------------------
+    geofence: {
+        clockIn: async (data: ClockInRequest) => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/geofence/clock-in`, {
+                method: 'POST', headers, body: JSON.stringify(data),
+            });
+        },
+
+        clockOut: async (data: ClockInRequest) => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/geofence/clock-out`, {
+                method: 'POST', headers, body: JSON.stringify(data),
+            });
+        },
+    },
+
+    // -------------------------------------------------------------------------
+    // ADJUSTMENTS
+    // -------------------------------------------------------------------------
+    adjustments: {
+        create: async (data: CreateAdjustmentRequest) => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/worker/adjustments`, {
+                method: 'POST', headers, body: JSON.stringify(data),
+            });
+        },
+    },
+
+    // -------------------------------------------------------------------------
+    // PREFERENCES
+    // -------------------------------------------------------------------------
+    preferences: {
+        get: async () => {
+            const headers = await getAuthHeaders();
+            const data = await fetchJson<any>(`${CONFIG.API_URL}/preferences`, { headers });
+            return data.preferences;
+        },
+        update: async (data: Partial<WorkerPreferences>) => {
+            const headers = await getAuthHeaders();
+            const res = await fetchJson<any>(`${CONFIG.API_URL}/preferences`, {
+                method: 'PATCH', headers, body: JSON.stringify(data),
+            });
+            return res.preferences;
+        },
+    },
+
+    // -------------------------------------------------------------------------
+    // DEVICES
+    // -------------------------------------------------------------------------
+    devices: {
+        register: async (data: any) => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/devices/register`, {
+                method: 'POST', headers, body: JSON.stringify(data),
+            });
+        },
+    },
+
+    // -------------------------------------------------------------------------
+    // AVAILABILITY
+    // -------------------------------------------------------------------------
+    availability: {
+        get: async (from: string, to: string) => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/worker/availability?from=${from}&to=${to}`, { headers });
+        },
+        set: async (data: { startTime: string; endTime: string; type?: string }) => {
+            const headers = await getAuthHeaders();
+            return fetchJson(`${CONFIG.API_URL}/worker/availability`, {
+                method: 'POST', headers, body: JSON.stringify(data),
+            });
+        },
+    },
+};

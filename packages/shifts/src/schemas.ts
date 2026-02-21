@@ -15,7 +15,6 @@ export const ShiftSchema = z.object({
     endTime: z.string().datetime(),
     status: ShiftStatusSchema,
     workerId: z.string().optional(),
-    price: z.number().optional(),
     capacity: z.object({
         filled: z.number(),
         total: z.number()

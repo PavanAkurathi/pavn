@@ -17,8 +17,6 @@
       "infoPlist": {
         "UIBackgroundModes": [
           "location",
-          "fetch",
-          "location",
           "fetch"
         ],
         "NSLocationAlwaysAndWhenInUseUsageDescription": "We need your location to track shift attendance.",

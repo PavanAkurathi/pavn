@@ -11,8 +11,8 @@ import { AppError } from "@repo/observability";
 
 const ClockOutSchema = z.object({
     shiftId: z.string(),
-    latitude: z.string(),
-    longitude: z.string(),
+    latitude: z.coerce.number().min(-90).max(90),
+    longitude: z.coerce.number().min(-180).max(180),
     accuracyMeters: z.number().optional(),
     deviceTimestamp: z.string().datetime(),
 });
@@ -119,9 +119,11 @@ export const clockOut = async (data: any, workerId: string, orgId: string) => {
         const point = `POINT(${longitude} ${latitude})`;
 
         // A. Update Assignment
+        // Worker self clock-out: effective = actual (no snapping, record real departure time)
         const updatedArgs = await tx.update(shiftAssignment)
             .set({
                 actualClockOut: clockOutResult.recordedTime,
+                effectiveClockOut: clockOutResult.recordedTime,
                 clockOutPosition: sql`ST_GeogFromText(${point})`,
                 clockOutVerified: true,
                 clockOutMethod: 'geofence',
@@ -171,7 +173,7 @@ export const clockOut = async (data: any, workerId: string, orgId: string) => {
             isOnSite: true,
             eventType: 'clock_out',
             recordedAt: now,
-            deviceTimestamp: now
+            deviceTimestamp: deviceTime
         });
 
         // Log Audit

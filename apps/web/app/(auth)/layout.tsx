@@ -13,7 +13,7 @@ export default function AuthLayout({
                 <div className="relative z-10">
                     <h2 className="text-3xl font-extrabold mb-4">The OS for Modern Hospitality</h2>
                     <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-                        Join thousands of venues managing their workforce smarter, faster, and more fairly with Workers Hive.
+                        Flat-rate scheduling and GPS timekeeping built for hospitality. No per-user fees. No contracts.
                     </p>
                 </div>
 

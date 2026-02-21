@@ -1,29 +1,36 @@
 // packages/geofence/src/services/flagged-timesheets.ts
 
 import { db } from "@repo/database";
-import { shiftAssignment, shift, timeCorrectionRequest } from "@repo/database/schema";
+import { shiftAssignment, shift, timeCorrectionRequest, location, user } from "@repo/database/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 export const getFlaggedTimesheets = async (orgId: string) => {
-    // Get all assignments that need review
-    const flagged = await db.query.shiftAssignment.findMany({
-        where: and(
-            eq(shiftAssignment.needsReview, true)
-        ),
-        with: {
-            shift: {
-                with: {
-                    location: true
-                }
-            },
-            worker: true
-        },
-        orderBy: [desc(shiftAssignment.updatedAt)]
-    });
+    // Get flagged assignments — org-scoped at SQL level via inner join on shift
+    const flagged = await db
+        .select({
+            assignmentId: shiftAssignment.id,
+            shiftId: shift.id,
+            shiftTitle: shift.title,
+            shiftDate: shift.startTime,
+            locationName: location.name,
+            workerId: shiftAssignment.workerId,
+            workerName: user.name,
+            clockIn: shiftAssignment.actualClockIn,
+            clockOut: shiftAssignment.actualClockOut,
+            reviewReason: shiftAssignment.reviewReason,
+            lastKnownAt: shiftAssignment.lastKnownAt,
+        })
+        .from(shiftAssignment)
+        .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+        .leftJoin(location, eq(shift.locationId, location.id))
+        .leftJoin(user, eq(shiftAssignment.workerId, user.id))
+        .where(and(
+            eq(shiftAssignment.needsReview, true),
+            eq(shift.organizationId, orgId)
+        ))
+        .orderBy(desc(shiftAssignment.updatedAt));
 
-    const orgFlagged = flagged.filter(a => a.shift?.organizationId === orgId);
-
-    // Get pending correction requests
+    // Get pending correction requests (already org-scoped)
     const pendingRequests = await db.query.timeCorrectionRequest.findMany({
         where: and(
             eq(timeCorrectionRequest.organizationId, orgId),
@@ -40,19 +47,7 @@ export const getFlaggedTimesheets = async (orgId: string) => {
     });
 
     return {
-        flaggedTimesheets: orgFlagged.map(a => ({
-            assignmentId: a.id,
-            shiftId: a.shift?.id,
-            shiftTitle: a.shift?.title,
-            shiftDate: a.shift?.startTime,
-            locationName: a.shift?.location?.name,
-            workerId: a.workerId,
-            workerName: a.worker?.name,
-            clockIn: a.actualClockIn,
-            clockOut: a.actualClockOut,
-            reviewReason: a.reviewReason,
-            lastKnownAt: a.lastKnownAt,
-        })),
+        flaggedTimesheets: flagged,
         pendingCorrections: pendingRequests.map(r => ({
             requestId: r.id,
             assignmentId: r.shiftAssignmentId,
@@ -66,7 +61,7 @@ export const getFlaggedTimesheets = async (orgId: string) => {
             createdAt: r.createdAt,
         })),
         summary: {
-            totalFlagged: orgFlagged.length,
+            totalFlagged: flagged.length,
             totalPendingCorrections: pendingRequests.length,
         }
     };

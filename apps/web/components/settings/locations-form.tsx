@@ -20,6 +20,7 @@ import {
 import { toast } from "sonner";
 import { Plus, MapPin, Trash2, MoreVertical, Edit } from "lucide-react";
 import { AddLocationModal } from "./add-location-modal";
+import { PLAN_LIMITS } from "@repo/config";
 
 type Location = {
     id: string;
@@ -43,7 +44,13 @@ export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: Location
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
+    const atCap = locations.length >= PLAN_LIMITS.MAX_LOCATIONS;
+
     const handleAddClick = () => {
+        if (atCap) {
+            toast.error(`Your plan supports up to ${PLAN_LIMITS.MAX_LOCATIONS} locations. Contact support to upgrade.`);
+            return;
+        }
         setEditingLocation(null);
         setIsModalOpen(true);
     };
@@ -114,9 +121,12 @@ export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: Location
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-7">
                     <div className="space-y-1.5">
                         <CardTitle>Locations</CardTitle>
-                        <CardDescription>Manage your business locations.</CardDescription>
+                        <CardDescription>
+                            {locations.length} of {PLAN_LIMITS.MAX_LOCATIONS} locations used.
+                            {atCap && " Contact support to add more."}
+                        </CardDescription>
                     </div>
-                    <Button onClick={handleAddClick} size="sm">
+                    <Button onClick={handleAddClick} size="sm" disabled={atCap}>
                         <Plus className="w-4 h-4 mr-2" />
                         Add Location
                     </Button>

@@ -7,12 +7,11 @@ import { AppError } from "@repo/observability";
 
 export class AssignmentService {
 
-    // Integrity: Centralized Clock-In with Hardware Verification
-    // Implements "Soft Fail": Records the punch but flags for review if outside geofence.
-    // Helper type for transaction
-    // In a real app we might export this from @repo/database
-    // Using any for now to avoid prolonged type gymnastics with Drizzle generics in this refactor
-    // equivalent to: PgTransaction<any, any, any>
+    /**
+     * @deprecated Use `@repo/geofence` clockIn service instead.
+     * This legacy version lacks anti-spoofing, proper geofence enforcement,
+     * location recording, and notification cleanup.
+     */
     static async clockIn(
         actorId: string,
         shiftId: string,
@@ -101,7 +100,10 @@ export class AssignmentService {
         return await db.transaction(execute);
     }
 
-    // Integrity: Centralized Clock-Out
+    /**
+     * @deprecated Use `@repo/geofence` clockOut service instead.
+     * This legacy version lacks geofence enforcement and location recording.
+     */
     static async clockOut(
         actorId: string,
         shiftId: string,
@@ -170,7 +172,10 @@ export class AssignmentService {
         return await db.transaction(execute);
     }
 
-    // Legacy/Admin Manual Update
+    // Admin/Manager Manual Timesheet Update
+    // Snapping rules:
+    //   - actorRole 'member' (worker): effectiveClockIn snaps to scheduledStart if early
+    //   - actorRole 'manager': NO snapping — trust the manager's time exactly
     static async updateTimesheet(
         actorId: string,
         orgId: string,
@@ -188,21 +193,23 @@ export class AssignmentService {
                 )
             });
 
-            if (!assignment) throw new Error("Assignment not found");
+            if (!assignment) throw new AppError("Assignment not found", "NOT_FOUND", 404);
 
             const targetShift = await tx.query.shift.findFirst({
                 where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
                 columns: { startTime: true }
             });
 
-            if (!targetShift) throw new Error("Shift not found");
+            if (!targetShift) throw new AppError("Shift not found", "NOT_FOUND", 404);
 
             // Snapping Logic
             let effectiveClockIn = data.clockIn;
             if (data.clockIn) {
                 if (actorRole === 'member' && data.clockIn < targetShift.startTime) {
+                    // Worker self-update: snap to scheduled start
                     effectiveClockIn = targetShift.startTime;
                 } else {
+                    // Manager update: use exact time (no snapping)
                     effectiveClockIn = data.clockIn;
                 }
             }
@@ -218,9 +225,10 @@ export class AssignmentService {
                 .set({
                     actualClockIn: data.clockIn,
                     effectiveClockIn: effectiveClockIn,
+                    actualClockOut: data.clockOut,
                     effectiveClockOut: data.clockOut,
                     breakMinutes: data.breakMinutes || 0,
-                    totalDurationMinutes: totalWorkedMinutes, // STORING MINUTES (TICKET-001)
+                    totalDurationMinutes: totalWorkedMinutes,
                     payoutAmountCents: null,
                     status: 'completed',
                     updatedAt: new Date()

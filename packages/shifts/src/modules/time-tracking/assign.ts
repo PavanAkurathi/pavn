@@ -10,7 +10,7 @@ const AssignSchema = z.object({
     workerIds: z.array(z.string()).min(1)
 });
 
-export const assignWorker = async (body: any, shiftId: string, orgId: string, tx: TxOrDb = db) => {
+export const assignWorker = async (body: any, shiftId: string, orgId: string, tx: TxOrDb = db, force: boolean = false) => {
     const parseResult = AssignSchema.safeParse(body);
 
     if (!parseResult.success) {
@@ -56,6 +56,7 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string, tx
     }
 
     // 3. Check for Overlaps (Privacy Safe)
+    const warnings: Array<{ workerId: string; type: string; message: string }> = [];
     for (const workerId of workersToAssign) {
         const result = await OverlapService.findOverlappingAssignment(
             workerId,
@@ -65,12 +66,33 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string, tx
         );
 
         if (result.conflict) {
-            throw new AppError(
-                `Worker ${workerId} is unavailable: ${result.message || 'Time conflict'}`,
-                "OVERLAP_CONFLICT",
-                409
-            );
+            if (result.type === 'unavailable') {
+                // Hard block — worker marked themselves unavailable
+                throw new AppError(
+                    `Worker ${workerId} is unavailable: ${result.message || 'Marked unavailable'}`,
+                    "OVERLAP_CONFLICT",
+                    409
+                );
+            }
+            // Intra-org overlap — warn but allow with force
+            if (!force) {
+                warnings.push({
+                    workerId,
+                    type: result.type || 'internal_conflict',
+                    message: result.message || 'Worker has overlapping shift in this org',
+                });
+            }
         }
+    }
+
+    // If warnings and not forced, return warning response (not error)
+    if (warnings.length > 0 && !force) {
+        return {
+            success: false,
+            warning: true,
+            conflicts: warnings,
+            message: "Workers have overlapping shifts. Resend with force=true to override.",
+        };
     }
 
     // 4. Create Assignments

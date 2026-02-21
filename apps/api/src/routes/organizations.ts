@@ -52,7 +52,7 @@ const getCrewRoute = createRoute({
 
 organizationsRouter.openapi(getCrewRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const search = c.req.query("search");
@@ -77,7 +77,7 @@ const inviteWorkerRoute = createRoute({
 
 organizationsRouter.openapi(inviteWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const user = c.get("user");
@@ -103,7 +103,7 @@ const updateWorkerRoute = createRoute({
 
 organizationsRouter.openapi(updateWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -127,7 +127,7 @@ const deactivateWorkerRoute = createRoute({
 
 organizationsRouter.openapi(deactivateWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -150,7 +150,7 @@ const reactivateWorkerRoute = createRoute({
 
 organizationsRouter.openapi(reactivateWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -175,7 +175,7 @@ const getLocationsRoute = createRoute({
 
 organizationsRouter.openapi(getLocationsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const result = await getLocations(orgId);
@@ -195,7 +195,7 @@ const createLocationRoute = createRoute({
 
 organizationsRouter.openapi(createLocationRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const body = await c.req.json();
@@ -218,7 +218,7 @@ const updateLocationRoute = createRoute({
 
 organizationsRouter.openapi(updateLocationRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -242,7 +242,7 @@ const deleteLocationRoute = createRoute({
 
 organizationsRouter.openapi(deleteLocationRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -268,7 +268,7 @@ const updateSettingsRoute = createRoute({
 
 organizationsRouter.openapi(updateSettingsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const body = await c.req.json();
@@ -289,7 +289,7 @@ const getSettingsRoute = createRoute({
 
 organizationsRouter.openapi(getSettingsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     // getSettings logic in services/get-settings.ts takes orgId

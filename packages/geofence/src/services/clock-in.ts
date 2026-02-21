@@ -13,8 +13,8 @@ import { AppError } from "@repo/observability";
 
 const ClockInSchema = z.object({
     shiftId: z.string(),
-    latitude: z.string(),
-    longitude: z.string(),
+    latitude: z.coerce.number().min(-90).max(90),
+    longitude: z.coerce.number().min(-180).max(180),
     accuracyMeters: z.number().optional(),
     deviceTimestamp: z.string().datetime(),
 });
@@ -133,9 +133,14 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
     // 5. Transaction
     await db.transaction(async (tx) => {
         // A. Update Assignment
+        // Worker self clock-in: effectiveClockIn snaps to scheduled start (never earlier)
+        // If worker is late, effective = actual (they don't get credit for time they weren't here)
+        const effectiveStart = now < scheduledStart ? scheduledStart : now;
+
         await tx.update(shiftAssignment)
             .set({
                 actualClockIn: clockInResult.recordedTime,
+                effectiveClockIn: effectiveStart,
                 clockInPosition: sql`ST_GeogFromText(${point})`,
                 clockInVerified: true,
                 clockInMethod: 'geofence',
@@ -164,7 +169,7 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
             isOnSite: true,
             eventType: 'clock_in',
             recordedAt: now,
-            deviceTimestamp: now,
+            deviceTimestamp: deviceTime,
         });
 
         // D. Log Audit
@@ -181,6 +186,7 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
                 distanceMeters,
                 scheduledStart: scheduledStart.toISOString(),
                 actualClockIn: clockInResult.recordedTime.toISOString(),
+                effectiveClockIn: effectiveStart.toISOString(),
                 wasEarly: clockInResult.isEarly,
                 wasLate: clockInResult.isLate,
                 minutesDifference: clockInResult.minutesDifference,
@@ -208,6 +214,7 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
         success: true,
         data: {
             clockInTime: clockInResult.recordedTime.toISOString(),
+            effectiveClockIn: effectiveStart.toISOString(),
             actualTime: clockInResult.actualTime.toISOString(),
             scheduledTime: clockInResult.scheduledTime.toISOString(),
             wasEarly: clockInResult.isEarly,

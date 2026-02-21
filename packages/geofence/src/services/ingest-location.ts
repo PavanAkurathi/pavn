@@ -9,8 +9,8 @@ import { sendSMS } from "@repo/auth";
 import { AppError } from "@repo/observability";
 
 const LocationPingSchema = z.object({
-    latitude: z.string(),
-    longitude: z.string(),
+    latitude: z.coerce.number().min(-90).max(90),
+    longitude: z.coerce.number().min(-180).max(180),
     accuracyMeters: z.number().optional(),
     deviceTimestamp: z.string().optional(),
 });

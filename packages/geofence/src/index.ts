@@ -16,6 +16,7 @@ export { getPendingCorrections, reviewCorrection } from "./services/review-corre
 // Manager Operations
 export { managerOverride } from "./services/manager-override";
 export { getFlaggedTimesheets } from "./services/flagged-timesheets";
+export { getWorkerCorrections } from "./services/get-worker-corrections";
 
 // Export schemas for OpenAPI
 export * from "./schemas";
@@ -29,4 +30,3 @@ export { ingestLocation } from "./services/ingest-location";
 // =============================================================================
 export * from "./utils/geocode";
 export * from "./utils/distance";
-export * from "./utils/audit";

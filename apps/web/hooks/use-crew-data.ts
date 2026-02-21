@@ -30,7 +30,9 @@ import { useOrganizationId } from "./use-schedule-data";
 // Duplicate interface removed
 
 
-const API_BASE = process.env.NEXT_PUBLIC_SHIFTS_API_URL || "http://localhost:4005"; // Shift Service
+import { API_BASE_URL } from "@/lib/constants";
+
+const API_BASE = API_BASE_URL; // Shift Service
 
 export function useCrewData() {
     // 1. Get the Context (Org ID)

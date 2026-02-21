@@ -69,7 +69,7 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
                         <span className="text-muted-foreground">/mo per location</span>
                     </div>
                     <ul className="space-y-2 mb-6">
-                        {["Unlimited Staff", "Conflict Guard AI", "Compliance Rules", "Marketplace Access"].map((f) => (
+                        {["Unlimited Staff", "Up to 5 Locations", "GPS Geofenced Timeclock", "Cross-Org Conflict Detection"].map((f) => (
                             <li key={f} className="flex items-center gap-2 text-sm text-slate-600">
                                 <Check className="w-4 h-4 text-slate-900" /> {f}
                             </li>

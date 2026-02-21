@@ -10,26 +10,28 @@ export function PublicFooter() {
     return (
         <footer className="bg-black text-slate-400 border-t border-slate-900 font-sans">
 
-            {/* --- TOP SECTION: NEWSLETTER CTA --- */}
+            {/* --- TOP SECTION: CTA --- */}
             <div className="border-b border-slate-900">
                 <div className="container mx-auto px-6 py-12 md:py-16">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="max-w-xl">
-                            <h3 className="text-2xl font-bold text-white mb-2">Join the Hive.</h3>
+                            <h3 className="text-2xl font-bold text-white mb-2">Ready to simplify your scheduling?</h3>
                             <p className="text-slate-400">
-                                Get the latest hospitality labor laws, scheduling tips, and product updates sent to your inbox.
+                                $30/month flat rate. Unlimited staff. 15-day free trial.
                             </p>
                         </div>
 
                         <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
-                            <input
-                                type="email"
-                                placeholder="Enter your work email"
-                                className="bg-slate-900 border border-slate-800 text-white px-4 py-3 rounded-lg w-full md:w-80 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all placeholder:text-slate-600"
-                            />
-                            <Button className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 h-auto">
-                                Subscribe
-                            </Button>
+                            <a href="/auth/signup">
+                                <Button className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 h-auto">
+                                    Start Free Trial
+                                </Button>
+                            </a>
+                            <a href="/demo">
+                                <Button variant="outline" className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white font-bold px-6 py-3 h-auto">
+                                    Book a Demo
+                                </Button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -50,12 +52,7 @@ export function PublicFooter() {
                         <p className="text-sm leading-relaxed mb-8 max-w-sm text-slate-500">
                             The operating system for modern hospitality groups. We replace clunky legacy software with a fast, flat-rate platform that scales with you.
                         </p>
-                        <div className="flex gap-4">
-                            <SocialIcon icon={<Twitter className="w-4 h-4" />} href="#" />
-                            <SocialIcon icon={<Linkedin className="w-4 h-4" />} href="#" />
-                            <SocialIcon icon={<Instagram className="w-4 h-4" />} href="#" />
-                            <SocialIcon icon={<Facebook className="w-4 h-4" />} href="#" />
-                        </div>
+                        {/* Social links — add real URLs when accounts are created */}
                     </div>
 
                     {/* COLUMN 2: PRODUCT */}
@@ -66,7 +63,7 @@ export function PublicFooter() {
                             <FooterLink href="/features" text="Features" />
                             <FooterLink href="/locations" text="Locations" />
                             <FooterLink href="/download" text="Mobile App" />
-                            <FooterLink href="/demo" text="Request Demo" badge="Live" />
+                            <FooterLink href="/demo" text="Request Demo" />
                         </ul>
                     </div>
 
@@ -87,9 +84,7 @@ export function PublicFooter() {
                         <h4 className="font-bold text-white mb-6">Company</h4>
                         <ul className="space-y-4 text-sm">
                             <FooterLink href="/about" text="About Us" />
-                            <FooterLink href="/careers" text="Careers" />
-                            <FooterLink href="/contact" text="Contact Support" />
-                            <FooterLink href="/partners" text="Partnerships" />
+                            <FooterLink href="/contact" text="Contact" />
                             <FooterLink href="/auth/login" text="Manager Login" highlight />
                         </ul>
                     </div>

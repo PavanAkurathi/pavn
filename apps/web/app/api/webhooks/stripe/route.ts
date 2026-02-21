@@ -7,14 +7,12 @@ import { eq } from "@repo/database";
 import Stripe from "stripe";
 
 const getStripe = () => {
-    const apiKey = process.env.STRIPE_SECRET_KEY || "sk_test_mock_key_for_build";
+    const apiKey = process.env.STRIPE_SECRET_KEY;
     if (!apiKey) {
-        // This should theoretically be unreachable due to the fallback above, 
-        // but ensures the type checker and runtime are happy.
-        throw new Error("Stripe API Key is missing");
+        throw new Error("STRIPE_SECRET_KEY is not set");
     }
     return new Stripe(apiKey, {
-        apiVersion: "2025-12-15.clover" as any, // @ts-ignore - Beta version
+        apiVersion: "2025-01-27.acacia" as any,
         typescript: true,
     });
 };

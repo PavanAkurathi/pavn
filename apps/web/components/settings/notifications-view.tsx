@@ -13,6 +13,7 @@ import { Switch } from '@repo/ui/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@repo/ui/components/ui/radio-group';
 import { Label } from '@repo/ui/components/ui/label';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { API_BASE_URL } from '@/lib/constants';
 
 const PreferencesSchema = z.object({
     clockInAlertsEnabled: z.boolean(),
@@ -39,7 +40,7 @@ export function NotificationsView() {
     useEffect(() => {
         async function load() {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4005'}/manager-preferences`, {
+                const res = await fetch(`${API_BASE_URL}/manager-preferences`, {
                     headers: {
                         'Content-Type': 'application/json'
                     }
@@ -60,7 +61,7 @@ export function NotificationsView() {
 
     const onSubmit = async (data: PreferencesForm) => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4005'}/manager-preferences`, {
+            const res = await fetch(`${API_BASE_URL}/manager-preferences`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

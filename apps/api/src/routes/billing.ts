@@ -58,7 +58,7 @@ const getBillingRoute = createRoute({
 billingRouter.openapi(getBillingRoute, async (c) => {
     // Auth check (Manager)
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) {
+    if (userRole !== "admin") {
         return c.json({ error: "Access denied" }, 403);
     }
 
@@ -89,7 +89,7 @@ const getInvoicesRoute = createRoute({
 
 billingRouter.openapi(getInvoicesRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     // TODO: Implement invoice listing from Stripe
     return c.json({ invoices: [] } as any, 200);
@@ -108,7 +108,7 @@ const getUsageRoute = createRoute({
 
 billingRouter.openapi(getUsageRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!["manager", "owner", "admin"].includes(userRole as string)) return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
 
@@ -141,7 +141,7 @@ const getPaymentMethodsRoute = createRoute({
 
 billingRouter.openapi(getPaymentMethodsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
     // TODO: Implement Stripe payment methods list
     return c.json({ paymentMethods: [] } as any, 200);
@@ -159,7 +159,7 @@ const addPaymentMethodRoute = createRoute({
 
 billingRouter.openapi(addPaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
     return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
@@ -176,7 +176,7 @@ const deletePaymentMethodRoute = createRoute({
 
 billingRouter.openapi(deletePaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
     return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
@@ -193,7 +193,7 @@ const setDefaultPaymentMethodRoute = createRoute({
 
 billingRouter.openapi(setDefaultPaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
     return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
@@ -211,7 +211,7 @@ const subscribeRoute = createRoute({
 
 billingRouter.openapi(subscribeRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
     return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
@@ -225,7 +225,7 @@ const cancelRoute = createRoute({
 
 billingRouter.openapi(cancelRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
     return c.json({ error: "Not yet implemented" } as any, 501);
 });
 
@@ -239,7 +239,7 @@ const upgradeRoute = createRoute({
 
 billingRouter.openapi(upgradeRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin" && userRole !== "owner") return c.json({ error: "Access denied" }, 403);
+    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
     return c.json({ error: "Not yet implemented" } as any, 501);
 });
 

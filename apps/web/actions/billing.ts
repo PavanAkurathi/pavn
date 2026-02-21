@@ -10,8 +10,13 @@ import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "sk_test_placeholder", {
-    apiVersion: "2025-12-15.clover" as any, // Always use latest or your pinned version
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+if (!stripeSecretKey) {
+    console.error("STRIPE_SECRET_KEY is not set. Billing features will not work.");
+}
+
+const stripe = new Stripe(stripeSecretKey || "", {
+    apiVersion: "2025-01-27.acacia" as any,
 });
 
 async function getSession() {

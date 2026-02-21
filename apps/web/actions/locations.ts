@@ -4,9 +4,9 @@ import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-// Switch to functional exports that handle geocoding
-import { createLocation as createLocationService, updateLocation as updateLocationService, deleteLocation as deleteLocationService } from "@repo/shifts-service";
+import { createLocation as createLocationService, updateLocation as updateLocationService, deleteLocation as deleteLocationService, getLocations } from "@repo/shifts-service";
 import { createLocationSchema } from "@repo/shifts-service/schemas";
+import { PLAN_LIMITS, SUPPORT_EMAIL } from "@repo/config";
 
 async function getSession() {
     return await auth.api.getSession({
@@ -16,11 +16,23 @@ async function getSession() {
 
 export async function createLocation(data: z.input<typeof createLocationSchema>) {
     const session = await getSession();
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
     const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
+    }
+
+    // --- Location cap enforcement ---
+    try {
+        const existingLocations = await getLocations(activeOrganizationId);
+        if (existingLocations.length >= PLAN_LIMITS.MAX_LOCATIONS) {
+            return {
+                error: `Your plan supports up to ${PLAN_LIMITS.MAX_LOCATIONS} locations. Need more? Contact us at ${SUPPORT_EMAIL} to upgrade.`
+            };
+        }
+    } catch (e) {
+        console.error("Failed to check location count:", e);
+        // Don't block on count check failure — allow creation
     }
 
     try {
