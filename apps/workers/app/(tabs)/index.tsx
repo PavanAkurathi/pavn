@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState, useEffect, useCallback } from "react";
-import { api, WorkerShift, ConflictInfo, WorkerOrg } from "../../lib/api";
+import { api, WorkerShift, ConflictInfo, WorkerOrg, SessionExpiredError } from "../../lib/api";
 
 // =============================================================================
 // HELPERS
@@ -216,7 +216,10 @@ export default function ScheduleScreen() {
                 setOrganizations(result.organizations);
             }
         } catch (err) {
-            console.error("Failed to load shifts:", err);
+            // Don't log session expiration errors - they're handled by the API layer
+            if (!(err instanceof SessionExpiredError)) {
+                console.error("Failed to load shifts:", err);
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);

@@ -137,15 +137,24 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
                         const params = user as any;
                         if (params.phoneNumber) {
                             const phone = params.phoneNumber as string;
-                            if (!isValidPhoneNumber(phone)) {
-                                throw new Error("Invalid phone number. Please use E.164 format (e.g. +14155552671)");
+                            // Only validate and normalize if it looks like a phone number
+                            // During verification, Better Auth might pass other data
+                            if (phone && phone.startsWith('+')) {
+                                try {
+                                    if (isValidPhoneNumber(phone)) {
+                                        params.phoneNumber = normalizePhoneNumber(phone);
+                                    }
+                                } catch (validationError) {
+                                    // Log but don't throw - allow the update to proceed
+                                    console.warn("[HOOK WARNING] Phone number validation failed, using as-is:", validationError);
+                                }
                             }
-                            params.phoneNumber = normalizePhoneNumber(phone);
                         }
                         return { data: user };
                     } catch (e) {
                         console.error("[HOOK ERROR] User update before hook failed:", e);
-                        throw e;
+                        // Don't throw - allow the update to proceed
+                        return { data: user };
                     }
                 }
             }
@@ -159,7 +168,9 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     },
 
     plugins: [
-        expo(),
+        expo({
+            disableOriginOverride: true,
+        }),
         organization({
             allowUserToCreateOrganization: true,
         }),

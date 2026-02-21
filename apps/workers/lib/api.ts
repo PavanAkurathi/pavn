@@ -1,6 +1,20 @@
 import { CONFIG } from './config';
 import * as SecureStore from 'expo-secure-store';
 import { authClient } from './auth-client';
+import { router } from 'expo-router';
+import Toast from 'react-native-toast-message';
+
+// =============================================================================
+// CUSTOM ERRORS
+// =============================================================================
+
+// Custom error class for handled session expiration
+export class SessionExpiredError extends Error {
+    constructor() {
+        super('Session expired');
+        this.name = 'SessionExpiredError';
+    }
+}
 
 // =============================================================================
 // TYPES
@@ -125,7 +139,22 @@ async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
 
     if (response.status === 401) {
         await SecureStore.deleteItemAsync("better-auth.session_token");
-        // Optionally, we could still throw here so the rejecting promise cascades to the caller
+        
+        // Show user-friendly notification
+        Toast.show({
+            type: 'info',
+            text1: 'Session Expired',
+            text2: 'Please log in again to continue',
+            visibilityTime: 3000,
+        });
+        
+        // Small delay to ensure Toast is visible before redirect
+        setTimeout(() => {
+            router.replace('/login');
+        }, 500);
+        
+        // Throw custom error that calling code can detect and ignore
+        throw new SessionExpiredError();
     }
 
     if (!response.ok) {

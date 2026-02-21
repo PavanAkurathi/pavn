@@ -116,6 +116,12 @@ export default function LoginScreen() {
 
             // Success
 
+            // Extract the session token and store it so our api.ts helper can fetch it
+            if (res.data?.token) {
+                const SecureStore = require('expo-secure-store');
+                await SecureStore.setItemAsync("better-auth.session_token", res.data.token);
+            }
+
             router.replace("/(tabs)");
 
         } catch (err: any) {
