@@ -126,7 +126,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     });
 
     const { fields, append, remove, insert } = useFieldArray({
-        control: form.control,
+        control: form.control as any,
         name: "schedules",
     });
 
