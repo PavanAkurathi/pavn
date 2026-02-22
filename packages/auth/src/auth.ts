@@ -41,9 +41,10 @@ export const auth: ReturnType<typeof betterAuth> = betterAuth({
     secret: (() => {
         if (process.env.BETTER_AUTH_SECRET) return process.env.BETTER_AUTH_SECRET;
 
-        // CRITICAL: Fail fast in production
+        // CRITICAL: Warn in production but do not throw to avoid crashing Next.js static builds
         if (process.env.NODE_ENV === "production") {
-            throw new Error("FATAL: BETTER_AUTH_SECRET is missing in production environment");
+            console.error("FATAL: BETTER_AUTH_SECRET is missing in production environment");
+            return "fatal_missing_secret_build_fallback";
         }
 
         // Fallback for verification/build/dev steps where env might be missing

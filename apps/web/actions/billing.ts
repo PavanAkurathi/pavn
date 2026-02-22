@@ -15,7 +15,7 @@ if (!stripeSecretKey) {
     console.error("STRIPE_SECRET_KEY is not set. Billing features will not work.");
 }
 
-const stripe = new Stripe(stripeSecretKey || "", {
+const stripe = new Stripe(stripeSecretKey || "sk_test_placeholder", {
     apiVersion: "2025-01-27.acacia" as any,
 });
 
