@@ -2,9 +2,10 @@ import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@repo/database";
-import { member, user, organization, certification } from "@repo/database/schema";
+import { member, user, organization, certification, invitation, rosterEntry } from "@repo/database/schema";
 import { eq, and, ne, inArray } from "@repo/database";
-import { RosterTable } from "../../../components/roster/roster-table";
+import { DataTable } from "../../../components/roster/data-table";
+import { columns, WorkerDetails } from "../../../components/roster/columns";
 
 export default async function RostersPage() {
     const sessionResponse = await auth.api.getSession({
@@ -39,6 +40,7 @@ export default async function RostersPage() {
         role: member.role,
         joinedAt: member.createdAt,
         jobTitle: member.jobTitle,
+        hourlyRate: member.hourlyRate,
         user: {
             id: user.id,
             name: user.name,
@@ -82,22 +84,79 @@ export default async function RostersPage() {
         });
     }
 
-    const workers = workersResult
-        .filter(r => r.user !== null)
-        .map(r => ({
-            id: r.id,
-            role: r.role,
-            joinedAt: r.joinedAt,
-            jobTitle: r.jobTitle,
-            name: r.user!.name,
-            email: r.user!.email,
-            phone: r.user!.phoneNumber,
-            image: r.user!.image,
-            status: (r.user!.emailVerified ? "active" : "invited") as "active" | "invited",
-            emergencyContact: r.user!.emergencyContact,
-            address: r.user!.address,
-            certifications: certsMap.get(r.user!.id) || []
+    // Fetch Pending Invitations
+    const invitations = await db.select()
+        .from(invitation)
+        .where(eq(invitation.organizationId, activeOrgId));
+
+    // Fetch Uninvited (CSV Imports)
+    const rosterEntries = await db.select()
+        .from(rosterEntry)
+        .where(eq(rosterEntry.organizationId, activeOrgId));
+
+    const invitedEmails = new Set(invitations.map(i => i.email));
+    const rosterEmails = new Set(rosterEntries.map(re => re.email));
+
+    // 1. Roster Entries (The detailed source of imported/staged data)
+    const mappedRoster = rosterEntries.map(re => {
+        // If an invitation exists for this email, it is functionally invited
+        const isInvited = re.status === "invited" || invitedEmails.has(re.email);
+        return {
+            id: re.id,
+            role: re.role,
+            joinedAt: re.createdAt || new Date(),
+            jobTitle: re.jobTitle,
+            name: re.name,
+            email: re.email,
+            phone: re.phoneNumber,
+            image: null,
+            status: (isInvited ? "invited" : "uninvited") as "invited" | "uninvited",
+            hourlyRate: re.hourlyRate,
+            emergencyContact: null
+        };
+    });
+
+    const mappedMembers = workersResult.filter(r => r.user !== null).map(r => ({
+        id: r.id,
+        role: r.role,
+        joinedAt: r.joinedAt,
+        jobTitle: r.jobTitle,
+        name: r.user!.name,
+        email: r.user!.email,
+        phone: r.user!.phoneNumber,
+        image: r.user!.image,
+        status: (r.user!.emailVerified ? "active" : "invited") as "active" | "invited",
+        hourlyRate: r.hourlyRate,
+        emergencyContact: r.user!.emergencyContact as { name: string; phone: string; relation?: string } | null,
+    }));
+
+    const memberEmails = new Set(mappedMembers.map(m => m.email));
+
+    // 2. Standalone Invitations (Ones made directly via BetterAuth, not from CSV)
+    const mappedInvitations = invitations
+        .filter(i => !rosterEmails.has(i.email) && !memberEmails.has(i.email))
+        .map(i => ({
+            id: i.id,
+            role: i.role,
+            joinedAt: i.createdAt || new Date(),
+            jobTitle: i.role,
+            name: i.email,
+            email: i.email,
+            phone: null,
+            image: null,
+            status: "invited" as const,
+            hourlyRate: null,
+            emergencyContact: null
         }));
+
+    const workers: WorkerDetails[] = [
+        ...mappedMembers,
+        ...mappedRoster,
+        ...mappedInvitations
+    ];
+
+    // Sort workers by joinedAt descending
+    workers.sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
 
     return (
         <div className="space-y-6 max-w-5xl">
@@ -108,7 +167,7 @@ export default async function RostersPage() {
                 </div>
             </div>
 
-            <RosterTable data={workers} />
+            <DataTable columns={columns} data={workers} />
         </div>
     );
 }

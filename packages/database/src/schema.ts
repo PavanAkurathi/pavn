@@ -104,6 +104,7 @@ export const verification = pgTable("verification", {
 
 export const userRelations = relations(user, ({ many }) => ({
     certifications: many(certification),
+    roles: many(workerRole),
     // specific relations to shifts/assignments can be added here if needed, 
     // but often handled via the other side (shiftAssignment.worker)
 }));
@@ -197,7 +198,6 @@ export const invitation = pgTable("invitation", {
         .references(() => user.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
 });
-
 export const memberRelations = relations(member, ({ one }) => ({
     organization: one(organization, {
         fields: [member.organizationId],
@@ -206,6 +206,56 @@ export const memberRelations = relations(member, ({ one }) => ({
     user: one(user, {
         fields: [member.userId],
         references: [user.id],
+    }),
+}));
+
+export const rosterEntry = pgTable("roster_entry", {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phoneNumber: text("phone_number"),
+    role: text("role").default("member"),
+    hourlyRate: integer("hourly_rate"), // Stored in cents, nullable
+    jobTitle: text("job_title"),
+    status: text("status").default("uninvited").notNull(), // 'uninvited'
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
+});
+
+export const rosterEntryRelations = relations(rosterEntry, ({ one }) => ({
+    organization: one(organization, {
+        fields: [rosterEntry.organizationId],
+        references: [organization.id],
+    }),
+}));
+
+export const workerRole = pgTable("worker_role", {
+    id: text("id").primaryKey(),
+    workerId: text("worker_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // e.g. "Server", "Bartender"
+    hourlyRate: integer("hourly_rate"), // Stored in cents
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+    workerRoleWorkerIdx: index("worker_role_worker_idx").on(table.workerId),
+    workerRoleOrgIdx: index("worker_role_org_idx").on(table.organizationId),
+}));
+
+export const workerRoleRelations = relations(workerRole, ({ one }) => ({
+    worker: one(user, {
+        fields: [workerRole.workerId],
+        references: [user.id],
+    }),
+    organization: one(organization, {
+        fields: [workerRole.organizationId],
+        references: [organization.id],
     }),
 }));
 

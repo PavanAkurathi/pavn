@@ -3,7 +3,7 @@
 import { auth, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
-import { member, user, organization, invitation, certification } from "@repo/database/schema";
+import { member, user, organization, invitation, certification, rosterEntry } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
@@ -185,6 +185,7 @@ interface BulkImportWorker {
         issuer: string;
         expiresAt: Date;
     }[];
+    hourlyRate?: number;
 }
 
 export async function bulkImport(workers: BulkImportWorker[]) {
@@ -223,11 +224,16 @@ export async function bulkImport(workers: BulkImportWorker[]) {
 
     for (const workerData of workers) {
         try {
-            await addMember({
-                ...workerData,
-                // Disable auto-invites during bulk to prevent spamming. 
-                // Maybe add an option later, but for now safe default.
-                invites: { email: false, sms: false }
+            await db.insert(rosterEntry).values({
+                id: nanoid(),
+                organizationId: activeOrgId,
+                name: workerData.name,
+                email: workerData.email,
+                phoneNumber: workerData.phoneNumber || null,
+                role: workerData.role || "member",
+                jobTitle: workerData.jobTitle || null,
+                hourlyRate: workerData.hourlyRate || null,
+                status: "uninvited"
             });
             results.success++;
         } catch (error: any) {

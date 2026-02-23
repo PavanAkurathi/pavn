@@ -22,6 +22,7 @@ interface WorkerRow {
     phone: string;
     role: "member";
     jobTitle: string;
+    hourlyRate: string;
     // Profile Extensions
     image: string;
     emergencyName: string;
@@ -117,6 +118,7 @@ export default function BulkImportPage() {
             phone: getValue("phone") || getValue("mobile") || getValue("cell"),
             role: "member" as const,
             jobTitle: getValue("title") || getValue("job") || getValue("position"),
+            hourlyRate: getValue("rate") || getValue("wage") || getValue("pay"),
             // Profile Extensions
             image: getValue("avatar") || getValue("image") || getValue("photo") || getValue("picture"),
             emergencyName: getValue("emergency name") || getValue("contact name") || getValue("ice name"),
@@ -160,24 +162,35 @@ export default function BulkImportPage() {
         }
 
         try {
-            const payload = validRows.map(r => ({
-                name: r.name,
-                email: r.email,
-                phoneNumber: r.phone || undefined,
-                role: r.role,
-                jobTitle: r.jobTitle || undefined,
-                image: r.image || undefined,
-                emergencyContact: (r.emergencyName || r.emergencyPhone) ? {
-                    name: r.emergencyName || "",
-                    phone: r.emergencyPhone || "",
-                    relation: "Emergency Contact" // Defaulting since simple import usually lacks relation
-                } : undefined,
-                certifications: r.certName ? [{
-                    name: r.certName,
-                    issuer: "External Import",
-                    expiresAt: r.certExpiry ? new Date(r.certExpiry) : new Date(new Date().setFullYear(new Date().getFullYear() + 1)) // Default 1 year if not parsed
-                }] : undefined
-            }));
+            const payload = validRows.map(r => {
+                let hourlyRateCents: number | undefined;
+                if (r.hourlyRate) {
+                    const numericString = r.hourlyRate.replace(/[^0-9.]/g, '');
+                    if (numericString) {
+                        hourlyRateCents = Math.round(parseFloat(numericString) * 100);
+                    }
+                }
+
+                return {
+                    name: r.name,
+                    email: r.email,
+                    phoneNumber: r.phone || undefined,
+                    role: r.role,
+                    jobTitle: r.jobTitle || undefined,
+                    hourlyRate: hourlyRateCents,
+                    image: r.image || undefined,
+                    emergencyContact: (r.emergencyName || r.emergencyPhone) ? {
+                        name: r.emergencyName || "",
+                        phone: r.emergencyPhone || "",
+                        relation: "Emergency Contact"
+                    } : undefined,
+                    certifications: r.certName ? [{
+                        name: r.certName,
+                        issuer: "External Import",
+                        expiresAt: r.certExpiry ? new Date(r.certExpiry) : new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+                    }] : undefined
+                };
+            });
 
             const result = await bulkImport(payload);
             setImportStats(result);
@@ -256,6 +269,7 @@ export default function BulkImportPage() {
                                             <TableHead>Email</TableHead>
                                             <TableHead>Phone</TableHead>
                                             <TableHead>Title</TableHead>
+                                            <TableHead>Rate/Hr</TableHead>
                                             <TableHead>Emergency</TableHead>
                                             <TableHead>Cert</TableHead>
                                             <TableHead className="w-[50px]"></TableHead>
@@ -300,6 +314,14 @@ export default function BulkImportPage() {
                                                         value={row.jobTitle}
                                                         onChange={(e) => updateRow(row.id, "jobTitle", e.target.value)}
                                                         placeholder="Guard"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        className="h-8 bg-transparent border-transparent hover:border-input focus:bg-background w-20"
+                                                        value={row.hourlyRate}
+                                                        onChange={(e) => updateRow(row.id, "hourlyRate", e.target.value)}
+                                                        placeholder="$25.50"
                                                     />
                                                 </TableCell>
                                                 <TableCell>

@@ -204,6 +204,20 @@
       "when": 1771811731844,
       "tag": "0028_charming_madripoor",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1771816470766,
+      "tag": "0029_cultured_garia",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1771823690667,
+      "tag": "0030_chubby_chronomancer",
+      "breakpoints": true
     }
   ]
 }
