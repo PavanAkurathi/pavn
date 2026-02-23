@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Check, Clock } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -18,6 +18,10 @@ const MOCK_NOTIFICATIONS: any[] = [];
 export function NotificationsPopover() {
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState<typeof MOCK_NOTIFICATIONS>([]);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Prevent hydration mismatch for Radix popover aria-controls
+    useEffect(() => setIsMounted(true), []);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -30,6 +34,15 @@ export function NotificationsPopover() {
             prev.map((n) => (n.id === id ? { ...n, read: true } : n))
         );
     };
+
+    if (!isMounted) {
+        return (
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Notifications</span>
+            </Button>
+        );
+    }
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
