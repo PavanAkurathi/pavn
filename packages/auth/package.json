@@ -26,10 +26,12 @@
     "dependencies": {
         "@better-auth/expo": "1.4.18",
         "@better-auth/stripe": "1.4.17",
+        "@dub/better-auth": "^0.0.6",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/utils": "workspace:*",
         "better-auth": "1.4.17",
+        "dub": "^0.71.4",
         "nanoid": "^5.1.6",
         "stripe": "^17.7.0",
         "twilio": "^5.4.4"

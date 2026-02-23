@@ -120,6 +120,26 @@ export default function LoginScreen() {
             if (res.data?.token) {
                 const SecureStore = require('expo-secure-store');
                 await SecureStore.setItemAsync("better-auth.session_token", res.data.token);
+
+                // Auto-accept any pending invitations from Dub.co Deep Links
+                try {
+                    const orgToken = await SecureStore.getItemAsync("pending_invitation_token");
+                    if (orgToken) {
+                        console.log("[Login] Processing pending invitation:", orgToken);
+                        const inviteRes = await authClient.organization.acceptInvitation({
+                            invitationId: orgToken,
+                        });
+
+                        if (!inviteRes.error) {
+                            await SecureStore.deleteItemAsync("pending_invitation_token");
+                            console.log("[Login] Successfully joined organization!");
+                        } else {
+                            console.warn("[Login] Failed to join organization:", inviteRes.error);
+                        }
+                    }
+                } catch (inviteErr) {
+                    console.warn("[Login] Error checking for pending invitation:", inviteErr);
+                }
             }
 
             router.replace("/(tabs)");
