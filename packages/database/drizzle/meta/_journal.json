@@ -197,6 +197,13 @@
       "when": 1770867342620,
       "tag": "0027_daily_apocalypse",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1771811731844,
+      "tag": "0028_charming_madripoor",
+      "breakpoints": true
     }
   ]
 }
