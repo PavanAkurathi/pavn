@@ -8,7 +8,7 @@ import { Label } from "@repo/ui/components/ui/label";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { addMember } from "@/actions/team";
+import { inviteWorker } from "@/actions/workers";
 
 export function AddWorkerDialog() {
     const [open, setOpen] = useState(false);
@@ -29,7 +29,7 @@ export function AddWorkerDialog() {
         setLoading(true);
 
         try {
-            const result = await addMember({
+            const result = await inviteWorker({
                 name: formData.name,
                 email: formData.email,
                 phoneNumber: formData.phoneNumber,

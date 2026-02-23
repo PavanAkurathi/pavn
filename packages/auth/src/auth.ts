@@ -36,7 +36,7 @@ console.log("[AUTH DEBUG] Vercel URL Env:", vercelUrl);
 console.log("[AUTH DEBUG] Base Trusted Origins:", baseTrustedOrigins);
 console.log("[AUTH DEBUG] Request Origin Validation Enabled");
 
-export const auth: ReturnType<typeof betterAuth> = betterAuth({
+export const auth = betterAuth({
     appName: "Antigravity SaaS",
     secret: (() => {
         if (process.env.BETTER_AUTH_SECRET) return process.env.BETTER_AUTH_SECRET;
