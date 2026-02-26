@@ -46,7 +46,6 @@ const PublishSchema = z.object({
         scheduleName: z.string(),
         positions: z.array(z.object({
             roleName: z.string(),
-            // price: z.number().optional(), // REMOVED per WOR-26
             workerIds: z.array(z.string().nullable()).max(50, "Cannot exceed 50 positions per role")
         }))
     }))
@@ -197,9 +196,6 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
     const overlapMap = new Map<string, Array<{ startTime: Date; endTime: Date; title: string }>>();
     const availabilityMap = new Map<string, Array<{ startTime: Date; endTime: Date; type: string }>>();
 
-    // WOR-26: Silent Hourly Rate Lookup
-    const hourlyRateMap = new Map<string, number>();
-
     if (allWorkerIds.size > 0 && minDateStr && maxDateStr) {
         const uniqueWorkerIds = Array.from(allWorkerIds);
 
@@ -231,9 +227,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                     lt(workerAvailability.startTime, searchEnd),
                     gt(workerAvailability.endTime, searchStart)
                 )
-            }),
-
-            // WOR-26: Fetch member rates - REMOVED per TICKET-006
+            })
         ]);
 
         // Group by Worker
@@ -251,13 +245,6 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             list.push({ startTime: record.startTime, endTime: record.endTime, type: record.type });
             availabilityMap.set(record.workerId, list);
         }
-
-        // WOR-26: Populate Rate Map - REMOVED per TICKET-006
-        /*
-        for (const m of members) {
-            if (m.hourlyRate) hourlyRateMap.set(m.userId, m.hourlyRate);
-        }
-        */
     }
 
     // 1. Prepare Data in Memory (Batch Strategy)
@@ -314,7 +301,6 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                     description: block.scheduleName,
                     startTime: startDateTime,
                     endTime: endDateTime,
-                    // price: position.price || 0, // REMOVED per WOR-26
                     capacityTotal: capacityTotal,
                     status: initialStatus,
                     scheduleGroupId: scheduleIntentId

@@ -52,14 +52,12 @@ export const getWorkerShifts = async (
         .where(and(...conditions));
 
     // Sort order
-    if (status === 'upcoming') {
-        query.orderBy(asc(shift.startTime));
-    } else {
-        query.orderBy(desc(shift.startTime));
-    }
+    const orderedQuery = status === 'upcoming'
+        ? query.orderBy(asc(shift.startTime))
+        : query.orderBy(desc(shift.startTime));
 
     // Apply pagination at DB level
-    const rows = await query.limit(limit).offset(offset);
+    const rows = await orderedQuery.limit(limit).offset(offset);
 
     // Transform results
     const results = rows.map(row => {

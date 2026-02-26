@@ -338,16 +338,16 @@ export const shiftAssignment = pgTable("shift_assignment", {
 
     // -- Timesheet Data (Triple-Timestamp Model) --
     // 1. Actual (Behavioral) - Raw device timestamp
-    actualClockIn: timestamp("actual_clock_in", { withTimezone: true, mode: 'date' }),
-    actualClockOut: timestamp("actual_clock_out", { withTimezone: true, mode: 'date' }),
+    actualClockIn: timestamp("actual_clock_in", { mode: 'date' }),
+    actualClockOut: timestamp("actual_clock_out", { mode: 'date' }),
 
     // 2. Effective (Billable/Payable) - Rounded/Snapped
-    effectiveClockIn: timestamp("effective_clock_in", { withTimezone: true, mode: 'date' }),
-    effectiveClockOut: timestamp("effective_clock_out", { withTimezone: true, mode: 'date' }),
+    effectiveClockIn: timestamp("effective_clock_in", { mode: 'date' }),
+    effectiveClockOut: timestamp("effective_clock_out", { mode: 'date' }),
 
     // 3. Manager Verified (Final) - Validated by manager
-    managerVerifiedIn: timestamp("manager_verified_in", { withTimezone: true, mode: 'date' }),
-    managerVerifiedOut: timestamp("manager_verified_out", { withTimezone: true, mode: 'date' }),
+    managerVerifiedIn: timestamp("manager_verified_in", { mode: 'date' }),
+    managerVerifiedOut: timestamp("manager_verified_out", { mode: 'date' }),
 
     breakMinutes: integer("break_minutes").default(0),
 

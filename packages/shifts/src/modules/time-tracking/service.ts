@@ -22,6 +22,8 @@ export class AssignmentService {
     ) {
         // Logic runner that takes a transaction (existing or new)
         const execute = async (tx: TxOrDb) => {
+            console.warn("[DEPRECATED] AssignmentService.clockIn is heavily deprecated. Migrate to @repo/geofence.");
+
             // 1. Fetch Assignment & Shift details
             const assignment = await tx.query.shiftAssignment.findFirst({
                 where: and(
@@ -113,6 +115,8 @@ export class AssignmentService {
         tx?: TxOrDb
     ) {
         const execute = async (tx: TxOrDb) => {
+            console.warn("[DEPRECATED] AssignmentService.clockOut is heavily deprecated. Migrate to @repo/geofence.");
+
             const assignment = await tx.query.shiftAssignment.findFirst({
                 where: and(
                     eq(shiftAssignment.shiftId, shiftId),

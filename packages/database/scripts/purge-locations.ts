@@ -1,6 +1,6 @@
 
-import { db } from "../src/db";
-import { workerLocation } from "../src/schema";
+import { db } from "@repo/database";
+import { workerLocation } from "@repo/database/schema";
 import { and, eq, lt } from "drizzle-orm";
 
 async function purgeOldLocations() {

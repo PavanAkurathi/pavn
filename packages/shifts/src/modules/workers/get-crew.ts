@@ -8,7 +8,7 @@ export const getCrew = async (orgId: string, options: { search?: string, limit?:
 
     const whereClause = and(
         eq(member.organizationId, orgId),
-        notInArray(member.role, ['admin', 'owner', 'manager']),
+        notInArray(member.role, ['admin', 'manager']),
         search ? ilike(user.name, `%${search}%`) : undefined
     );
 

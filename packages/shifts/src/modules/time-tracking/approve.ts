@@ -19,7 +19,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
             columns: { role: true }
         });
 
-        if (!memberRecord || memberRecord.role !== 'admin') {
+        if (!memberRecord || !['admin', 'manager'].includes(memberRecord.role)) {
             throw new AppError("Insufficient permissions to approve shifts", "FORBIDDEN", 403);
         }
 

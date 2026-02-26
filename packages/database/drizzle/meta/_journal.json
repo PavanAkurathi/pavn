@@ -8,6 +8,13 @@
       "when": 1772079119234,
       "tag": "0000_wise_marvel_apes",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772111099188,
+      "tag": "0001_gigantic_glorian",
+      "breakpoints": true
     }
   ]
 }

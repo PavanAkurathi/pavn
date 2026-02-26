@@ -26,15 +26,6 @@ export const updateTimesheet = async (body: any, orgId: string, actorId: string 
     const { shiftId, workerId, action, data } = parseResult.data;
 
     if (action === 'mark_no_show') {
-        // We need to fetch assignment ID or have AssignmentService handle it by shift/worker
-        // The original controller had a placeholder string "get_assignment_id_here"?!
-        // Let's assume we need to find it.
-        // Assuming AssignmentService.updateStatus takes an assignment ID.
-        // For now, let's look it up or rely on AssignmentService to help.
-        // Actually the original code was: await AssignmentService.updateStatus(actorId, "get_assignment_id_here", ...)
-        // This suggests the original code was broken or incomplete?
-        // I should probably fix this.
-
         // Fix: Find assignment ID first
         const assignment = await AssignmentService.getAssignment(shiftId, workerId); // Need to check if this method exists or implement lookup
         if (!assignment) throw new AppError("Assignment not found", "NOT_FOUND", 404);

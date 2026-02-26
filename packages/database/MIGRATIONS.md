@@ -18,7 +18,7 @@ Run `bun run migrate` (or `drizzle-kit migrate`) to apply these changes.
 ## Remove Currency Field (WH-002)
 
 To clean up schema drift, we removed the orphaned `currency` field from the `shift` table.
-- **Migration 0009**: Adds composite indexes to `shift` and status index to `shift_assignment`.
+- **Migration 0008**: Removes `currency` field.
 
 ## Add Missing Indexes (WH-006)
 
