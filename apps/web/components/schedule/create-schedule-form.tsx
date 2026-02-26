@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { useForm } from "react-hook-form";
+import { useForm } from "@repo/ui/components/ui/form";
 import { useFieldArray } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";

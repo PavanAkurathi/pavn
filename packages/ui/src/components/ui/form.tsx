@@ -176,4 +176,4 @@ export {
 }
 
 // Re-export react-hook-form utilities to ensure single instance across monorepo
-export { useFormContext, useFieldArray } from "react-hook-form"
+export { useFormContext, useFieldArray, useForm, Controller } from "react-hook-form"

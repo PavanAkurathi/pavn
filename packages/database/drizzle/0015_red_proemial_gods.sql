@@ -1,1 +1,0 @@
-ALTER TABLE "organization" ADD COLUMN "early_clock_in_buffer_minutes" integer DEFAULT 60 NOT NULL;

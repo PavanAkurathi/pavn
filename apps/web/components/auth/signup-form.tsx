@@ -16,7 +16,7 @@ import {
 } from "@repo/ui/components/ui/field";
 import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PRICING } from "@repo/config";
