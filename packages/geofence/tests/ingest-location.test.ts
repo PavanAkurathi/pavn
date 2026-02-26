@@ -83,8 +83,8 @@ describe("Ingest Location Controller - Departure", () => {
         const mockAssignment = {
             id: "a1",
             status: "active",
-            clockIn: new Date(Date.now() - 3000000),
-            clockOut: null,
+            actualClockIn: new Date(Date.now() - 3000000),
+            actualClockOut: null,
             shift: mockShift,
             reviewReason: null // Not yet flagged
         };
@@ -147,8 +147,8 @@ describe("Ingest Location Controller - Departure", () => {
         const mockAssignment = {
             id: "a1",
             status: "active",
-            clockIn: new Date(Date.now() - 3000000),
-            clockOut: null,
+            actualClockIn: new Date(Date.now() - 3000000),
+            actualClockOut: null,
             shift: mockShift,
             reviewReason: 'left_geofence' // ALREADY FLAGGED
         };

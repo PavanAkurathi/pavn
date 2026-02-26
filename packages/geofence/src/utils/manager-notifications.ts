@@ -20,7 +20,12 @@ export async function notifyManagers(
             role: member.role,
         })
             .from(member)
-            .where(eq(member.organizationId, orgId));
+            .where(
+                and(
+                    eq(member.organizationId, orgId),
+                    inArray(member.role, ['admin', 'owner', 'manager'])
+                )
+            );
 
         if (members.length === 0) return;
 
@@ -48,13 +53,9 @@ export async function notifyManagers(
                 if (shift.contactId !== m.userId) continue;
             }
 
-            if (pref.shiftScope === 'booked_by_me') {
-                continue;
-            }
-
-            if (pref.locationScope === 'selected') {
-                continue;
-            }
+            // TODO: Un-ignore these when preferences feature is fully implemented
+            // if (pref.shiftScope === 'booked_by_me') continue;
+            // if (pref.locationScope === 'selected') continue;
 
             recipients.push(m.userId);
         }

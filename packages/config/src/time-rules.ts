@@ -18,12 +18,10 @@ export function applyClockInRules(actualTime: Date, scheduledTime: Date): ClockI
     const diffMs = actualTime.getTime() - scheduledTime.getTime();
     const diffMinutes = Math.round(diffMs / 60000);
 
+    // If diffMinutes is negative, they arrived BEFORE scheduledTime (early)
     const isEarly = diffMinutes < 0;
-    const isLate = diffMinutes > 0; // Strict lateness for now, could add 5 min grace period
-
-    // Rule: If clocking in early (within buffer), we might want to record the actual time
-    // but Pay calculation might eventually snap to scheduled start.
-    // For this function, we just return the analysis.
+    // If diffMinutes is positive, they arrived AFTER scheduledTime (late)
+    const isLate = diffMinutes > 0;
     // The requirement often is: "If I arrive 10 mins early, pay me from Scheduled Start".
     // If I arrive late, pay me from Actual Arrival.
 

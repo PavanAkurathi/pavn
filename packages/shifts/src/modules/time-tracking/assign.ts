@@ -101,7 +101,7 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string, tx
         shiftId: shiftId,
         workerId: workerId,
         status: 'active' as const,
-        hourlyRateSnapshot: existingShift.price
+        budgetRateSnapshot: existingShift.price
     }));
 
     await tx.insert(shiftAssignment).values(values);

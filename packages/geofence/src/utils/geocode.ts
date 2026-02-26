@@ -141,12 +141,10 @@ async function geocodeWithNominatim(address: string): Promise<GeocodeResponse> {
 // Batch geocode for importing multiple locations
 export async function geocodeAddresses(addresses: string[]): Promise<Map<string, GeocodeResponse>> {
     const results = new Map<string, GeocodeResponse>();
-    // Parallel calls are now safe because geocodeAddress handles throttling internally
-    await Promise.all(
-        addresses.map(async (address) => {
-            const res = await geocodeAddress(address);
-            results.set(address, res);
-        })
-    );
+    // Process sequentially so our internal rate limiter queue respects 1 req/sec properly
+    for (const address of addresses) {
+        const res = await geocodeAddress(address);
+        results.set(address, res);
+    }
     return results;
 }

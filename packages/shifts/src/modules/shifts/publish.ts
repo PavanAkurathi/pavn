@@ -1,5 +1,5 @@
 import { db, TxOrDb } from "@repo/database";
-import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences, member } from "@repo/database/schema";
+import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences } from "@repo/database/schema";
 import { eq, and, lt, gt, inArray, like, sql } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
 import { z } from "zod";
@@ -234,15 +234,6 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             }),
 
             // WOR-26: Fetch member rates - REMOVED per TICKET-006
-            /*
-            db.query.member.findMany({
-                where: and(
-                    eq(member.organizationId, activeOrgId),
-                    inArray(member.userId, uniqueWorkerIds)
-                ),
-                columns: { userId: true, hourlyRate: true }
-            })
-            */
         ]);
 
         // Group by Worker

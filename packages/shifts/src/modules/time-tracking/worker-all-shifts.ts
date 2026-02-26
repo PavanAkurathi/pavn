@@ -103,35 +103,42 @@ export const getWorkerAllShifts = async (
     // 5. Detect cross-org conflicts (only for upcoming/in-progress)
     const conflicts: ConflictInfo[] = [];
     if (status !== 'history') {
-        for (let i = 0; i < shifts.length; i++) {
-            for (let j = i + 1; j < shifts.length; j++) {
-                const a = shifts[i];
-                const b = shifts[j];
+        // Sort shifts by start time to detect overlaps in O(n log n) instead of O(n^2)
+        const sortedShifts = [...shifts].sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
 
-                if (!a || !b) continue;
+        for (let i = 0; i < sortedShifts.length - 1; i++) {
+            const current = sortedShifts[i];
+            const next = sortedShifts[i + 1];
 
-                const aStart = new Date(a.startTime);
-                const aEnd = new Date(a.endTime);
-                const bStart = new Date(b.startTime);
-                const bEnd = new Date(b.endTime);
+            if (!current || !next) continue;
 
-                // Check time overlap
-                if (aStart < bEnd && bStart < aEnd) {
+            const currentStart = new Date(current.startTime);
+            const currentEnd = new Date(current.endTime);
+            const nextStart = new Date(next.startTime);
+            const nextEnd = new Date(next.endTime);
+
+            // Check time overlap
+            if (currentStart < nextEnd && nextStart < currentEnd) {
+                // If they belong to different orgs, it's a cross-org conflict
+                if (current.organization.id !== next.organization.id) {
+                    const overlapStart = (currentStart > nextStart ? currentStart : nextStart).toISOString();
+                    const overlapEnd = (currentEnd < nextEnd ? currentEnd : nextEnd).toISOString();
+
                     conflicts.push({
-                        shiftId: a.id,
-                        overlapsWithShiftId: b.id,
-                        overlapsWithTitle: b.title,
-                        overlapsWithOrg: b.organization.name,
-                        overlapStart: (aStart > bStart ? aStart : bStart).toISOString(),
-                        overlapEnd: (aEnd < bEnd ? aEnd : bEnd).toISOString(),
+                        shiftId: current.id,
+                        overlapsWithShiftId: next.id,
+                        overlapsWithTitle: next.title,
+                        overlapsWithOrg: next.organization.name,
+                        overlapStart: overlapStart,
+                        overlapEnd: overlapEnd,
                     });
                     conflicts.push({
-                        shiftId: b.id,
-                        overlapsWithShiftId: a.id,
-                        overlapsWithTitle: a.title,
-                        overlapsWithOrg: a.organization.name,
-                        overlapStart: (aStart > bStart ? aStart : bStart).toISOString(),
-                        overlapEnd: (aEnd < bEnd ? aEnd : bEnd).toISOString(),
+                        shiftId: next.id,
+                        overlapsWithShiftId: current.id,
+                        overlapsWithTitle: current.title,
+                        overlapsWithOrg: current.organization.name,
+                        overlapStart: overlapStart,
+                        overlapEnd: overlapEnd,
                     });
                 }
             }

@@ -80,13 +80,13 @@ export const reviewCorrection = async (data: any, managerId: string, orgId: stri
         };
 
         if (request.requestedClockIn) {
-            updateData.clockIn = request.requestedClockIn;
+            updateData.actualClockIn = request.requestedClockIn;
             updateData.clockInMethod = 'manual_override';
             updateData.clockInVerified = false;
         }
 
         if (request.requestedClockOut) {
-            updateData.clockOut = request.requestedClockOut;
+            updateData.actualClockOut = request.requestedClockOut;
             updateData.clockOutMethod = 'manual_override';
             updateData.clockOutVerified = false;
         }
