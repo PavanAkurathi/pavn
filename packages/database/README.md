@@ -3,8 +3,8 @@
 Shared database package handling schema definitions, migrations, and connection management.
 
 ## Tech Stack
-- **PostgreSQL**: Production database (Neon).
-- **Drizzle ORM**: TypeScript ORM and Query Builder.
+- **PostgreSQL**: Production database hosted on Neon.
+- **[Drizzle ORM](https://orm.drizzle.team/)**: TypeScript ORM and Query Builder.
 
 ## Directory Structure
 - **`src/schema.ts`**: All table definitions.

@@ -3,10 +3,11 @@
 import { auth, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
-import { member, user, invitation } from "@repo/database/schema";
+import { member, user, invitation, rosterEntry } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { Dub } from "dub";
+import { nanoid } from "nanoid";
 
 
 
@@ -16,6 +17,7 @@ interface InviteWorkerInput {
     phoneNumber?: string;
     role: "admin" | "member";
     jobTitle?: string;
+    hourlyRate?: number;
     invites: {
         email: boolean;
         sms: boolean;
@@ -59,7 +61,7 @@ export async function inviteWorker(input: InviteWorkerInput) {
             throw new Error("Permission denied");
         }
 
-        const { name, email, phoneNumber, role, jobTitle, invites } = input;
+        const { name, email, phoneNumber, role, jobTitle, hourlyRate, invites } = input;
 
         // 1. Create a true, trackable invitation in BetterAuth
         // NOTE: Even if they already exist, we send an invite. If they exist and are already a member, wait, let's catch that.
@@ -120,40 +122,86 @@ export async function inviteWorker(input: InviteWorkerInput) {
             throw new Error("Failed to generate or fetch BetterAuth Invitation ID");
         }
 
+        // --- NEW: Create or update a roster_entry so the Name and details show up ---
+        const existingRoster = await db.select().from(rosterEntry).where(
+            and(
+                eq(rosterEntry.email, email),
+                eq(rosterEntry.organizationId, activeOrgId)
+            )
+        ).limit(1);
+
+        if (existingRoster[0]) {
+            // Update existing entry with newer details from manual invite
+            await db.update(rosterEntry).set({
+                name,
+                phoneNumber: phoneNumber || existingRoster[0].phoneNumber,
+                jobTitle: jobTitle || existingRoster[0].jobTitle,
+                hourlyRate: hourlyRate !== undefined ? hourlyRate : existingRoster[0].hourlyRate,
+                status: "invited",
+                role: role
+            }).where(eq(rosterEntry.id, existingRoster[0].id));
+        } else {
+            // Create a new entry
+            await db.insert(rosterEntry).values({
+                id: nanoid(),
+                organizationId: activeOrgId,
+                name,
+                email,
+                phoneNumber: phoneNumber || null,
+                jobTitle: jobTitle || null,
+                hourlyRate: hourlyRate !== undefined ? hourlyRate : null,
+                status: "invited",
+                role: role,
+                createdAt: new Date()
+            });
+        }
+        // --------------------------------------------------------------------------
+
         let shortLink = "";
 
         // Initialize Dub SDK exactly when needed to ensure process.env is read at runtime
+        const dubToken = process.env.DUB_API_KEY;
         const dub = new Dub({
-            token: process.env.DUB_API_KEY || "dub_test_token"
+            token: dubToken || "dub_test_token"
         });
 
         // 2. Generate Dub.co Trackable & Deferred Deep Link
         if (invites.sms && phoneNumber) {
             try {
                 // The URL is the fallback web URL. We append orgToken so if they use desktop it still works.
-                // The iOS/Android specific App store routing happens within Dub config, but linking is intercepted if App is installed.
                 const originalUrl = `https://pavn.link/invite?orgToken=${invitationId}`;
 
-                const linkObj = await dub.links.create({
-                    url: originalUrl,
-                    domain: process.env.NEXT_PUBLIC_DUB_DOMAIN || "links.workershive.com"
-                });
+                // Only attempt real Dub.co tracking link if a key exists and we are not in simple test mode
+                if (dubToken && dubToken !== "dub_test_token") {
+                    const linkObj = await dub.links.create({
+                        url: originalUrl,
+                        domain: process.env.NEXT_PUBLIC_DUB_DOMAIN || "links.workershive.com"
+                    });
+                    shortLink = linkObj.shortLink;
+                } else {
+                    console.log("[WorkerInvite] Missing real DUB_API_KEY, falling back to original URL");
+                    shortLink = originalUrl;
+                }
 
-                shortLink = linkObj.shortLink;
-
-                // 3. Send SMS via Twilio using the Dub link
+                // 3. Send SMS via Twilio using the Dub link (or fallback link)
                 const message = `You've been invited to join the team on WorkersHive! Click here to download the app and join: ${shortLink}`;
                 await sendSMS(phoneNumber, message);
-                console.log(`[WorkerInvite] Sent Dub.co SMS to ${phoneNumber}: ${shortLink}`);
+                console.log(`[WorkerInvite] Sent SMS to ${phoneNumber}: ${shortLink}`);
 
             } catch (err: any) {
                 console.error("[WorkerInvite] Dub.co Link Generation or SMS Error:", err);
-                // Return descriptive error
-                return { error: `Failed to create short link or send SMS: ${err.message}` };
+
+                // If it's specifically a Dub API error but Twilio might be fine, or Twilio failed.
+                // In dev, we don't want to completely block the user from proceeding.
+                if (process.env.NODE_ENV === "development") {
+                    console.log("[WorkerInvite] Suppressing SMS/Dub error in development environment.");
+                } else {
+                    return { error: `Failed to create short link or send SMS: ${err.message}` };
+                }
             }
         }
 
-        // Return the link in development if you're testing on the same device
+        // Return the link in development if you're testing on the same device and it failed to generate
         if (process.env.NODE_ENV === "development" && !shortLink) {
             shortLink = `https://${process.env.NEXT_PUBLIC_DUB_DOMAIN || "links.workershive.com"}/fake-dev-link?orgToken=${invitationId}`;
         }
@@ -205,7 +253,8 @@ export async function bulkInviteWorkers(rosterEntryIds: string[]) {
         );
 
         let successCount = 0;
-        const dub = new Dub({ token: process.env.DUB_API_KEY || "dub_test_token" });
+        const dubToken = process.env.DUB_API_KEY;
+        const dub = new Dub({ token: dubToken || "dub_test_token" });
 
         for (const entry of entries) {
             try {
@@ -224,11 +273,17 @@ export async function bulkInviteWorkers(rosterEntryIds: string[]) {
                 if (entry.phoneNumber && invitationId) {
                     try {
                         const originalUrl = `https://pavn.link/invite?orgToken=${invitationId}`;
-                        const linkObj = await dub.links.create({
-                            url: originalUrl,
-                            domain: process.env.NEXT_PUBLIC_DUB_DOMAIN || "links.workershive.com"
-                        });
-                        shortLink = linkObj.shortLink;
+
+                        if (dubToken && dubToken !== "dub_test_token") {
+                            const linkObj = await dub.links.create({
+                                url: originalUrl,
+                                domain: process.env.NEXT_PUBLIC_DUB_DOMAIN || "links.workershive.com"
+                            });
+                            shortLink = linkObj.shortLink;
+                        } else {
+                            console.log("[BulkInvite] Missing real DUB_API_KEY, falling back to original URL");
+                            shortLink = originalUrl;
+                        }
 
                         const message = `You've been invited to join the team on WorkersHive! Download the app and join: ${shortLink}`;
                         await sendSMS(entry.phoneNumber, message);
@@ -255,6 +310,64 @@ export async function bulkInviteWorkers(rosterEntryIds: string[]) {
     } catch (e: any) {
         console.error("BULK INVITE ERROR:", e);
         return { error: e.message || "Failed to process bulk invites" };
+    }
+}
+
+export async function removeWorker(email: string) {
+    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        });
+
+        if (!session) throw new Error("Unauthorized");
+
+        let activeOrgId = (session.session as any).activeOrganizationId as string || undefined;
+        if (!activeOrgId) {
+            const defaultOrg = await db.select().from(member).where(eq(member.userId, session.user.id)).limit(1);
+            if (defaultOrg[0]) activeOrgId = defaultOrg[0].organizationId;
+        }
+        if (!activeOrgId) throw new Error("No active organization");
+
+        // Verify admin/owner
+        const currentMember = await db.select()
+            .from(member)
+            .where(and(
+                eq(member.userId, session.user.id),
+                eq(member.organizationId, activeOrgId)
+            )).limit(1);
+
+        if (!currentMember[0] || (currentMember[0].role !== "admin" && currentMember[0].role !== "owner")) {
+            throw new Error("Permission denied");
+        }
+
+        // Delete from member table if they exist as a real user
+        const targetUser = await db.select().from(user).where(eq(user.email, email)).limit(1);
+        if (targetUser[0]) {
+            await db.delete(member).where(and(
+                eq(member.userId, targetUser[0].id),
+                eq(member.organizationId, activeOrgId)
+            ));
+        }
+
+        // Delete pending invitation records
+        await db.delete(invitation).where(and(
+            eq(invitation.email, email),
+            eq(invitation.organizationId, activeOrgId)
+        ));
+
+        // Delete staging roster records
+        await db.delete(rosterEntry).where(and(
+            eq(rosterEntry.email, email),
+            eq(rosterEntry.organizationId, activeOrgId)
+        ));
+
+        revalidatePath("/rosters");
+        revalidatePath("/settings/team");
+
+        return { success: true };
+    } catch (e: any) {
+        console.error("[RemoveWorker] Error:", e);
+        return { error: e.message || "Failed to remove worker" };
     }
 }
 

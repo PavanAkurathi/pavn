@@ -2,6 +2,21 @@
 
 Pavn is a comprehensive workforce management platform designed to streamline shift scheduling, geofencing, and worker management.
 
+## Tech Stack
+This project is built using a modern, type-safe stack:
+- **Core Strategy:** Monorepo managed by [Turborepo](https://turbo.build/) using [Bun](https://bun.sh/) as the package manager and runtime.
+- **Backend API:** [Hono](https://hono.dev/) server handling authentication, shifts, and core logic.
+- **Frontend Web:** [Next.js](https://nextjs.org/) for business administrators and managers.
+- **Mobile App:** [Expo / React Native](https://expo.dev/) for gig workers.
+- **Authentication:** [Better-Auth](https://better-auth.com/) for email/password, SMS OTP, and organization multi-tenancy.
+- **Database:** PostgreSQL (Neon) managed with [Drizzle ORM](https://orm.drizzle.team/).
+
+## Key Features
+- **Shift Scheduling & Management:** Draft, publish, and assign shifts, including recurring shift patterns.
+- **Geofence Clock-In/Out:** Secure, client-side geofence validation for accurate attendance tracking.
+- **Push Notifications:** Real-time push notifications using Expo for shift updates.
+- **Auth & Profiles:** Robust session management with Better-Auth and worker profile management.
+
 ## Project Structure
 
 This is a monorepo managed by [Turbo](https://turbo.build/).

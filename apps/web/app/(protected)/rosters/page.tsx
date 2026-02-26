@@ -6,6 +6,10 @@ import { member, user, organization, certification, invitation, rosterEntry } fr
 import { eq, and, ne, inArray } from "@repo/database";
 import { DataTable } from "../../../components/roster/data-table";
 import { columns, WorkerDetails } from "../../../components/roster/columns";
+import { Button } from "@repo/ui/components/ui/button";
+import { Plus, Upload } from "lucide-react";
+import Link from "next/link";
+import { AddWorkerDialog } from "../../../components/roster/add-worker-dialog";
 
 export default async function RostersPage() {
     const sessionResponse = await auth.api.getSession({
@@ -133,14 +137,16 @@ export default async function RostersPage() {
     const memberEmails = new Set(mappedMembers.map(m => m.email));
 
     // 2. Standalone Invitations (Ones made directly via BetterAuth, not from CSV)
+    // We only want to show these if there isn't ALREADY a roster_entry for this email.
+    // If there is a roster_entry, the map above already marked it as "invited" and has their Name & Phone!
     const mappedInvitations = invitations
         .filter(i => !rosterEmails.has(i.email) && !memberEmails.has(i.email))
         .map(i => ({
-            id: i.id,
+            id: i.id, // Note: This is an invitation ID, not a user/roster ID.
             role: i.role,
             joinedAt: i.createdAt || new Date(),
             jobTitle: i.role,
-            name: i.email,
+            name: i.email, // Their name isn't known yet, so we show email
             email: i.email,
             phone: null,
             image: null,
@@ -164,6 +170,15 @@ export default async function RostersPage() {
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Roster</h2>
                     <p className="text-muted-foreground">Manage your field staff and workers.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Link href="/rosters/import">
+                        <Button variant="outline" size="sm">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Import CSV
+                        </Button>
+                    </Link>
+                    <AddWorkerDialog />
                 </div>
             </div>
 

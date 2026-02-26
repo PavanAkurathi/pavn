@@ -1,6 +1,6 @@
 # Pavn Auth (`@repo/auth`)
 
-Authentication logic and configuration using **Better Auth**.
+Authentication logic and configuration utilizing **[Better-Auth](https://better-auth.com/)**.
 
 ## Features
 - **Core Auth**: Session management, cookies, and tokens.

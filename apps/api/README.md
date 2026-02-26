@@ -1,12 +1,12 @@
 # Pavn API Server (`apps/api`)
 
-The central backend service for the Pavn platform, built with **Hono**.
+The central backend service for the Pavn platform, built with **[Hono](https://hono.dev/)** and running on **[Bun](https://bun.sh/)**.
 
 ## Features
-- **Authentication**: Powered by Better Auth (Email/Password, SMS OTP).
-- **Shifts**: CRUD operations for shifts, assignments, and rosters.
-- **Geofence**: Location verification for clock-ins/outs.
-- **Notifications**: Push notifications via Expo and Email service.
+- **Authentication**: Powered by **[Better-Auth](https://better-auth.com/)** (Email/Password, SMS OTP, Organization multi-tenancy).
+- **Shifts**: CRUD operations for shifts, assignments, and rosters, including full support for **recurring shift patterns**.
+- **Geofence**: Secure verification for job location clock-ins/outs.
+- **Notifications**: Push notifications via Expo and intelligent Email services.
 
 ## Running Locally
 
@@ -25,9 +25,10 @@ bun run dev
 - **`src/index.ts`**: Entry point, middleware setup, and route mounting.
 - **`src/routes/`**: Route definitions grouped by feature (e.g., `auth`, `shifts`, `webhook`).
 - **Middleware**:
-    - `auth`: Verifies Session Tokens / Bearer Tokens.
+    - `auth`: Verifies Session Tokens / Bearer Tokens via Better-Auth.
     - `cors`: Handles Cross-Origin Resource Sharing.
     - `logger`: Request logging.
+    - `timeout`: Global 30-second request timeout middleware for system reliability.
 
 ## API Documentation
 

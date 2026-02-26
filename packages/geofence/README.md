@@ -1,16 +1,18 @@
-# Pavn Package (`@repo/*`)
+# Pavn Geofence (`@repo/geofence`)
 
-This is a shared internal package for the Pavn monorepo.
+Shared internal package for handling secure, client-side geofence validation and distance calculations across the Pavn platform.
+
+## Features
+- **Geofence Validation**: Logic to verify if a worker is within the required distance from a job location during clock-in/out.
+- **Distance Calculation**: Accurate geospatial math (Haversine formula) for coordinate distance checks.
 
 ## Usage
 
-Import this package in your application:
+Import the utility functions directly into your application (e.g., `apps/workers` or `apps/api`):
 
 ```typescript
-import { ... } from "@repo/package-name";
+import { isWithinGeofence, calculateDistance } from "@repo/geofence";
 ```
 
-## Development
-
-- Run `bun run build` to compile.
-- Run `bun run lint` to check for code issues.
+## Security Note
+This package explicitly handles client-side validation logic designed to provide clear error messages (`"You must be at the job location to clock in/out"`) without leaking exact distance variances, preventing users from attempting to "game" or spoof the geofence system.

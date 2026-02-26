@@ -33,10 +33,17 @@ export default async function WorkerProfilePage({ params }: PageProps) {
     }
 
     const { user: currentUser, session } = sessionResponse;
-    const activeOrgId = (session as any).activeOrganizationId as string;
+    let activeOrgId = (session as any).activeOrganizationId as string | undefined;
 
     if (!activeOrgId) {
-        redirect("/auth/sign-in");
+        const defaultOrg = await db.query.member.findFirst({
+            where: eq(member.userId, currentUser.id)
+        });
+        if (defaultOrg) {
+            activeOrgId = defaultOrg.organizationId;
+        } else {
+            redirect("/auth/sign-in");
+        }
     }
 
     // 2. Resolve the ID. First try member, then roster_entry

@@ -5,7 +5,8 @@ The mobile application for gig workers, built with **Expo (React Native)**.
 ## Features
 - **Shift Discovery**: Browse and accept available shifts.
 - **Schedule**: View upcoming and past shifts.
-- **Clock-In/Out**: Geofence-validated attendance tracking.
+- **Clock-In/Out**: Secure, client-side geofence-validated attendance tracking.
+- **Push Notifications**: Real-time Expo push notifications for shift and schedule updates.
 - **Profile**: Manage worker profile and availability.
 
 ## Running Locally
