@@ -1,7 +1,7 @@
 // packages/auth/src/client.ts
 
 import { createAuthClient } from "better-auth/react";
-import { organizationClient, emailOTPClient } from "better-auth/client/plugins";
+import { organizationClient, emailOTPClient, phoneNumberClient } from "better-auth/client/plugins";
 import { stripeClient } from "@better-auth/stripe/client";
 export { betterFetch } from "better-auth/client";
 import type { auth } from "./auth.js"; // Import type for inference
@@ -11,6 +11,7 @@ export const authClient = createAuthClient({
     plugins: [
         organizationClient(),
         emailOTPClient(),
+        phoneNumberClient(),
         stripeClient({
             subscription: true
         })

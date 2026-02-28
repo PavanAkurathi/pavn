@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, X, Minus, ArrowRight } from "lucide-react";
-import { PRICING } from "@repo/config";
+import { SUBSCRIPTION } from "@repo/config";
 import Link from "next/link";
 
 /**
@@ -42,7 +42,7 @@ const ROWS: RowData[] = [
         title: "Cost for 40 Staff",
         description:
             "What you actually pay per month for a full team. Per-user pricing punishes growth — every busser or runner you add increases your bill.",
-        hive: { value: `$${PRICING.MONTHLY_PER_LOCATION}`, subtext: "Flat. Always." },
+        hive: { value: `$${SUBSCRIPTION.MONTHLY_PRICE_USD}`, subtext: "Flat. Always." },
         competitor: { value: "$160–$280", subtext: "$4–$7 per user/mo" },
         type: "text",
     },
@@ -106,7 +106,7 @@ const ROWS: RowData[] = [
 // --- MAIN COMPONENT ---
 
 export function ComparisonTable() {
-    const hiveCost = PRICING.MONTHLY_PER_LOCATION;
+    const hiveCost = SUBSCRIPTION.MONTHLY_PRICE_USD;
     const competitorLow = 40 * 4; // $4/user — scheduling + time tracking
     const yearlySavings = (competitorLow - hiveCost) * 12;
 
@@ -159,7 +159,7 @@ export function ComparisonTable() {
                                     Workers Hive
                                 </div>
                                 <span className="text-xs text-zinc-400 font-medium uppercase tracking-wider">
-                                    ${PRICING.MONTHLY_PER_LOCATION}/mo flat
+                                    ${SUBSCRIPTION.MONTHLY_PRICE_USD}/mo flat
                                 </span>
                             </div>
 
@@ -199,7 +199,7 @@ export function ComparisonTable() {
                         </button>
                     </Link>
                     <p className="text-sm text-slate-500 mt-3">
-                        {PRICING.TRIAL_DAYS}-day free trial · No credit card · Cancel anytime
+                        {SUBSCRIPTION.TRIAL_DAYS}-day free trial · No credit card · Cancel anytime
                     </p>
                 </div>
             </div>
@@ -302,16 +302,14 @@ function StatusIcon({
                     <div className="absolute inset-0 bg-emerald-500/20 rounded-full animate-pulse"></div>
                 )}
                 <div
-                    className={`relative w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${
-                        isCompetitor
+                    className={`relative w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${isCompetitor
                             ? "bg-emerald-600/30 shadow-none"
                             : "bg-emerald-500 shadow-emerald-500/30"
-                    }`}
+                        }`}
                 >
                     <Check
-                        className={`w-5 h-5 stroke-[3] ${
-                            isCompetitor ? "text-emerald-400" : "text-zinc-900"
-                        }`}
+                        className={`w-5 h-5 stroke-[3] ${isCompetitor ? "text-emerald-400" : "text-zinc-900"
+                            }`}
                     />
                 </div>
             </div>

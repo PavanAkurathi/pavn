@@ -3,11 +3,11 @@ import { Metadata } from 'next';
 import { Check, HelpCircle } from 'lucide-react';
 import { Button } from '@repo/ui/components/ui/button';
 import { FAQ } from '@/components/landing/faq';
-import { PRICING, SUBSCRIPTION_PLAN } from '@repo/config';
+import { SUBSCRIPTION } from '@repo/config';
 
 export const metadata: Metadata = {
     title: 'Pricing | Workers Hive',
-    description: `Simple flat-rate pricing for restaurant scheduling. $${PRICING.MONTHLY_PER_LOCATION}/month per location. Unlimited staff included.`,
+    description: `Simple flat-rate pricing for restaurant scheduling. $${SUBSCRIPTION.MONTHLY_PRICE_USD}/month per location. Unlimited staff included.`,
 };
 
 export default function PricingPage() {
@@ -19,10 +19,10 @@ export default function PricingPage() {
                     __html: JSON.stringify({
                         "@context": "https://schema.org",
                         "@type": "PriceSpecification",
-                        "price": PRICING.MONTHLY_PER_LOCATION.toFixed(2),
+                        "price": SUBSCRIPTION.MONTHLY_PRICE_USD.toFixed(2),
                         "priceCurrency": "USD",
                         "unitCode": "MON",
-                        "name": SUBSCRIPTION_PLAN.name,
+                        "name": SUBSCRIPTION.PLAN_NAME,
                         "description": "Unlimited staff, geofenced timeclock, and scheduling for one location."
                     })
                 }}
@@ -43,9 +43,9 @@ export default function PricingPage() {
                     <div className="absolute top-0 w-full h-2 bg-linear-to-r from-red-600 to-red-400"></div>
 
                     <div className="p-10 text-center border-b border-slate-100">
-                        <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest mb-4">{SUBSCRIPTION_PLAN.name}</h3>
+                        <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest mb-4">{SUBSCRIPTION.PLAN_NAME}</h3>
                         <div className="flex justify-center items-baseline gap-2 mb-2">
-                            <span className="text-6xl font-extrabold text-slate-900">${PRICING.MONTHLY_PER_LOCATION}</span>
+                            <span className="text-6xl font-extrabold text-slate-900">${SUBSCRIPTION.MONTHLY_PRICE_USD}</span>
                             <span className="text-xl text-slate-500 font-medium">/month</span>
                         </div>
                         <p className="text-slate-400 text-sm">Per location. Billed monthly.</p>
@@ -62,7 +62,7 @@ export default function PricingPage() {
 
                         <Link href="/auth/signup">
                             <Button className="w-full h-14 text-lg font-bold bg-red-600 hover:bg-red-700 shadow-xl shadow-red-600/20">
-                                Start {PRICING.TRIAL_DAYS}-Day Free Trial
+                                Start {SUBSCRIPTION.TRIAL_DAYS}-Day Free Trial
                             </Button>
                         </Link>
                         <p className="text-xs text-center text-slate-400 mt-4">No credit card required for trial.</p>

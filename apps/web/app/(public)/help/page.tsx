@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { APP_NAME, SUPPORT_EMAIL, PRICING } from '@repo/config';
+import { APP_NAME, SUPPORT_EMAIL, SUBSCRIPTION } from '@repo/config';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export default function HelpPage() {
                 <Section title="For Managers">
                     <FAQ
                         q="How much does Workers Hive cost?"
-                        a={`$${PRICING.MONTHLY_PER_LOCATION}/month per location. Flat rate, unlimited staff. No per-user fees. No contracts. You get a ${PRICING.TRIAL_DAYS}-day free trial — no credit card required.`}
+                        a={`$${SUBSCRIPTION.MONTHLY_PRICE_USD}/month per location. Flat rate, unlimited staff. No per-user fees. No contracts. You get a ${SUBSCRIPTION.TRIAL_DAYS}-day free trial — no credit card required.`}
                     />
                     <FAQ
                         q="How do I add my team?"

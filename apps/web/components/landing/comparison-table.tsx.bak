@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, X, MoveRight } from "lucide-react";
-import { PRICING } from "@repo/config";
+import { SUBSCRIPTION } from "@repo/config";
 
 export function ComparisonTable() {
     return (
@@ -47,7 +47,7 @@ export function ComparisonTable() {
                             <Row
                                 title="Monthly Cost (40 Staff)"
                                 description="Stop paying per-user fees. We charge one flat rate per location regardless of team size."
-                                hive={`$${PRICING.MONTHLY_PER_LOCATION} / mo`}
+                                hive={`$${SUBSCRIPTION.MONTHLY_PRICE_USD} / mo`}
                                 competitor="$160 - $240"
                                 isText
                             />

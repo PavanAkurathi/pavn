@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { APP_NAME, SUPPORT_EMAIL, PRICING } from '@repo/config';
+import { APP_NAME, SUPPORT_EMAIL, SUBSCRIPTION } from '@repo/config';
 
 export const metadata: Metadata = {
     title: `Terms of Service | ${APP_NAME}`,
@@ -30,7 +30,7 @@ export default function TermsPage() {
 
                 <h2>3. Subscription and Payment</h2>
                 <p>
-                    Manager accounts are billed on a monthly subscription basis at the current rate (${PRICING.MONTHLY_PER_LOCATION}/month per location at time of writing). New accounts receive a {PRICING.TRIAL_DAYS}-day free trial. You may cancel your subscription at any time and will retain access through the end of your current billing period. We do not offer refunds for partial months.
+                    Manager accounts are billed on a monthly subscription basis at the current rate (${SUBSCRIPTION.MONTHLY_PRICE_USD}/month per location at time of writing). New accounts receive a {SUBSCRIPTION.TRIAL_DAYS}-day free trial. You may cancel your subscription at any time and will retain access through the end of your current billing period. We do not offer refunds for partial months.
                 </p>
                 <p>
                     Worker accounts are free. Workers are not charged for any use of the Service.

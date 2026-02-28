@@ -10,7 +10,7 @@ import posthog from "posthog-js";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { PRICING } from "@repo/config";
+import { SUBSCRIPTION } from "@repo/config";
 import { createCheckoutSession, createCustomerPortal } from "@/actions/billing";
 
 interface BillingFormProps {
@@ -26,7 +26,7 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
         setLoading(true);
         try {
             if (!isActive) {
-                posthog.capture('checkout_started', { price: PRICING.MONTHLY_PER_LOCATION });
+                posthog.capture('checkout_started', { price: SUBSCRIPTION.MONTHLY_PRICE_USD });
             }
             const res = isActive ? await createCustomerPortal() : await createCheckoutSession();
 
@@ -65,7 +65,7 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-baseline gap-1 mb-6">
-                        <span className="text-3xl font-bold">${PRICING.MONTHLY_PER_LOCATION}</span>
+                        <span className="text-3xl font-bold">${SUBSCRIPTION.MONTHLY_PRICE_USD}</span>
                         <span className="text-muted-foreground">/mo per location</span>
                     </div>
                     <ul className="space-y-2 mb-6">

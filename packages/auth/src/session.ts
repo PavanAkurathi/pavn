@@ -19,7 +19,7 @@ export async function setWorkerOrgContext(
     await db
         .update(schema.session)
         .set({
-            activeOrgId: orgId,
-        } as any) // Typecast required due to dynamically added better-auth schema fields
+            activeOrganizationId: orgId,
+        })
         .where(eq(schema.session.id, sessionId));
 }

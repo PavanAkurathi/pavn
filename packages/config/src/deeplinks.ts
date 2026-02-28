@@ -4,13 +4,16 @@ export const DEEPLINK_CONFIG = {
     branchBaseUrl: process.env.BRANCH_BASE_URL ?? "https://link.workershive.com",
 
     buildInviteLink: (orgId: string, inviteToken: string): string => {
-        const params = new URLSearchParams({
+        const params: Record<string, string> = {
             org: orgId,
             token: inviteToken,
             $deeplink_path: `invite/${orgId}`,
-            $ios_url: process.env.APP_STORE_URL ?? "",
-            $android_url: process.env.PLAY_STORE_URL ?? "",
-        });
-        return `${DEEPLINK_CONFIG.branchBaseUrl}/invite?${params.toString()}`;
+        };
+
+        if (process.env.APP_STORE_URL) params.$ios_url = process.env.APP_STORE_URL;
+        if (process.env.PLAY_STORE_URL) params.$android_url = process.env.PLAY_STORE_URL;
+
+        const searchParams = new URLSearchParams(params);
+        return `${DEEPLINK_CONFIG.branchBaseUrl}/invite?${searchParams.toString()}`;
     },
 } as const;

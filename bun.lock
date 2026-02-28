@@ -208,6 +208,7 @@
         "@better-auth/expo": "1.4.18",
         "@better-auth/stripe": "1.4.17",
         "@dub/better-auth": "^0.0.6",
+        "@repo/config": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/utils": "workspace:*",

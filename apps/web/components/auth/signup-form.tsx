@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { useForm, Controller } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PRICING } from "@repo/config";
+import { SUBSCRIPTION } from "@repo/config";
 
 const signupSchema = z.object({
     firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -215,7 +215,7 @@ export function SignupForm() {
                         <div className="flex items-start">
                             <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 shrink-0" />
                             <p className="text-sm text-slate-500">
-                                <span className="font-bold text-slate-700">{PRICING.TRIAL_DAYS}-day free trial</span> with full access.
+                                <span className="font-bold text-slate-700">{SUBSCRIPTION.TRIAL_DAYS}-day free trial</span> with full access.
                             </p>
                         </div>
                         <div className="flex items-start">

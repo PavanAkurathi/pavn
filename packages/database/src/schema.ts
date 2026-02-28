@@ -88,7 +88,7 @@ export const session = pgTable("session", {
     userId: text("user_id")
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }), // Cascade delete
-    activeOrganizationId: text("active_organization_id"), // Context Key
+    activeOrganizationId: text("activeOrganizationId"), // Note: using camelCase for Better-Auth compatibility
 }, (table) => ({
     sessionUserIdx: index("session_user_idx").on(table.userId)
 }));

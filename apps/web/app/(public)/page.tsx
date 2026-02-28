@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { Button } from '@repo/ui/components/ui/button';
-import { PRICING } from '@repo/config';
+import { SUBSCRIPTION } from '@repo/config';
 import {
   Check,
   ArrowRight,
@@ -139,7 +139,7 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/auth/signup">
               <button className="h-16 px-12 rounded-full bg-destructive text-white font-bold text-xl hover:bg-red-600 transition-all shadow-2xl shadow-red-900/50">
-                Start {PRICING.TRIAL_DAYS}-Day Free Trial
+                Start {SUBSCRIPTION.TRIAL_DAYS}-Day Free Trial
               </button>
             </Link>
           </div>
