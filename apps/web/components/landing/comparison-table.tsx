@@ -151,7 +151,7 @@ export function ComparisonTable() {
 
                             {/* Workers Hive Header */}
                             <div className="col-span-3 p-8 border-b border-white/10 bg-zinc-800/50 flex flex-col items-center justify-center relative">
-                                <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-500"></div>
+                                <div className="absolute top-0 w-full h-1 bg-linear-to-r from-red-600 to-red-500"></div>
                                 <div className="flex items-center gap-2 font-bold text-xl mb-1">
                                     <div className="w-6 h-6 bg-white text-black rounded flex items-center justify-center text-xs font-black">
                                         W
@@ -303,12 +303,12 @@ function StatusIcon({
                 )}
                 <div
                     className={`relative w-8 h-8 rounded-full flex items-center justify-center shadow-lg ${isCompetitor
-                            ? "bg-emerald-600/30 shadow-none"
-                            : "bg-emerald-500 shadow-emerald-500/30"
+                        ? "bg-emerald-600/30 shadow-none"
+                        : "bg-emerald-500 shadow-emerald-500/30"
                         }`}
                 >
                     <Check
-                        className={`w-5 h-5 stroke-[3] ${isCompetitor ? "text-emerald-400" : "text-zinc-900"
+                        className={`w-5 h-5 stroke-3 ${isCompetitor ? "text-emerald-400" : "text-zinc-900"
                             }`}
                     />
                 </div>
