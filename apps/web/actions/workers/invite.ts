@@ -9,6 +9,8 @@ import { revalidatePath } from "next/cache";
 import { Dub } from "dub";
 import { nanoid } from "nanoid";
 
+import { z } from "zod";
+
 interface InviteWorkerInput {
     name: string;
     email: string;
@@ -22,8 +24,27 @@ interface InviteWorkerInput {
     };
 }
 
-export async function inviteWorker(input: InviteWorkerInput) {
+const inviteWorkerSchema = z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    phoneNumber: z.string().optional(),
+    role: z.enum(["admin", "member"]),
+    jobTitle: z.string().optional(),
+    hourlyRate: z.number().optional(),
+    invites: z.object({
+        email: z.boolean(),
+        sms: z.boolean(),
+    }),
+});
+
+export async function inviteWorker(rawInput: InviteWorkerInput) {
     try {
+        const parsed = inviteWorkerSchema.safeParse(rawInput);
+        if (!parsed.success) {
+            return { error: "Invalid input data: " + parsed.error.message };
+        }
+        const input = parsed.data;
+
         const session = await auth.api.getSession({
             headers: await headers()
         });

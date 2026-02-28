@@ -8,6 +8,8 @@ import { eq, and } from "@repo/database";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
 
+import { z } from "zod";
+
 interface AddMemberInput {
     name: string;
     email: string;
@@ -38,8 +40,43 @@ interface AddMemberInput {
     };
 }
 
-export async function addMember(input: AddMemberInput) {
+const addMemberSchema = z.object({
+    name: z.string().min(1),
+    email: z.string().email(),
+    phoneNumber: z.string().optional(),
+    role: z.enum(["admin", "member"]),
+    jobTitle: z.string().optional(),
+    image: z.string().optional(),
+    emergencyContact: z.object({
+        name: z.string(),
+        phone: z.string(),
+        relation: z.string(),
+    }).optional(),
+    address: z.object({
+        street: z.string(),
+        city: z.string(),
+        state: z.string(),
+        zip: z.string(),
+    }).optional(),
+    certifications: z.array(z.object({
+        name: z.string(),
+        issuer: z.string(),
+        expiresAt: z.coerce.date(),
+    })).optional(),
+    invites: z.object({
+        email: z.boolean(),
+        sms: z.boolean(),
+    }),
+});
+
+export async function addMember(rawInput: AddMemberInput) {
     try {
+        const parsed = addMemberSchema.safeParse(rawInput);
+        if (!parsed.success) {
+            return { error: "Invalid input data: " + parsed.error.message };
+        }
+        const input = parsed.data;
+
         const session = await auth.api.getSession({
             headers: await headers()
         });

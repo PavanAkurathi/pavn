@@ -8,8 +8,18 @@ import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { Dub } from "dub";
 
-export async function bulkInviteWorkers(rosterEntryIds: string[]) {
+import { z } from "zod";
+
+const bulkInviteSchema = z.array(z.string());
+
+export async function bulkInviteWorkers(rawInput: string[]) {
     try {
+        const parsed = bulkInviteSchema.safeParse(rawInput);
+        if (!parsed.success) {
+            return { error: "Invalid input data: " + parsed.error.message };
+        }
+        const rosterEntryIds = parsed.data;
+
         const session = await auth.api.getSession({
             headers: await headers()
         });

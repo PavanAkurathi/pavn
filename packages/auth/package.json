@@ -31,10 +31,11 @@
         "@repo/email": "workspace:*",
         "@repo/utils": "workspace:*",
         "better-auth": "1.4.17",
+        "drizzle-orm": "^0.45.1",
         "dub": "^0.71.4",
         "nanoid": "^5.1.6",
         "stripe": "^17.7.0",
-        "twilio": "^5.4.4"
+        "twilio": "^5.12.2"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",

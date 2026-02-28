@@ -7,8 +7,18 @@ import { member, user, invitation, rosterEntry } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
 
-export async function removeWorker(email: string) {
+import { z } from "zod";
+
+const removeWorkerSchema = z.string().email();
+
+export async function removeWorker(rawEmail: string) {
     try {
+        const parsed = removeWorkerSchema.safeParse(rawEmail);
+        if (!parsed.success) {
+            return { error: "Invalid email address: " + parsed.error.message };
+        }
+        const email = parsed.data;
+
         const session = await auth.api.getSession({
             headers: await headers()
         });

@@ -1,100 +1,97 @@
 import { validatePhoneNumber, formatPhoneNumber } from "@repo/utils";
+import { DEEPLINK_CONFIG } from "@repo/config";
 
-export const isValidPhoneNumber = (phone: string): boolean => {
-    return validatePhoneNumber(phone, 'US');
-};
+export const isValidPhoneNumber = (phone: string): boolean =>
+    validatePhoneNumber(phone, "US"); // TODO: make locale configurable when you expand internationally
 
-export const normalizePhoneNumber = (phone: string): string => {
-    return formatPhoneNumber(phone, 'US');
-};
+export const normalizePhoneNumber = (phone: string): string =>
+    formatPhoneNumber(phone, "US");
 
+// ── Twilio (lazy ESM-safe initialization) ────────────────────────────────────
 
-let twilioClient: any = null;
+let twilioClient: Awaited<ReturnType<typeof buildTwilioClient>> | null = null;
 
-const getTwilioClient = () => {
-    if (twilioClient) return twilioClient;
-
+async function buildTwilioClient() {
     if (process.env.MOCK_SMS === "true") return null;
 
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
-    console.log("[SMS DEBUG] Loading Credentials...");
-    console.log(`[SMS DEBUG] SID Present: ${!!accountSid}`);
-    console.log(`[SMS DEBUG] Token Present: ${!!authToken}`);
-    console.log(`[SMS DEBUG] Phone Present: ${!!process.env.TWILIO_PHONE_NUMBER}`);
-
-    if (!accountSid || !authToken) {
+    if (!accountSid || !authToken || !fromNumber) {
         if (process.env.NODE_ENV === "production") {
-            throw new Error("Missing Twilio credentials in production");
+            throw new Error("[SMS FATAL] Missing Twilio credentials in production");
         }
+        console.warn("[SMS] Missing Twilio credentials — running in mock mode");
         return null;
     }
 
-    const twilio = require("twilio");
-    twilioClient = twilio(accountSid, authToken);
-    return twilioClient;
-};
+    // ESM-compatible dynamic import (no require())
+    const { default: twilio } = await import("twilio");
+    return {
+        client: twilio(accountSid, authToken),
+        from: normalizePhoneNumber(fromNumber),
+    };
+}
 
-
-export const sendSMS = async (to: string, body: string): Promise<void> => {
-    try {
-        const client = getTwilioClient();
-
-        if (!client) {
-            console.log("\n🛑 ----------------------------------------");
-            console.log(" [SMS MOCK] To:", to);
-            console.log(" [SMS MOCK] Body:", body);
-            console.log("---------------------------------------- 🛑\n");
-
-            // Helper for dev: write to file
-            if (process.env.NODE_ENV !== "production") {
-                const fs = require('fs');
-                try {
-                    const otpMatch = body.match(/code is: (\d+)/);
-                    if (otpMatch && otpMatch[1]) {
-                        // Write to TMP for absolute certainty
-                        fs.writeFileSync('/tmp/pavn-otp.txt', otpMatch[1]);
-                        // Also try project root
-                        fs.writeFileSync('latest-otp.txt', otpMatch[1]);
-                    }
-                } catch (e) {
-                    console.error("Failed to write OTP file:", e);
-                }
-            }
-            return;
-        }
-
-        const from = process.env.TWILIO_PHONE_NUMBER;
-        if (!from) {
-            if (process.env.NODE_ENV === "production") {
-                throw new Error("Missing TWILIO_PHONE_NUMBER in production");
-            }
-            console.warn("[SMS WARNING] TWILIO_PHONE_NUMBER not set. Message not sent.");
-            return;
-        }
-
-        const validFrom = normalizePhoneNumber(from as string);
-        const validTo = normalizePhoneNumber(to);
-
-        await client.messages.create({
-            body,
-            from: validFrom,
-            to: validTo,
-        });
-
-    } catch (error) {
-        const maskedPhone = to.slice(-4).padStart(to.length, "*");
-        console.error(`[SMS ERROR] Failed to send to ${maskedPhone}:`, error);
-
-        // In production, we might want to re-throw or handle differently
-        // but for now, we catch to prevent crashing the auth flow
-        // Always re-throw so the caller knows it failed
-        throw error;
+async function getTwilioClient() {
+    if (!twilioClient) {
+        twilioClient = await buildTwilioClient();
     }
-};
+    return twilioClient;
+}
 
-export const sendOTP = async (phoneNumber: string, code: string): Promise<void> => {
-    const message = `Your Pavn verification code is: ${code}`;
+// ── Send SMS ──────────────────────────────────────────────────────────────────
+
+export async function sendSMS(to: string, body: string): Promise<void> {
+    const twilio = await getTwilioClient();
+
+    if (!twilio) {
+        // Dev mock — write OTP to file for easy access during development
+        const code = body.match(/\b(\d{6})\b/)?.[1];
+        console.log(`\n📱 [SMS MOCK] → ${to}\n   ${body}\n`);
+
+        if (process.env.NODE_ENV !== "production" && code) {
+            const { writeFileSync } = await import("fs");
+            try {
+                writeFileSync("/tmp/latest-otp.txt", code);
+            } catch {
+                // Non-critical
+            }
+        }
+        return;
+    }
+
+    const normalizedTo = normalizePhoneNumber(to);
+
+    await twilio.client.messages.create({
+        body,
+        from: twilio.from,
+        to: normalizedTo,
+    });
+    // Don't log phone numbers in production — log only last 4 digits
+    console.log(`[SMS] Sent to ***${normalizedTo.slice(-4)}`);
+}
+
+// ── Worker Invitation SMS ─────────────────────────────────────────────────────
+// This is the deep link message sent when a business invites a gig worker.
+
+export async function sendWorkerInviteSMS(
+    to: string,
+    companyName: string,
+    orgId: string,
+    inviteToken: string
+): Promise<void> {
+    const deepLink = DEEPLINK_CONFIG.buildInviteLink(orgId, inviteToken);
+
+    const message =
+        `${companyName} invited you to Workers Hive. ` +
+        `View your schedule & shifts: ${deepLink}`;
+
+    await sendSMS(to, message);
+}
+
+export async function sendOTP(phoneNumber: string, code: string): Promise<void> {
+    const message = `Your Workers Hive verification code is: ${code}. Valid for 5 minutes.`;
     await sendSMS(phoneNumber, message);
-};
+}
