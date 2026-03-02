@@ -3,12 +3,7 @@
 import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType, jsonb, time, uniqueIndex, bigint } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
-// PostGIS Geometry Type Helper
-const geography = customType<{ data: string }>({
-    dataType() {
-        return "geography(POINT, 4326)";
-    },
-});
+// We removed PostGIS customType due to Neon deployment bugs. Using jsonb for spatial data.
 
 // ============================================================================
 // 1. IDENTITY & AUTH (Using Account Table for better compatibility)
@@ -148,7 +143,7 @@ export const location = pgTable("location", {
     instructions: text("instructions"),
 
     // -- Geofence --
-    position: geography("position"),
+    position: jsonb("position").$type<{ lat: number, lng: number }>(),
     geofenceRadius: integer("geofence_radius").default(100),
     geocodedAt: timestamp("geocoded_at", { withTimezone: true, mode: 'date' }),
     geocodeSource: text("geocode_source"), // 'google' | 'manual' | 'mapbox'
@@ -157,7 +152,7 @@ export const location = pgTable("location", {
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
 }, (table) => ({
     locationOrgIdx: index("location_org_idx").on(table.organizationId),
-    locationPosIdx: index("location_pos_idx").using("gist", table.position) // GIST Index for PostGIS
+    locationPosIdx: index("location_pos_idx").on(table.position) // Switched from GIST to B-Tree temporarily
 }));
 
 // ============================================================================
@@ -357,12 +352,12 @@ export const shiftAssignment = pgTable("shift_assignment", {
     totalDurationMinutes: integer("total_duration_minutes").default(0), // Added (TICKET-001)
 
     // -- Clock In Verification --
-    clockInPosition: geography("clock_in_position"),
+    clockInPosition: jsonb("clock_in_position").$type<{ lat: number, lng: number }>(),
     clockInVerified: boolean("clock_in_verified").default(false),
     clockInMethod: text("clock_in_method"), // 'geofence' | 'manual_override'
 
     // -- Clock Out Verification --
-    clockOutPosition: geography("clock_out_position"),
+    clockOutPosition: jsonb("clock_out_position").$type<{ lat: number, lng: number }>(),
     clockOutVerified: boolean("clock_out_verified").default(false),
     clockOutMethod: text("clock_out_method"), // 'geofence' | 'manual_override' | 'left_geofence' | 'auto_flagged'
 
@@ -371,7 +366,7 @@ export const shiftAssignment = pgTable("shift_assignment", {
     reviewReason: text("review_reason"), // 'left_geofence' | 'no_clockout' | 'disputed' | 'late_arrival'
 
     // -- Last Known Position (for flagged shifts) --
-    lastKnownPosition: geography("last_known_position"),
+    lastKnownPosition: jsonb("last_known_position").$type<{ lat: number, lng: number }>(),
     lastKnownAt: timestamp("last_known_at", { withTimezone: true, mode: 'date' }),
 
     // -- Manager Audit Trail --
@@ -434,11 +429,11 @@ export const workerLocation = pgTable("worker_location", {
         .references(() => organization.id, { onDelete: "cascade" }),
 
     // GPS Data
-    position: geography("position").notNull(),
+    position: jsonb("position").$type<{ lat: number, lng: number }>().notNull(),
     accuracyMeters: integer("accuracy_meters"), // GPS accuracy from device
 
     // Computed on insert
-    venuePosition: geography("venue_position"), // Snapshot of venue coords
+    venuePosition: jsonb("venue_position").$type<{ lat: number, lng: number }>(), // Snapshot of venue coords
     distanceToVenueMeters: integer("distance_to_venue_meters"),
     isOnSite: boolean("is_on_site").default(false),
 
@@ -453,7 +448,7 @@ export const workerLocation = pgTable("worker_location", {
     workerLocationShiftIdx: index("worker_location_shift_idx").on(table.shiftId),
     workerLocationTimeIdx: index("worker_location_time_idx").on(table.recordedAt),
     workerLocationOrgIdx: index("worker_location_org_idx").on(table.organizationId),
-    workerLocationPosIdx: index("worker_location_pos_idx").using("gist", table.position) // GIST Index for PostGIS
+    workerLocationPosIdx: index("worker_location_pos_idx").on(table.position) // Switched from GIST for Neon
 }));
 
 export const workerLocationRelations = relations(workerLocation, ({ one }) => ({

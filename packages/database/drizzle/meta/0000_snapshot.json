@@ -1,5 +1,5 @@
 {
-  "id": "b9a9fb37-a738-4c4b-8369-be720312bd50",
+  "id": "6234da80-e43d-4f50-b80c-b36c375cad9d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -873,7 +873,7 @@
         },
         "position": {
           "name": "position",
-          "type": "geography(POINT, 4326)",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -937,7 +937,7 @@
           ],
           "isUnique": false,
           "concurrently": false,
-          "method": "gist",
+          "method": "btree",
           "with": {}
         }
       },
@@ -1685,8 +1685,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "active_organization_id": {
-          "name": "active_organization_id",
+        "activeOrganizationId": {
+          "name": "activeOrganizationId",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -2029,37 +2029,37 @@
         },
         "actual_clock_in": {
           "name": "actual_clock_in",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "actual_clock_out": {
           "name": "actual_clock_out",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "effective_clock_in": {
           "name": "effective_clock_in",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "effective_clock_out": {
           "name": "effective_clock_out",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "manager_verified_in": {
           "name": "manager_verified_in",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
         "manager_verified_out": {
           "name": "manager_verified_out",
-          "type": "timestamp with time zone",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -2091,7 +2091,7 @@
         },
         "clock_in_position": {
           "name": "clock_in_position",
-          "type": "geography(POINT, 4326)",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -2110,7 +2110,7 @@
         },
         "clock_out_position": {
           "name": "clock_out_position",
-          "type": "geography(POINT, 4326)",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -2142,7 +2142,7 @@
         },
         "last_known_position": {
           "name": "last_known_position",
-          "type": "geography(POINT, 4326)",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -2929,7 +2929,7 @@
         },
         "position": {
           "name": "position",
-          "type": "geography(POINT, 4326)",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
@@ -2941,7 +2941,7 @@
         },
         "venue_position": {
           "name": "venue_position",
-          "type": "geography(POINT, 4326)",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": false
         },
@@ -3051,7 +3051,7 @@
           ],
           "isUnique": false,
           "concurrently": false,
-          "method": "gist",
+          "method": "btree",
           "with": {}
         }
       },

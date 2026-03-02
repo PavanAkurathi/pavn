@@ -18,7 +18,7 @@
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.1, 2.1_
 
-- [~] 2. Write preservation property tests for DateTimePicker (BEFORE implementing fix)
+- [ ] 2. Write preservation property tests for DateTimePicker (BEFORE implementing fix)
   - **Property 2: Preservation** - Other Native Modules and iOS DateTimePicker
   - **IMPORTANT**: Follow observation-first methodology
   - Observe behavior on UNFIXED code for non-buggy inputs (other native modules, iOS DateTimePicker, other screens)
@@ -36,7 +36,7 @@
 
 - [ ] 3. Fix DateTimePicker native module configuration
 
-  - [~] 3.1 Update DateTimePicker plugin configuration in app.json
+  - [ ] 3.1 Update DateTimePicker plugin configuration in app.json
     - Change DateTimePicker plugin from simple string to configuration object
     - Enable Material DatePicker for Android: `{ "android": { "useMaterialDatePicker": true } }`
     - Verify plugin order: ensure DateTimePicker is before expo-build-properties
@@ -45,13 +45,13 @@
     - _Preservation: Other Expo native modules continue to function correctly (Property 4)_
     - _Requirements: 1.1, 2.1, 3.1_
 
-  - [~] 3.2 Rebuild native project with updated configuration
+  - [ ] 3.2 Rebuild native project with updated configuration
     - Run `npx expo prebuild --clean` to regenerate native iOS/Android projects
     - Verify autolinking includes DateTimePicker module in generated files
     - Check `apps/workers/ios/build/generated/autolinking/autolinking.json` for DateTimePicker entry
     - _Requirements: 2.1_
 
-  - [~] 3.3 Verify bug condition exploration test now passes
+  - [ ] 3.3 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - DateTimePicker Renders Without Crash
     - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
     - The test from task 1 encodes the expected behavior
@@ -60,7 +60,7 @@
     - **EXPECTED OUTCOME**: Test PASSES (confirms DateTimePicker bug is fixed)
     - _Requirements: 2.1_
 
-  - [~] 3.4 Verify preservation tests still pass
+  - [ ] 3.4 Verify preservation tests still pass
     - **Property 2: Preservation** - Other Native Modules and iOS DateTimePicker
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Run preservation property tests from step 2
@@ -68,7 +68,7 @@
     - Confirm all tests still pass after fix (no regressions)
     - _Requirements: 3.1_
 
-- [~] 4. Checkpoint - Ensure DateTimePicker tests pass
+- [ ] 4. Checkpoint - Ensure DateTimePicker tests pass
   - Verify bug condition test passes (DateTimePicker renders without crash)
   - Verify preservation tests pass (other native modules work correctly)
   - Ask user if questions arise
@@ -92,7 +92,7 @@
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.2, 2.2_
 
-- [~] 6. Write preservation property tests for API error handling (BEFORE implementing fix)
+- [ ] 6. Write preservation property tests for API error handling (BEFORE implementing fix)
   - **Property 2: Preservation** - Non-401 Error Handling
   - **IMPORTANT**: Follow observation-first methodology
   - Observe behavior on UNFIXED code for non-buggy inputs (successful requests, non-401 errors)
@@ -122,7 +122,7 @@
     - _Preservation: Non-401 errors continue to throw appropriate error messages (Property 5)_
     - _Requirements: 1.2, 2.2, 3.2_
 
-  - [~] 7.2 Verify bug condition exploration test now passes
+  - [ ] 7.2 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - 401 Handled Gracefully
     - **IMPORTANT**: Re-run the SAME test from task 5 - do NOT write a new test
     - The test from task 5 encodes the expected behavior
@@ -131,7 +131,7 @@
     - **EXPECTED OUTCOME**: Test PASSES (confirms 401 error handling is fixed)
     - _Requirements: 2.2_
 
-  - [~] 7.3 Verify preservation tests still pass
+  - [ ] 7.3 Verify preservation tests still pass
     - **Property 2: Preservation** - Non-401 Error Handling
     - **IMPORTANT**: Re-run the SAME tests from task 6 - do NOT write new tests
     - Run preservation property tests from step 6
@@ -139,14 +139,14 @@
     - Confirm all tests still pass after fix (no regressions)
     - _Requirements: 3.2_
 
-- [~] 8. Checkpoint - Ensure API error handling tests pass
+- [ ] 8. Checkpoint - Ensure API error handling tests pass
   - Verify bug condition test passes (401 handled gracefully)
   - Verify preservation tests pass (non-401 errors work correctly)
   - Ask user if questions arise
 
 ## Bug 3: Vercel Build Failure
 
-- [~] 9. Write bug condition exploration test for Vercel build failure
+- [ ] 9. Write bug condition exploration test for Vercel build failure
   - **Property 1: Fault Condition** - TypeScript Compilation Failure
   - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -163,7 +163,7 @@
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.3, 2.3_
 
-- [~] 10. Write preservation property tests for build process (BEFORE implementing fix)
+- [ ] 10. Write preservation property tests for build process (BEFORE implementing fix)
   - **Property 2: Preservation** - Local Build and Other Dependencies
   - **IMPORTANT**: Follow observation-first methodology
   - Observe behavior on UNFIXED code for non-buggy inputs (local Bun builds, other form components)
@@ -195,7 +195,7 @@
     - Test with npm/pnpm install to verify single installation
     - _Requirements: 2.3_
 
-  - [~] 11.3 Verify bug condition exploration test now passes
+  - [ ] 11.3 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - Vercel Build Succeeds
     - **IMPORTANT**: Re-run the SAME test from task 9 - do NOT write a new test
     - The test from task 9 encodes the expected behavior
@@ -204,7 +204,7 @@
     - **EXPECTED OUTCOME**: Test PASSES (confirms Vercel build is fixed)
     - _Requirements: 2.3_
 
-  - [~] 11.4 Verify preservation tests still pass
+  - [ ] 11.4 Verify preservation tests still pass
     - **Property 2: Preservation** - Local Build and Other Dependencies
     - **IMPORTANT**: Re-run the SAME tests from task 10 - do NOT write new tests
     - Run preservation property tests from step 10
@@ -212,14 +212,14 @@
     - Confirm all tests still pass after fix (no regressions)
     - _Requirements: 3.3, 3.4_
 
-- [~] 12. Checkpoint - Ensure all build tests pass
+- [ ] 12. Checkpoint - Ensure all build tests pass
   - Verify bug condition test passes (Vercel build succeeds)
   - Verify preservation tests pass (local builds and other dependencies work correctly)
   - Ask user if questions arise
 
 ## Final Validation
 
-- [~] 13. Run full test suite and verify all fixes
+- [ ] 13. Run full test suite and verify all fixes
   - Run all exploration tests (tasks 1, 5, 9) - all should PASS
   - Run all preservation tests (tasks 2, 6, 10) - all should PASS
   - Verify DateTimePicker renders correctly on Android
