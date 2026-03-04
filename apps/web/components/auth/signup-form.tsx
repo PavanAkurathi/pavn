@@ -25,7 +25,7 @@ const signupSchema = z.object({
     firstName: z.string().min(2, "First name must be at least 2 characters"),
     lastName: z.string().min(2, "Last name must be at least 2 characters"),
     email: z.string().email("Please enter a valid email address"),
-    phone: z.string().min(10, "Please enter a valid phone number"),
+    phone: z.string().regex(/^\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/, "Must be a valid US/Canada phone number"),
     businessName: z.string().min(2, "Business name must be at least 2 characters"),
     password: z.string().min(8, "Password must be at least 8 characters"),
 });
