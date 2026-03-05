@@ -17,6 +17,7 @@ export const user = pgTable("user", {
     image: text("image"),
     phoneNumber: text("phone_number"),
     stripeCustomerId: text("stripe_customer_id"),
+    role: text("role").default("admin"),
 
     // Profile Extensions
     emergencyContact: json("emergency_contact").$type<{

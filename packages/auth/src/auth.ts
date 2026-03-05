@@ -130,7 +130,7 @@ export const auth = betterAuth({
     // ── User Schema ────────────────────────────────────────────────────────────
     user: {
         additionalFields: {
-            role: { type: "string", fieldName: "role", defaultValue: "business" },
+            role: { type: "string", fieldName: "role", defaultValue: "admin" },
         },
     },
 
@@ -147,7 +147,7 @@ export const auth = betterAuth({
                     const params = user as Record<string, unknown>;
 
                     // Read role context from headers or body passed during auth
-                    let role = "business"; // default
+                    let role = "admin"; // default
 
                     if (ctx?.headers) {
                         const parsedHeaders = new Headers(ctx.headers as HeadersInit);
