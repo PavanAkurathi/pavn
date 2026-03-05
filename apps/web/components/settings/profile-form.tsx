@@ -32,7 +32,7 @@ import { Badge } from "@repo/ui/components/ui/badge";
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
     email: z.string().email("Please enter a valid email address."),
-    phoneNumber: z.string().optional().refine((val) => !val || /^\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(val), "Must be a valid US/Canada phone number"),
+    phoneNumber: z.string().optional().refine((val) => !val || /^\s*\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\s*$/.test(val), "Must be a valid US/Canada phone number"),
 });
 
 const passwordSchema = z.object({

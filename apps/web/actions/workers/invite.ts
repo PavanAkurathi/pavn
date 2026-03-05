@@ -27,7 +27,7 @@ interface InviteWorkerInput {
 const inviteWorkerSchema = z.object({
     name: z.string().min(1),
     email: z.string().email(),
-    phoneNumber: z.string().optional().refine((val) => !val || /^\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(val), "Must be a valid US/Canada phone number"),
+    phoneNumber: z.string().optional().refine((val) => !val || /^\s*\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\s*$/.test(val), "Must be a valid US/Canada phone number"),
     role: z.enum(["admin", "member"]),
     jobTitle: z.string().optional(),
     hourlyRate: z.number().optional(),

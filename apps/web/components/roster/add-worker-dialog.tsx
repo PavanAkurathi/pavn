@@ -33,7 +33,7 @@ import { inviteWorker } from "@/actions/workers";
 const addWorkerSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
     email: z.string().email("Invalid email address."),
-    phoneNumber: z.string().optional().refine((val) => !val || /^\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(val), "Must be a valid US/Canada phone number"),
+    phoneNumber: z.string().optional().refine((val) => !val || /^\s*\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\s*$/.test(val), "Must be a valid US/Canada phone number"),
     jobTitle: z.string().optional(),
     hourlyRate: z.string().optional().refine((val) => !val || /^\d+(\.\d{1,2})?$/.test(val), "Must be a valid number (e.g. 15.50)"),
     sendSms: z.boolean().default(true),
