@@ -134,9 +134,9 @@ export const auth = betterAuth({
         },
     },
 
-    // ── Email/Password disabled — we use OTP-only flows ───────────────────────
+    // ── Email/Password ────────────────────────────────────────────────────────
     emailAndPassword: {
-        enabled: false,
+        enabled: true,
     },
 
     // ── Database Hooks ─────────────────────────────────────────────────────────
