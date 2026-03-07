@@ -22,10 +22,12 @@ interface TeamListProps {
         image?: string | null;
         jobTitle?: string | null;
         status?: "active" | "invited";
+        user?: { id: string };
     }>;
+    currentUserId: string;
 }
 
-export function TeamList({ members }: TeamListProps) {
+export function TeamList({ members, currentUserId }: TeamListProps) {
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -36,7 +38,7 @@ export function TeamList({ members }: TeamListProps) {
                     </CardDescription>
                 </div>
                 <div className="flex gap-2">
-                    {/* Admin Invite Dialog could go here in future */}
+                    <AddMemberDialog />
                 </div>
             </CardHeader>
             <CardContent>
@@ -76,7 +78,7 @@ export function TeamList({ members }: TeamListProps) {
                                     </p>
                                 </div>
 
-                                <TeamActions memberId={member.id} memberRole={member.role} />
+                                <TeamActions memberId={member.id} memberRole={member.role} isSelf={member.user?.id === currentUserId} status={member.status} />
                             </div>
                         </div>
                     ))}
@@ -103,11 +105,11 @@ import { resendInvite, deleteMemberAction } from "@/actions/invites";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-function TeamActions({ memberId, memberRole }: { memberId: string, memberRole: string }) {
+function TeamActions({ memberId, memberRole, isSelf, status }: { memberId: string, memberRole: string, isSelf: boolean, status?: string }) {
     const router = useRouter();
 
-    // Safety check: Cannot delete owners easily (simplified)
-    if (memberRole === 'owner') return null;
+    // Safety check: Cannot delete yourself or owners
+    if (memberRole === 'owner' || isSelf) return null;
 
     const handleResend = async () => {
         toast.promise(resendInvite(memberId), {
@@ -140,10 +142,14 @@ function TeamActions({ memberId, memberRole }: { memberId: string, memberRole: s
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={handleResend}>
-                    Resend Invite
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
+                {status === 'invited' && (
+                    <>
+                        <DropdownMenuItem onClick={handleResend}>
+                            Resend Invite
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                    </>
+                )}
                 <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600">
                     Remove Member
                 </DropdownMenuItem>

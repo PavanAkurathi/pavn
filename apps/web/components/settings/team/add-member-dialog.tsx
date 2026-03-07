@@ -19,13 +19,11 @@ export function AddMemberDialog() {
 
     // Form State
     const [formData, setFormData] = useState({
-        name: "",
+        firstName: "",
+        lastName: "",
         email: "",
         phoneNumber: "",
-        role: "member" as "admin" | "member",
-        jobTitle: "",
-        inviteEmail: true,
-        inviteSms: false
+        role: "manager" as "admin" | "manager",
     });
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -34,30 +32,27 @@ export function AddMemberDialog() {
 
         try {
             const result = await addMember({
-                name: formData.name,
+                name: `${formData.firstName} ${formData.lastName}`.trim(),
                 email: formData.email,
                 phoneNumber: formData.phoneNumber,
                 role: formData.role,
-                jobTitle: formData.jobTitle,
                 invites: {
-                    email: formData.inviteEmail,
-                    sms: formData.inviteSms
+                    email: true,
+                    sms: false
                 }
             });
 
             if (result && 'error' in result) {
                 toast.error(result.error);
             } else {
-                toast.success("Member added successfully");
+                toast.success("Member added successfully! They will receive an email shortly.");
                 setOpen(false);
                 setFormData({
-                    name: "",
+                    firstName: "",
+                    lastName: "",
                     email: "",
                     phoneNumber: "",
-                    role: "member",
-                    jobTitle: "",
-                    inviteEmail: true,
-                    inviteSms: false
+                    role: "manager",
                 });
             }
         } catch (error) {
@@ -85,34 +80,46 @@ export function AddMemberDialog() {
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Full Name</Label>
+                            <Label htmlFor="firstName">First Name</Label>
                             <Input
-                                id="name"
+                                id="firstName"
                                 required
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="John Doe"
+                                value={formData.firstName}
+                                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                                placeholder="John"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="lastName">Last Name</Label>
                             <Input
-                                id="email"
-                                type="email"
+                                id="lastName"
                                 required
-                                value={formData.email}
-                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                placeholder="john@example.com"
+                                value={formData.lastName}
+                                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                                placeholder="Doe"
                             />
                         </div>
                     </div>
 
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            required
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            placeholder="john@example.com"
+                        />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="phone">Phone (Optional)</Label>
+                            <Label htmlFor="phone">Contact Number</Label>
                             <Input
                                 id="phone"
                                 type="tel"
+                                required
                                 value={formData.phoneNumber}
                                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                                 placeholder="+1 (555) 000-0000"
@@ -122,49 +129,22 @@ export function AddMemberDialog() {
                             <Label htmlFor="role">Role</Label>
                             <Select
                                 value={formData.role}
-                                onValueChange={(val: "admin" | "member") => setFormData({ ...formData, role: val })}
+                                onValueChange={(val: "admin" | "manager") => setFormData({ ...formData, role: val })}
                             >
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select role" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="member">Member</SelectItem>
+                                    <SelectItem value="manager">Manager</SelectItem>
                                     <SelectItem value="admin">Admin</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="jobTitle">Job Title</Label>
-                        <Input
-                            id="jobTitle"
-                            value={formData.jobTitle}
-                            onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                            placeholder="Security Guard"
-                        />
-                    </div>
-                    <div className="space-y-3 pt-2">
-                        <Label>Invitation Methods</Label>
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="inviteEmail"
-                                    checked={formData.inviteEmail}
-                                    onCheckedChange={(c) => setFormData({ ...formData, inviteEmail: c as boolean })}
-                                />
-                                <Label htmlFor="inviteEmail">Send Email</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="inviteSms"
-                                    checked={formData.inviteSms}
-                                    onCheckedChange={(c) => setFormData({ ...formData, inviteSms: c as boolean })}
-                                />
-                                <Label htmlFor="inviteSms">Send SMS</Label>
-                            </div>
-                        </div>
-                    </div>
+                    <p className="text-xs text-muted-foreground pt-2">
+                        They will receive an email invitation to log in securely via an Email OTP code.
+                    </p>
 
                     <DialogFooter>
                         <Button type="submit" disabled={loading}>

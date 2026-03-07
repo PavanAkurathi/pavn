@@ -7,6 +7,7 @@ import { member, user, certification } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
+import { sendInvite } from "@repo/email";
 
 import { z } from "zod";
 
@@ -14,7 +15,7 @@ interface AddMemberInput {
     name: string;
     email: string;
     phoneNumber?: string;
-    role: "admin" | "member";
+    role: "admin" | "manager";
     jobTitle?: string;
     // Profile Extensions
     image?: string;
@@ -44,7 +45,7 @@ const addMemberSchema = z.object({
     name: z.string().min(1),
     email: z.string().email(),
     phoneNumber: z.string().optional(),
-    role: z.enum(["admin", "member"]),
+    role: z.enum(["admin", "manager"]),
     jobTitle: z.string().optional(),
     image: z.string().optional(),
     emergencyContact: z.object({
@@ -179,10 +180,11 @@ export async function addMember(rawInput: AddMemberInput) {
             }
         }
 
-        // 5. Handle Invitations (Stub for now)
+        // 5. Handle Invitations
         if (invites.email) {
-            // TODO: Send Email Invite via Resend
-            console.log(`[Mock] Sending email invite to ${email}`);
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+            await sendInvite(email, role, appUrl);
+            console.log(`[Email] Dispatched invite to ${email} for role ${role}`);
         }
         if (invites.sms && phoneNumber) {
             try {

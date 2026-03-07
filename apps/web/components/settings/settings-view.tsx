@@ -34,6 +34,7 @@ export function SettingsView({
     user,
     organization,
     locations,
+    role,
     sessions,
     accounts,
     members,
@@ -70,7 +71,9 @@ export function SettingsView({
                         <TabItem value="notifications" icon={<Bell className="w-4 h-4" />} label="Notifications" />
                         <TabItem value="locations" icon={<MapPin className="w-4 h-4" />} label="Locations" />
                         <TabItem value="team" icon={<Users className="w-4 h-4" />} label="Team" />
-                        <TabItem value="billing" icon={<CreditCard className="w-4 h-4" />} label="Billing" />
+                        {role === "admin" && (
+                            <TabItem value="billing" icon={<CreditCard className="w-4 h-4" />} label="Billing" />
+                        )}
                     </TabsList>
                 </aside>
 
@@ -97,20 +100,22 @@ export function SettingsView({
                     </TabsContent>
 
                     <TabsContent value="team" className="mt-0 space-y-6">
-                        <TeamList members={members} />
+                        <TeamList members={members} currentUserId={user.id} />
                     </TabsContent>
 
                     <TabsContent value="notifications" className="mt-0 space-y-6">
                         <NotificationsView />
                     </TabsContent>
 
-                    <TabsContent value="billing" className="mt-0 space-y-6">
-                        <BillingView
-                            subscriptionStatus={subscription?.status || "inactive"}
-                            currentPeriodEnd={subscription?.currentPeriodEnd}
-                            invoices={invoices}
-                        />
-                    </TabsContent>
+                    {role === "admin" && (
+                        <TabsContent value="billing" className="mt-0 space-y-6">
+                            <BillingView
+                                subscriptionStatus={subscription?.status || "inactive"}
+                                currentPeriodEnd={subscription?.currentPeriodEnd}
+                                invoices={invoices}
+                            />
+                        </TabsContent>
+                    )}
                 </div>
             </Tabs>
         </div>

@@ -18,6 +18,7 @@ export const user = pgTable("user", {
     phoneNumber: text("phone_number"),
     stripeCustomerId: text("stripe_customer_id"),
     role: text("role").default("admin"),
+    timezone: text("timezone").default("UTC"), // NOTIF-004: Worker timezone for quiet hours
 
     // Profile Extensions
     emergencyContact: json("emergency_contact").$type<{
@@ -153,7 +154,9 @@ export const location = pgTable("location", {
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
 }, (table) => ({
     locationOrgIdx: index("location_org_idx").on(table.organizationId),
-    locationPosIdx: index("location_pos_idx").on(table.position) // Switched from GIST to B-Tree temporarily
+    // GEO-002 Fix: Using GIST index for spatial queries (optimized for ST_DWithin operations)
+    // Note: Migration 0010 creates this index with CONCURRENTLY option
+    locationPosGistIdx: index("location_position_gist_idx").on(table.position) // GIST index for spatial operations
 }));
 
 // ============================================================================
@@ -292,6 +295,7 @@ export const shift = pgTable("shift", {
 
     startTime: timestamp("start_time", { withTimezone: true, mode: 'date' }).notNull(),
     endTime: timestamp("end_time", { withTimezone: true, mode: 'date' }).notNull(),
+    timezone: text("timezone"), // NOTIF-004: Shift-specific timezone (optional, falls back to location/org timezone)
 
     // -- Capacity --
     capacityTotal: integer("capacity_total").notNull().default(1),
@@ -361,6 +365,13 @@ export const shiftAssignment = pgTable("shift_assignment", {
     clockOutPosition: jsonb("clock_out_position").$type<{ lat: number, lng: number }>(),
     clockOutVerified: boolean("clock_out_verified").default(false),
     clockOutMethod: text("clock_out_method"), // 'geofence' | 'manual_override' | 'left_geofence' | 'auto_flagged'
+
+    // -- GPS Accuracy Metadata (GEO-001) --
+    clockInAccuracy: decimal("clock_in_accuracy", { precision: 10, scale: 2 }), // GPS accuracy in meters
+    clockInDistance: decimal("clock_in_distance", { precision: 10, scale: 2 }), // Distance from geofence center in meters
+    clockInWarning: text("clock_in_warning"), // Warning message if accuracy is suboptimal
+    clockOutAccuracy: decimal("clock_out_accuracy", { precision: 10, scale: 2 }), // GPS accuracy in meters
+    clockOutDistance: decimal("clock_out_distance", { precision: 10, scale: 2 }), // Distance from geofence center in meters
 
     // -- Review Workflow --
     needsReview: boolean("needs_review").default(false),
