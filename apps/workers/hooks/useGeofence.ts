@@ -5,8 +5,8 @@ import { z } from 'zod';
 
 const ClockRequestSchema = z.object({
     shiftId: z.string().min(1, "Shift ID required"),
-    latitude: z.string().regex(/^-?\d+\.?\d*$/, "Invalid latitude"),
-    longitude: z.string().regex(/^-?\d+\.?\d*$/, "Invalid longitude"),
+    latitude: z.number().min(-90, "Invalid latitude").max(90, "Invalid latitude"),
+    longitude: z.number().min(-180, "Invalid longitude").max(180, "Invalid longitude"),
     accuracyMeters: z.number().max(200, "GPS signal too weak. Move to an open area.").optional(),
     deviceTimestamp: z.string().datetime("Invalid timestamp"),
 });
@@ -66,8 +66,8 @@ export function useGeofence() {
 
             const request = {
                 shiftId,
-                latitude: String(location.coords.latitude),
-                longitude: String(location.coords.longitude),
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
                 accuracyMeters: accuracy || undefined,
                 deviceTimestamp: new Date().toISOString()
             };
@@ -126,8 +126,8 @@ export function useGeofence() {
 
             const request = {
                 shiftId,
-                latitude: String(location.coords.latitude),
-                longitude: String(location.coords.longitude),
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
                 accuracyMeters: accuracy || undefined,
                 deviceTimestamp: new Date().toISOString()
             };

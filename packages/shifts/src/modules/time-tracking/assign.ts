@@ -5,6 +5,7 @@ import { AppError } from "@repo/observability";
 import { z } from "zod";
 import { OverlapService } from "./overlap";
 import { newId } from "../../utils/ids";
+import { notifyWorkersOfCrossOrgConflicts } from "./cross-org-conflict-notifications";
 
 const AssignSchema = z.object({
     workerIds: z.array(z.string()).min(1)
@@ -106,7 +107,15 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string, tx
 
     await tx.insert(shiftAssignment).values(values);
 
-    // TODO: Notify workers
+    await notifyWorkersOfCrossOrgConflicts(
+        workersToAssign.map(workerId => ({
+            workerId,
+            shiftId,
+            startTime: existingShift.startTime,
+            endTime: existingShift.endTime,
+        })),
+        orgId
+    );
 
     return {
         success: true,

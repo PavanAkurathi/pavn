@@ -4,6 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import Constants from "expo-constants";
 import { authClient } from "../lib/auth-client";
+import { clearStoredActiveOrganizationId } from "../lib/organization-context";
+import { workerTheme } from "../lib/theme";
 
 export default function SettingsScreen() {
     const router = useRouter();
@@ -11,6 +13,7 @@ export default function SettingsScreen() {
     const handleSignOut = async () => {
         try {
             await authClient.signOut();
+            await clearStoredActiveOrganizationId();
             router.replace("/(auth)/login");
         } catch (e) {
             console.error("Sign out failed", e);
@@ -21,7 +24,7 @@ export default function SettingsScreen() {
         <SafeAreaView style={s.container} edges={["top"]}>
             <View style={s.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <Ionicons name="arrow-back" size={24} color={workerTheme.colors.foreground} />
                 </TouchableOpacity>
                 <Text style={s.title}>Settings</Text>
                 <View style={{ width: 24 }} />
@@ -58,34 +61,36 @@ export default function SettingsScreen() {
 function SettingsRow({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
     return (
         <TouchableOpacity style={s.row} onPress={onPress} activeOpacity={0.6}>
-            <Ionicons name={icon as any} size={20} color="#999" />
+            <Ionicons name={icon as any} size={20} color={workerTheme.colors.mutedForeground} />
             <Text style={s.rowLabel}>{label}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#444" />
+            <Ionicons name="chevron-forward" size={18} color={workerTheme.colors.mutedForeground} />
         </TouchableOpacity>
     );
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#0A0A0A" },
+    container: { flex: 1, backgroundColor: workerTheme.colors.background },
     header: {
         flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: "#1A1A1A",
+        paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: workerTheme.colors.border,
     },
-    title: { fontSize: 18, fontWeight: "700", color: "#fff" },
+    title: { fontSize: 18, fontWeight: "700", color: workerTheme.colors.foreground },
     row: {
         flexDirection: "row", alignItems: "center", gap: 14,
         paddingVertical: 16, paddingHorizontal: 20,
-        borderBottomWidth: 1, borderBottomColor: "#141414",
+        borderBottomWidth: 1, borderBottomColor: workerTheme.colors.border,
+        backgroundColor: workerTheme.colors.surface,
     },
-    rowLabel: { flex: 1, fontSize: 16, color: "#fff" },
+    rowLabel: { flex: 1, fontSize: 16, color: workerTheme.colors.foreground },
     logoutBtn: {
         marginTop: 32, marginHorizontal: 20, paddingVertical: 14,
-        borderRadius: 10, borderWidth: 1, borderColor: "#333", alignItems: "center",
+        borderRadius: 10, borderWidth: 1, borderColor: workerTheme.colors.border, alignItems: "center",
+        backgroundColor: workerTheme.colors.surface,
     },
-    logoutText: { fontSize: 16, fontWeight: "600", color: "#EF4444" },
+    logoutText: { fontSize: 16, fontWeight: "600", color: workerTheme.colors.primary },
     footer: { alignItems: "center", marginTop: 24 },
     legalRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-    legalLink: { fontSize: 13, color: "#666" },
-    legalSep: { color: "#444" },
-    version: { fontSize: 12, color: "#444", marginTop: 8 },
+    legalLink: { fontSize: 13, color: workerTheme.colors.mutedForeground },
+    legalSep: { color: workerTheme.colors.mutedForeground },
+    version: { fontSize: 12, color: workerTheme.colors.mutedForeground, marginTop: 8 },
 });

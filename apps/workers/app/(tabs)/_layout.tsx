@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { workerTheme } from "../../lib/theme";
 
 export default function TabsLayout() {
     const insets = useSafeAreaInsets();
@@ -10,15 +11,15 @@ export default function TabsLayout() {
             screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: "#000",
-                    borderTopColor: "#1A1A1A",
+                    backgroundColor: workerTheme.colors.background,
+                    borderTopColor: workerTheme.colors.border,
                     borderTopWidth: 1,
                     height: 56 + insets.bottom,
                     paddingBottom: insets.bottom + 2,
                     paddingTop: 6,
                 },
-                tabBarActiveTintColor: "#3B82F6",
-                tabBarInactiveTintColor: "#666",
+                tabBarActiveTintColor: workerTheme.colors.primary,
+                tabBarInactiveTintColor: workerTheme.colors.mutedForeground,
                 tabBarLabelStyle: {
                     fontSize: 11,
                     fontWeight: "500",
@@ -28,7 +29,7 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="index"
                 options={{
-                    title: "Schedule",
+                    title: "Shifts",
                     tabBarIcon: ({ color, size }) => (
                         <Ionicons name="calendar-outline" size={size} color={color} />
                     ),

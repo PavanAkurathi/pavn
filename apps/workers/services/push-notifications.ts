@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 // Try importing api from absolute path or checking structure
 // Assuming api util exists in ../lib/api based on file structure scan
 import { api } from '../lib/api';
@@ -33,8 +34,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
     // Get Expo push token
     // Note: Project ID should be in app.json, but explicit config guarantees it works
+    const projectId =
+        Constants.easConfig?.projectId ||
+        Constants.expoConfig?.extra?.eas?.projectId;
+
     const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: process.env.EXPO_PROJECT_ID,
+        projectId,
     });
 
     const pushToken = tokenData.data;

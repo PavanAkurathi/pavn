@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useEffect, useRef } from "react";
 import { api, WorkerShift } from "../../../lib/api";
 import { useGeofence } from "../../../hooks/useGeofence";
+import { workerTheme } from "../../../lib/theme";
 
 // =============================================================================
 // HELPERS
@@ -159,14 +160,18 @@ export default function ShiftDetailScreen() {
     };
 
     if (loading) {
-        return <View style={s.centered}><ActivityIndicator size="large" color="#3B82F6" /></View>;
+        return (
+            <View style={s.centered}>
+                <ActivityIndicator size="large" color={workerTheme.colors.primary} />
+            </View>
+        );
     }
     if (!shift) {
         return (
             <View style={s.centered}>
-                <Text style={{ color: "#888" }}>Shift not found</Text>
+                <Text style={{ color: workerTheme.colors.mutedForeground }}>Shift not found</Text>
                 <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-                    <Text style={{ color: "#3B82F6" }}>Go back</Text>
+                    <Text style={{ color: workerTheme.colors.primary }}>Go back</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -181,14 +186,22 @@ export default function ShiftDetailScreen() {
             {/* Back + Adjust buttons */}
             <SafeAreaView edges={["top"]} style={s.topBar}>
                 <TouchableOpacity onPress={() => router.back()} style={s.topBtn}>
-                    <Ionicons name="arrow-back" size={22} color="#fff" />
+                    <Ionicons name="arrow-back" size={22} color={workerTheme.colors.foreground} />
                 </TouchableOpacity>
                 {isClockedOut && (
                     <TouchableOpacity
-                        onPress={() => router.push({ pathname: `/shift/${id}/request-adjustment`, params: { shiftTitle: shift.title } })}
+                        onPress={() =>
+                            router.push({
+                                pathname: `/shift/${id}/request-adjustment`,
+                                params: {
+                                    shiftTitle: shift.title,
+                                    assignmentId: shift.assignmentId,
+                                },
+                            })
+                        }
                         style={s.topBtn}
                     >
-                        <Ionicons name="create-outline" size={22} color="#fff" />
+                        <Ionicons name="create-outline" size={22} color={workerTheme.colors.foreground} />
                     </TouchableOpacity>
                 )}
             </SafeAreaView>
@@ -208,9 +221,24 @@ export default function ShiftDetailScreen() {
                         <Ionicons
                             name={isActive ? "radio-button-on" : isClockedOut ? "checkmark-circle" : "time-outline"}
                             size={16}
-                            color={isActive ? "#4ADE80" : isClockedOut ? "#60A5FA" : "#888"}
+                            color={
+                                isActive
+                                    ? workerTheme.colors.success
+                                    : isClockedOut
+                                      ? workerTheme.colors.secondary
+                                      : workerTheme.colors.mutedForeground
+                            }
                         />
-                        <Text style={[s.statusText, isActive ? { color: "#4ADE80" } : isClockedOut ? { color: "#60A5FA" } : {}]}>
+                        <Text
+                            style={[
+                                s.statusText,
+                                isActive
+                                    ? { color: workerTheme.colors.success }
+                                    : isClockedOut
+                                      ? { color: workerTheme.colors.secondary }
+                                      : null,
+                            ]}
+                        >
                             {isActive ? "In Progress" : isClockedOut ? "Completed" : shift.status.toUpperCase()}
                         </Text>
                     </View>
@@ -238,7 +266,7 @@ export default function ShiftDetailScreen() {
                         <Text style={s.timerValue}>{formatTimer(elapsed)}</Text>
                         {locStatus === 'verified' && (
                             <View style={s.proximityRow}>
-                                <Ionicons name="wifi" size={14} color="#4ADE80" />
+                                <Ionicons name="wifi" size={14} color={workerTheme.colors.success} />
                                 <Text style={s.proximityText}>Close to location</Text>
                             </View>
                         )}
@@ -248,7 +276,7 @@ export default function ShiftDetailScreen() {
                 {/* Late Indicator */}
                 {lateMinutes > 0 && lateMinutes < 120 && (
                     <View style={s.warningCard}>
-                        <Ionicons name="warning" size={16} color="#EF4444" />
+                        <Ionicons name="warning" size={16} color={workerTheme.colors.primary} />
                         <Text style={s.warningText}>Clocked in {lateMinutes} min late</Text>
                     </View>
                 )}
@@ -264,28 +292,36 @@ export default function ShiftDetailScreen() {
                 {/* Missing flags */}
                 {shift.timesheetFlags.missingClockIn && (
                     <View style={s.warningCard}>
-                        <Ionicons name="alert-circle" size={16} color="#F59E0B" />
-                        <Text style={[s.warningText, { color: "#F59E0B" }]}>No clock-in recorded — your manager will update this</Text>
+                        <Ionicons name="alert-circle" size={16} color={workerTheme.colors.warning} />
+                        <Text style={[s.warningText, { color: workerTheme.colors.warning }]}>
+                            No clock-in recorded, your manager will update this
+                        </Text>
                     </View>
                 )}
                 {shift.timesheetFlags.missingClockOut && (
                     <View style={s.warningCard}>
-                        <Ionicons name="alert-circle" size={16} color="#F59E0B" />
-                        <Text style={[s.warningText, { color: "#F59E0B" }]}>No clock-out recorded — your manager will update this</Text>
+                        <Ionicons name="alert-circle" size={16} color={workerTheme.colors.warning} />
+                        <Text style={[s.warningText, { color: workerTheme.colors.warning }]}>
+                            No clock-out recorded, your manager will update this
+                        </Text>
                     </View>
                 )}
 
                 {/* Map area + Get Directions */}
                 {shift.location.latitude && shift.location.longitude ? (
                     <View style={s.mapSection}>
-                        <View style={s.mapPlaceholder}>
-                            <Ionicons name="location" size={32} color="#3B82F6" />
+                    <View style={s.mapPlaceholder}>
+                            <Ionicons name="location" size={32} color={workerTheme.colors.primary} />
                             <Text style={s.mapCoords}>
                                 {shift.location.latitude.toFixed(4)}, {shift.location.longitude.toFixed(4)}
                             </Text>
                         </View>
                         <TouchableOpacity style={s.directionsBtn} onPress={openDirections}>
-                            <Ionicons name="navigate-outline" size={18} color="#3B82F6" />
+                            <Ionicons
+                                name="navigate-outline"
+                                size={18}
+                                color={workerTheme.colors.primary}
+                            />
                             <Text style={s.directionsText}>Get directions</Text>
                         </TouchableOpacity>
                     </View>
@@ -310,32 +346,40 @@ export default function ShiftDetailScreen() {
                             {locStatus === 'checking' && <Text style={s.locText}>Verifying location...</Text>}
                             {locStatus === 'verified' && (
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                                    <Ionicons name="wifi" size={14} color="#4ADE80" />
-                                    <Text style={[s.locText, { color: "#4ADE80" }]}>At venue — ready to clock in</Text>
+                                    <Ionicons name="wifi" size={14} color={workerTheme.colors.success} />
+                                    <Text style={[s.locText, { color: workerTheme.colors.success }]}>
+                                        At venue, ready to clock in
+                                    </Text>
                                 </View>
                             )}
-                            {locStatus === 'failed' && <Text style={[s.locText, { color: "#EF4444" }]}>You must be at the venue to clock in</Text>}
+                            {locStatus === 'failed' && (
+                                <Text style={[s.locText, { color: workerTheme.colors.primary }]}>
+                                    You must be at the venue to clock in
+                                </Text>
+                            )}
                         </View>
                         <TouchableOpacity
                             style={[s.actionBtn, canClockIn ? s.btnGreen : s.btnDisabled]}
                             disabled={!canClockIn || geoLoading}
                             onPress={handleClockIn}
                         >
-                            {geoLoading ? <ActivityIndicator color="#000" /> : (
+                            {geoLoading ? <ActivityIndicator color={workerTheme.colors.white} /> : (
                                 <Text style={canClockIn ? s.btnText : s.btnTextDisabled}>Clock in</Text>
                             )}
                         </TouchableOpacity>
                         {locStatus === 'failed' && (
                             <TouchableOpacity onPress={verifyLocation} style={{ alignItems: "center", marginTop: 8 }}>
-                                <Text style={{ color: "#3B82F6", fontSize: 13 }}>Retry location check</Text>
+                                <Text style={{ color: workerTheme.colors.primary, fontSize: 13 }}>
+                                    Retry location check
+                                </Text>
                             </TouchableOpacity>
                         )}
                     </View>
                 )}
                 {isActive && (
                     <TouchableOpacity style={[s.actionBtn, s.btnRed]} disabled={geoLoading} onPress={handleClockOut}>
-                        {geoLoading ? <ActivityIndicator color="#fff" /> : (
-                            <Text style={[s.btnText, { color: "#fff" }]}>Clock out</Text>
+                        {geoLoading ? <ActivityIndicator color={workerTheme.colors.white} /> : (
+                            <Text style={[s.btnText, { color: workerTheme.colors.white }]}>Clock out</Text>
                         )}
                     </TouchableOpacity>
                 )}
@@ -353,11 +397,18 @@ function InfoRow({ icon, label, value, tag, highlight }: {
 }) {
     return (
         <View style={s.infoRow}>
-            <Ionicons name={icon as any} size={18} color="#666" style={{ marginTop: 1 }} />
+            <Ionicons
+                name={icon as any}
+                size={18}
+                color={workerTheme.colors.mutedForeground}
+                style={{ marginTop: 1 }}
+            />
             <View style={{ flex: 1 }}>
                 <Text style={s.infoLabel}>{label}</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Text style={[s.infoValue, highlight && { color: "#4ADE80" }]}>{value}</Text>
+                    <Text style={[s.infoValue, highlight && { color: workerTheme.colors.success }]}>
+                        {value}
+                    </Text>
                     {tag && <View style={s.tag}><Text style={s.tagText}>{tag}</Text></View>}
                 </View>
             </View>
@@ -370,80 +421,124 @@ function InfoRow({ icon, label, value, tag, highlight }: {
 // =============================================================================
 
 const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#0A0A0A" },
-    centered: { flex: 1, backgroundColor: "#0A0A0A", justifyContent: "center", alignItems: "center" },
+    container: { flex: 1, backgroundColor: workerTheme.colors.background },
+    centered: {
+        flex: 1,
+        backgroundColor: workerTheme.colors.background,
+        justifyContent: "center",
+        alignItems: "center",
+    },
 
     topBar: {
         position: "absolute", top: 0, left: 0, right: 0, zIndex: 10,
         flexDirection: "row", justifyContent: "space-between",
         paddingHorizontal: 16, paddingBottom: 8,
     },
-    topBtn: { padding: 8, backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 20 },
+    topBtn: {
+        padding: 8,
+        backgroundColor: "rgba(255,255,255,0.92)",
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: workerTheme.colors.border,
+    },
 
     section: { paddingHorizontal: 20, marginBottom: 16 },
-    shiftTitle: { fontSize: 24, fontWeight: "700", color: "#fff", marginBottom: 4 },
-    orgName: { fontSize: 15, color: "#3B82F6", marginBottom: 2 },
-    locationName: { fontSize: 14, color: "#ccc" },
-    address: { fontSize: 13, color: "#666", marginTop: 2 },
+    shiftTitle: { fontSize: 24, fontWeight: "700", color: workerTheme.colors.foreground, marginBottom: 4 },
+    orgName: { fontSize: 15, color: workerTheme.colors.primary, marginBottom: 2 },
+    locationName: { fontSize: 14, color: workerTheme.colors.secondary },
+    address: { fontSize: 13, color: workerTheme.colors.mutedForeground, marginTop: 2 },
 
     statusBadge: {
         flexDirection: "row", alignItems: "center", gap: 6,
         alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 5,
-        borderRadius: 6, backgroundColor: "#1A1A1A",
+        borderRadius: 999, backgroundColor: workerTheme.colors.surfaceMuted,
     },
-    statusActive: { backgroundColor: "#052E16" },
-    statusDone: { backgroundColor: "#172554" },
+    statusActive: { backgroundColor: workerTheme.colors.successSoft },
+    statusDone: { backgroundColor: workerTheme.colors.secondarySoft },
     statusUpcoming: {},
-    statusText: { fontSize: 12, fontWeight: "600", color: "#888" },
+    statusText: { fontSize: 12, fontWeight: "600", color: workerTheme.colors.mutedForeground },
 
     infoCard: {
-        marginHorizontal: 16, backgroundColor: "#141414", borderRadius: 12,
-        padding: 14, marginBottom: 12,
+        marginHorizontal: 16,
+        backgroundColor: workerTheme.colors.surface,
+        borderRadius: 18,
+        padding: 14,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: workerTheme.colors.border,
     },
     infoRow: { flexDirection: "row", gap: 10, paddingVertical: 8 },
-    infoLabel: { fontSize: 12, color: "#666" },
-    infoValue: { fontSize: 15, color: "#fff", fontWeight: "500" },
-    tag: { backgroundColor: "#1E3A5F", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-    tagText: { fontSize: 10, color: "#60A5FA", fontWeight: "600" },
+    infoLabel: { fontSize: 12, color: workerTheme.colors.mutedForeground },
+    infoValue: { fontSize: 15, color: workerTheme.colors.foreground, fontWeight: "500" },
+    tag: {
+        backgroundColor: workerTheme.colors.secondarySoft,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 999,
+    },
+    tagText: { fontSize: 10, color: workerTheme.colors.secondary, fontWeight: "600" },
 
     timerCard: {
-        marginHorizontal: 16, backgroundColor: "#052E16", borderRadius: 12,
-        padding: 20, alignItems: "center", marginBottom: 12,
+        marginHorizontal: 16,
+        backgroundColor: workerTheme.colors.successSoft,
+        borderRadius: 18,
+        padding: 20,
+        alignItems: "center",
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#BFE3C4",
     },
-    timerLabel: { fontSize: 12, color: "#4ADE80", marginBottom: 4 },
-    timerValue: { fontSize: 36, fontWeight: "700", color: "#fff", fontVariant: ["tabular-nums"] },
+    timerLabel: { fontSize: 12, color: workerTheme.colors.success, marginBottom: 4 },
+    timerValue: { fontSize: 36, fontWeight: "700", color: workerTheme.colors.foreground, fontVariant: ["tabular-nums"] },
     proximityRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
-    proximityText: { fontSize: 12, color: "#4ADE80" },
+    proximityText: { fontSize: 12, color: workerTheme.colors.success },
 
     warningCard: {
         flexDirection: "row", alignItems: "center", gap: 8,
-        marginHorizontal: 16, backgroundColor: "#1C1004", borderRadius: 8,
-        padding: 12, marginBottom: 12,
+        marginHorizontal: 16,
+        backgroundColor: workerTheme.colors.warningSoft,
+        borderRadius: 14,
+        padding: 12,
+        marginBottom: 12,
     },
-    warningText: { fontSize: 13, color: "#EF4444", flex: 1 },
+    warningText: { fontSize: 13, color: workerTheme.colors.primary, flex: 1 },
 
     mapSection: { marginHorizontal: 16, marginBottom: 12 },
     mapPlaceholder: {
-        height: 140, backgroundColor: "#141414", borderRadius: 12,
+        height: 140,
+        backgroundColor: workerTheme.colors.surfaceMuted,
+        borderRadius: 18,
         justifyContent: "center", alignItems: "center", gap: 6,
+        borderWidth: 1,
+        borderColor: workerTheme.colors.border,
     },
-    mapCoords: { fontSize: 11, color: "#555" },
+    mapCoords: { fontSize: 11, color: workerTheme.colors.mutedForeground },
     directionsBtn: {
         flexDirection: "row", alignItems: "center", gap: 4,
         paddingVertical: 8, paddingHorizontal: 12, marginTop: 6,
     },
-    directionsText: { fontSize: 14, color: "#3B82F6", fontWeight: "500" },
+    directionsText: { fontSize: 14, color: workerTheme.colors.primary, fontWeight: "600" },
 
-    adjustLabel: { fontSize: 14, fontWeight: "600", color: "#fff", marginBottom: 6 },
-    adjustText: { fontSize: 13, color: "#888", lineHeight: 18 },
+    adjustLabel: { fontSize: 14, fontWeight: "600", color: workerTheme.colors.foreground, marginBottom: 6 },
+    adjustText: { fontSize: 13, color: workerTheme.colors.mutedForeground, lineHeight: 18 },
 
-    footer: { padding: 16, borderTopWidth: 1, borderTopColor: "#1A1A1A", backgroundColor: "#0A0A0A" },
+    footer: {
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: workerTheme.colors.border,
+        backgroundColor: workerTheme.colors.background,
+    },
     locRow: { alignItems: "center", marginBottom: 10 },
-    locText: { fontSize: 12, color: "#666" },
-    actionBtn: { height: 52, borderRadius: 26, justifyContent: "center", alignItems: "center" },
-    btnGreen: { backgroundColor: "#22C55E" },
-    btnRed: { backgroundColor: "#EF4444" },
-    btnDisabled: { backgroundColor: "#1A1A1A" },
-    btnText: { fontSize: 16, fontWeight: "700", color: "#000" },
-    btnTextDisabled: { fontSize: 16, fontWeight: "600", color: "#555" },
+    locText: { fontSize: 12, color: workerTheme.colors.mutedForeground },
+    actionBtn: {
+        height: 52,
+        borderRadius: 26,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    btnGreen: { backgroundColor: workerTheme.colors.success },
+    btnRed: { backgroundColor: workerTheme.colors.secondary },
+    btnDisabled: { backgroundColor: workerTheme.colors.surfaceMuted },
+    btnText: { fontSize: 16, fontWeight: "700", color: workerTheme.colors.white },
+    btnTextDisabled: { fontSize: 16, fontWeight: "600", color: workerTheme.colors.subtleForeground },
 });

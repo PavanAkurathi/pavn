@@ -1,16 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, Switch, ActivityIndicator, Alert, Text, TouchableOpacity } from 'react-native';
-import { api, WorkerPreferences } from '../lib/api';
-// Assuming a standard consistent layout component or using View directly if no global layout context
-// Will use View + SafeArea for now or verify if there is a Layout component.
-// Based on previous files, I haven't seen a global Layout, so standard React Native view.
+import { useEffect, useState } from "react";
+import {
+    View,
+    StyleSheet,
+    ScrollView,
+    Switch,
+    ActivityIndicator,
+    Alert,
+    Text,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { api, WorkerPreferences } from "../lib/api";
+import { workerTheme } from "../lib/theme";
 
 export default function NotificationPreferencesScreen() {
     const [loading, setLoading] = useState(true);
     const [preferences, setPreferences] = useState<WorkerPreferences | null>(null);
 
     useEffect(() => {
-        loadPreferences();
+        void loadPreferences();
     }, []);
 
     const loadPreferences = async () => {
@@ -18,7 +25,7 @@ export default function NotificationPreferencesScreen() {
             const data = await api.preferences.get();
             setPreferences(data);
         } catch (error) {
-            Alert.alert('Error', 'Failed to load preferences');
+            Alert.alert("Error", "Failed to load preferences");
             console.error(error);
         } finally {
             setLoading(false);
@@ -26,9 +33,10 @@ export default function NotificationPreferencesScreen() {
     };
 
     const togglePreference = async (key: keyof WorkerPreferences) => {
-        if (!preferences) return;
+        if (!preferences) {
+            return;
+        }
 
-        // Optimistic update
         const oldValue = preferences[key];
         const newValue = !oldValue;
 
@@ -37,98 +45,166 @@ export default function NotificationPreferencesScreen() {
         try {
             await api.preferences.update({ [key]: newValue });
         } catch (error) {
-            // Revert on failure
             setPreferences({ ...preferences, [key]: oldValue });
-            Alert.alert('Error', 'Failed to update setting');
+            Alert.alert("Error", "Failed to update setting");
         }
     };
 
     if (loading) {
         return (
-            <View style={styles.center}>
-                <ActivityIndicator size="large" />
-            </View>
+            <SafeAreaView style={s.center}>
+                <ActivityIndicator size="large" color={workerTheme.colors.primary} />
+            </SafeAreaView>
         );
     }
 
-    if (!preferences) return null;
+    if (!preferences) {
+        return null;
+    }
 
-    const renderToggle = (label: string, key: keyof WorkerPreferences, description?: string) => (
-        <View style={styles.row}>
-            <View style={styles.textContainer}>
-                <Text style={styles.label}>{label}</Text>
-                {description && <Text style={styles.description}>{description}</Text>}
+    const renderToggle = (
+        label: string,
+        key: keyof WorkerPreferences,
+        description?: string,
+    ) => (
+        <View style={s.row} key={key}>
+            <View style={s.textContainer}>
+                <Text style={s.label}>{label}</Text>
+                {description ? <Text style={s.description}>{description}</Text> : null}
             </View>
             <Switch
-                value={!!preferences[key]}
+                value={Boolean(preferences[key])}
                 onValueChange={() => togglePreference(key)}
+                thumbColor={workerTheme.colors.white}
+                trackColor={{
+                    false: workerTheme.colors.border,
+                    true: workerTheme.colors.primary,
+                }}
+                ios_backgroundColor={workerTheme.colors.border}
             />
         </View>
     );
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.header}>Notifications</Text>
+        <SafeAreaView style={s.container} edges={["bottom"]}>
+            <ScrollView contentContainerStyle={s.content}>
+                <Text style={s.header}>Notification preferences</Text>
+                <Text style={s.intro}>
+                    Shift reminders, schedule alerts, and arrival nudges are handled in the app. SMS remains reserved for authentication.
+                </Text>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionHeader}>Reminders</Text>
-                {renderToggle("Night Before Shift", "nightBeforeEnabled", "Get a reminder the night before your shift.")}
-                {renderToggle("1 Hour Before", "sixtyMinEnabled", "Get a heads-up 60 minutes before start.")}
-                {renderToggle("15 Minutes Before", "fifteenMinEnabled", "Get a final warning to head out.")}
-            </View>
+                <View style={s.section}>
+                    <Text style={s.sectionHeader}>Reminders</Text>
+                    <View style={s.sectionCard}>
+                        {renderToggle(
+                            "Night before shift",
+                            "nightBeforeEnabled",
+                            "Get a reminder the night before your shift.",
+                        )}
+                        {renderToggle(
+                            "1 hour before",
+                            "sixtyMinEnabled",
+                            "Get a heads-up 60 minutes before start.",
+                        )}
+                        {renderToggle(
+                            "15 minutes before",
+                            "fifteenMinEnabled",
+                            "Get a final warning to head out.",
+                        )}
+                    </View>
+                </View>
 
-            <View style={styles.section}>
-                <Text style={styles.sectionHeader}>Alerts</Text>
-                {renderToggle("Shift Starting", "shiftStartEnabled", "Notify when your shift technically begins.")}
-                {renderToggle("Late Warning", "lateWarningEnabled", "Alert if you haven't clocked in on time.")}
-                {renderToggle("Geofence Arrival", "geofenceAlertsEnabled", "Nudge to clock in when you arrive on site.")}
-            </View>
+                <View style={s.section}>
+                    <Text style={s.sectionHeader}>Alerts</Text>
+                    <View style={s.sectionCard}>
+                        {renderToggle(
+                            "Shift starting",
+                            "shiftStartEnabled",
+                            "Notify when your shift technically begins.",
+                        )}
+                        {renderToggle(
+                            "Late warning",
+                            "lateWarningEnabled",
+                            "Alert if you have not clocked in on time.",
+                        )}
+                        {renderToggle(
+                            "Arrival banner",
+                            "geofenceAlertsEnabled",
+                            "Show a clock-in alert when you arrive on site.",
+                        )}
+                    </View>
+                </View>
 
-            <View style={styles.section}>
-                {/* Placeholder for Quiet Hours UI - WH-203 implemented backend logic, but UI can be simple toggle for now */}
-                <Text style={styles.sectionHeader}>Quiet Hours</Text>
-                {renderToggle("Enable Quiet Hours", "quietHoursEnabled", "Suppress non-urgent notifications during set times.")}
-                {/* DatePicker logic omitted for MVP brevity, can be added later */}
-            </View>
-        </ScrollView>
+                <View style={s.section}>
+                    <Text style={s.sectionHeader}>Quiet hours</Text>
+                    <View style={s.sectionCard}>
+                        {renderToggle(
+                            "Enable quiet hours",
+                            "quietHoursEnabled",
+                            "Suppress non-urgent app notifications during set times.",
+                        )}
+                    </View>
+                </View>
+            </ScrollView>
+        </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
-        padding: 20,
+        backgroundColor: workerTheme.colors.background,
     },
     center: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: workerTheme.colors.background,
+    },
+    content: {
+        padding: 20,
+        paddingBottom: 40,
     },
     header: {
         fontSize: 28,
-        fontWeight: 'bold',
+        fontWeight: "700",
+        color: workerTheme.colors.foreground,
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    intro: {
+        fontSize: 14,
+        lineHeight: 21,
+        color: workerTheme.colors.mutedForeground,
         marginBottom: 24,
-        marginTop: 40,
     },
     section: {
-        marginBottom: 32,
+        marginBottom: 24,
     },
     sectionHeader: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 16,
-        color: '#666',
-        textTransform: 'uppercase',
+        fontSize: 12,
+        fontWeight: "700",
+        color: workerTheme.colors.mutedForeground,
+        marginBottom: 10,
         letterSpacing: 1,
+        textTransform: "uppercase",
+    },
+    sectionCard: {
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: workerTheme.colors.border,
+        backgroundColor: workerTheme.colors.surface,
+        overflow: "hidden",
     },
     row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: '#eee',
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: workerTheme.colors.border,
     },
     textContainer: {
         flex: 1,
@@ -136,11 +212,13 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 16,
-        fontWeight: '500',
+        fontWeight: "600",
+        color: workerTheme.colors.foreground,
         marginBottom: 4,
     },
     description: {
         fontSize: 14,
-        color: '#888',
+        lineHeight: 19,
+        color: workerTheme.colors.mutedForeground,
     },
 });

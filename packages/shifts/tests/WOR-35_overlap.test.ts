@@ -44,7 +44,7 @@ mock.module("@repo/database", () => ({
     idempotencyKey: { key: 'key' },
     scheduledNotification: {},
     workerAvailability: {},
-    location: {},
+    location: { id: 'id', organizationId: 'organization_id' },
     workerNotificationPreferences: {},
     member: {}
 }));
@@ -137,4 +137,3 @@ describe("Overlap Scope and Info Disclosure", () => {
         }
     });
 });
-

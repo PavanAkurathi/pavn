@@ -1,184 +1,214 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { useState, type ReactNode } from "react";
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    Switch,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { workerTheme } from "../lib/theme";
 
 export default function NotificationSettingsScreen() {
     const router = useRouter();
-
-    // Mock initial state
     const [settings, setSettings] = useState({
-        newSchedule: true,
+        scheduleUpdates: true,
         shiftChanges: true,
-        remindersPush: true,
-        remindersSMS: false,
-        openShifts: true,
+        arrivalBanners: true,
+        conflictAlerts: true,
+        preShiftReminders: true,
         teamAnnouncements: true,
     });
 
-    const toggleSwitch = (key: string) => {
-        setSettings(prev => ({ ...prev, [key]: !prev[key as keyof typeof settings] }));
+    const toggle = (key: keyof typeof settings) => {
+        setSettings((current) => ({ ...current, [key]: !current[key] }));
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+        <SafeAreaView style={s.container} edges={["top"]}>
+            <View style={s.header}>
+                <TouchableOpacity onPress={() => router.back()} style={s.backButton}>
+                    <Ionicons name="arrow-back" size={24} color={workerTheme.colors.foreground} />
                 </TouchableOpacity>
-                <Text style={styles.title}>Notification Settings</Text>
+                <Text style={s.title}>Notifications</Text>
             </View>
 
-            <ScrollView style={styles.content}>
+            <ScrollView contentContainerStyle={s.content}>
+                <Text style={s.intro}>
+                    Arrival, conflict, and shift reminders are handled in the app. SMS stays reserved for sign-in verification.
+                </Text>
 
-                {/* Shift Updates */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>SHIFT UPDATES</Text>
-                    <View style={styles.row}>
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>New Schedule Published</Text>
-                            <Text style={styles.rowSubtitle}>Get notified when a new schedule is live.</Text>
-                        </View>
-                        <Switch
-                            trackColor={{ false: "#333", true: "#fff" }}
-                            thumbColor={settings.newSchedule ? "#000" : "#888"}
-                            ios_backgroundColor="#333"
-                            onValueChange={() => toggleSwitch("newSchedule")}
-                            value={settings.newSchedule}
-                        />
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.row}>
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>Shift Changes</Text>
-                            <Text style={styles.rowSubtitle}>Alerts for modified or cancelled shifts.</Text>
-                        </View>
-                        <Switch
-                            trackColor={{ false: "#333", true: "#fff" }}
-                            thumbColor={settings.shiftChanges ? "#000" : "#888"}
-                            ios_backgroundColor="#333"
-                            onValueChange={() => toggleSwitch("shiftChanges")}
-                            value={settings.shiftChanges}
-                        />
-                    </View>
-                </View>
+                <Section title="Shift updates">
+                    <ToggleRow
+                        title="Schedule published"
+                        subtitle="See when a new schedule is ready."
+                        value={settings.scheduleUpdates}
+                        onValueChange={() => toggle("scheduleUpdates")}
+                    />
+                    <ToggleRow
+                        title="Shift changes"
+                        subtitle="Get alerted when a shift is modified or cancelled."
+                        value={settings.shiftChanges}
+                        onValueChange={() => toggle("shiftChanges")}
+                    />
+                </Section>
 
-                {/* Reminders */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>REMINDERS</Text>
-                    <View style={styles.row}>
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>Push Notifications</Text>
-                            <Text style={styles.rowSubtitle}>Remind me 1 hour before shift starts.</Text>
-                        </View>
-                        <Switch
-                            trackColor={{ false: "#333", true: "#fff" }}
-                            thumbColor={settings.remindersPush ? "#000" : "#888"}
-                            ios_backgroundColor="#333"
-                            onValueChange={() => toggleSwitch("remindersPush")}
-                            value={settings.remindersPush}
-                        />
-                    </View>
-                    <View style={styles.divider} />
-                    <View style={styles.row}>
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>SMS Reminders</Text>
-                            <Text style={styles.rowSubtitle}>Receive text message reminders.</Text>
-                        </View>
-                        <Switch
-                            trackColor={{ false: "#333", true: "#fff" }}
-                            thumbColor={settings.remindersSMS ? "#000" : "#888"}
-                            ios_backgroundColor="#333"
-                            onValueChange={() => toggleSwitch("remindersSMS")}
-                            value={settings.remindersSMS}
-                        />
-                    </View>
-                </View>
+                <Section title="On-site alerts">
+                    <ToggleRow
+                        title="Arrival banner"
+                        subtitle="Show an in-app alert when you arrive at the venue and can clock in."
+                        value={settings.arrivalBanners}
+                        onValueChange={() => toggle("arrivalBanners")}
+                    />
+                    <ToggleRow
+                        title="Conflict alerts"
+                        subtitle="Notify you when shifts overlap so you can resolve them."
+                        value={settings.conflictAlerts}
+                        onValueChange={() => toggle("conflictAlerts")}
+                    />
+                </Section>
 
-                {/* Opportunities */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>OPPORTUNITIES</Text>
-                    <View style={styles.row}>
-                        <View style={styles.rowText}>
-                            <Text style={styles.rowTitle}>Open Shifts</Text>
-                            <Text style={styles.rowSubtitle}>Notify when shifts become available to pick up.</Text>
-                        </View>
-                        <Switch
-                            trackColor={{ false: "#333", true: "#fff" }}
-                            thumbColor={settings.openShifts ? "#000" : "#888"}
-                            ios_backgroundColor="#333"
-                            onValueChange={() => toggleSwitch("openShifts")}
-                            value={settings.openShifts}
-                        />
-                    </View>
-                </View>
-
+                <Section title="Reminders">
+                    <ToggleRow
+                        title="Pre-shift reminders"
+                        subtitle="Receive app reminders before your shift starts."
+                        value={settings.preShiftReminders}
+                        onValueChange={() => toggle("preShiftReminders")}
+                    />
+                    <ToggleRow
+                        title="Team announcements"
+                        subtitle="See important updates from your organizations."
+                        value={settings.teamAnnouncements}
+                        onValueChange={() => toggle("teamAnnouncements")}
+                    />
+                </Section>
             </ScrollView>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+function Section({
+    title,
+    children,
+}: {
+    title: string;
+    children: ReactNode;
+}) {
+    return (
+        <View style={s.section}>
+            <Text style={s.sectionTitle}>{title}</Text>
+            <View style={s.sectionBody}>{children}</View>
+        </View>
+    );
+}
+
+function ToggleRow({
+    title,
+    subtitle,
+    value,
+    onValueChange,
+}: {
+    title: string;
+    subtitle: string;
+    value: boolean;
+    onValueChange: () => void;
+}) {
+    return (
+        <View style={s.row}>
+            <View style={s.rowText}>
+                <Text style={s.rowTitle}>{title}</Text>
+                <Text style={s.rowSubtitle}>{subtitle}</Text>
+            </View>
+            <Switch
+                value={value}
+                onValueChange={onValueChange}
+                thumbColor={workerTheme.colors.white}
+                trackColor={{
+                    false: workerTheme.colors.border,
+                    true: workerTheme.colors.primary,
+                }}
+                ios_backgroundColor={workerTheme.colors.border}
+            />
+        </View>
+    );
+}
+
+const s = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: workerTheme.colors.background,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
+        gap: 12,
         paddingHorizontal: 16,
-        paddingBottom: 16,
+        paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#222",
+        borderBottomColor: workerTheme.colors.border,
     },
     backButton: {
-        marginRight: 16,
+        marginLeft: -4,
+        padding: 4,
     },
     title: {
         fontSize: 20,
-        fontWeight: "bold",
-        color: "#fff",
+        fontWeight: "700",
+        color: workerTheme.colors.foreground,
     },
     content: {
-        flex: 1,
+        padding: 20,
+        paddingBottom: 40,
+    },
+    intro: {
+        fontSize: 14,
+        lineHeight: 21,
+        color: workerTheme.colors.mutedForeground,
+        marginBottom: 20,
     },
     section: {
-        marginTop: 24,
+        marginBottom: 22,
     },
-    sectionHeader: {
+    sectionTitle: {
         fontSize: 12,
-        fontWeight: "600",
-        color: "#666",
-        paddingHorizontal: 16,
-        marginBottom: 8,
+        fontWeight: "700",
+        textTransform: "uppercase",
         letterSpacing: 1,
+        color: workerTheme.colors.mutedForeground,
+        marginBottom: 10,
+    },
+    sectionBody: {
+        borderWidth: 1,
+        borderColor: workerTheme.colors.border,
+        borderRadius: 18,
+        backgroundColor: workerTheme.colors.surface,
+        overflow: "hidden",
     },
     row: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        paddingVertical: 16,
+        gap: 16,
         paddingHorizontal: 16,
-        backgroundColor: "#111",
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: workerTheme.colors.border,
     },
     rowText: {
         flex: 1,
-        marginRight: 16,
     },
     rowTitle: {
         fontSize: 16,
-        color: "#fff",
-        fontWeight: "500",
+        fontWeight: "600",
+        color: workerTheme.colors.foreground,
     },
     rowSubtitle: {
+        marginTop: 4,
         fontSize: 13,
-        color: "#888",
-        marginTop: 2,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: "#222",
-        marginLeft: 16,
+        lineHeight: 18,
+        color: workerTheme.colors.mutedForeground,
     },
 });

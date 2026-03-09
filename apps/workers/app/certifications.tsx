@@ -1,16 +1,16 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { workerTheme } from "../lib/theme";
 
-// Mock Data
 const CERTIFICATIONS = [
     {
         id: "1",
         name: "ServSafe Alcohol",
         issuer: "National Restaurant Association",
         expires: "2025-08-15",
-        status: "valid", // valid, expiring, expired
+        status: "valid",
     },
     {
         id: "2",
@@ -21,179 +21,174 @@ const CERTIFICATIONS = [
     },
 ];
 
-const StatusBadge = ({ status }: { status: string }) => {
-    let color = "#22C55E"; // Green
-    let bg = "rgba(34, 197, 94, 0.1)";
+function StatusBadge({ status }: { status: string }) {
+    let color: string = workerTheme.colors.success;
+    let backgroundColor: string = workerTheme.colors.successSoft;
     let label = "Valid";
 
     if (status === "expired") {
-        color = "#EF4444"; // Red
-        bg = "rgba(239, 68, 68, 0.1)";
+        color = workerTheme.colors.primary;
+        backgroundColor = workerTheme.colors.primarySoft;
         label = "Expired";
     } else if (status === "expiring") {
-        color = "#F59E0B"; // Amber
-        bg = "rgba(245, 158, 11, 0.1)";
-        label = "Expiring Soon";
+        color = workerTheme.colors.warning;
+        backgroundColor = workerTheme.colors.warningSoft;
+        label = "Expiring soon";
     }
 
     return (
-        <View style={[styles.badge, { backgroundColor: bg, borderColor: color }]}>
-            <Text style={[styles.badgeText, { color: color }]}>{label}</Text>
+        <View style={[s.badge, { backgroundColor }]}>
+            <Text style={[s.badgeText, { color }]}>{label}</Text>
         </View>
     );
-};
+}
 
 export default function CertificationsScreen() {
     const router = useRouter();
 
-    const renderItem = ({ item }: { item: typeof CERTIFICATIONS[0] }) => (
-        <TouchableOpacity style={styles.card}>
-            <View style={styles.cardHeader}>
-                <View style={styles.iconContainer}>
-                    <Ionicons name="ribbon-outline" size={20} color="#fff" />
-                </View>
-                <View style={styles.cardText}>
-                    <Text style={styles.cardTitle}>{item.name}</Text>
-                    <Text style={styles.cardSubtitle}>{item.issuer}</Text>
-                </View>
-                <StatusBadge status={item.status} />
-            </View>
-            <View style={styles.cardFooter}>
-                <Text style={styles.expiryText}>Expires: {item.expires}</Text>
-                <Ionicons name="chevron-forward" size={16} color="#666" />
-            </View>
-        </TouchableOpacity>
-    );
-
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+        <SafeAreaView style={s.container} edges={["top"]}>
+            <View style={s.header}>
+                <TouchableOpacity onPress={() => router.back()} style={s.iconButton}>
+                    <Ionicons name="arrow-back" size={24} color={workerTheme.colors.foreground} />
                 </TouchableOpacity>
-                <Text style={styles.title}>Certifications</Text>
-                <TouchableOpacity style={styles.addButton} onPress={() => router.push("/add-certification")}>
-                    <Ionicons name="add" size={24} color="#fff" />
+                <Text style={s.title}>Certifications</Text>
+                <TouchableOpacity style={s.iconButton} onPress={() => router.push("/add-certification")}>
+                    <Ionicons name="add" size={24} color={workerTheme.colors.foreground} />
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.content}>
-                <FlatList
-                    data={CERTIFICATIONS}
-                    renderItem={renderItem}
-                    keyExtractor={(item) => item.id}
-                    contentContainerStyle={styles.listContent}
-                    ListEmptyComponent={
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyText}>No certifications added yet.</Text>
+            <FlatList
+                data={CERTIFICATIONS}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={s.listContent}
+                renderItem={({ item }) => (
+                    <TouchableOpacity style={s.card}>
+                        <View style={s.cardHeader}>
+                            <View style={s.iconWrap}>
+                                <Ionicons
+                                    name="ribbon-outline"
+                                    size={18}
+                                    color={workerTheme.colors.secondary}
+                                />
+                            </View>
+                            <View style={s.cardText}>
+                                <Text style={s.cardTitle}>{item.name}</Text>
+                                <Text style={s.cardSubtitle}>{item.issuer}</Text>
+                            </View>
+                            <StatusBadge status={item.status} />
                         </View>
-                    }
-                />
-            </View>
+
+                        <View style={s.cardFooter}>
+                            <Text style={s.expiryText}>Expires {item.expires}</Text>
+                            <Ionicons
+                                name="chevron-forward"
+                                size={16}
+                                color={workerTheme.colors.mutedForeground}
+                            />
+                        </View>
+                    </TouchableOpacity>
+                )}
+                ListEmptyComponent={
+                    <View style={s.emptyState}>
+                        <Text style={s.emptyText}>No certifications added yet.</Text>
+                    </View>
+                }
+            />
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: workerTheme.colors.background,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 16,
-        paddingBottom: 16,
+        paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#222",
+        borderBottomColor: workerTheme.colors.border,
     },
-    backButton: {
+    iconButton: {
         padding: 4,
-        marginLeft: -4,
     },
     title: {
         fontSize: 18,
-        fontWeight: "bold",
-        color: "#fff",
-    },
-    addButton: {
-        padding: 4,
-        marginRight: -4,
-    },
-    content: {
-        flex: 1,
+        fontWeight: "700",
+        color: workerTheme.colors.foreground,
     },
     listContent: {
         padding: 16,
+        paddingBottom: 40,
     },
     card: {
-        backgroundColor: "#111",
-        borderRadius: 12,
-        padding: 16,
         marginBottom: 12,
+        padding: 16,
+        borderRadius: 18,
         borderWidth: 1,
-        borderColor: "#222",
+        borderColor: workerTheme.colors.border,
+        backgroundColor: workerTheme.colors.surface,
     },
     cardHeader: {
         flexDirection: "row",
         alignItems: "flex-start",
-        marginBottom: 12,
+        gap: 12,
     },
-    iconContainer: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: "#222",
+    iconWrap: {
+        width: 34,
+        height: 34,
+        borderRadius: 10,
         alignItems: "center",
         justifyContent: "center",
-        marginRight: 12,
+        backgroundColor: workerTheme.colors.secondarySoft,
     },
     cardText: {
         flex: 1,
-        marginRight: 8,
     },
     cardTitle: {
         fontSize: 16,
-        fontWeight: "600",
-        color: "#fff",
-        marginBottom: 2,
+        fontWeight: "700",
+        color: workerTheme.colors.foreground,
     },
     cardSubtitle: {
+        marginTop: 2,
         fontSize: 13,
-        color: "#888",
+        color: workerTheme.colors.mutedForeground,
     },
     badge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
-        borderWidth: 1,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
     },
     badgeText: {
         fontSize: 10,
         fontWeight: "700",
         textTransform: "uppercase",
-        letterSpacing: 0.5,
+        letterSpacing: 0.6,
     },
     cardFooter: {
+        marginTop: 14,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: workerTheme.colors.border,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        borderTopWidth: 1,
-        borderTopColor: "#222",
-        paddingTop: 12,
     },
     expiryText: {
         fontSize: 12,
-        color: "#666",
-        fontFamily: "monospace", // Giving it a slight 'audit' feel
+        color: workerTheme.colors.mutedForeground,
     },
     emptyState: {
-        padding: 32,
+        paddingVertical: 40,
         alignItems: "center",
     },
     emptyText: {
-        color: "#666",
         fontSize: 14,
+        color: workerTheme.colors.mutedForeground,
     },
 });

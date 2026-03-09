@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { authClient } from "../../lib/auth-client";
 import { Ionicons } from "@expo/vector-icons";
+import { workerTheme } from "../../lib/theme";
 
 export default function InviteRedemptionScreen() {
     const { code } = useLocalSearchParams();
@@ -91,7 +92,7 @@ export default function InviteRedemptionScreen() {
             <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.iconCircle}>
-                        <Ionicons name="phone-portrait-outline" size={32} color="#000" />
+                        <Ionicons name="phone-portrait-outline" size={32} color={workerTheme.colors.secondary} />
                     </View>
                     <Text style={styles.title}>
                         {step === 'details' ? "Let's get you set up" : "Check your texts"}
@@ -148,7 +149,7 @@ export default function InviteRedemptionScreen() {
                             disabled={loading}
                         >
                             {loading ? (
-                                <ActivityIndicator color="#fff" />
+                                <ActivityIndicator color={workerTheme.colors.white} />
                             ) : (
                                 <Text style={styles.buttonText}>Send Code</Text>
                             )}
@@ -174,14 +175,14 @@ export default function InviteRedemptionScreen() {
                             disabled={loading}
                         >
                             {loading ? (
-                                <ActivityIndicator color="#fff" />
+                                <ActivityIndicator color={workerTheme.colors.white} />
                             ) : (
                                 <Text style={styles.buttonText}>Verify & Join</Text>
                             )}
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={() => setStep('details')} style={{ alignItems: 'center', marginTop: 16 }}>
-                            <Text style={{ color: '#666' }}>Change Number</Text>
+                            <Text style={{ color: workerTheme.colors.secondary }}>Change Number</Text>
                         </TouchableOpacity>
                     </View>
                 )}
@@ -193,7 +194,7 @@ export default function InviteRedemptionScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: workerTheme.colors.background,
     },
     content: {
         padding: 24,
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: "#F0F0F0",
+        backgroundColor: workerTheme.colors.secondarySoft,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 16,
@@ -215,12 +216,12 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: "bold",
-        color: "#000",
+        color: workerTheme.colors.foreground,
         marginBottom: 8,
     },
     subtitle: {
         fontSize: 16,
-        color: "#666",
+        color: workerTheme.colors.mutedForeground,
         textAlign: "center",
         marginHorizontal: 32,
     },
@@ -228,13 +229,13 @@ const styles = StyleSheet.create({
         marginTop: 16,
         paddingHorizontal: 12,
         paddingVertical: 6,
-        backgroundColor: "#E8F5E9",
+        backgroundColor: workerTheme.colors.successSoft,
         borderRadius: 16,
         borderWidth: 1,
         borderColor: "#C8E6C9",
     },
     codeText: {
-        color: "#2E7D32",
+        color: workerTheme.colors.success,
         fontSize: 12,
         fontWeight: "600",
     },
@@ -247,18 +248,19 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#333",
+        color: workerTheme.colors.foreground,
     },
     input: {
         borderWidth: 1,
-        borderColor: "#E0E0E0",
+        borderColor: workerTheme.colors.border,
         borderRadius: 12,
         padding: 16,
         fontSize: 16,
-        backgroundColor: "#FAFAFA",
+        backgroundColor: workerTheme.colors.surfaceInset,
+        color: workerTheme.colors.foreground,
     },
     button: {
-        backgroundColor: "#000",
+        backgroundColor: workerTheme.colors.primary,
         height: 56,
         borderRadius: 12,
         alignItems: "center",
@@ -274,7 +276,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     buttonText: {
-        color: "#fff",
+        color: workerTheme.colors.white,
         fontSize: 16,
         fontWeight: "600",
     },

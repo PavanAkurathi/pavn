@@ -115,16 +115,7 @@ shiftsRouter.openapi(upcomingRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getUpcomingShifts(orgId);
-    return c.json({ dateGroups: result } as any, 200); // Check mapper struct? Assume array or object?
-    // Wait, getUpcomingShifts returns DTOs (array of shifts?). 
-    // Previous schema was { dateGroups: ... }? Or just array?
-    // Step 238: getUpcomingShifts returns `dtos` (array).
-    // Step 204 (old shifts.ts) used `c.json({ shifts: ... })`.
-    // The Schema `UpcomingShiftsResponseSchema` expects what?
-    // I should check schema. Assuming it expects { shifts: [] } or just []?
-    // Old route used `return c.json(result as any, 200);`.
-    // If result is array, then it is JSON array.
-    // I'll wrap as is.
+    return c.json(result as any, 200);
 });
 
 const getPendingRoute = createRoute({
@@ -343,9 +334,14 @@ shiftsRouter.openapi(updateTimesheetRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const user = c.get("user");
+    const shiftId = c.req.param("shiftId");
     const body = await c.req.json();
 
-    const result = await updateTimesheet(body, orgId, user?.id || "system");
+    if (body?.shiftId && body.shiftId !== shiftId) {
+        return c.json({ error: "Shift ID mismatch" }, 400);
+    }
+
+    const result = await updateTimesheet({ ...body, shiftId }, orgId, user?.id || "system");
     return c.json(result as any, 200);
 });
 

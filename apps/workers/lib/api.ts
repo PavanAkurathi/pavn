@@ -1,8 +1,11 @@
 import { CONFIG } from './config';
 import * as SecureStore from 'expo-secure-store';
-import { authClient } from './auth-client';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
+import {
+    clearStoredActiveOrganizationId,
+    resolveActiveOrganizationId,
+} from './organization-context';
 
 // =============================================================================
 // CUSTOM ERRORS
@@ -13,6 +16,13 @@ export class SessionExpiredError extends Error {
     constructor() {
         super('Session expired');
         this.name = 'SessionExpiredError';
+    }
+}
+
+export class OrganizationContextError extends Error {
+    constructor(message: string = 'Organization context required') {
+        super(message);
+        this.name = 'OrganizationContextError';
     }
 }
 
@@ -120,12 +130,14 @@ async function getAuthHeaders(includeOrg: boolean = true): Promise<AuthHeaders> 
     const token = await SecureStore.getItemAsync("better-auth.session_token");
     const headers: AuthHeaders = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
     };
 
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
     if (includeOrg) {
-        const session = await authClient.getSession();
-        const activeOrgId = session.data?.session?.activeOrganizationId;
+        const activeOrgId = await resolveActiveOrganizationId();
         if (activeOrgId) {
             headers['x-org-id'] = activeOrgId;
         }
@@ -134,39 +146,93 @@ async function getAuthHeaders(includeOrg: boolean = true): Promise<AuthHeaders> 
     return headers;
 }
 
-async function fetchJson<T>(url: string, opts?: RequestInit): Promise<T> {
+async function parseErrorResponse(response: Response): Promise<{ message: string; code?: string }> {
+    try {
+        const errJson = await response.json();
+        return {
+            message: errJson.error || errJson.message || response.statusText,
+            code: errJson.code,
+        };
+    } catch {
+        return {
+            message: await response.text() || response.statusText,
+        };
+    }
+}
+
+async function expireSession(): Promise<void> {
+    await Promise.all([
+        SecureStore.deleteItemAsync("better-auth.session_token"),
+        clearStoredActiveOrganizationId(),
+    ]);
+
+    Toast.show({
+        type: 'info',
+        text1: 'Session Expired',
+        text2: 'Please log in again to continue',
+        visibilityTime: 3000,
+    });
+
+    setTimeout(() => {
+        router.replace('/(auth)/login');
+    }, 500);
+}
+
+async function retryWithFreshOrganization<T>(url: string, opts?: RequestInit): Promise<T | null> {
+    const activeOrgId = await resolveActiveOrganizationId(true);
+    if (!activeOrgId) {
+        return null;
+    }
+
+    const headers = new Headers(opts?.headers);
+    headers.set('x-org-id', activeOrgId);
+
+    return fetchJson<T>(url, {
+        ...opts,
+        headers,
+    }, false);
+}
+
+async function fetchJson<T>(url: string, opts?: RequestInit, allowOrgRetry: boolean = true): Promise<T> {
     const response = await fetch(url, opts);
 
     if (response.status === 401) {
-        await SecureStore.deleteItemAsync("better-auth.session_token");
-        
-        // Show user-friendly notification
-        Toast.show({
-            type: 'info',
-            text1: 'Session Expired',
-            text2: 'Please log in again to continue',
-            visibilityTime: 3000,
-        });
-        
-        // Small delay to ensure Toast is visible before redirect
-        setTimeout(() => {
-            router.replace('/login');
-        }, 500);
-        
-        // Throw custom error that calling code can detect and ignore
-        throw new SessionExpiredError();
+        const error = await parseErrorResponse(response);
+
+        if (allowOrgRetry && error.code === 'ORG_REQUIRED') {
+            const retryResult = await retryWithFreshOrganization<T>(url, opts);
+            if (retryResult !== null) {
+                return retryResult;
+            }
+        }
+
+        if (error.code === 'AUTH_REQUIRED') {
+            await expireSession();
+            throw new SessionExpiredError();
+        }
+
+        throw new OrganizationContextError(error.message);
+    }
+
+    if (response.status === 403) {
+        const error = await parseErrorResponse(response);
+
+        if (allowOrgRetry && error.code === 'ACCESS_DENIED') {
+            await clearStoredActiveOrganizationId();
+            const retryResult = await retryWithFreshOrganization<T>(url, opts);
+            if (retryResult !== null) {
+                return retryResult;
+            }
+        }
+
+        throw new Error(error.message);
     }
 
     if (!response.ok) {
-        let errMsg: string;
-        try {
-            const errJson = await response.json();
-            errMsg = errJson.error || errJson.message || response.statusText;
-        } catch {
-            errMsg = await response.text() || response.statusText;
-        }
-        throw new Error(errMsg);
+        const error = await parseErrorResponse(response);
+        throw new Error(error.message);
     }
+
     return response.json();
 }
 
@@ -295,7 +361,7 @@ export const api = {
     // -------------------------------------------------------------------------
     devices: {
         register: async (data: any) => {
-            const headers = await getAuthHeaders();
+            const headers = await getAuthHeaders(false);
             return fetchJson(`${CONFIG.API_URL}/devices/register`, {
                 method: 'POST', headers, body: JSON.stringify(data),
             });

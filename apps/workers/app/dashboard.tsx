@@ -4,6 +4,7 @@ import { useGeofence } from '../hooks/useGeofence';
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { authClient } from '../lib/auth-client';
+import { clearStoredActiveOrganizationId } from '../lib/organization-context';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -76,6 +77,7 @@ export default function Dashboard() {
 
     async function handleLogout() {
         await authClient.signOut();
+        await clearStoredActiveOrganizationId();
         router.replace("/(auth)/login");
     }
 

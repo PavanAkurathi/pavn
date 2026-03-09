@@ -54,7 +54,7 @@ mock.module("@repo/database", () => ({
     idempotencyKey: {},
     scheduledNotification: {},
     workerAvailability: {},
-    location: {},
+    location: { id: 'id', organizationId: 'organization_id' },
     workerNotificationPreferences: {},
     member: {}
 }));
@@ -222,6 +222,29 @@ describe("Publish  (WH-131 Fix)", () => {
             expect(e.code).toBe("INVALID_PAST_DATES");
             expect(e.message).toContain("1999-01-01");
         }
+    });
+
+    test("rejects a location that is outside the active organization", async () => {
+        const orgId = "org_123";
+        const body = {
+            organizationId: orgId,
+            locationId: "foreign_loc",
+            timezone: "UTC",
+            schedules: [{
+                startTime: "09:00",
+                endTime: "17:00",
+                dates: ["2026-06-10"],
+                scheduleName: "Foreign Venue",
+                positions: []
+            }]
+        };
+
+        mockBuilder.query.location.findFirst.mockResolvedValueOnce(null);
+
+        await expect(publishSchedule(body, orgId)).rejects.toMatchObject({
+            statusCode: 404,
+            code: "NOT_FOUND",
+        });
     });
 
     // WH-130: Recurrence Tests

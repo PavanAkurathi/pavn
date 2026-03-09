@@ -5,7 +5,7 @@ import { workerLocation, shiftAssignment, shift, member, location } from "@repo/
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { sendSMS } from "@repo/auth";
+import { sendPushNotification } from "@repo/notifications";
 import { AppError } from "@repo/observability";
 
 const LocationPingSchema = z.object({
@@ -39,33 +39,39 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
 
     // 3. Find shift
     const now = new Date();
-    const activeAssignment = await db.query.shiftAssignment.findFirst({
-        where: and(
+    const activeAssignments = await db.select({
+        assignment: shiftAssignment,
+        shift,
+        location,
+    })
+        .from(shiftAssignment)
+        .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+        .leftJoin(location, eq(shift.locationId, location.id))
+        .where(and(
             eq(shiftAssignment.workerId, workerId),
+            eq(shift.organizationId, orgId),
             inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress'])
-        ),
-        with: {
-            shift: {
-                with: { location: true }
-            }
-        }
-    });
+        ))
+        .orderBy(desc(shift.startTime));
 
     let relevantShift = null;
     let relevantAssignment = null;
     let venueLocationId = null;
     let venueName = null;
 
-    if (activeAssignment?.shift) {
-        const shiftStart = new Date(activeAssignment.shift.startTime);
-        const shiftEnd = new Date(activeAssignment.shift.endTime);
+    if (activeAssignments.length > 0) {
         const bufferMs = 60 * 60 * 1000;
+        const activeAssignment = activeAssignments.find(({ shift }) => {
+            const shiftStart = new Date(shift.startTime);
+            const shiftEnd = new Date(shift.endTime);
+            return now.getTime() >= shiftStart.getTime() - bufferMs && now.getTime() <= shiftEnd.getTime() + bufferMs;
+        });
 
-        if (now.getTime() >= shiftStart.getTime() - bufferMs && now.getTime() <= shiftEnd.getTime() + bufferMs) {
+        if (activeAssignment) {
             relevantShift = activeAssignment.shift;
-            relevantAssignment = activeAssignment;
+            relevantAssignment = activeAssignment.assignment;
             venueLocationId = activeAssignment.shift.locationId;
-            venueName = activeAssignment.shift.location?.name;
+            venueName = activeAssignment.location?.name;
         } else {
             return { success: true, message: "Ignored: Outside 60m shift window" };
         }
@@ -81,8 +87,8 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
 
     if (venueLocationId) {
         const [geoResult] = await db.select({
-            isWithin: sql<boolean>`ST_DWithin(${location.position}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
-            distance: sql<number>`ST_Distance(${location.position}, ST_GeogFromText(${point}))`,
+            isWithin: sql<boolean>`ST_DWithin(${location.position}::geography, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+            distance: sql<number>`ST_Distance(${location.position}::geography, ST_GeogFromText(${point}))`,
             radius: location.geofenceRadius
         })
             .from(location)
@@ -125,11 +131,16 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
     if (isOnSite && relevantAssignment && !relevantAssignment.actualClockIn) {
         if (!previousPing || !previousPing.isOnSite) {
             eventType = 'arrival';
-            // Send SMS
-            if (membership.user.phoneNumber) {
-                const message = `Hi ${membership.user.name}, you have arrived at ${venueName}. Please remember to clock in using the app.`;
-                sendSMS(membership.user.phoneNumber, message).catch(err => console.error("SMS failed", err));
-            }
+            sendPushNotification({
+                workerId,
+                title: "You've arrived",
+                body: `You are at ${venueName || "your shift location"}. Open the app to clock in.`,
+                data: {
+                    type: "shift_arrival",
+                    shiftId: relevantShift?.id || null,
+                    url: "/(tabs)",
+                },
+            }).catch(err => console.error("Arrival push failed", err));
         }
     }
 
@@ -147,15 +158,6 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
                         updatedAt: now,
                     })
                     .where(eq(shiftAssignment.id, relevantAssignment.id));
-
-                if (membership.user.phoneNumber) {
-                    try {
-                        const message = `Hi ${membership.user.name}, we detected you left the venue. You have been flagged for review. Please clock out or contact your manager.`;
-                        await sendSMS(membership.user.phoneNumber, message);
-                    } catch (err) {
-                        console.error("SMS failed", err);
-                    }
-                }
             }
         }
     }

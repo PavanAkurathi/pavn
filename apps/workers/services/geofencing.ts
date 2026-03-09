@@ -32,8 +32,8 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
                 await Notifications.scheduleNotificationAsync({
                     content: {
                         title: "You've arrived!",
-                        body: "Tap to clock in for your shift.",
-                        data: { url: "/clock-in" },
+                        body: "Open the app to clock in or clock out.",
+                        data: { url: "/(tabs)" },
                     },
                     trigger: null, // Immediate
                 });
@@ -49,22 +49,25 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
  */
 export async function syncGeofences() {
     try {
-
-
         // 1. Fetch upcoming shifts
-        const shifts = await api.shifts.getUpcomingWithLocation();
-        await registerGeofences(shifts);
+        const result = await api.worker.getAllShifts('upcoming');
+        await registerGeofences(result.shifts);
     } catch (error) {
         console.error('[GEOFENCE] Sync failed:', error);
     }
 }
 
 export async function registerGeofences(shifts: WorkerShift[]) {
-    const regions: Location.LocationRegion[] = [];
+    const regionsByLocation = new Map<string, Location.LocationRegion>();
 
     for (const shift of shifts) {
-        if (shift.location && shift.location.latitude && shift.location.longitude) {
-            regions.push({
+        if (
+            shift.location &&
+            typeof shift.location.latitude === 'number' &&
+            typeof shift.location.longitude === 'number' &&
+            !regionsByLocation.has(shift.location.id)
+        ) {
+            regionsByLocation.set(shift.location.id, {
                 identifier: shift.location.id,
                 latitude: shift.location.latitude,
                 longitude: shift.location.longitude,
@@ -74,6 +77,8 @@ export async function registerGeofences(shifts: WorkerShift[]) {
             });
         }
     }
+
+    const regions = Array.from(regionsByLocation.values());
 
     if (regions.length > 0) {
         // Expo limits to 20 regions

@@ -151,8 +151,8 @@ app.use("*", async (c, next) => {
 
     // Validate tenant context
     // Some worker routes are cross-org (no x-org-id needed)
-    const ORG_FREE_PATHS = ['/worker/all-shifts', '/worker/organizations'];
-    const isOrgFree = ORG_FREE_PATHS.some(p => c.req.path.endsWith(p));
+    const ORG_FREE_PREFIXES = ['/worker/all-shifts', '/worker/organizations', '/devices'];
+    const isOrgFree = ORG_FREE_PREFIXES.some(prefix => c.req.path.startsWith(prefix));
 
     if (isOrgFree) {
         // Cross-org route: authenticated by session only, no org context

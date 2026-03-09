@@ -26,11 +26,16 @@ export const updateTimesheet = async (body: any, orgId: string, actorId: string 
     const { shiftId, workerId, action, data } = parseResult.data;
 
     if (action === 'mark_no_show') {
-        // Fix: Find assignment ID first
-        const assignment = await AssignmentService.getAssignment(shiftId, workerId); // Need to check if this method exists or implement lookup
+        const assignment = await AssignmentService.getAssignment(shiftId, workerId, orgId);
         if (!assignment) throw new AppError("Assignment not found", "NOT_FOUND", 404);
 
-        await AssignmentService.updateStatus(actorId, assignment.id, 'no_show', { reason: "Manager marked no-show" });
+        await AssignmentService.updateStatus(
+            actorId,
+            assignment.id,
+            'no_show',
+            { reason: "Manager marked no-show" },
+            orgId
+        );
     }
     else if (action === 'update_time') {
         const clockIn = data?.clockIn ? new Date(data.clockIn) : null;
@@ -45,7 +50,8 @@ export const updateTimesheet = async (body: any, orgId: string, actorId: string 
                 clockIn,
                 clockOut,
                 breakMinutes: data?.breakMinutes
-            }
+            },
+            'manager'
         );
     } else {
         throw new AppError("Invalid action", "INVALID_ACTION", 400);

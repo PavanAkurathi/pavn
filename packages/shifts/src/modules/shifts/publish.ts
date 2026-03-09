@@ -12,6 +12,7 @@ import { newId } from "../../utils/ids";
 import { expandRecurringDates, RecurrenceConfig } from "../../utils/recurrence";
 import { createHash } from "crypto";
 import { buildNotificationSchedule } from "@repo/notifications";
+import { notifyWorkersOfCrossOrgConflicts } from "../time-tracking/cross-org-conflict-notifications";
 
 // Rate Limiting
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
@@ -108,12 +109,24 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
     // Force use of header-derived orgId
     const activeOrgId = headerOrgId;
 
+    const locationRecord = await db.query.location.findFirst({
+        where: and(
+            eq(location.id, locationId),
+            eq(location.organizationId, activeOrgId)
+        ),
+        columns: { id: true, name: true }
+    });
+
+    if (!locationRecord) {
+        throw new AppError("Location not found", "NOT_FOUND", 404);
+    }
+
 
     // WH-140: Robust Idempotency with Payload Hashing
     // Generate a deterministic hash of the critical payload configuration
     // We include schedules and recurrence settings.
 
-    const payloadString = JSON.stringify({ schedules, recurrence, locationId, organizationId });
+    const payloadString = JSON.stringify({ schedules, recurrence, locationId, organizationId: activeOrgId });
 
 
 
@@ -377,10 +390,6 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
     // WH-204: Fetch location name for notification body
 
-    const locationRecord = await db.query.location.findFirst({
-        where: eq(location.id, locationId),
-        columns: { name: true }
-    });
     const venueName = locationRecord?.name || 'the venue';
 
     // 2. Execute Batch Inserts (Atomic Transaction)
@@ -509,6 +518,29 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
         }
         throw error;
+    }
+
+    if (status === 'published' && assignmentsToInsert.length > 0) {
+        await notifyWorkersOfCrossOrgConflicts(
+            assignmentsToInsert.flatMap(assignment => {
+                if (!assignment.workerId) {
+                    return [];
+                }
+
+                const shiftData = shiftsToInsert.find(shiftRecord => shiftRecord.id === assignment.shiftId);
+                if (!shiftData) {
+                    return [];
+                }
+
+                return [{
+                    workerId: assignment.workerId,
+                    shiftId: assignment.shiftId,
+                    startTime: shiftData.startTime as Date,
+                    endTime: shiftData.endTime as Date,
+                }];
+            }),
+            activeOrgId
+        );
     }
 
     return {

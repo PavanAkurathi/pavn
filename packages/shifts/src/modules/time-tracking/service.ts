@@ -269,14 +269,14 @@ export class AssignmentService {
         const result = await db.select({
             isWithinRange: sql<boolean>`
                 ST_DWithin(
-                    ${location.position},
+                    ${location.position}::geography,
                     ST_SetSRID(ST_GeomFromText(${point}), 4326)::geography,
                     ${location.geofenceRadius}
                 )
             `,
             distance: sql<number>`
                 ST_Distance(
-                    ${location.position},
+                    ${location.position}::geography,
                     ST_SetSRID(ST_GeomFromText(${point}), 4326)::geography
                 )
             `
@@ -305,13 +305,30 @@ export class AssignmentService {
     /**
      * Get assignment by shift and worker
      */
-    static async getAssignment(shiftId: string, workerId: string) {
-        return await db.query.shiftAssignment.findFirst({
+    static async getAssignment(shiftId: string, workerId: string, orgId?: string) {
+        const assignment = await db.query.shiftAssignment.findFirst({
             where: and(
                 eq(shiftAssignment.shiftId, shiftId),
                 eq(shiftAssignment.workerId, workerId)
-            )
+            ),
+            with: {
+                shift: {
+                    columns: {
+                        organizationId: true,
+                    },
+                },
+            },
         });
+
+        if (!assignment) {
+            return null;
+        }
+
+        if (orgId && assignment.shift?.organizationId !== orgId) {
+            return null;
+        }
+
+        return assignment;
     }
 
     /**
@@ -322,14 +339,25 @@ export class AssignmentService {
         assignmentId: string,
         status: string,
         metadata: Record<string, any> = {},
+        orgId?: string,
         tx?: TxOrDb
     ) {
         const execute = async (tx: TxOrDb) => {
             const current = await tx.query.shiftAssignment.findFirst({
-                where: eq(shiftAssignment.id, assignmentId)
+                where: eq(shiftAssignment.id, assignmentId),
+                with: {
+                    shift: {
+                        columns: {
+                            organizationId: true,
+                        },
+                    },
+                },
             });
 
             if (!current) throw new AppError("Assignment not found", "NOT_FOUND", 404);
+            if (orgId && current.shift?.organizationId !== orgId) {
+                throw new AppError("Assignment not found", "NOT_FOUND", 404);
+            }
 
             await tx.update(shiftAssignment)
                 .set({

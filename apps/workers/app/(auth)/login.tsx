@@ -12,6 +12,7 @@ import {
 import Toast from 'react-native-toast-message';
 import { useRouter } from "expo-router";
 import { authClient } from "../../lib/auth-client";
+import { workerTheme } from "../../lib/theme";
 import { validate, phoneSchema, otpSchema } from "../../lib/validation";
 import { Ionicons as IoniconsVector } from "@expo/vector-icons";
 // Cast to any to avoid "cannot be used as a JSX component" error due to React 18/19 type conflict
@@ -164,9 +165,14 @@ export default function LoginScreen() {
             <View style={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.iconCircle}>
-                        <Ionicons name="phone-portrait-outline" size={32} color="#000" />
+                        <Ionicons
+                            name="phone-portrait-outline"
+                            size={32}
+                            color={workerTheme.colors.secondary}
+                        />
                     </View>
-                    <Text style={styles.title}>Welcome Back</Text>
+                    <Text style={styles.eyebrow}>WorkersHive</Text>
+                    <Text style={styles.title}>Welcome back</Text>
                     <Text style={styles.subtitle}>
                         {step === 'phone'
                             ? "Sign in with your mobile number"
@@ -194,7 +200,7 @@ export default function LoginScreen() {
                             testID="button-send-code"
                         >
                             {loading ? (
-                                <ActivityIndicator color="#000" />
+                                <ActivityIndicator color={workerTheme.colors.white} />
                             ) : (
                                 <Text style={styles.buttonText}>Send Code</Text>
                             )}
@@ -220,7 +226,7 @@ export default function LoginScreen() {
                             testID="button-verify"
                         >
                             {loading ? (
-                                <ActivityIndicator color="#000" />
+                                <ActivityIndicator color={workerTheme.colors.white} />
                             ) : (
                                 <Text style={styles.buttonText}>Verify & Sign In</Text>
                             )}
@@ -242,7 +248,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: workerTheme.colors.background,
     },
     content: {
         flex: 1,
@@ -257,30 +263,40 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: "#222",
+        backgroundColor: workerTheme.colors.secondarySoft,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 16,
     },
+    eyebrow: {
+        fontSize: 12,
+        fontWeight: "700",
+        letterSpacing: 1.2,
+        textTransform: "uppercase",
+        color: workerTheme.colors.primary,
+        marginBottom: 10,
+    },
     title: {
         fontSize: 32,
         fontWeight: "bold",
-        color: "#fff",
+        color: workerTheme.colors.foreground,
         marginBottom: 8,
+        textAlign: "center",
     },
     subtitle: {
         fontSize: 16,
-        color: "#888",
+        color: workerTheme.colors.mutedForeground,
         textAlign: "center",
+        lineHeight: 22,
     },
     form: {
         gap: 24,
     },
     input: {
         fontSize: 24,
-        color: "#fff",
+        color: workerTheme.colors.foreground,
         borderBottomWidth: 2,
-        borderBottomColor: "#333",
+        borderBottomColor: workerTheme.colors.border,
         paddingVertical: 12,
     },
     otpInput: {
@@ -288,13 +304,13 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     button: {
-        backgroundColor: "#fff",
+        backgroundColor: workerTheme.colors.primary,
         paddingVertical: 16,
-        borderRadius: 8,
+        borderRadius: 14,
         alignItems: "center",
     },
     buttonText: {
-        color: "#000",
+        color: workerTheme.colors.white,
         fontSize: 16,
         fontWeight: "600",
     },
@@ -303,7 +319,8 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     backLinkText: {
-        color: "#666",
+        color: workerTheme.colors.secondary,
         fontSize: 14,
+        fontWeight: "600",
     },
 });

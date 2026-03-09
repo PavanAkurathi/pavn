@@ -1,9 +1,18 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Image, Platform } from "react-native";
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    TextInput,
+    Image,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import * as ImagePicker from 'expo-image-picker';
+import * as ImagePicker from "expo-image-picker";
+import { workerTheme } from "../lib/theme";
 
 export default function AddCertificationScreen() {
     const router = useRouter();
@@ -16,7 +25,7 @@ export default function AddCertificationScreen() {
 
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
+            mediaTypes: ["images"],
             allowsEditing: true,
             aspect: [4, 3],
             quality: 1,
@@ -28,132 +37,127 @@ export default function AddCertificationScreen() {
     };
 
     const handleSave = () => {
-        // Here we would normally upload the image and save the data
-
         router.back();
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <Ionicons name="close" size={24} color="#fff" />
+        <SafeAreaView style={s.container} edges={["top"]}>
+            <View style={s.header}>
+                <TouchableOpacity onPress={() => router.back()} style={s.headerButton}>
+                    <Ionicons name="close" size={24} color={workerTheme.colors.foreground} />
                 </TouchableOpacity>
-                <Text style={styles.title}>Add Certification</Text>
-                <TouchableOpacity onPress={handleSave} style={styles.saveButton}>
-                    <Text style={styles.saveText}>Save</Text>
+                <Text style={s.title}>Add Certification</Text>
+                <TouchableOpacity onPress={handleSave} style={s.headerButton}>
+                    <Text style={s.saveText}>Save</Text>
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content}>
-
-                {/* Upload Area */}
-                <TouchableOpacity style={styles.uploadArea} onPress={pickImage}>
+            <ScrollView contentContainerStyle={s.content}>
+                <TouchableOpacity style={s.uploadArea} onPress={pickImage}>
                     {image ? (
-                        <Image source={{ uri: image }} style={styles.previewImage} />
+                        <Image source={{ uri: image }} style={s.previewImage} />
                     ) : (
-                        <View style={styles.uploadPlaceholder}>
-                            <View style={styles.uploadIconCircle}>
-                                <Ionicons name="cloud-upload-outline" size={24} color="#007AFF" />
+                        <View style={s.uploadPlaceholder}>
+                            <View style={s.uploadIconCircle}>
+                                <Ionicons
+                                    name="cloud-upload-outline"
+                                    size={24}
+                                    color={workerTheme.colors.secondary}
+                                />
                             </View>
-                            <Text style={styles.uploadTitle}>Upload Certificate</Text>
-                            <Text style={styles.uploadSubtitle}>Tap to select image</Text>
+                            <Text style={s.uploadTitle}>Upload certificate</Text>
+                            <Text style={s.uploadSubtitle}>Tap to select an image</Text>
                         </View>
                     )}
                 </TouchableOpacity>
-                {image && (
-                    <TouchableOpacity onPress={() => setImage(null)} style={styles.removeImageButton}>
-                        <Text style={styles.removeImageText}>Remove Image</Text>
+
+                {image ? (
+                    <TouchableOpacity onPress={() => setImage(null)} style={s.removeImageButton}>
+                        <Text style={s.removeImageText}>Remove image</Text>
                     </TouchableOpacity>
-                )}
+                ) : null}
 
-                {/* Form Fields */}
-                <View style={styles.form}>
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Certification Name</Text>
+                <View style={s.form}>
+                    <View style={s.inputContainer}>
+                        <Text style={s.label}>Certification Name</Text>
                         <TextInput
-                            style={styles.input}
+                            style={s.input}
                             placeholder="e.g. ServSafe Alcohol"
-                            placeholderTextColor="#666"
+                            placeholderTextColor={workerTheme.colors.subtleForeground}
                             value={form.name}
-                            onChangeText={(t) => setForm(prev => ({ ...prev, name: t }))}
+                            onChangeText={(value) => setForm((current) => ({ ...current, name: value }))}
                         />
                     </View>
 
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Issuing Organization</Text>
+                    <View style={s.inputContainer}>
+                        <Text style={s.label}>Issuing Organization</Text>
                         <TextInput
-                            style={styles.input}
+                            style={s.input}
                             placeholder="e.g. National Restaurant Association"
-                            placeholderTextColor="#666"
+                            placeholderTextColor={workerTheme.colors.subtleForeground}
                             value={form.issuer}
-                            onChangeText={(t) => setForm(prev => ({ ...prev, issuer: t }))}
+                            onChangeText={(value) => setForm((current) => ({ ...current, issuer: value }))}
                         />
                     </View>
 
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Expiration Date</Text>
+                    <View style={s.inputContainer}>
+                        <Text style={s.label}>Expiration Date</Text>
                         <TextInput
-                            style={styles.input}
+                            style={s.input}
                             placeholder="YYYY-MM-DD"
-                            placeholderTextColor="#666"
+                            placeholderTextColor={workerTheme.colors.subtleForeground}
                             value={form.expiry}
-                            onChangeText={(t) => setForm(prev => ({ ...prev, expiry: t }))}
+                            onChangeText={(value) => setForm((current) => ({ ...current, expiry: value }))}
                             keyboardType="numbers-and-punctuation"
                         />
                     </View>
                 </View>
-
             </ScrollView>
         </SafeAreaView>
     );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        backgroundColor: workerTheme.colors.background,
     },
     header: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         paddingHorizontal: 16,
-        paddingBottom: 16,
+        paddingVertical: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#222",
+        borderBottomColor: workerTheme.colors.border,
     },
-    backButton: {
-        padding: 4,
-        marginLeft: -4,
+    headerButton: {
+        minWidth: 48,
+        alignItems: "center",
     },
     title: {
         fontSize: 18,
-        fontWeight: "bold",
-        color: "#fff",
-    },
-    saveButton: {
-        padding: 4,
-        marginRight: -4,
+        fontWeight: "700",
+        color: workerTheme.colors.foreground,
     },
     saveText: {
-        color: "#007AFF",
         fontSize: 16,
         fontWeight: "600",
+        color: workerTheme.colors.primary,
     },
     content: {
-        flex: 1,
         padding: 16,
+        paddingBottom: 40,
     },
     uploadArea: {
-        height: 200,
-        backgroundColor: "#111",
-        borderRadius: 12,
-        borderWidth: 2,
-        borderColor: "#222",
-        borderStyle: "dashed",
-        overflow: "hidden",
+        height: 220,
         marginBottom: 8,
+        borderRadius: 18,
+        borderWidth: 2,
+        borderStyle: "dashed",
+        borderColor: workerTheme.colors.border,
+        backgroundColor: workerTheme.colors.surface,
+        overflow: "hidden",
         justifyContent: "center",
         alignItems: "center",
     },
@@ -166,52 +170,52 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     uploadIconCircle: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: "rgba(0, 122, 255, 0.1)",
+        width: 52,
+        height: 52,
+        borderRadius: 26,
         alignItems: "center",
         justifyContent: "center",
+        backgroundColor: workerTheme.colors.secondarySoft,
         marginBottom: 12,
     },
     uploadTitle: {
-        color: "#fff",
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: "700",
+        color: workerTheme.colors.foreground,
         marginBottom: 4,
     },
     uploadSubtitle: {
-        color: "#666",
         fontSize: 13,
+        color: workerTheme.colors.mutedForeground,
     },
     removeImageButton: {
         alignItems: "center",
-        padding: 8,
-        marginBottom: 24,
+        paddingVertical: 8,
+        marginBottom: 20,
     },
     removeImageText: {
-        color: "#FF5252",
         fontSize: 14,
+        color: workerTheme.colors.primary,
     },
     form: {
-        gap: 24,
+        gap: 20,
     },
     inputContainer: {
         gap: 8,
     },
     label: {
-        color: "#888",
         fontSize: 13,
-        fontWeight: "500",
+        fontWeight: "600",
+        color: workerTheme.colors.mutedForeground,
         marginLeft: 4,
     },
     input: {
-        backgroundColor: "#111",
-        borderRadius: 8,
-        padding: 16,
-        color: "#fff",
-        fontSize: 16,
+        borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#222",
+        borderColor: workerTheme.colors.border,
+        backgroundColor: workerTheme.colors.surface,
+        padding: 16,
+        color: workerTheme.colors.foreground,
+        fontSize: 16,
     },
 });

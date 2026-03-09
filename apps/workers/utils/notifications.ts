@@ -9,11 +9,11 @@ const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreCl
 if (Platform.OS !== 'android' || !isExpoGo) {
     Notifications.setNotificationHandler({
         handleNotification: async () => ({
-            shouldShowAlert: false, // We use Soft Banner for foreground
+            shouldShowAlert: true,
             shouldPlaySound: true,
             shouldSetBadge: false,
-            shouldShowBanner: false,
-            shouldShowList: false,
+            shouldShowBanner: true,
+            shouldShowList: true,
             priority: Notifications.AndroidNotificationPriority.MAX,
         }),
     });

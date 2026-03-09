@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { authClient } from "../lib/auth-client";
 import { api } from "../lib/api";
+import { workerTheme } from "../lib/theme";
 
 export default function PersonalInfoScreen() {
     const router = useRouter();
@@ -55,7 +56,7 @@ export default function PersonalInfoScreen() {
         return (
             <SafeAreaView style={s.container} edges={["top"]}>
                 <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-                    <ActivityIndicator size="large" color="#3B82F6" />
+                    <ActivityIndicator size="large" color={workerTheme.colors.primary} />
                 </View>
             </SafeAreaView>
         );
@@ -65,12 +66,19 @@ export default function PersonalInfoScreen() {
         <SafeAreaView style={s.container} edges={["top"]}>
             <View style={s.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <Ionicons name="arrow-back" size={24} color={workerTheme.colors.foreground} />
                 </TouchableOpacity>
                 <Text style={s.title}>Personal Information</Text>
                 <TouchableOpacity onPress={handleSave} disabled={!hasChanges || saving}>
-                    {saving ? <ActivityIndicator size="small" color="#3B82F6" /> : (
-                        <Text style={[s.saveText, !hasChanges && { color: "#444" }]}>Save</Text>
+                    {saving ? <ActivityIndicator size="small" color={workerTheme.colors.primary} /> : (
+                        <Text
+                            style={[
+                                s.saveText,
+                                !hasChanges && { color: workerTheme.colors.subtleForeground },
+                            ]}
+                        >
+                            Save
+                        </Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -108,34 +116,45 @@ function Field({ label, value, onChange, editable = true }: {
         <View style={s.fieldContainer}>
             <Text style={s.fieldLabel}>{label}</Text>
             <TextInput
-                style={[s.fieldInput, !editable && { color: "#555" }]}
+                style={[s.fieldInput, !editable && { color: workerTheme.colors.subtleForeground }]}
                 value={value}
                 onChangeText={onChange}
                 editable={editable}
-                placeholderTextColor="#444"
+                placeholderTextColor={workerTheme.colors.subtleForeground}
             />
         </View>
     );
 }
 
 const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#0A0A0A" },
+    container: { flex: 1, backgroundColor: workerTheme.colors.background },
     header: {
         flexDirection: "row", alignItems: "center", justifyContent: "space-between",
         paddingHorizontal: 16, paddingVertical: 14,
-        borderBottomWidth: 1, borderBottomColor: "#1A1A1A",
+        borderBottomWidth: 1, borderBottomColor: workerTheme.colors.border,
     },
-    title: { fontSize: 18, fontWeight: "700", color: "#fff" },
-    saveText: { fontSize: 16, fontWeight: "600", color: "#3B82F6" },
+    title: { fontSize: 18, fontWeight: "700", color: workerTheme.colors.foreground },
+    saveText: { fontSize: 16, fontWeight: "600", color: workerTheme.colors.primary },
     section: { marginTop: 24 },
     sectionLabel: {
-        fontSize: 12, fontWeight: "600", color: "#666",
+        fontSize: 12, fontWeight: "600", color: workerTheme.colors.mutedForeground,
         paddingHorizontal: 16, marginBottom: 8, letterSpacing: 1,
     },
-    inputGroup: { backgroundColor: "#141414", paddingHorizontal: 16 },
+    inputGroup: {
+        backgroundColor: workerTheme.colors.surface,
+        paddingHorizontal: 16,
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: workerTheme.colors.border,
+    },
     fieldContainer: { paddingVertical: 12 },
-    fieldLabel: { fontSize: 12, color: "#888", marginBottom: 4 },
-    fieldInput: { fontSize: 16, color: "#fff", paddingVertical: 4 },
-    divider: { height: 1, backgroundColor: "#222" },
-    helperText: { marginTop: 8, marginHorizontal: 16, fontSize: 12, color: "#555" },
+    fieldLabel: { fontSize: 12, color: workerTheme.colors.mutedForeground, marginBottom: 4 },
+    fieldInput: { fontSize: 16, color: workerTheme.colors.foreground, paddingVertical: 4 },
+    divider: { height: 1, backgroundColor: workerTheme.colors.border },
+    helperText: {
+        marginTop: 8,
+        marginHorizontal: 16,
+        fontSize: 12,
+        color: workerTheme.colors.mutedForeground,
+    },
 });

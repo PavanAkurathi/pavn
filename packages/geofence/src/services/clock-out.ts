@@ -87,8 +87,8 @@ export const clockOut = async (data: any, workerId: string, orgId: string) => {
     if (venueLocationId) {
         const point = `POINT(${longitude} ${latitude})`;
         const [geoResult] = await db.select({
-            isWithin: sql<boolean>`ST_DWithin(${location.position}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
-            distance: sql<number>`ST_Distance(${location.position}, ST_GeogFromText(${point}))`,
+            isWithin: sql<boolean>`ST_DWithin(${location.position}::geography, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+            distance: sql<number>`ST_Distance(${location.position}::geography, ST_GeogFromText(${point}))`,
             radius: location.geofenceRadius
         })
             .from(location)

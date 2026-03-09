@@ -1,9 +1,9 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
 import { CONFIG } from '../lib/config';
+import { resolveActiveOrganizationId } from '../lib/organization-context';
 
 const LOCATION_TASK_NAME = 'background-location-task';
 // const GEOFENCE_API_URL = "http://localhost:4006"; // Replaced by CONFIG
@@ -29,6 +29,7 @@ async function sendLocationToBackend(location: Location.LocationObject) {
     try {
         const token = await SecureStore.getItemAsync("better-auth.session_token");
         if (!token) return;
+        const orgId = await resolveActiveOrganizationId();
 
         // In a real app, use the user's ID if needed, or just relying on Auth Header
         // The backend `ingest-location` uses headers to identify key/user.
@@ -38,13 +39,14 @@ async function sendLocationToBackend(location: Location.LocationObject) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                ...(orgId ? { 'x-org-id': orgId } : {}),
             },
             body: JSON.stringify({
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
-                timestamp: new Date(location.timestamp).toISOString(),
-                accuracy: location.coords.accuracy,
+                deviceTimestamp: new Date(location.timestamp).toISOString(),
+                accuracyMeters: location.coords.accuracy,
                 speed: location.coords.speed,
                 heading: location.coords.heading,
                 isBackground: true
