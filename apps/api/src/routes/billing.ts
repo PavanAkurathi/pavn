@@ -35,10 +35,12 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
-import { requireAdmin, requireManager } from "../middleware";
 import { BillingInfoSchema } from "@repo/shifts-service";
 
 export const billingRouter = new OpenAPIHono<AppContext>();
+
+const billingUnavailable = (c: any) =>
+    c.json({ error: "Billing API is not enabled in this build" } as any, 503);
 
 // =============================================================================
 // SUBSCRIPTION / BILLING INFO (Manager can view)
@@ -51,7 +53,8 @@ const getBillingRoute = createRoute({
     description: 'Get current subscription and billing status.',
     responses: {
         200: { content: { 'application/json': { schema: BillingInfoSchema } }, description: 'Billing info' },
-        403: { description: 'Forbidden' }
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
     }
 });
 
@@ -62,18 +65,7 @@ billingRouter.openapi(getBillingRoute, async (c) => {
         return c.json({ error: "Access denied" }, 403);
     }
 
-    const orgId = c.get("orgId");
-
-    // TODO: Implement billing info retrieval from Stripe
-    return c.json({
-        plan: "professional",
-        status: "active",
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-        usage: {
-            workers: 0,
-            shifts: 0,
-        },
-    } as any, 200);
+    return billingUnavailable(c);
 });
 
 const getInvoicesRoute = createRoute({
@@ -83,7 +75,8 @@ const getInvoicesRoute = createRoute({
     description: 'Get invoice history.',
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Invoices' },
-        403: { description: 'Forbidden' }
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
     }
 });
 
@@ -91,8 +84,7 @@ billingRouter.openapi(getInvoicesRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
-    // TODO: Implement invoice listing from Stripe
-    return c.json({ invoices: [] } as any, 200);
+    return billingUnavailable(c);
 });
 
 const getUsageRoute = createRoute({
@@ -102,7 +94,8 @@ const getUsageRoute = createRoute({
     description: 'Get current billing period usage.',
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Usage stats' },
-        403: { description: 'Forbidden' }
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
     }
 });
 
@@ -110,18 +103,7 @@ billingRouter.openapi(getUsageRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
-    const orgId = c.get("orgId");
-
-    // TODO: Implement usage stats from database
-    return c.json({
-        period: {
-            start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            end: new Date().toISOString(),
-        },
-        workers: { count: 0, limit: 100 },
-        shifts: { count: 0, limit: 1000 },
-        storage: { used: 0, limit: 10737418240 }, // 10GB in bytes
-    } as any, 200);
+    return billingUnavailable(c);
 });
 
 // =============================================================================
@@ -135,7 +117,8 @@ const getPaymentMethodsRoute = createRoute({
     description: 'List payment methods (Admin only).',
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Payment methods' },
-        403: { description: 'Forbidden' }
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
     }
 });
 
@@ -143,8 +126,7 @@ billingRouter.openapi(getPaymentMethodsRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
 
-    // TODO: Implement Stripe payment methods list
-    return c.json({ paymentMethods: [] } as any, 200);
+    return billingUnavailable(c);
 });
 
 const addPaymentMethodRoute = createRoute({
@@ -153,14 +135,15 @@ const addPaymentMethodRoute = createRoute({
     summary: 'Add Payment Method',
     description: 'Add a new payment method (Admin only).',
     responses: {
-        501: { description: 'Not implemented' }
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
     }
 });
 
 billingRouter.openapi(addPaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+    return billingUnavailable(c);
 });
 
 const deletePaymentMethodRoute = createRoute({
@@ -170,14 +153,15 @@ const deletePaymentMethodRoute = createRoute({
     description: 'Delete a payment method (Admin only).',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        501: { description: 'Not implemented' }
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
     }
 });
 
 billingRouter.openapi(deletePaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+    return billingUnavailable(c);
 });
 
 const setDefaultPaymentMethodRoute = createRoute({
@@ -187,14 +171,15 @@ const setDefaultPaymentMethodRoute = createRoute({
     description: 'Set default payment method (Admin only).',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        501: { description: 'Not implemented' }
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
     }
 });
 
 billingRouter.openapi(setDefaultPaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+    return billingUnavailable(c);
 });
 
 // =============================================================================
@@ -206,13 +191,16 @@ const subscribeRoute = createRoute({
     path: '/subscribe',
     summary: 'Create Subscription',
     description: 'Create a new subscription (Admin only).',
-    responses: { 501: { description: 'Not implemented' } }
+    responses: {
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
+    }
 });
 
 billingRouter.openapi(subscribeRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+    return billingUnavailable(c);
 });
 
 const cancelRoute = createRoute({
@@ -220,13 +208,16 @@ const cancelRoute = createRoute({
     path: '/cancel',
     summary: 'Cancel Subscription',
     description: 'Cancel current subscription (Admin only).',
-    responses: { 501: { description: 'Not implemented' } }
+    responses: {
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
+    }
 });
 
 billingRouter.openapi(cancelRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+    return billingUnavailable(c);
 });
 
 const upgradeRoute = createRoute({
@@ -234,13 +225,16 @@ const upgradeRoute = createRoute({
     path: '/upgrade',
     summary: 'Upgrade Plan',
     description: 'Upgrade subscription plan (Admin only).',
-    responses: { 501: { description: 'Not implemented' } }
+    responses: {
+        403: { description: 'Forbidden' },
+        503: { description: 'Billing API unavailable' }
+    }
 });
 
 billingRouter.openapi(upgradeRoute, async (c) => {
     const userRole = c.get("userRole");
     if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
-    return c.json({ error: "Not yet implemented" } as any, 501);
+    return billingUnavailable(c);
 });
 
 export default billingRouter;

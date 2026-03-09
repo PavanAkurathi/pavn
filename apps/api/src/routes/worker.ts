@@ -226,7 +226,8 @@ const updateProfileRoute = createRoute({
             content: { 'application/json': { schema: WorkerSchema } },
             description: 'Updated profile'
         },
-        501: { description: 'Not implemented' }
+        400: { description: 'Invalid request' },
+        401: { description: 'Unauthorized' }
     }
 });
 

@@ -14,13 +14,16 @@ import { DubProvider } from "@dub/react-native";
 import { authClient } from "../lib/auth-client";
 import { bootstrapOrganizationContext } from "../lib/organization-context";
 import { workerTheme } from "../lib/theme";
+import { isWorkersProd, optionalPublicEnv, requirePublicEnv } from "../lib/env";
 import { syncGeofences } from "../services/geofencing";
 import {
     registerForPushNotifications,
     setupNotificationHandlers,
 } from "../services/push-notifications";
 
-const DUB_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_DUB_PUBLISHABLE_KEY || "pk_test_placeholder";
+const DUB_PUBLISHABLE_KEY = isWorkersProd
+    ? requirePublicEnv("EXPO_PUBLIC_DUB_PUBLISHABLE_KEY")
+    : optionalPublicEnv("EXPO_PUBLIC_DUB_PUBLISHABLE_KEY") || "dev_only_dub_key";
 const DUB_DOMAIN = process.env.EXPO_PUBLIC_DUB_DOMAIN || "links.workershive.com";
 
 // Initialize Sentry conditionally

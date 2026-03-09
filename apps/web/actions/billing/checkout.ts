@@ -6,9 +6,9 @@ import { organization } from "@repo/database/schema";
 import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
 import Stripe from "stripe";
+import { requireServerEnv } from "@/lib/server-env";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const stripe = new Stripe(stripeSecretKey || "sk_test_placeholder", {
+const stripe = new Stripe(requireServerEnv("STRIPE_SECRET_KEY"), {
     apiVersion: "2025-01-27.acacia" as any,
 });
 
@@ -48,9 +48,9 @@ export async function createCheckoutSession() {
         customer: customerId,
         mode: "subscription",
         payment_method_types: ["card"],
-        line_items: [{ price: process.env.STRIPE_PRICE_ID_MONTHLY, quantity: 1 }],
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing?canceled=true`,
+        line_items: [{ price: requireServerEnv("STRIPE_PRICE_ID_MONTHLY"), quantity: 1 }],
+        success_url: `${requireServerEnv("NEXT_PUBLIC_APP_URL")}/settings/billing?success=true`,
+        cancel_url: `${requireServerEnv("NEXT_PUBLIC_APP_URL")}/settings/billing?canceled=true`,
         metadata: { orgId: orgId },
     });
 

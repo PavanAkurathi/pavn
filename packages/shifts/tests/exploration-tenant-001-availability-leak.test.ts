@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { db } from "@repo/database/db";
+import { db } from "@repo/database";
 import { organization, user, member, workerAvailability } from "@repo/database/schema";
-import { eq, and, inArray, lt, gt } from "drizzle-orm";
+import { eq, and, or, inArray, lt, gt } from "drizzle-orm";
 
 /**
  * EXPLORATION TEST - TENANT-001: Availability Query Leak
@@ -165,8 +165,8 @@ describe("TENANT-001 Exploration: Availability Query Leak", () => {
         console.log(`\n📊 Query Results:`);
         console.log(`  Total records returned: ${availabilityRecords.length}`);
         
-        const orgARecords = availabilityRecords.filter(r => r.organizationId === orgA.id);
-        const orgBRecords = availabilityRecords.filter(r => r.organizationId === orgB.id);
+        const orgARecords = availabilityRecords.filter((record) => record.organizationId === orgA.id);
+        const orgBRecords = availabilityRecords.filter((record) => record.organizationId === orgB.id);
         
         console.log(`  Org A records: ${orgARecords.length}`);
         console.log(`  Org B records: ${orgBRecords.length}`);
@@ -254,7 +254,7 @@ describe("TENANT-001 Exploration: Availability Query Leak", () => {
 
         // Check if Org B worker is visible
         const orgBWorkerVisible = availabilityRecords.some(
-            r => r.workerId === workerOrgB.id
+            (record) => record.workerId === workerOrgB.id
         );
 
         if (orgBWorkerVisible) {

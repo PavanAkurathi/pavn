@@ -1,0 +1,75 @@
+const required = {
+  api: [
+    "DATABASE_URL",
+    "BETTER_AUTH_SECRET",
+    "NEXT_PUBLIC_APP_URL",
+  ],
+  auth_sms: [
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+    "TWILIO_PHONE_NUMBER",
+  ],
+  workers_app: [
+    "EXPO_PUBLIC_API_URL",
+    "EXPO_PUBLIC_DUB_PUBLISHABLE_KEY",
+  ],
+};
+
+const optional = {
+  observability: [
+    "SENTRY_DSN",
+    "EXPO_PUBLIC_SENTRY_DSN",
+  ],
+  deeplinks: [
+    "EXPO_PUBLIC_DUB_DOMAIN",
+    "DUB_API_KEY",
+  ],
+  billing: [
+    "STRIPE_SECRET_KEY",
+    "STRIPE_PRICE_ID_MONTHLY",
+    "STRIPE_WEBHOOK_SECRET",
+  ],
+  email: [
+    "RESEND_API_KEY",
+    "EMAIL_FROM",
+  ],
+};
+
+function audit(keys) {
+  const missing = [];
+  for (const key of keys) {
+    if (!process.env[key]) {
+      missing.push(key);
+    }
+  }
+  return missing;
+}
+
+let failed = false;
+
+console.log("Launch env audit");
+console.log("================");
+
+for (const [group, keys] of Object.entries(required)) {
+  const missing = audit(keys);
+  if (missing.length > 0) {
+    failed = true;
+    console.log(`REQUIRED ${group}: missing ${missing.join(", ")}`);
+  } else {
+    console.log(`REQUIRED ${group}: OK`);
+  }
+}
+
+for (const [group, keys] of Object.entries(optional)) {
+  const missing = audit(keys);
+  if (missing.length > 0) {
+    console.log(`OPTIONAL ${group}: missing ${missing.join(", ")}`);
+  } else {
+    console.log(`OPTIONAL ${group}: OK`);
+  }
+}
+
+if (failed) {
+  process.exitCode = 1;
+  console.error("Missing required env vars.");
+}

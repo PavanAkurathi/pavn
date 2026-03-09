@@ -1,4 +1,6 @@
 // Basic interface for an error tracker (compatible with Sentry)
+import { createRequire } from "node:module";
+
 export interface ErrorTracker {
     captureException(error: any, context?: Record<string, any>): void;
     captureMessage(message: string, context?: Record<string, any>): void;
@@ -25,6 +27,7 @@ import { nanoid } from "nanoid";
 
 // Lazy Sentry import to prevent crashes when SENTRY_DSN is missing
 let Sentry: any = null;
+const nodeRequire = createRequire(import.meta.url);
 
 export const initSentry = () => {
     if (!process.env.SENTRY_DSN) {
@@ -33,8 +36,9 @@ export const initSentry = () => {
     }
 
     try {
-        // Dynamic import to prevent build-time issues
-        Sentry = require("@sentry/node");
+        // Use Node's module loader so this package stays ESM-safe.
+        const sentryModule = nodeRequire("@sentry/node");
+        Sentry = sentryModule.default ?? sentryModule;
         Sentry.init({
             dsn: process.env.SENTRY_DSN,
             tracesSampleRate: 1.0,

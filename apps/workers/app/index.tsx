@@ -69,16 +69,5 @@ export default function Index() {
         );
     }
 
-    return (
-        <View
-            style={{
-                flex: 1,
-                justifyContent: "center",
-                alignItems: "center",
-                backgroundColor: workerTheme.colors.background,
-            }}
-        >
-            {/* Placeholder for Main App until Tabs are implemented */}
-        </View>
-    );
+    return null;
 }

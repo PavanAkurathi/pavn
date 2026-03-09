@@ -6,9 +6,9 @@ import { organization } from "@repo/database/schema";
 import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
 import Stripe from "stripe";
+import { requireServerEnv } from "@/lib/server-env";
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-const stripe = new Stripe(stripeSecretKey || "sk_test_placeholder", {
+const stripe = new Stripe(requireServerEnv("STRIPE_SECRET_KEY"), {
     apiVersion: "2025-01-27.acacia" as any,
 });
 
@@ -31,7 +31,7 @@ export async function createCustomerPortal() {
 
     const portalSession = await stripe.billingPortal.sessions.create({
         customer: org.stripeCustomerId,
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings/billing`,
+        return_url: `${requireServerEnv("NEXT_PUBLIC_APP_URL")}/settings/billing`,
     });
 
     return { url: portalSession.url };

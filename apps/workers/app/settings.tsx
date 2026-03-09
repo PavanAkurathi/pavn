@@ -34,7 +34,6 @@ export default function SettingsScreen() {
                 <SettingsRow icon="person-outline" label="Account information" onPress={() => router.push("/personal-info")} />
                 <SettingsRow icon="notifications-outline" label="Notifications" onPress={() => router.push("/preferences")} />
                 <SettingsRow icon="calendar-outline" label="My availability" onPress={() => router.push("/availability")} />
-                <SettingsRow icon="ribbon-outline" label="Certifications" onPress={() => router.push("/certifications")} />
                 <SettingsRow icon="help-circle-outline" label="Contact support" onPress={() => Linking.openURL("mailto:support@workershive.com")} />
 
                 <TouchableOpacity style={s.logoutBtn} onPress={handleSignOut}>

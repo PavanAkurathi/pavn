@@ -18,6 +18,7 @@
  * 
  * Public Routes (no auth):
  * - GET /health - Health check
+ * - GET /ready - Launch readiness check
  * - POST/GET /api/auth/* - Better Auth handlers
  * 
  * Protected Routes (require auth + org context):
@@ -40,6 +41,7 @@
  * 
  * // Health check
  * curl http://localhost:4005/health
+ * curl http://localhost:4005/ready
  * 
  * @author WorkersHive Team
  * @since 1.0.0
@@ -54,7 +56,7 @@ import { auth } from "@repo/auth";
 import { db, eq, and } from "@repo/database";
 import { member } from "@repo/database/schema";
 import { corsConfig } from "@repo/config";
-import { requestId, errorHandler, timeout } from "@repo/observability";
+import { requestId, errorHandler, initSentry, logMessage, timeout } from "@repo/observability";
 
 // Import route modules
 // Import route modules
@@ -64,12 +66,14 @@ import { timesheetsRouter } from "./routes/timesheets.js";
 import { billingRouter } from "./routes/billing.js";
 import { organizationsRouter } from "./routes/organizations.js";
 import { geofenceRouter } from "./routes/geofence.js";
+import { getApiReadinessSummary, validateApiRuntimeEnv } from "./lib/runtime-env.js";
 
 // Types
 export type Role = "admin" | "member";
 
 export type AppContext = {
     Variables: {
+        requestId: string;
         orgId: string;
         user: typeof auth.$Infer.Session.user | null;
         session: typeof auth.$Infer.Session.session | null;
@@ -78,6 +82,9 @@ export type AppContext = {
 };
 
 // Create main app
+initSentry();
+validateApiRuntimeEnv();
+
 const app = new OpenAPIHono<AppContext>();
 
 // =============================================================================
@@ -108,6 +115,19 @@ app.use("*", cors(corsConfig));
 // Request tracing & timeout
 app.use("*", requestId());
 app.use("*", timeout(30000));
+app.use("*", async (c, next) => {
+    await next();
+
+    const status = c.res.status;
+    if (status >= 500 || (c.req.path === "/ready" && status === 503)) {
+        logMessage("[API] Request requires attention", {
+            path: c.req.path,
+            method: c.req.method,
+            status,
+            requestId: c.get("requestId"),
+        });
+    }
+});
 
 // Global error handler
 app.onError((err, c) => errorHandler(err, c));
@@ -118,6 +138,24 @@ app.onError((err, c) => errorHandler(err, c));
 
 // Health check
 app.get("/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
+app.get("/ready", async (c) => {
+    const readiness = await getApiReadinessSummary();
+    return c.json(readiness, readiness.status === "ready" ? 200 : 503);
+});
+
+void (async () => {
+    const readiness = await getApiReadinessSummary();
+    logMessage(
+        readiness.status === "ready"
+            ? "[READY] API startup ready"
+            : "[READY] API startup not ready",
+        {
+            status: readiness.status,
+            required: readiness.required,
+            optional: readiness.optional,
+        }
+    );
+})();
 
 // Auth routes (Better Auth handles these)
 app.on(["POST", "GET"], "/api/auth/*", async (c) => {
@@ -135,7 +173,7 @@ app.on(["POST", "GET"], "/api/auth/*", async (c) => {
 
 app.use("*", async (c, next) => {
     // Skip public routes
-    if (c.req.path === "/health" || c.req.path.startsWith("/api/auth") || c.req.path === "/docs" || c.req.path === "/openapi.json" || c.req.path === "/") {
+    if (c.req.path === "/health" || c.req.path === "/ready" || c.req.path.startsWith("/api/auth") || c.req.path === "/docs" || c.req.path === "/openapi.json" || c.req.path === "/") {
         await next();
         return;
     }

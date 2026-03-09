@@ -8,6 +8,7 @@ import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { Dub } from "dub";
 import { nanoid } from "nanoid";
+import { requireServerEnvInProduction } from "@/lib/server-env";
 
 import { z } from "zod";
 
@@ -179,10 +180,12 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
         let shortLink = "";
 
         // Initialize Dub SDK exactly when needed to ensure process.env is read at runtime
-        const dubToken = process.env.DUB_API_KEY;
-        const dub = new Dub({
-            token: dubToken || "dub_test_token"
-        });
+        const dubToken = requireServerEnvInProduction("DUB_API_KEY");
+        const dub = dubToken
+            ? new Dub({
+                token: dubToken,
+            })
+            : null;
 
         // 2. Generate Dub.co Trackable & Deferred Deep Link
         if (invites.sms && phoneNumber) {
@@ -191,7 +194,7 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
                 const originalUrl = `https://pavn.link/invite?orgToken=${invitationId}`;
 
                 // Only attempt real Dub.co tracking link if a key exists and we are not in simple test mode
-                if (dubToken && dubToken !== "dub_test_token") {
+                if (dub) {
                     const linkObj = await dub.links.create({
                         url: originalUrl,
                         domain: process.env.NEXT_PUBLIC_DUB_DOMAIN || "links.workershive.com"

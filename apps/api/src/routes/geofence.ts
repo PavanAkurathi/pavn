@@ -229,30 +229,4 @@ geofenceRouter.openapi(reviewCorrectionRoute, async (c) => {
     return c.json(result as any, 200);
 });
 
-// =============================================================================
-// LOCATION VERIFICATION
-// =============================================================================
-
-const verifyLocationRoute = createRoute({
-    method: 'post',
-    path: '/verify-location',
-    summary: 'Verify Location',
-    description: 'Check if worker is at venue without clocking in. Uses PostGIS ST_DWithin for server-side geofence check.',
-    responses: {
-        501: { description: 'Not implemented' }
-    }
-});
-
-geofenceRouter.openapi(verifyLocationRoute, async (c) => {
-    const user = c.get("user");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-    // TODO: Implement server-side geofence verification using PostGIS
-    // Accept {shiftId, latitude, longitude} → return {verified: boolean, distance: number}
-    return c.json({
-        verified: false,
-        message: "Not yet implemented"
-    } as any, 501);
-});
-
 export default geofenceRouter;

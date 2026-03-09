@@ -7,6 +7,9 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
+    "check-env": "node scripts/check-launch-env.mjs",
+    "release:preflight": "node scripts/release-preflight.mjs",
+    "release:smoke": "node scripts/release-smoke.mjs",
     "test": "turbo run test",
     "db:reset": "bun run --filter @repo/database reset"
   },

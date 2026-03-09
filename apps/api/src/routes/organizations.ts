@@ -96,7 +96,6 @@ const updateWorkerRoute = createRoute({
     request: { params: z.object({ id: z.string() }) },
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker updated' },
-        501: { description: 'Not implemented' },
         403: { description: 'Forbidden' }
     }
 });
@@ -120,7 +119,6 @@ const deactivateWorkerRoute = createRoute({
     request: { params: z.object({ id: z.string() }) },
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker deactivated' },
-        501: { description: 'Not implemented' },
         403: { description: 'Forbidden' }
     }
 });
@@ -143,7 +141,6 @@ const reactivateWorkerRoute = createRoute({
     request: { params: z.object({ id: z.string() }) },
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker reactivated' },
-        501: { description: 'Not implemented' },
         403: { description: 'Forbidden' }
     }
 });
@@ -211,7 +208,6 @@ const updateLocationRoute = createRoute({
     request: { params: z.object({ id: z.string() }) },
     responses: {
         200: { content: { 'application/json': { schema: LocationSchema } }, description: 'Location updated' },
-        501: { description: 'Not implemented' },
         403: { description: 'Forbidden' }
     }
 });
@@ -235,7 +231,6 @@ const deleteLocationRoute = createRoute({
     request: { params: z.object({ id: z.string() }) },
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Location deleted' },
-        501: { description: 'Not implemented' },
         403: { description: 'Forbidden' }
     }
 });
@@ -261,7 +256,6 @@ const updateSettingsRoute = createRoute({
     description: 'Update organization settings.',
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Settings updated' },
-        501: { description: 'Not implemented' },
         403: { description: 'Forbidden' }
     }
 });

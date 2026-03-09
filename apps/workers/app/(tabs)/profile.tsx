@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
+import { Alert, View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
 import Constants from "expo-constants";
 
 import { authClient } from "../../lib/auth-client";
@@ -44,18 +43,8 @@ export default function ProfileScreen() {
         }
     };
 
-    const pickImage = async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsEditing: true,
-            aspect: [1, 1],
-            quality: 0.8,
-        });
-        if (!result.canceled && result.assets[0]?.uri) {
-            // TODO: Upload image to storage, then update profile
-            // For now just update local state
-            setUser(prev => prev ? { ...prev, image: result.assets[0].uri } : prev);
-        }
+    const showUnavailable = (feature: string) => {
+        Alert.alert("Unavailable", `${feature} is not available in this build yet.`);
     };
 
     const handleSignOut = async () => {
@@ -89,7 +78,7 @@ export default function ProfileScreen() {
 
             <ScrollView contentContainerStyle={styles.scroll}>
                 {/* Avatar */}
-                <TouchableOpacity style={styles.avatarContainer} onPress={pickImage}>
+                <TouchableOpacity style={styles.avatarContainer} onPress={() => showUnavailable("Profile photo upload")}>
                     {user?.image ? (
                         <Image source={{ uri: user.image }} style={styles.avatar} />
                     ) : (
@@ -127,7 +116,6 @@ export default function ProfileScreen() {
                 <View style={styles.section}>
                     <MenuItem icon="person-outline" label="Personal info" onPress={() => router.push("/personal-info")} />
                     <MenuItem icon="calendar-outline" label="My availability" onPress={() => router.push("/availability")} />
-                    <MenuItem icon="document-text-outline" label="Certifications" onPress={() => router.push("/certifications")} />
                     <MenuItem icon="notifications-outline" label="Notification preferences" onPress={() => router.push("/preferences")} />
                     <MenuItem icon="time-outline" label="Adjustment requests" onPress={() => router.push("/notifications")} />
                 </View>
