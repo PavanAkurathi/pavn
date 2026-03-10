@@ -1,6 +1,6 @@
 // packages/geofence/src/services/clock-in.ts
 
-import { db } from "@repo/database";
+import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
 import { shift, shiftAssignment, workerLocation, organization, location } from "@repo/database/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -87,8 +87,8 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
 
     // Use SQL to check distance against the venue location
     const [geoResult] = await db.select({
-        isWithin: sql<boolean>`ST_DWithin(${location.position}::geography, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
-        distance: sql<number>`ST_Distance(${location.position}::geography, ST_GeogFromText(${point}))`,
+        isWithin: sql<boolean>`ST_DWithin(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+        distance: sql<number>`ST_Distance(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}))`,
         radius: location.geofenceRadius
     })
         .from(location)
@@ -141,7 +141,7 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
             .set({
                 actualClockIn: clockInResult.recordedTime,
                 effectiveClockIn: effectiveStart,
-                clockInPosition: sql`ST_GeogFromText(${point})`,
+                clockInPosition: toLatLng(latitude, longitude),
                 clockInVerified: true,
                 clockInMethod: 'geofence',
                 updatedAt: now,
@@ -162,9 +162,9 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
             workerId,
             shiftId,
             organizationId: orgId,
-            position: sql`ST_GeogFromText(${point})`,
+            position: toLatLng(latitude, longitude),
             accuracyMeters: accuracyMeters || null,
-            venuePosition: sql`(SELECT position FROM ${location} WHERE ${location.id} = ${shiftRecord.locationId})`,
+            venuePosition: shiftRecord.location?.position ?? null,
             distanceToVenueMeters: distanceMeters,
             isOnSite: true,
             eventType: 'clock_in',

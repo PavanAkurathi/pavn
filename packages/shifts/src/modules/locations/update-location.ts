@@ -1,6 +1,6 @@
-import { db } from "@repo/database";
+import { db, toLatLng } from "@repo/database";
 import { location } from "@repo/database/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { LocationSchema } from "../../schemas";
 import { geocodeAddress } from "./geocoding";
 import { AppError } from "@repo/observability";
@@ -35,7 +35,7 @@ export const updateLocation = async (data: any, id: string, orgId: string) => {
         } else {
             const coords = geocodeResult.data;
             positionUpdate = {
-                position: sql`ST_GeogFromText(${`POINT(${coords.longitude} ${coords.latitude})`})`,
+                position: toLatLng(Number(coords.latitude), Number(coords.longitude)),
                 geocodedAt: new Date(),
                 geocodeSource: coords.source,
                 latitude: coords.latitude, // if schema has these

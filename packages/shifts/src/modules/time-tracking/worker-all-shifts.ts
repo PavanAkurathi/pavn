@@ -1,6 +1,6 @@
 // packages/shifts/src/modules/time-tracking/worker-all-shifts.ts
 
-import { db } from "@repo/database";
+import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { shift, shiftAssignment, location, organization, member } from "@repo/database/schema";
 import { eq, and, inArray, gte, lte, asc, desc, ne, sql } from "drizzle-orm";
 
@@ -80,8 +80,8 @@ export const getWorkerAllShifts = async (
                 name: location.name,
                 address: location.address,
                 geofenceRadius: location.geofenceRadius,
-                latitude: sql<number>`ST_Y(${location.position}::geometry)`.mapWith(Number),
-                longitude: sql<number>`ST_X(${location.position}::geometry)`.mapWith(Number),
+                latitude: jsonPositionLatitude(location.position),
+                longitude: jsonPositionLongitude(location.position),
             },
             organization: {
                 id: organization.id,

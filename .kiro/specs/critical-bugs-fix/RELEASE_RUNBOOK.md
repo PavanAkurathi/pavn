@@ -15,7 +15,8 @@ Ship the scheduling launch without exposing unfinished surfaces or missing runti
 npm run release:preflight
 ```
 
-4. Build the worker app with production `EXPO_PUBLIC_*` values, not local fallbacks.
+4. The preflight now includes the automated manager/worker lifecycle E2E in [lifecycle.spec.ts](/Users/av/Documents/pavn/packages/e2e/tests/api/lifecycle.spec.ts).
+5. Build the worker app with production `EXPO_PUBLIC_*` values, not local fallbacks.
 
 ## Staging Deploy
 
@@ -31,7 +32,9 @@ npm run release:smoke -- --base-url=https://staging-api.example.com
 
 ## Staging Manual Smoke
 
-Run these on real iPhone and Android devices:
+Run the detailed checklist in [STAGING_LIFECYCLE_SMOKE.md](/Users/av/Documents/pavn/.kiro/specs/critical-bugs-fix/STAGING_LIFECYCLE_SMOKE.md).
+
+Minimum pass items on real iPhone and Android devices:
 
 1. Login via SMS OTP and restart the app. Session should persist.
 2. Open the shifts tab. `All orgs` should show the worker's cross-org feed without leaking foreign-org detail to managers.

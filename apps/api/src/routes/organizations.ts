@@ -84,7 +84,7 @@ organizationsRouter.openapi(inviteWorkerRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const body = await c.req.json();
-    const result = await inviteWorker({ ...body, inviterId: user.id }, orgId);
+    const result = await inviteWorker(body, orgId, user.id);
     return c.json(result as any, 200);
 });
 

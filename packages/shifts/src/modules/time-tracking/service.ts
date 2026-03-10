@@ -1,4 +1,4 @@
-import { db, TxOrDb } from "@repo/database";
+import { db, TxOrDb, jsonPositionToGeography, toLatLng } from "@repo/database";
 import { shiftAssignment, assignmentAuditEvent, location, shift } from "@repo/database/schema";
 import { eq, and, desc, sql, inArray, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -65,7 +65,7 @@ export class AssignmentService {
                     needsReview: !isVerified, // Flag for manager if outside geofence
                     reviewReason: reviewReason,
 
-                    clockInPosition: sql`ST_SetSRID(ST_MakePoint(${coordinates.lng}, ${coordinates.lat}), 4326)`,
+                    clockInPosition: toLatLng(coordinates.lat, coordinates.lng),
                     clockInMethod: 'geofence',
                     updatedAt: now
                 })
@@ -142,7 +142,7 @@ export class AssignmentService {
                     effectiveClockOut: now,
                     status: 'completed',
                     clockOutVerified: true, // Assuming valid for now, or could check geofence on exit too
-                    clockOutPosition: sql`ST_SetSRID(ST_MakePoint(${coordinates.lng}, ${coordinates.lat}), 4326)`,
+                    clockOutPosition: toLatLng(coordinates.lat, coordinates.lng),
                     clockOutMethod: 'geofence',
 
                     // STORE DURATION (Minutes) in totalDurationMinutes (TICKET-001)
@@ -269,14 +269,14 @@ export class AssignmentService {
         const result = await db.select({
             isWithinRange: sql<boolean>`
                 ST_DWithin(
-                    ${location.position}::geography,
+                    ${jsonPositionToGeography(location.position)},
                     ST_SetSRID(ST_GeomFromText(${point}), 4326)::geography,
                     ${location.geofenceRadius}
                 )
             `,
             distance: sql<number>`
                 ST_Distance(
-                    ${location.position}::geography,
+                    ${jsonPositionToGeography(location.position)},
                     ST_SetSRID(ST_GeomFromText(${point}), 4326)::geography
                 )
             `

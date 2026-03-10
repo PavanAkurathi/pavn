@@ -301,9 +301,12 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
                 // Calculate capacity total (including nulls)
                 const capacityTotal = workerIds.length;
+                const assignedWorkerCount = workerIds.filter(Boolean).length;
 
                 // Determine Shift Status
-                const initialStatus = status === 'draft' ? 'draft' : 'published';
+                const initialStatus = status === 'draft'
+                    ? 'draft'
+                    : (assignedWorkerCount > 0 && assignedWorkerCount >= capacityTotal ? 'assigned' : 'published');
 
                 shiftsToInsert.push({
                     id: shiftId,

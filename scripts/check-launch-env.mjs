@@ -1,3 +1,7 @@
+import { loadRootEnv } from "./load-root-env.mjs";
+
+loadRootEnv();
+
 const required = {
   api: [
     "DATABASE_URL",

@@ -8,6 +8,13 @@
       "when": 1772390501546,
       "tag": "0000_dapper_ma_gnuci",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773124658597,
+      "tag": "0001_solid_scorpion",
+      "breakpoints": true
     }
   ]
 }

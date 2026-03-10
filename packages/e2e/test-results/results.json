@@ -146,248 +146,40 @@
   },
   "suites": [
     {
-      "title": "web/web.spec.ts",
-      "file": "web/web.spec.ts",
+      "title": "api/lifecycle.spec.ts",
+      "file": "api/lifecycle.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Schedule Management",
-          "file": "web/web.spec.ts",
-          "line": 110,
+          "title": "manager/worker lifecycle",
+          "file": "api/lifecycle.spec.ts",
+          "line": 19,
           "column": 6,
           "specs": [
             {
-              "title": "can create new shift",
+              "title": "registration to approved shift works across manager and worker roles",
               "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 120000,
+                  "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
+                  "projectId": "api",
+                  "projectName": "api",
                   "results": [
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 13492,
+                      "duration": 8246,
                       "errors": [],
-                      "stdout": [
-                        {
-                          "text": "BROWSER LOG: [Fast Refresh] rebuilding\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: [Fast Refresh] done in 166ms\n"
-                        },
-                        {
-                          "text": "REQUEST FAILED: http://localhost:3000/dashboard/schedule/create?_rsc=spvu4 - net::ERR_ABORTED\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": []\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"15:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"15:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 0,\n  \"totalAssigned\": 0,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: DEBUG: handleReview clicked\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: DEBUG: form.trigger() result: true\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: DEBUG: Setting isReviewOpen = true\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Confirm button is enabled. Clicking...\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: DEBUG: Calling publishSchedule API {locationId: TWKlbreXeMwBEnADWdpgV, organizationId: 9NEq3_s7PPBpIfsDhSioX, contactId: RWLt9UH5RXTApFBTsJjG6591TtyoeHyO, timezone: America/New_York, status: published}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: Clicked Confirm.\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: DEBUG: publishSchedule API success\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: DEBUG: Calling router.push\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: DEBUG: router.push called\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Data: {\n  \"locationId\": \"TWKlbreXeMwBEnADWdpgV\",\n  \"managerIds\": [\n    \"RWLt9UH5RXTApFBTsJjG6591TtyoeHyO\"\n  ],\n  \"schedules\": [\n    {\n      \"scheduleName\": \"\",\n      \"breakDuration\": \"0\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\",\n      \"positions\": [\n        {\n          \"roleId\": \"member\",\n          \"roleName\": \"Role\",\n          \"workerId\": \"44618723-889b-4ecd-82a0-34b961424505\",\n          \"workerName\": \"Test Worker\",\n          \"workerAvatar\": \"\",\n          \"workerInitials\": \"T\"\n        }\n      ],\n      \"dates\": [\n        \"2026-02-14T05:00:00.000Z\"\n      ],\n      \"daysOfWeek\": []\n    }\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "BROWSER LOG: ReviewScheduleDialog Stats: {\n  \"totalShifts\": 1,\n  \"totalAssigned\": 1,\n  \"totalOpen\": 0,\n  \"uniqueDates\": [\n    \"2026-02-14\"\n  ]\n}\n"
-                        },
-                        {
-                          "text": "REQUEST FAILED: http://localhost:3000/dashboard/schedule/create - net::ERR_ABORTED\n"
-                        }
-                      ],
+                      "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-02-10T04:44:57.925Z",
+                      "startTime": "2026-03-10T13:57:44.364Z",
                       "annotations": [],
                       "attachments": []
                     }
@@ -395,9 +187,9 @@
                   "status": "expected"
                 }
               ],
-              "id": "2948388c6448a8e5345d-d29fc8676ebe78fc91a4",
-              "file": "web/web.spec.ts",
-              "line": 121,
+              "id": "1f1785dee40219527314-a9f2ad9b66cc11aa6a7a",
+              "file": "api/lifecycle.spec.ts",
+              "line": 20,
               "column": 9
             }
           ]
@@ -407,8 +199,8 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-02-10T04:44:54.705Z",
-    "duration": 17198.332,
+    "startTime": "2026-03-10T13:57:43.534Z",
+    "duration": 9103.815,
     "expected": 1,
     "skipped": 0,
     "unexpected": 0,

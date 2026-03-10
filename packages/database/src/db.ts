@@ -25,7 +25,8 @@ export const db = new Proxy({} as Database, {
         if (!dbInstance) {
             dbInstance = getDb();
         }
-        return dbInstance![prop as keyof Database];
+        const value = dbInstance![prop as keyof Database];
+        return typeof value === "function" ? value.bind(dbInstance) : value;
     },
 });
 

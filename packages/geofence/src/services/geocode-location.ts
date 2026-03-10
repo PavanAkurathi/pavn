@@ -1,8 +1,8 @@
 // packages/geofence/src/services/geocode-location.ts
 
-import { db } from "@repo/database";
+import { db, toLatLng } from "@repo/database";
 import { location } from "@repo/database/schema";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { geocodeAddress } from "../utils/geocode";
 import { AppError } from "@repo/observability";
 
@@ -45,7 +45,7 @@ export const geocodeLocation = async (locationId: string, orgId: string, forceRe
     // 4. Update
     await db.update(location)
         .set({
-            position: sql`ST_GeogFromText(${`POINT(${result.data.longitude} ${result.data.latitude})`})`,
+            position: toLatLng(Number(result.data.latitude), Number(result.data.longitude)),
             geocodedAt: new Date(),
             geocodeSource: result.data.source,
             updatedAt: new Date(),
@@ -88,7 +88,7 @@ export const geocodeAllLocations = async (orgId: string) => {
         } else {
             await db.update(location)
                 .set({
-                    position: sql`ST_GeogFromText(${`POINT(${result.data.longitude} ${result.data.latitude})`})`,
+                    position: toLatLng(Number(result.data.latitude), Number(result.data.longitude)),
                     geocodedAt: new Date(),
                     geocodeSource: result.data.source,
                     updatedAt: new Date(),

@@ -7,11 +7,13 @@ This checklist is for the current scheduling-focused launch. Billing, certificat
 Supporting docs:
 - [Environment Matrix](/Users/av/Documents/pavn/.kiro/specs/critical-bugs-fix/ENVIRONMENT_MATRIX.md)
 - [Release Runbook](/Users/av/Documents/pavn/.kiro/specs/critical-bugs-fix/RELEASE_RUNBOOK.md)
+- [Staging Lifecycle Smoke](/Users/av/Documents/pavn/.kiro/specs/critical-bugs-fix/STAGING_LIFECYCLE_SMOKE.md)
 
 ## Blockers
 
 - [ ] `packages/shifts`, `packages/geofence`, `apps/api`, and `apps/workers` typecheck clean
 - [ ] targeted regression tests for publish, timesheet updates, cross-org conflicts, and API routes pass
+- [ ] automated manager/worker lifecycle E2E passes locally
 - [ ] staging database migration and data cleanup complete
 - [ ] no worker-facing mock screens or fake success payloads remain on live navigation paths
 - [ ] billing endpoints are either fully enabled or explicitly unavailable
@@ -49,18 +51,22 @@ Supporting docs:
 
 ```bash
 npm run release:preflight
+npm run release:lifecycle:local
 npm run release:smoke -- --base-url=https://staging-api.example.com
 
 # individual commands
+npm run typecheck --workspace=packages/database
 npm run typecheck --workspace=packages/shifts
 npm run typecheck --workspace=packages/geofence
 npm run typecheck --workspace=apps/api
 npx tsc --noEmit -p apps/workers/tsconfig.json
+npx tsc --noEmit -p packages/e2e/tsconfig.json
 bun test packages/shifts/tests/update-timesheet.test.ts \
   packages/shifts/tests/worker-all-shifts.test.ts \
   packages/shifts/tests/publish.test.ts \
   packages/shifts/tests/cross-org-conflict-notifications.test.ts \
   apps/api/src/routes/shifts.test.ts
+npm run test:api:lifecycle --workspace=packages/e2e
 ```
 
 ## Go / No-Go

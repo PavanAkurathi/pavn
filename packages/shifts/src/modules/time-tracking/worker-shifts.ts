@@ -1,4 +1,4 @@
-import { db } from "@repo/database";
+import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { shift, shiftAssignment, location, organization } from "@repo/database/schema";
 import { eq, and, inArray, gte, lte, asc, desc, sql } from "drizzle-orm";
 
@@ -40,8 +40,8 @@ export const getWorkerShifts = async (
             shift: shift,
             location: {
                 ...location,
-                latitude: sql<number>`ST_Y(${location.position}::geometry)`.mapWith(Number),
-                longitude: sql<number>`ST_X(${location.position}::geometry)`.mapWith(Number)
+                latitude: jsonPositionLatitude(location.position),
+                longitude: jsonPositionLongitude(location.position)
             },
             organization: organization
         })

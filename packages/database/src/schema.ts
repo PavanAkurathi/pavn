@@ -1,7 +1,8 @@
 // packages/database/src/schema.ts
 
-import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType, jsonb, time, uniqueIndex, bigint } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, index, json, integer, unique, decimal, customType, jsonb, time, uniqueIndex, bigint, check } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
+import { jsonPositionToGeography } from "./spatial";
 
 // We removed PostGIS customType due to Neon deployment bugs. Using jsonb for spatial data.
 
@@ -154,9 +155,14 @@ export const location = pgTable("location", {
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull(),
 }, (table) => ({
     locationOrgIdx: index("location_org_idx").on(table.organizationId),
-    // GEO-002 Fix: Using GIST index for spatial queries (optimized for ST_DWithin operations)
-    // Note: Migration 0010 creates this index with CONCURRENTLY option
-    locationPosGistIdx: index("location_position_gist_idx").on(table.position) // GIST index for spatial operations
+    // GEO-002: position stores {lat, lng} in jsonb, so spatial queries index the derived geography expression.
+    locationPosGistIdx: index("location_position_gist_idx")
+        .using("gist", jsonPositionToGeography(table.position))
+        .concurrently(),
+    geofenceRadiusRangeCheck: check(
+        "check_geofence_radius_range",
+        sql`${table.geofenceRadius} >= 10 AND ${table.geofenceRadius} <= 500`
+    )
 }));
 
 // ============================================================================

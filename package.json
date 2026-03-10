@@ -10,6 +10,7 @@
     "check-env": "node scripts/check-launch-env.mjs",
     "release:preflight": "node scripts/release-preflight.mjs",
     "release:smoke": "node scripts/release-smoke.mjs",
+    "release:lifecycle:local": "node scripts/run-lifecycle-local.mjs",
     "test": "turbo run test",
     "db:reset": "bun run --filter @repo/database reset"
   },

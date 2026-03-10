@@ -1,6 +1,6 @@
 // packages/geofence/src/services/ingest-location.ts
 
-import { db } from "@repo/database";
+import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
 import { workerLocation, shiftAssignment, shift, member, location } from "@repo/database/schema";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -87,8 +87,8 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
 
     if (venueLocationId) {
         const [geoResult] = await db.select({
-            isWithin: sql<boolean>`ST_DWithin(${location.position}::geography, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
-            distance: sql<number>`ST_Distance(${location.position}::geography, ST_GeogFromText(${point}))`,
+            isWithin: sql<boolean>`ST_DWithin(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+            distance: sql<number>`ST_Distance(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}))`,
             radius: location.geofenceRadius
         })
             .from(location)
@@ -153,7 +153,7 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
                     .set({
                         needsReview: true,
                         reviewReason: 'left_geofence',
-                        lastKnownPosition: sql`ST_GeogFromText(${point})`,
+                        lastKnownPosition: toLatLng(latitude, longitude),
                         lastKnownAt: now,
                         updatedAt: now,
                     })
@@ -167,9 +167,9 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
         workerId,
         shiftId: relevantShift?.id || null,
         organizationId: orgId,
-        position: sql`ST_GeogFromText(${point})`,
+        position: toLatLng(latitude, longitude),
         accuracyMeters: accuracyMeters || null,
-        venuePosition: venueLocationId ? sql`(SELECT position FROM ${location} WHERE ${location.id} = ${venueLocationId})` : null,
+        venuePosition: activeAssignments.find(({ shift }) => shift.locationId === venueLocationId)?.location?.position ?? null,
         distanceToVenueMeters: distanceMeters,
         isOnSite,
         eventType,

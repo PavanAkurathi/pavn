@@ -1,6 +1,5 @@
-import { db } from "@repo/database";
+import { db, toLatLng } from "@repo/database";
 import { location } from "@repo/database/schema";
-import { sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { AppError } from "@repo/observability";
@@ -52,7 +51,7 @@ export const createLocation = async (body: any, orgId: string) => {
         slug,
         timezone,
         address: coords.formattedAddress, // Use normalized address
-        position: sql`ST_GeogFromText(${`POINT(${coords.longitude} ${coords.latitude})`})`,
+        position: toLatLng(Number(coords.latitude), Number(coords.longitude)),
         geofenceRadius: finalRadius,
         geocodedAt: new Date(),
         geocodeSource: coords.source,

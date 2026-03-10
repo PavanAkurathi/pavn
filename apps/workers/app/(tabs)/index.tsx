@@ -33,6 +33,8 @@ const isInProgress = (shift: WorkerShift): boolean =>
     !shift.timesheet.clockOut &&
     new Date(shift.endTime) > new Date(Date.now() - 2 * 60 * 60 * 1000);
 
+const isCancelled = (shift: WorkerShift): boolean => shift.status === "cancelled";
+
 type ViewMode = "schedule" | "history";
 
 function FilterChip({
@@ -90,6 +92,11 @@ function ShiftRow({
                     <View style={styles.liveBadge}>
                         <View style={styles.liveDot} />
                         <Text style={styles.liveBadgeText}>Live</Text>
+                    </View>
+                ) : isCancelled(shift) ? (
+                    <View style={styles.cancelledBadge}>
+                        <Ionicons name="close-circle" size={13} color={workerTheme.colors.destructive} />
+                        <Text style={styles.cancelledBadgeText}>Cancelled</Text>
                     </View>
                 ) : null}
             </View>
@@ -482,6 +489,20 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: "700",
         color: workerTheme.colors.primary,
+    },
+    cancelledBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 999,
+        backgroundColor: workerTheme.colors.destructiveSoft,
+    },
+    cancelledBadgeText: {
+        fontSize: 12,
+        fontWeight: "700",
+        color: workerTheme.colors.destructive,
     },
     shiftTime: {
         marginTop: 8,

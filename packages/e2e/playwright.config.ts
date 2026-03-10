@@ -95,19 +95,21 @@ export default defineConfig({
         },
     ],
 
-    /* Run local dev servers before starting the tests */
-    webServer: [
-        {
-            command: 'cd ../.. && bun --env-file=.env run dev --filter=api',
-            url: 'http://localhost:4005/health',
-            reuseExistingServer: !process.env.CI,
-            timeout: 120 * 1000,
-        },
-        {
-            command: 'cd ../../apps/web && bun --env-file=../../.env run dev',
-            url: 'http://localhost:3000',
-            reuseExistingServer: !process.env.CI,
-            timeout: 120 * 1000,
-        },
-    ],
+    // Allow staging smoke runs to target deployed URLs without booting local dev servers.
+    webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER === '1'
+        ? undefined
+        : [
+            {
+                command: 'cd ../../apps/api && bun run dev',
+                url: 'http://localhost:4005/health',
+                reuseExistingServer: !process.env.CI,
+                timeout: 120 * 1000,
+            },
+            {
+                command: 'cd ../../apps/web && bun --env-file=../../.env run dev',
+                url: 'http://localhost:3000',
+                reuseExistingServer: !process.env.CI,
+                timeout: 120 * 1000,
+            },
+        ],
 });

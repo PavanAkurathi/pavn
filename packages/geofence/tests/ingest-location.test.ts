@@ -1,176 +1,203 @@
-import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { ingestLocation as ingestLocationController } from "../src/services/ingest-location";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { ingestLocation } from "../src/services/ingest-location";
 
-// Mocks
-const mockSendSMS = mock(() => Promise.resolve());
-mock.module("@repo/auth", () => ({
-    sendSMS: mockSendSMS
-}));
-
-const mockMemberFind = mock(() => Promise.resolve({
-    user: { id: "u1", name: "John", phoneNumber: "+15555555555" }
-}));
-
-const mockAssignmentFind = mock(() => Promise.resolve(null as any));
-const mockLocationFind = mock(() => Promise.resolve(null as any));
-const mockInsert = mock(() => ({ values: () => Promise.resolve() }));
-const mockUpdate = mock(() => ({
-    set: () => ({
-        where: () => Promise.resolve()
+const pushNotificationMock = mock(() => Promise.resolve());
+const memberFindMock = mock(() =>
+    Promise.resolve({
+        user: { id: "worker-1", name: "Taylor Worker" },
     })
+);
+const previousPingFindMock = mock(() => Promise.resolve(null));
+const updatePayloads: any[] = [];
+const insertPayloads: any[] = [];
+
+const updateMock = mock(() => ({
+    set: (values: Record<string, unknown>) => {
+        updatePayloads.push(values);
+        return {
+            where: () => Promise.resolve(),
+        };
+    },
 }));
 
-// Mock db.select chain
-// db.select().from().where() -> returns [geoResult]
-const mockSelect = mock(() => ({
-    from: () => ({
-        where: () => Promise.resolve([{
-            isWithin: true,
-            distance: 50,
-            radius: 100
-        }])
-    })
+const insertMock = mock(() => ({
+    values: (values: Record<string, unknown>) => {
+        insertPayloads.push(values);
+        return Promise.resolve();
+    },
+}));
+
+const selectMock = mock();
+
+mock.module("@repo/notifications", () => ({
+    sendPushNotification: pushNotificationMock,
 }));
 
 mock.module("@repo/database", () => ({
     db: {
         query: {
-            member: { findFirst: mockMemberFind },
-            shiftAssignment: { findFirst: mockAssignmentFind },
-            workerLocation: { findFirst: mockLocationFind },
+            member: { findFirst: memberFindMock },
+            workerLocation: { findFirst: previousPingFindMock },
         },
-        insert: mockInsert,
-        update: mockUpdate,
-        select: mockSelect,
+        select: selectMock,
+        update: updateMock,
+        insert: insertMock,
     },
-    member: { userId: "userId", organizationId: "organizationId" },
-    shiftAssignment: { workerId: "workerId", status: "status", id: "id" },
-    workerLocation: { workerId: "workerId", shiftId: "shiftId", recordedAt: "recordedAt" },
-    shift: { id: "id", organizationId: "organizationId" },
-    location: { id: "id", position: "position", geofenceRadius: "geofenceRadius" }
+    jsonPositionToGeography: () => "position_geography",
+    toLatLng: (lat: number, lng: number) => ({ lat, lng }),
 }));
 
+mock.module("@repo/database/schema", () => ({
+    workerLocation: { workerId: "worker_id", shiftId: "shift_id", recordedAt: "recorded_at", id: "id" },
+    shiftAssignment: { workerId: "worker_id", shiftId: "shift_id", id: "id" },
+    shift: { id: "id", locationId: "location_id", startTime: "start_time", endTime: "end_time" },
+    member: { userId: "user_id", organizationId: "organization_id" },
+    location: { id: "id", position: "position", geofenceRadius: "geofence_radius", name: "name" },
+}));
 
-describe("Ingest Location Controller - Departure", () => {
+describe("ingestLocation", () => {
     beforeEach(() => {
-        mockSendSMS.mockClear();
-        mockUpdate.mockClear();
-        mockAssignmentFind.mockClear();
-        mockLocationFind.mockClear();
-        mockSelect.mockClear();
+        pushNotificationMock.mockClear();
+        memberFindMock.mockClear();
+        previousPingFindMock.mockClear();
+        updateMock.mockClear();
+        insertMock.mockClear();
+        selectMock.mockReset();
+        updatePayloads.length = 0;
+        insertPayloads.length = 0;
     });
 
-    const mockRequest = (body: any) => new Request("http://localhost/location", {
-        method: "POST",
-        body: JSON.stringify(body)
+    test("sends an arrival push and stores JSON coordinates when a worker reaches the venue", async () => {
+        const shiftStart = new Date(Date.now() + 15 * 60 * 1000);
+        const shiftEnd = new Date(Date.now() + 2 * 60 * 60 * 1000);
+        const activeAssignments = [
+            {
+                assignment: {
+                    id: "assignment-1",
+                    actualClockIn: null,
+                    actualClockOut: null,
+                    reviewReason: null,
+                },
+                shift: {
+                    id: "shift-1",
+                    startTime: shiftStart,
+                    endTime: shiftEnd,
+                    locationId: "location-1",
+                },
+                location: {
+                    id: "location-1",
+                    name: "Test Venue",
+                    position: { lat: 40.7128, lng: -74.006 },
+                    geofenceRadius: 100,
+                },
+            },
+        ];
+
+        selectMock
+            .mockImplementationOnce(() => ({
+                from: () => ({
+                    innerJoin: () => ({
+                        leftJoin: () => ({
+                            where: () => ({
+                                orderBy: () => Promise.resolve(activeAssignments),
+                            }),
+                        }),
+                    }),
+                }),
+            }))
+            .mockImplementationOnce(() => ({
+                from: () => ({
+                    where: () =>
+                        Promise.resolve([
+                            { isWithin: true, distance: 12, radius: 100 },
+                        ]),
+                }),
+            }));
+
+        const result = await ingestLocation(
+            {
+                latitude: 40.7128,
+                longitude: -74.006,
+                accuracyMeters: 15,
+                deviceTimestamp: new Date().toISOString(),
+            },
+            "worker-1",
+            "org-1"
+        );
+
+        expect(result.success).toBe(true);
+        expect(result.data.eventType).toBe("arrival");
+        expect(pushNotificationMock).toHaveBeenCalledTimes(1);
+        expect(insertPayloads[0]?.position).toEqual({ lat: 40.7128, lng: -74.006 });
+        expect(insertPayloads[0]?.venuePosition).toEqual({ lat: 40.7128, lng: -74.006 });
+        expect(updatePayloads).toHaveLength(0);
     });
 
-    test("triggers departure notification when leaving geofence", async () => {
-        // Setup: User is clocked in and active
-        const mockShift = {
-            id: "s1",
-            startTime: new Date(Date.now() - 3600000), // Started 1hr ago
-            endTime: new Date(Date.now() + 3600000),
-            locationId: "l1",
-            location: {
-                id: "l1",
-                name: "Test Venue",
-                position: "POINT(0 0)",
-                geofenceRadius: 100
-            }
-        };
+    test("flags a departure with JSON last-known coordinates and does not send a push", async () => {
+        const shiftStart = new Date(Date.now() - 30 * 60 * 1000);
+        const shiftEnd = new Date(Date.now() + 60 * 60 * 1000);
+        const activeAssignments = [
+            {
+                assignment: {
+                    id: "assignment-2",
+                    actualClockIn: new Date(Date.now() - 20 * 60 * 1000),
+                    actualClockOut: null,
+                    reviewReason: null,
+                },
+                shift: {
+                    id: "shift-2",
+                    startTime: shiftStart,
+                    endTime: shiftEnd,
+                    locationId: "location-2",
+                },
+                location: {
+                    id: "location-2",
+                    name: "Night Shift Venue",
+                    position: { lat: 41.0, lng: -73.9 },
+                    geofenceRadius: 100,
+                },
+            },
+        ];
 
-        const mockAssignment = {
-            id: "a1",
-            status: "active",
-            actualClockIn: new Date(Date.now() - 3000000),
-            actualClockOut: null,
-            shift: mockShift,
-            reviewReason: null // Not yet flagged
-        };
+        previousPingFindMock.mockResolvedValueOnce({ isOnSite: true });
 
-        mockAssignmentFind.mockResolvedValue(mockAssignment);
+        selectMock
+            .mockImplementationOnce(() => ({
+                from: () => ({
+                    innerJoin: () => ({
+                        leftJoin: () => ({
+                            where: () => ({
+                                orderBy: () => Promise.resolve(activeAssignments),
+                            }),
+                        }),
+                    }),
+                }),
+            }))
+            .mockImplementationOnce(() => ({
+                from: () => ({
+                    where: () =>
+                        Promise.resolve([
+                            { isWithin: false, distance: 320, radius: 100 },
+                        ]),
+                }),
+            }));
 
-        // Previous ping was ON SITE
-        mockLocationFind.mockResolvedValue({ isOnSite: true });
+        const result = await ingestLocation(
+            {
+                latitude: 40.5,
+                longitude: -74.2,
+                accuracyMeters: 20,
+                deviceTimestamp: new Date().toISOString(),
+            },
+            "worker-1",
+            "org-1"
+        );
 
-        // IMPORTANT: We need mockSelect to return "isWithin: false" for this test case (Departure)
-        // But mockSelect is global. We can override implementation per test if needed.
-        // Or we can mock the values returned based on input?
-        // Since we are checking DEPARTURE, line 133 condition is: !isOnSite && clockIn && !clockOut.
-        // So isOnSite must be false.
-        // So db.select check should return isWithin: false.
-
-        mockSelect.mockImplementationOnce(() => ({
-            from: () => ({
-                where: () => Promise.resolve([{
-                    isWithin: false,
-                    distance: 500, // far away
-                    radius: 100
-                }])
-            })
-        }));
-
-
-        // User is now FAR AWAY
-        const req = mockRequest({ latitude: "41.000", longitude: "-74.000" });
-
-        const payload = await req.json();
-        const res = await ingestLocationController(payload, "u1", "org1") as any;
-
-        expect(res.success).toBe(true);
-        expect(res.data.eventType).toBe('departure');
-        expect(mockSendSMS).toHaveBeenCalledTimes(1);
-        // Cast to any to bypass strict tuple checks on mock.calls
-        const calls = mockSendSMS.mock.calls as any[];
-        if (calls.length > 0 && calls[0].length > 1) {
-            const messageArg = calls[0][1] as string;
-            expect(messageArg).toContain("left the venue");
-        }
-    });
-
-    test("prevents duplicate notification if already flagged", async () => {
-        // Setup: User is clocked in and active BUT already flagged
-        const mockShift = {
-            id: "s1",
-            startTime: new Date(Date.now() - 3600000),
-            endTime: new Date(Date.now() + 3600000),
-            locationId: "l1",
-            location: {
-                id: "l1",
-                name: "Test Venue",
-                position: "POINT(0 0)",
-                geofenceRadius: 100
-            }
-        };
-
-        const mockAssignment = {
-            id: "a1",
-            status: "active",
-            actualClockIn: new Date(Date.now() - 3000000),
-            actualClockOut: null,
-            shift: mockShift,
-            reviewReason: 'left_geofence' // ALREADY FLAGGED
-        };
-
-        mockAssignmentFind.mockResolvedValue(mockAssignment);
-        mockLocationFind.mockResolvedValue({ isOnSite: true });
-
-        // Mock departure again
-        mockSelect.mockImplementationOnce(() => ({
-            from: () => ({
-                where: () => Promise.resolve([{
-                    isWithin: false,
-                    distance: 500,
-                    radius: 100
-                }])
-            })
-        }));
-
-        const req = mockRequest({ latitude: "41.000", longitude: "-74.000" });
-        const payload = await req.json();
-        await ingestLocationController(payload, "u1", "org1");
-
-        expect(mockSendSMS).not.toHaveBeenCalled();
+        expect(result.success).toBe(true);
+        expect(result.data.eventType).toBe("departure");
+        expect(pushNotificationMock).not.toHaveBeenCalled();
+        expect(updatePayloads[0]?.reviewReason).toBe("left_geofence");
+        expect(updatePayloads[0]?.lastKnownPosition).toEqual({ lat: 40.5, lng: -74.2 });
+        expect(insertPayloads[0]?.position).toEqual({ lat: 40.5, lng: -74.2 });
     });
 });

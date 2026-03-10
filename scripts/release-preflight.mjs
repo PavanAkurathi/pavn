@@ -1,9 +1,16 @@
 import { spawnSync } from "node:child_process";
+import { loadRootEnv } from "./load-root-env.mjs";
+
+loadRootEnv();
 
 const steps = [
   {
     label: "Launch env audit",
     command: ["npm", "run", "check-env"],
+  },
+  {
+    label: "Typecheck packages/database",
+    command: ["npm", "run", "typecheck", "--workspace=packages/database"],
   },
   {
     label: "Typecheck packages/shifts",
@@ -22,6 +29,10 @@ const steps = [
     command: ["npx", "tsc", "--noEmit", "-p", "apps/workers/tsconfig.json"],
   },
   {
+    label: "Typecheck packages/e2e",
+    command: ["npx", "tsc", "--noEmit", "-p", "packages/e2e/tsconfig.json"],
+  },
+  {
     label: "Targeted regression tests",
     command: [
       "bun",
@@ -32,6 +43,10 @@ const steps = [
       "packages/shifts/tests/cross-org-conflict-notifications.test.ts",
       "apps/api/src/routes/shifts.test.ts",
     ],
+  },
+  {
+    label: "Manager/worker lifecycle E2E",
+    command: ["npm", "run", "release:lifecycle:local"],
   },
 ];
 
