@@ -6,6 +6,9 @@ const required = {
   api: [
     "DATABASE_URL",
     "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+  ],
+  web: [
     "NEXT_PUBLIC_APP_URL",
   ],
   auth_sms: [
@@ -27,6 +30,15 @@ const optional = {
   deeplinks: [
     "EXPO_PUBLIC_DUB_DOMAIN",
     "DUB_API_KEY",
+    "NEXT_PUBLIC_AUTH_URL",
+    "EXPO_PUBLIC_AUTH_API_URL",
+    "EXPO_PUBLIC_SHIFTS_API_URL",
+    "EXPO_PUBLIC_GEOFENCE_API_URL",
+  ],
+  better_auth_infra: [
+    "BETTER_AUTH_API_KEY",
+    "BETTER_AUTH_API_URL",
+    "BETTER_AUTH_KV_URL",
   ],
   billing: [
     "STRIPE_SECRET_KEY",

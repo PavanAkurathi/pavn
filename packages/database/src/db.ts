@@ -1,9 +1,16 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
-import { Pool } from "@neondatabase/serverless";
+import { neonConfig, Pool } from "@neondatabase/serverless";
 import * as schema from "./schema";
+import WebSocket from "ws";
 
 // Note: dotenv removed - Vercel/Railway provide env vars natively
 // For local dev, use `bun --env-file=.env` or set DATABASE_URL manually
+
+// Neon uses WebSockets for the Pool/transaction client. Bun provides this natively,
+// but Vercel's Node runtime needs an explicit constructor.
+if (typeof process !== "undefined" && process.release?.name === "node") {
+    neonConfig.webSocketConstructor = WebSocket;
+}
 
 const getDb = () => {
     if (!process.env.DATABASE_URL) {
@@ -12,7 +19,8 @@ const getDb = () => {
             "For local dev, run with: bun --env-file=.env"
         );
     }
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const PoolCtor = Pool as unknown as new (config: { connectionString: string }) => InstanceType<typeof Pool>;
+    const pool = new PoolCtor({ connectionString: process.env.DATABASE_URL });
     return drizzle(pool, { schema });
 };
 

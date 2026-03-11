@@ -11,6 +11,7 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
+import { getWorkerPhoneAccess } from "@repo/auth";
 
 // Import services
 import {
@@ -30,6 +31,57 @@ import {
 } from "@repo/geofence";
 
 export const workerRouter = new OpenAPIHono<AppContext>();
+
+const workerAuthEligibilityRoute = createRoute({
+    method: "post",
+    path: "/auth/eligibility",
+    summary: "Check Worker Phone Eligibility",
+    description: "Check whether a phone number has already been added to at least one organization and can use the worker app.",
+    request: {
+        body: {
+            content: {
+                "application/json": {
+                    schema: z.object({
+                        phoneNumber: z.string(),
+                    }),
+                },
+            },
+        },
+    },
+    responses: {
+        200: {
+            description: "Eligibility check result",
+            content: {
+                "application/json": {
+                    schema: z.object({
+                        eligible: z.boolean(),
+                        organizationCount: z.number().int().nonnegative(),
+                        existingAccount: z.boolean(),
+                    }),
+                },
+            },
+        },
+        400: { description: "Invalid phone number" },
+    },
+});
+
+workerRouter.openapi(workerAuthEligibilityRoute, async (c) => {
+    const body = await c.req.json();
+    if (!body || typeof body.phoneNumber !== "string") {
+        return c.json({ error: "Invalid phone number" }, 400);
+    }
+
+    try {
+        const access = await getWorkerPhoneAccess(body.phoneNumber);
+        return c.json({
+            eligible: access.eligible,
+            organizationCount: access.organizationCount,
+            existingAccount: access.existingAccount,
+        }, 200);
+    } catch {
+        return c.json({ error: "Invalid phone number" }, 400);
+    }
+});
 
 // =============================================================================
 // WORKER SHIFTS

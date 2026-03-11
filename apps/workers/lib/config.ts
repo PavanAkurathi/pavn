@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { publicEnvWithDevFallback } from "./env";
+import { optionalPublicEnv, publicEnvWithDevFallback } from "./env";
 
 const getLocalUrl = (port: number) => {
     // Development Fallback
@@ -11,11 +11,11 @@ const getLocalUrl = (port: number) => {
     return `http://10.0.0.38:${port}`;
 };
 
+const apiUrl = publicEnvWithDevFallback("EXPO_PUBLIC_API_URL", getLocalUrl(4005));
+
 export const CONFIG = {
-    // All services now run on a single unified API gateway at port 4005
-    // In production, set EXPO_PUBLIC_API_URL to https://shift-serf.up.railway.app
-    API_URL: publicEnvWithDevFallback("EXPO_PUBLIC_API_URL", getLocalUrl(4005)),
-    AUTH_API_URL: publicEnvWithDevFallback("EXPO_PUBLIC_AUTH_API_URL", getLocalUrl(4005)),
-    SHIFTS_API_URL: publicEnvWithDevFallback("EXPO_PUBLIC_SHIFTS_API_URL", getLocalUrl(4005)),
-    GEOFENCE_API_URL: publicEnvWithDevFallback("EXPO_PUBLIC_GEOFENCE_API_URL", getLocalUrl(4005)),
+    API_URL: apiUrl,
+    AUTH_API_URL: optionalPublicEnv("EXPO_PUBLIC_AUTH_API_URL") ?? apiUrl,
+    SHIFTS_API_URL: optionalPublicEnv("EXPO_PUBLIC_SHIFTS_API_URL") ?? apiUrl,
+    GEOFENCE_API_URL: optionalPublicEnv("EXPO_PUBLIC_GEOFENCE_API_URL") ?? apiUrl,
 };

@@ -1,8 +1,8 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, WorkerShift } from '../lib/api';
+import { scheduleLocalNotification } from '../utils/notifications';
 
 export const GEOFENCE_TASK_NAME = 'geofence-monitor-task';
 
@@ -29,14 +29,10 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
             }));
 
             if (type === 'ENTER') {
-                await Notifications.scheduleNotificationAsync({
-                    content: {
-                        title: "You've arrived!",
-                        body: "Open the app to clock in or clock out.",
-                        data: { url: "/(tabs)" },
-                    },
-                    trigger: null, // Immediate
-                });
+                await scheduleLocalNotification(
+                    "You've arrived!",
+                    "Open the app to clock in or clock out."
+                );
             }
         } catch (e) {
             console.error('[GEOFENCE] Failed to log event:', e);

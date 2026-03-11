@@ -17,6 +17,8 @@ import {
 import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
 
+type AuthClientErrorContext = { error: { message: string } };
+
 export function LoginForm() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +47,7 @@ export function LoginForm() {
                 toast.success("Welcome back!");
                 router.push("/dashboard");
             },
-            onError: (ctx) => {
+            onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);
                 setIsLoading(false);
             }

@@ -14,7 +14,7 @@
     "check-types": "next typegen && tsc --noEmit"
   },
   "dependencies": {
-    "@better-auth/stripe": "^1.4.17",
+    "@better-auth/stripe": "1.5.1-beta.3",
     "@hookform/resolvers": "^4.1.0",
     "@repo/auth": "workspace:*",
     "@repo/config": "workspace:*",
@@ -28,7 +28,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@types/google.maps": "^3.58.1",
     "@vis.gl/react-google-maps": "^1.7.1",
-    "better-auth": "1.4.17",
+    "better-auth": "1.5.1-beta.3",
     "date-fns": "^4.1.0",
     "drizzle-orm": "0.45.1",
     "dub": "^0.71.4",

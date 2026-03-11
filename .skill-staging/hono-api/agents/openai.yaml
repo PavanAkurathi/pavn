@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hono API"
+  short_description: "Build Hono APIs with clean transport boundaries."
+  default_prompt: "Use $hono-api to implement or review the Hono API layer while keeping business logic in packages."

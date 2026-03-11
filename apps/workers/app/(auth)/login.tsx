@@ -12,6 +12,7 @@ import {
 import Toast from 'react-native-toast-message';
 import { useRouter } from "expo-router";
 import { authClient } from "../../lib/auth-client";
+import { checkWorkerEligibility, persistWorkerSession } from "../../lib/worker-auth";
 import { workerTheme } from "../../lib/theme";
 import { validate, phoneSchema, otpSchema } from "../../lib/validation";
 import { Ionicons as IoniconsVector } from "@expo/vector-icons";
@@ -40,8 +41,17 @@ export default function LoginScreen() {
         const formattedPhone = result.data; // e.g., +1781...
         setLoading(true);
 
-
         try {
+            const access = await checkWorkerEligibility(formattedPhone);
+            if (!access.eligible) {
+                Toast.show({
+                    type: 'error',
+                    text1: 'Not invited yet',
+                    text2: 'Your number has not been added to any organization yet.',
+                });
+                return;
+            }
+
             // Send OTP
             const res = await (authClient as any).phoneNumber.sendOtp({
                 phoneNumber: formattedPhone,
@@ -117,31 +127,7 @@ export default function LoginScreen() {
 
             // Success
 
-            // Extract the session token and store it so our api.ts helper can fetch it
-            if (res.data?.token) {
-                const SecureStore = require('expo-secure-store');
-                await SecureStore.setItemAsync("better-auth.session_token", res.data.token);
-
-                // Auto-accept any pending invitations from Dub.co Deep Links
-                try {
-                    const orgToken = await SecureStore.getItemAsync("pending_invitation_token");
-                    if (orgToken) {
-                        console.log("[Login] Processing pending invitation:", orgToken);
-                        const inviteRes = await authClient.organization.acceptInvitation({
-                            invitationId: orgToken,
-                        });
-
-                        if (!inviteRes.error) {
-                            await SecureStore.deleteItemAsync("pending_invitation_token");
-                            console.log("[Login] Successfully joined organization!");
-                        } else {
-                            console.warn("[Login] Failed to join organization:", inviteRes.error);
-                        }
-                    }
-                } catch (inviteErr) {
-                    console.warn("[Login] Error checking for pending invitation:", inviteErr);
-                }
-            }
+            await persistWorkerSession(res);
 
             router.replace("/(tabs)");
 

@@ -19,6 +19,11 @@ Required public config:
 - `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
 - `EXPO_PUBLIC_DUB_DOMAIN`
 
+Optional only if you intentionally split services:
+- `EXPO_PUBLIC_AUTH_API_URL`
+- `EXPO_PUBLIC_SHIFTS_API_URL`
+- `EXPO_PUBLIC_GEOFENCE_API_URL`
+
 Recommended mobile observability:
 - `EXPO_PUBLIC_SENTRY_DSN`
 

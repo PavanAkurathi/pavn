@@ -4,7 +4,7 @@ const REQUIRED_RUNTIME_ENV = {
     core: [
         "DATABASE_URL",
         "BETTER_AUTH_SECRET",
-        "NEXT_PUBLIC_APP_URL",
+        "BETTER_AUTH_URL",
     ],
     authSms: [
         "TWILIO_ACCOUNT_SID",
@@ -28,6 +28,9 @@ const OPTIONAL_RUNTIME_ENV = {
     email: [
         "RESEND_API_KEY",
         "EMAIL_FROM",
+    ],
+    web: [
+        "NEXT_PUBLIC_APP_URL",
     ],
 } as const;
 
@@ -90,6 +93,7 @@ export async function getApiReadinessSummary(): Promise<ReadinessSummary> {
         billing: groupConfigured(OPTIONAL_RUNTIME_ENV.billing),
         cron: groupConfigured(OPTIONAL_RUNTIME_ENV.cron),
         email: groupConfigured(OPTIONAL_RUNTIME_ENV.email),
+        web: groupConfigured(OPTIONAL_RUNTIME_ENV.web),
     };
 
     return {

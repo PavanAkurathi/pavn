@@ -173,7 +173,15 @@ app.on(["POST", "GET"], "/api/auth/*", async (c) => {
 
 app.use("*", async (c, next) => {
     // Skip public routes
-    if (c.req.path === "/health" || c.req.path === "/ready" || c.req.path.startsWith("/api/auth") || c.req.path === "/docs" || c.req.path === "/openapi.json" || c.req.path === "/") {
+    if (
+        c.req.path === "/health" ||
+        c.req.path === "/ready" ||
+        c.req.path.startsWith("/api/auth") ||
+        c.req.path.startsWith("/worker/auth") ||
+        c.req.path === "/docs" ||
+        c.req.path === "/openapi.json" ||
+        c.req.path === "/"
+    ) {
         await next();
         return;
     }

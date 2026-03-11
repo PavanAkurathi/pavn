@@ -3,16 +3,14 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import Toast from 'react-native-toast-message';
 import "../services/location";
-import "../services/geofencing";
-import "../utils/notifications";
-import { useEffect } from "react";
+import { type ReactNode, useEffect } from "react";
 
 import * as Sentry from '@sentry/react-native';
 
 import { ErrorBoundary } from "../components/ErrorBoundary";
-import { DubProvider } from "@dub/react-native";
 import { authClient } from "../lib/auth-client";
 import { bootstrapOrganizationContext } from "../lib/organization-context";
+import { isExpoGo } from "../lib/runtime";
 import { workerTheme } from "../lib/theme";
 import { isWorkersProd, optionalPublicEnv, requirePublicEnv } from "../lib/env";
 import { syncGeofences } from "../services/geofencing";
@@ -20,11 +18,29 @@ import {
     registerForPushNotifications,
     setupNotificationHandlers,
 } from "../services/push-notifications";
+import { configureForegroundNotifications } from "../utils/notifications";
 
 const DUB_PUBLISHABLE_KEY = isWorkersProd
     ? requirePublicEnv("EXPO_PUBLIC_DUB_PUBLISHABLE_KEY")
     : optionalPublicEnv("EXPO_PUBLIC_DUB_PUBLISHABLE_KEY") || "dev_only_dub_key";
 const DUB_DOMAIN = process.env.EXPO_PUBLIC_DUB_DOMAIN || "links.workershive.com";
+
+function DubProviderWrapper({
+    children,
+}: {
+    children: ReactNode;
+}) {
+    if (isExpoGo) {
+        return <>{children}</>;
+    }
+
+    const { DubProvider } = require("@dub/react-native") as typeof import("@dub/react-native");
+    return (
+        <DubProvider publishableKey={DUB_PUBLISHABLE_KEY} domain={DUB_DOMAIN}>
+            {children}
+        </DubProvider>
+    );
+}
 
 // Initialize Sentry conditionally
 if (process.env.EXPO_PUBLIC_SENTRY_DSN) {
@@ -39,6 +55,8 @@ function RootLayout() {
     const router = useRouter();
 
     useEffect(() => {
+        configureForegroundNotifications();
+
         const removeNotificationHandlers = setupNotificationHandlers(
             () => undefined,
             (response) => {
@@ -75,7 +93,7 @@ function RootLayout() {
     // ...
 
     return (
-        <DubProvider publishableKey={DUB_PUBLISHABLE_KEY} domain={DUB_DOMAIN}>
+        <DubProviderWrapper>
             <SafeAreaProvider>
                 <StatusBar style="dark" backgroundColor={workerTheme.colors.background} />
                 <ErrorBoundary>
@@ -86,7 +104,7 @@ function RootLayout() {
                 </ErrorBoundary>
                 <Toast />
             </SafeAreaProvider>
-        </DubProvider>
+        </DubProviderWrapper>
     );
 }
 

@@ -70,7 +70,6 @@ const inviteWorkerRoute = createRoute({
     description: 'Invite a new worker to the organization.',
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Invitation sent' },
-        501: { description: 'Not implemented' },
         403: { description: 'Forbidden' }
     }
 });

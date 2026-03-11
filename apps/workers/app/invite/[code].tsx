@@ -1,40 +1,51 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { authClient } from "../../lib/auth-client";
 import { Ionicons } from "@expo/vector-icons";
+import * as SecureStore from "expo-secure-store";
+import { checkWorkerEligibility, persistWorkerSession } from "../../lib/worker-auth";
 import { workerTheme } from "../../lib/theme";
+import { phoneSchema } from "../../lib/validation";
 
 export default function InviteRedemptionScreen() {
     const { code } = useLocalSearchParams();
     const router = useRouter();
 
-    const [name, setName] = useState("");
     const [phoneNumber, setPhoneNumber] = useState("");
-    const [password, setPassword] = useState(""); // Still needed for password fallback or we can auto-generate/skip
     const [otp, setOtp] = useState("");
-    const [step, setStep] = useState<'details' | 'otp'>('details');
+    const [step, setStep] = useState<'phone' | 'otp'>('phone');
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        if (typeof code === "string" && code) {
+            void SecureStore.setItemAsync("pending_invitation_token", code);
+        }
+    }, [code]);
+
     const handleSendOtp = async () => {
-        if (!name || !phoneNumber || !password) {
-            Alert.alert("Missing Fields", "Please fill in all details.");
+        const parsedPhone = phoneSchema.safeParse(phoneNumber);
+        if (!parsedPhone.success) {
+            Alert.alert("Invalid Phone Number", parsedPhone.error.issues[0]?.message ?? "Enter a valid mobile number.");
             return;
         }
 
         setLoading(true);
 
         try {
-            // 1. Sign Up User (Creates account, sends OTP to phone)
-            // Casting to 'any' because phoneNumber plugin types might not be inferred correctly in this env
-            const signUpRes = await (authClient.signUp as any).phoneNumber({
-                phoneNumber,
-                password,
-                name,
+            const formattedPhone = parsedPhone.data;
+            const access = await checkWorkerEligibility(formattedPhone);
+            if (!access.eligible) {
+                Alert.alert("Not Invited Yet", "Your number has not been added to any organization yet.");
+                return;
+            }
+
+            const sendOtpRes = await (authClient as any).phoneNumber.sendOtp({
+                phoneNumber: formattedPhone,
             });
 
-            if (signUpRes.error) {
-                throw new Error(signUpRes.error.message);
+            if (sendOtpRes.error) {
+                throw new Error(sendOtpRes.error.message);
             }
 
             setStep('otp');
@@ -48,13 +59,18 @@ export default function InviteRedemptionScreen() {
 
     const handleVerifyOtp = async () => {
         if (!otp) return;
+
+        const parsedPhone = phoneSchema.safeParse(phoneNumber);
+        if (!parsedPhone.success) {
+            Alert.alert("Invalid Phone Number", parsedPhone.error.issues[0]?.message ?? "Enter a valid mobile number.");
+            return;
+        }
+
         setLoading(true);
 
         try {
-            // 2. Verify Phone OTP (This logs them in)
-            // Using authClient.phoneNumber.verify as confirmed by docs/types
             const verifyRes = await (authClient as any).phoneNumber.verify({
-                phoneNumber,
+                phoneNumber: parsedPhone.data,
                 code: otp
             });
 
@@ -62,14 +78,7 @@ export default function InviteRedemptionScreen() {
                 throw new Error(verifyRes.error.message);
             }
 
-            // 3. Accept Invitation (Now that we are logged in)
-            const inviteRes = await authClient.organization.acceptInvitation({
-                invitationId: code as string,
-            });
-
-            if (inviteRes.error) {
-                throw new Error("Joined, but invite failed: " + inviteRes.error.message);
-            }
+            await persistWorkerSession(verifyRes);
 
             Alert.alert("Welcome!", "You are now verified and part of the team.", [
                 { text: "Let's Work", onPress: () => router.replace("/(tabs)") }
@@ -95,11 +104,11 @@ export default function InviteRedemptionScreen() {
                         <Ionicons name="phone-portrait-outline" size={32} color={workerTheme.colors.secondary} />
                     </View>
                     <Text style={styles.title}>
-                        {step === 'details' ? "Let's get you set up" : "Check your texts"}
+                        {step === 'phone' ? "Join your schedule" : "Check your texts"}
                     </Text>
                     <Text style={styles.subtitle}>
-                        {step === 'details'
-                            ? "Enter your mobile number to create your worker account."
+                        {step === 'phone'
+                            ? "Enter the mobile number your organization added for you."
                             : `We sent a code to ${phoneNumber}. Enter it below.`}
                     </Text>
                     {code && (
@@ -109,18 +118,8 @@ export default function InviteRedemptionScreen() {
                     )}
                 </View>
 
-                {step === 'details' ? (
+                {step === 'phone' ? (
                     <View style={styles.form}>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Full Name</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="Your Name"
-                                value={name}
-                                onChangeText={setName}
-                            />
-                        </View>
-
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Mobile Number</Text>
                             <TextInput
@@ -129,17 +128,6 @@ export default function InviteRedemptionScreen() {
                                 value={phoneNumber}
                                 onChangeText={setPhoneNumber}
                                 keyboardType="phone-pad"
-                            />
-                        </View>
-
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Create Password</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="••••••••"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
                             />
                         </View>
 
@@ -181,7 +169,7 @@ export default function InviteRedemptionScreen() {
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => setStep('details')} style={{ alignItems: 'center', marginTop: 16 }}>
+                        <TouchableOpacity onPress={() => setStep('phone')} style={{ alignItems: 'center', marginTop: 16 }}>
                             <Text style={{ color: workerTheme.colors.secondary }}>Change Number</Text>
                         </TouchableOpacity>
                     </View>

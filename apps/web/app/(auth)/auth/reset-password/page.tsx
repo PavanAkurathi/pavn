@@ -12,6 +12,8 @@ import { Suspense } from "react";
 import { OtpForm } from "@/components/auth/otp-form";
 import { Field, FieldGroup, FieldLabel } from "@repo/ui/components/ui/field";
 
+type AuthClientErrorContext = { error: { message: string } };
+
 function ResetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -51,7 +53,7 @@ function ResetPasswordForm() {
                 toast.success("Password reset successfully!");
                 router.push("/auth/login");
             },
-            onError: (ctx) => {
+            onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);
                 setLoading(false);
                 // If OTP is invalid, maybe go back? 

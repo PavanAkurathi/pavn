@@ -15,6 +15,7 @@ Use a private, uncommitted env file or shell session.
 Required for local API/web auth flow:
 - `DATABASE_URL`
 - `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
 
 Required for real SMS auth testing:
@@ -26,6 +27,9 @@ Worker app:
 - `EXPO_PUBLIC_API_URL`
 - `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
 - `EXPO_PUBLIC_DUB_DOMAIN`
+- `EXPO_PUBLIC_AUTH_API_URL` if auth is split from the main API URL
+- `EXPO_PUBLIC_SHIFTS_API_URL` if shifts are split from the main API URL
+- `EXPO_PUBLIC_GEOFENCE_API_URL` if geofence is split from the main API URL
 
 Recommended:
 - `SENTRY_DSN`
@@ -34,6 +38,9 @@ Recommended:
 - `DUB_API_KEY`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
+- `BETTER_AUTH_API_KEY`
+- `BETTER_AUTH_API_URL`
+- `BETTER_AUTH_KV_URL`
 
 Launch-optional unless billing is enabled:
 - `STRIPE_SECRET_KEY`
@@ -47,6 +54,7 @@ Set these in the staging hosting environment and EAS staging profile.
 Required runtime:
 - `DATABASE_URL`
 - `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
@@ -56,6 +64,9 @@ Required worker build config:
 - `EXPO_PUBLIC_API_URL`
 - `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
 - `EXPO_PUBLIC_DUB_DOMAIN`
+- `EXPO_PUBLIC_AUTH_API_URL` if auth is split from the main API URL
+- `EXPO_PUBLIC_SHIFTS_API_URL` if shifts are split from the main API URL
+- `EXPO_PUBLIC_GEOFENCE_API_URL` if geofence is split from the main API URL
 
 Recommended:
 - `SENTRY_DSN`
@@ -64,6 +75,9 @@ Recommended:
 - `DUB_API_KEY`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
+- `BETTER_AUTH_API_KEY`
+- `BETTER_AUTH_API_URL`
+- `BETTER_AUTH_KV_URL`
 
 Launch-optional unless billing is enabled:
 - `STRIPE_SECRET_KEY`
@@ -77,6 +91,7 @@ Set these only in the production secret manager / build system.
 Required runtime:
 - `DATABASE_URL`
 - `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
@@ -86,6 +101,9 @@ Required worker build config:
 - `EXPO_PUBLIC_API_URL`
 - `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
 - `EXPO_PUBLIC_DUB_DOMAIN`
+- `EXPO_PUBLIC_AUTH_API_URL` if auth is split from the main API URL
+- `EXPO_PUBLIC_SHIFTS_API_URL` if shifts are split from the main API URL
+- `EXPO_PUBLIC_GEOFENCE_API_URL` if geofence is split from the main API URL
 
 Recommended:
 - `SENTRY_DSN`
@@ -94,6 +112,9 @@ Recommended:
 - `DUB_API_KEY`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
+- `BETTER_AUTH_API_KEY`
+- `BETTER_AUTH_API_URL`
+- `BETTER_AUTH_KV_URL`
 
 Required only if billing is enabled for launch:
 - `STRIPE_SECRET_KEY`

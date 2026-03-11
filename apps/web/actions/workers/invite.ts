@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, sendSMS } from "@repo/auth";
+import { auth, normalizePhoneNumber, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { member, user, invitation, rosterEntry } from "@repo/database/schema";
@@ -82,6 +82,7 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
         }
 
         const { name, email, phoneNumber, role, jobTitle, hourlyRate, invites } = input;
+        const normalizedPhoneNumber = phoneNumber ? normalizePhoneNumber(phoneNumber) : null;
 
         // 1. Create a true, trackable invitation in BetterAuth
         // NOTE: Even if they already exist, we send an invite. If they exist and are already a member, wait, let's catch that.
@@ -154,7 +155,7 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
             // Update existing entry with newer details from manual invite
             await db.update(rosterEntry).set({
                 name,
-                phoneNumber: phoneNumber || existingRoster[0].phoneNumber,
+                phoneNumber: normalizedPhoneNumber || existingRoster[0].phoneNumber,
                 jobTitle: jobTitle || existingRoster[0].jobTitle,
                 hourlyRate: hourlyRate !== undefined ? hourlyRate : existingRoster[0].hourlyRate,
                 status: "invited",
@@ -167,7 +168,7 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
                 organizationId: activeOrgId,
                 name,
                 email,
-                phoneNumber: phoneNumber || null,
+                phoneNumber: normalizedPhoneNumber,
                 jobTitle: jobTitle || null,
                 hourlyRate: hourlyRate !== undefined ? hourlyRate : null,
                 status: "invited",
@@ -188,7 +189,7 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
             : null;
 
         // 2. Generate Dub.co Trackable & Deferred Deep Link
-        if (invites.sms && phoneNumber) {
+        if (invites.sms && normalizedPhoneNumber) {
             try {
                 // The URL is the fallback web URL. We append orgToken so if they use desktop it still works.
                 const originalUrl = `https://pavn.link/invite?orgToken=${invitationId}`;
@@ -207,8 +208,8 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
 
                 // 3. Send SMS via Twilio using the Dub link (or fallback link)
                 const message = `You've been invited to join the team on WorkersHive! Click here to download the app and join: ${shortLink}`;
-                await sendSMS(phoneNumber, message);
-                console.log(`[WorkerInvite] Sent SMS to ${phoneNumber}: ${shortLink}`);
+                await sendSMS(normalizedPhoneNumber, message);
+                console.log(`[WorkerInvite] Sent SMS to ${normalizedPhoneNumber}: ${shortLink}`);
 
             } catch (err: any) {
                 console.error("[WorkerInvite] Dub.co Link Generation or SMS Error:", err);

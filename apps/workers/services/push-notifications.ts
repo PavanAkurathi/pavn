@@ -1,4 +1,3 @@
-import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -6,13 +5,28 @@ import Constants from 'expo-constants';
 // Try importing api from absolute path or checking structure
 // Assuming api util exists in ../lib/api based on file structure scan
 import { api } from '../lib/api';
+import { isAndroidExpoGo } from '../lib/runtime';
 
 const PUSH_TOKEN_KEY = 'push_token_registered';
+
+function getNotificationsModule(): typeof import("expo-notifications") | null {
+    if (isAndroidExpoGo) {
+        return null;
+    }
+
+    return require("expo-notifications") as typeof import("expo-notifications");
+}
 
 /**
  * Register for push notifications (call on login and app launch)
  */
 export async function registerForPushNotifications(): Promise<string | null> {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) {
+        console.log('[PUSH] Skipping push registration in Expo Go (Android)');
+        return null;
+    }
+
     if (!Device.isDevice) {
         console.warn('[PUSH] Must use physical device for push notifications');
         return null;
@@ -75,9 +89,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
  * Setup notification handlers
  */
 export function setupNotificationHandlers(
-    onNotificationReceived: (notification: Notifications.Notification) => void,
-    onNotificationTapped: (response: Notifications.NotificationResponse) => void
+    onNotificationReceived: (notification: import("expo-notifications").Notification) => void,
+    onNotificationTapped: (response: import("expo-notifications").NotificationResponse) => void
 ): () => void {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) {
+        return () => undefined;
+    }
+
     // Handle notifications received while app is foregrounded
     const foregroundSubscription = Notifications.addNotificationReceivedListener(onNotificationReceived);
 

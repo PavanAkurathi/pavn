@@ -21,6 +21,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { SUBSCRIPTION } from "@repo/config";
 
+type AuthClientErrorContext = { error: { message: string } };
+
 const signupSchema = z.object({
     firstName: z.string().min(2, "First name must be at least 2 characters"),
     lastName: z.string().min(2, "Last name must be at least 2 characters"),
@@ -85,7 +87,7 @@ export function SignupForm() {
                 toast.success("Account created! Please verify your email.");
                 router.push(`/auth/verify-email?email=${encodeURIComponent(data.email)}`);
             },
-            onError: (ctx) => {
+            onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);
                 setIsLoading(false);
             }

@@ -12,6 +12,8 @@ import { ArrowLeft } from "lucide-react";
 import { authClient } from "@repo/auth/client";
 import { useRouter } from "next/navigation";
 
+type AuthClientErrorContext = { error: { message: string } };
+
 export default function ForgotPasswordPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -33,7 +35,7 @@ export default function ForgotPasswordPage() {
                 });
                 router.push(`/auth/reset-password?email=${encodeURIComponent(email)}`);
             },
-            onError: (ctx) => {
+            onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);
                 setLoading(false);
             }

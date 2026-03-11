@@ -10,6 +10,7 @@
             "DOM"
         ],
         "target": "ESNext",
+        "preserveSymlinks": true,
         "types": [
             "node"
         ],

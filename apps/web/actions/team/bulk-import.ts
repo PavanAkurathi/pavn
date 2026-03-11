@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@repo/auth";
+import { auth, isValidPhoneNumber, normalizePhoneNumber } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { member, rosterEntry } from "@repo/database/schema";
@@ -94,12 +94,16 @@ export async function bulkImport(rawWorkers: BulkImportWorker[]) {
 
     for (const workerData of workers) {
         try {
+            if (workerData.phoneNumber && !isValidPhoneNumber(workerData.phoneNumber)) {
+                throw new Error("Invalid phone number");
+            }
+
             await db.insert(rosterEntry).values({
                 id: nanoid(),
                 organizationId: activeOrgId,
                 name: workerData.name,
                 email: workerData.email,
-                phoneNumber: workerData.phoneNumber || null,
+                phoneNumber: workerData.phoneNumber ? normalizePhoneNumber(workerData.phoneNumber) : null,
                 role: workerData.role || "member",
                 jobTitle: workerData.jobTitle || null,
                 hourlyRate: workerData.hourlyRate || null,

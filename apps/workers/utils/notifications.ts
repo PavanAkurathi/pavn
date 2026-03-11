@@ -1,12 +1,27 @@
-import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import { Platform } from "react-native";
+import { isAndroidExpoGo } from "../lib/runtime";
 
-const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+let notificationHandlerConfigured = false;
 
-// Configure how notifications behave when the app is in the foreground
-// Skip on Android Expo Go to prevent crashes (feature removed in SDK 53)
-if (Platform.OS !== 'android' || !isExpoGo) {
+function getNotificationsModule(): typeof import("expo-notifications") | null {
+    if (isAndroidExpoGo) {
+        return null;
+    }
+
+    return require("expo-notifications") as typeof import("expo-notifications");
+}
+
+export function configureForegroundNotifications(): void {
+    if (notificationHandlerConfigured) {
+        return;
+    }
+
+    const Notifications = getNotificationsModule();
+    if (!Notifications) {
+        console.log("Skipping notification handler setup in Expo Go (Android)");
+        return;
+    }
+
     Notifications.setNotificationHandler({
         handleNotification: async () => ({
             shouldShowAlert: true,
@@ -17,10 +32,13 @@ if (Platform.OS !== 'android' || !isExpoGo) {
             priority: Notifications.AndroidNotificationPriority.MAX,
         }),
     });
+
+    notificationHandlerConfigured = true;
 }
 
 export async function registerForPushNotificationsAsync() {
-    if (Platform.OS === 'android' && isExpoGo) {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) {
         console.log('Skipping Push Notification registration in Expo Go (Android)');
         return null; // Graceful exit
     }
@@ -54,7 +72,8 @@ export async function registerForPushNotificationsAsync() {
 }
 
 export async function scheduleLocalNotification(title: string, body: string, triggerSeconds: number = 0) {
-    if (Platform.OS === 'android' && isExpoGo) {
+    const Notifications = getNotificationsModule();
+    if (!Notifications) {
         console.log('Skipping Local Notification schedule in Expo Go (Android)');
         return;
     }

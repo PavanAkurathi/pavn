@@ -14,6 +14,8 @@ import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
 import { Suspense } from "react";
 
+type AuthClientErrorContext = { error: { message: string } };
+
 function VerifyEmailForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -40,7 +42,7 @@ function VerifyEmailForm() {
                 toast.success("Email verified successfully!");
                 router.push("/dashboard");
             },
-            onError: (ctx) => {
+            onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);
                 setIsLoading(false);
             }

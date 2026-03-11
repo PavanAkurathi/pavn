@@ -1,9 +1,10 @@
 // packages/auth/src/auth.ts
 
 import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { organization, emailOTP, phoneNumber } from "better-auth/plugins";
 import { stripe } from "@better-auth/stripe";
+import { dash } from "@better-auth/infra";
 import Stripe from "stripe";
 import { expo } from "@better-auth/expo";
 import { db } from "@repo/database";
@@ -13,51 +14,20 @@ import { eq } from "drizzle-orm";
 import { sendOtp } from "@repo/email";
 import { SUBSCRIPTION, OTP } from "@repo/config";
 import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
-
-// ─── Environment Validation (fail fast, fail loud) ───────────────────────────
-
-function requireEnv(key: string): string {
-    const value = process.env[key];
-    if (!value) throw new Error(`[AUTH FATAL] Missing required env var: ${key}`);
-    return value;
-}
-
-const isProd = process.env.NODE_ENV === "production";
+import { getWorkerPhoneAccess, getWorkerTempEmail, syncWorkerMembershipsForPhone } from "./worker-access";
+import {
+    buildTrustedOrigins,
+    getBetterAuthInfraConnection,
+    getBetterAuthServerBaseUrl,
+    isAuthProd,
+    requireAuthEnv,
+} from "./env.js";
 
 // In production, crash immediately if secret is missing.
 // In dev/build, use a clearly labeled fallback.
-const authSecret = isProd
-    ? requireEnv("BETTER_AUTH_SECRET")
+const authSecret = isAuthProd
+    ? requireAuthEnv("BETTER_AUTH_SECRET")
     : (process.env.BETTER_AUTH_SECRET ?? "dev_only_secret_not_for_production");
-
-// ─── Trusted Origins ──────────────────────────────────────────────────────────
-
-function buildTrustedOrigins(): string[] {
-    const origins: string[] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8081",    // Expo web
-    ];
-
-    // Comma-separated list from env (Vercel, staging URLs, etc.)
-    const fromEnv = process.env.ALLOWED_ORIGINS ?? "";
-    if (fromEnv) {
-        fromEnv.split(",").forEach((o) => {
-            const trimmed = o.trim();
-            if (trimmed) origins.push(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
-        });
-    }
-
-    // Vercel deployment URL
-    if (process.env.VERCEL_URL) {
-        origins.push(`https://${process.env.VERCEL_URL}`);
-    }
-
-    // Retaining mobile deep link schemas as Next.js will receive them in the Origin header
-    origins.push("exp://", "myapp://", "workers://", "exp://**");
-
-    return [...new Set(origins)]; // deduplicate
-}
 
 const trustedOrigins = buildTrustedOrigins();
 
@@ -69,7 +39,7 @@ function buildStripePlugin() {
     const priceId = process.env.STRIPE_PRICE_ID_MONTHLY;
 
     if (!secretKey || !webhookSecret || !priceId) {
-        if (isProd) throw new Error("[AUTH FATAL] Missing Stripe env vars in production");
+        if (isAuthProd) throw new Error("[AUTH FATAL] Missing Stripe env vars in production");
         console.warn("[AUTH] Stripe not initialized — missing env vars. Skipping plugin.");
         return null;
     }
@@ -95,18 +65,29 @@ function buildStripePlugin() {
 
 const stripePlugin = buildStripePlugin();
 
+function buildInfraPlugins() {
+    const connection = getBetterAuthInfraConnection();
+    if (!connection) {
+        return [];
+    }
+
+    return [dash(connection)];
+}
+
+const infraPlugins = buildInfraPlugins();
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const auth = betterAuth({
     appName: "Workers Hive",
     secret: authSecret,
-    baseURL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    baseURL: getBetterAuthServerBaseUrl(),
 
-    trustedOrigins: async (request) => {
+    trustedOrigins: async (request: Request | undefined) => {
         const origin = request?.headers.get("origin");
 
         // Allow LAN IPs in development only (Expo Go on physical device)
-        if (!isProd && origin && /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) {
+        if (!isAuthProd && origin && /^http:\/\/192\.168\.\d+\.\d+(:\d+)?$/.test(origin)) {
             return [...trustedOrigins, origin];
         }
 
@@ -143,7 +124,7 @@ export const auth = betterAuth({
     databaseHooks: {
         user: {
             create: {
-                before: async (user, ctx) => {
+                before: async (user: any, ctx: any) => {
                     const params = user as Record<string, unknown>;
 
                     // Read role context from headers or body passed during auth
@@ -170,7 +151,7 @@ export const auth = betterAuth({
                     }
                     return { data: user };
                 },
-                after: async (user, ctx) => {
+                after: async (user: any, ctx: any) => {
                     // Scenario A: Business Admin Registration
                     const companyName = (ctx?.body as Record<string, unknown>)?.companyName as string | undefined;
                     if (companyName) {
@@ -256,7 +237,7 @@ export const auth = betterAuth({
                 },
             },
             update: {
-                before: async (user) => {
+                before: async (user: any) => {
                     const params = user as Record<string, unknown>;
                     if (typeof params.phoneNumber === "string" && params.phoneNumber.startsWith("+")) {
                         try {
@@ -297,14 +278,33 @@ export const auth = betterAuth({
         phoneNumber({
             sendOTP: async ({ phoneNumber, code }) => {
                 try {
+                    const access = await getWorkerPhoneAccess(phoneNumber);
+                    if (!access.eligible) {
+                        throw new Error("This phone number has not been invited to any organization yet.");
+                    }
                     await sendOTP(phoneNumber, code);
                 } catch (e) {
                     console.error(`[AUTH ERROR] Failed to send SMS OTP:`, e);
+                    if (e instanceof Error && e.message.includes("has not been invited")) {
+                        throw e;
+                    }
                     throw new Error("Failed to send SMS verification code. Please try again.");
                 }
             },
             expiresIn: OTP.SMS_EXPIRY_SECONDS,
+            signUpOnVerification: {
+                getTempEmail: (phoneNumber) => getWorkerTempEmail(phoneNumber),
+                getTempName: (phoneNumber) => phoneNumber,
+            },
+            callbackOnVerification: async ({ phoneNumber }) => {
+                const access = await getWorkerPhoneAccess(phoneNumber);
+                if (!access.existingUserId) {
+                    throw new Error("Failed to resolve worker account after phone verification.");
+                }
+                await syncWorkerMembershipsForPhone(access.existingUserId, phoneNumber);
+            },
         }),
+        ...infraPlugins,
         ...(stripePlugin ? [stripePlugin] : []),
     ],
 });
