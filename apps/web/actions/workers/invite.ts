@@ -2,7 +2,7 @@
 
 import { auth, normalizePhoneNumber, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
-import { db } from "@repo/database";
+import { db, resolveWorkerRoleSet } from "@repo/database";
 import { member, user, invitation, rosterEntry } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
@@ -18,6 +18,7 @@ interface InviteWorkerInput {
     phoneNumber?: string;
     role: "admin" | "member";
     jobTitle?: string;
+    roles?: string[];
     hourlyRate?: number;
     invites: {
         email: boolean;
@@ -31,6 +32,7 @@ const inviteWorkerSchema = z.object({
     phoneNumber: z.string().optional().refine((val) => !val || /^\s*\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\s*$/.test(val), "Must be a valid US/Canada phone number"),
     role: z.enum(["admin", "member"]),
     jobTitle: z.string().optional(),
+    roles: z.array(z.string().min(1)).optional(),
     hourlyRate: z.number().optional(),
     invites: z.object({
         email: z.boolean(),
@@ -81,8 +83,13 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
             throw new Error("Permission denied");
         }
 
-        const { name, email, phoneNumber, role, jobTitle, hourlyRate, invites } = input;
+        const { name, email, phoneNumber, role, jobTitle, roles, hourlyRate, invites } = input;
         const normalizedPhoneNumber = phoneNumber ? normalizePhoneNumber(phoneNumber) : null;
+        const resolvedRoles = resolveWorkerRoleSet({
+            roles,
+            fallbackRole: jobTitle,
+        });
+        const primaryRole = resolvedRoles[0] ?? jobTitle ?? null;
 
         // 1. Create a true, trackable invitation in BetterAuth
         // NOTE: Even if they already exist, we send an invite. If they exist and are already a member, wait, let's catch that.
@@ -156,7 +163,8 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
             await db.update(rosterEntry).set({
                 name,
                 phoneNumber: normalizedPhoneNumber || existingRoster[0].phoneNumber,
-                jobTitle: jobTitle || existingRoster[0].jobTitle,
+                jobTitle: primaryRole || existingRoster[0].jobTitle,
+                roles: resolvedRoles.length > 0 ? resolvedRoles : (existingRoster[0].roles || []),
                 hourlyRate: hourlyRate !== undefined ? hourlyRate : existingRoster[0].hourlyRate,
                 status: "invited",
                 role: role
@@ -169,7 +177,8 @@ export async function inviteWorker(rawInput: InviteWorkerInput) {
                 name,
                 email,
                 phoneNumber: normalizedPhoneNumber,
-                jobTitle: jobTitle || null,
+                jobTitle: primaryRole,
+                roles: resolvedRoles,
                 hourlyRate: hourlyRate !== undefined ? hourlyRate : null,
                 status: "invited",
                 role: role,

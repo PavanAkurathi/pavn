@@ -7,6 +7,7 @@ import {
     rosterEntry,
     user,
 } from "@repo/database/schema";
+import { resolveWorkerRoleSet, upsertWorkerRolesForOrganization } from "@repo/database";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
 type WorkerRosterAccess = {
@@ -17,6 +18,7 @@ type WorkerRosterAccess = {
     email: string;
     role: string | null;
     jobTitle: string | null;
+    roles: string[];
     hourlyRate: number | null;
     status: string;
 };
@@ -73,6 +75,7 @@ export async function getWorkerPhoneAccess(phoneNumber: string): Promise<WorkerP
             email: rosterEntry.email,
             role: rosterEntry.role,
             jobTitle: rosterEntry.jobTitle,
+            roles: rosterEntry.roles,
             hourlyRate: rosterEntry.hourlyRate,
             status: rosterEntry.status,
         })
@@ -169,6 +172,16 @@ export async function syncWorkerMembershipsForPhone(userId: string, phoneNumber:
                     or(eq(invitation.status, "pending"), eq(invitation.status, "accepted"))
                 ));
         }
+
+        await upsertWorkerRolesForOrganization({
+            workerId: userId,
+            organizationId: roster.organizationId,
+            roles: resolveWorkerRoleSet({
+                roles: roster.roles,
+                fallbackRole: roster.jobTitle,
+            }),
+            hourlyRate: roster.hourlyRate,
+        });
     }
 
     const nextUserValues: {

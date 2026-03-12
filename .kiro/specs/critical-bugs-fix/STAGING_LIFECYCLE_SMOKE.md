@@ -1,183 +1,141 @@
 # Staging Lifecycle Smoke
 
-This smoke flow is for a real scheduling beta on staging. It separates what is already automated locally from what must still be validated by a human using the manager web app and the Expo worker app.
+Run this after staging deploy and after `npm run release:smoke -- --base-url=...` is green.
 
-## Automated Local Gate
+## Accounts To Prepare
 
-Run this before you touch staging:
+- one manager account
+- one worker account
+- one org with a valid location
+- optional second org for cross-org conflict testing
 
-```bash
-cd /Users/av/Documents/pavn
-npm run release:preflight
-```
+## Manager + Worker Flow
 
-This now covers:
-- env presence audit
-- typechecks for `database`, `shifts`, `geofence`, `api`, `workers`, and `e2e`
-- targeted regression tests
-- the manager/worker lifecycle API E2E in [lifecycle.spec.ts](/Users/av/Documents/pavn/packages/e2e/tests/api/lifecycle.spec.ts)
-
-If you only want the lifecycle E2E:
-
-```bash
-cd /Users/av/Documents/pavn
-npm run release:lifecycle:local
-```
-
-## Staging Deploy Gate
-
-After the staging deploy is live:
-
-```bash
-cd /Users/av/Documents/pavn
-npm run release:smoke -- --base-url=https://your-staging-api.example.com
-```
-
-Pass criteria:
-- `/health` returns healthy
-- `/ready` returns `200`
-- `/openapi.json` is reachable
-
-## Accounts And Data To Prepare
-
-Create or reuse:
-- one manager account in staging
-- one worker account in staging
-- one organization with a valid location
-- one second organization if you want to validate cross-org conflict notifications
-
-Make sure the worker can log into the Expo app and the manager can log into the web app.
-
-## Manager And Worker Lifecycle
-
-### 1. Registration And Login
+### 1. Login
 
 Manager:
-- register a new organization or log into an existing manager account
-- confirm the manager lands in the business web app and can access scheduling
+
+- log into the web app
+- confirm schedule pages load
 
 Worker:
-- join through a real invite link or log into an invited worker account
-- confirm the worker lands on the `Shifts` tab
-- fully close and reopen the app
-- confirm the session persists and the worker stays signed in
 
-### 2. Publish And Staffing
+- log into the Expo app with OTP
+- close and reopen the app
+- confirm the session persists
 
-Manager:
-- create or verify a same-org location
-- publish a new shift for today with one worker slot
-- assign the worker to the shift
-
-Pass criteria:
-- the shift is visible in the manager schedule
-- the worker sees the shift in the Expo app
-- the shift is not deleted or hidden unexpectedly if later cancelled
-
-### 3. Tenant Boundary Checks
+### 2. Publish
 
 Manager:
-- attempt to publish using a location id from another organization
 
-Pass criteria:
-- the request is rejected
+- create or reuse a same-org location
+- publish a shift for today
+- assign the worker
 
-Optional cross-org conflict validation:
-- create an overlapping shift for the same worker in a second organization
-- assign the worker in both orgs
+Pass:
 
-Pass criteria:
-- the assignment is not blocked purely because another org has a conflict
-- the worker receives an in-app conflict notification
-- Org A manager cannot see Org B shift details
-- Org B manager cannot see Org A shift details
+- manager sees the shift
+- worker sees the shift
 
-### 4. Arrival And Clock-In
+### 3. Tenant Boundary
+
+Manager:
+
+- try publishing with a foreign-org location id
+
+Pass:
+
+- request is rejected
+
+Optional:
+
+- assign the same worker to overlapping shifts in two orgs
+
+Pass:
+
+- assignment is allowed
+- worker gets conflict notification
+- managers do not see each other’s shift detail
+
+### 4. Arrival + Clock In
 
 Worker:
-- travel into the active shift geofence
-- keep the app foregrounded once and backgrounded once
 
-Pass criteria:
-- the worker gets the in-app arrival notification/banner
-- no SMS is sent for arrival reminders
+- enter the venue geofence
+- keep app foregrounded once
+- keep app backgrounded once
+
+Pass:
+
+- arrival banner / notification appears in app
+- no arrival SMS is sent
 
 Then:
-- attempt clock-in off-site and confirm it fails
-- attempt clock-in on-site with current GPS and confirm it succeeds
 
-### 5. Clock-Out And Approval
+- confirm off-site clock-in fails
+- confirm on-site clock-in succeeds
+
+### 5. Clock Out + Approval
 
 Worker:
+
 - clock out on-site
 
 Manager:
-- open the shift timesheet view
-- verify the recorded timesheet exists
-- approve the shift
 
-Pass criteria:
-- the worker sees the shift move into history
-- the final shift status is visible as `approved`
+- open timesheet
+- approve shift
 
-### 6. Cancellation Path
+Pass:
+
+- worker sees shift in history
+- final shift status is `approved`
+
+### 6. Cancellation
 
 Manager:
-- publish a second test shift
+
+- publish a second shift
 - cancel it before start
 
-Pass criteria:
-- the shift remains visible as `cancelled` on the manager side
-- the worker sees the same shift as `cancelled`
-- the worker receives a cancellation notification
-- the shift is not hard-deleted
+Pass:
+
+- manager sees `cancelled`
+- worker sees `cancelled`
+- worker gets cancellation notification
+- shift is not deleted
 
 ### 7. Exceptions
 
 Manager:
-- mark a worker `no_show` on a same-org shift
-- attempt the same action across org boundaries if you have two orgs
+
+- mark same-org `no_show`
+- attempt cross-org `no_show`
 - apply a manual timesheet edit
 
-Pass criteria:
-- same-org `no_show` works
-- cross-org `no_show` is rejected
-- manual edit succeeds only within the active org
+Pass:
+
+- same-org action works
+- cross-org action is rejected
+- manual edit stays same-org only
 
 Worker:
-- submit a correction request for a finished shift
+
+- submit a correction request
 
 Manager:
-- review and resolve the correction
 
-Pass criteria:
-- correction submission works
-- manager review works
+- review it
 
-## Mobile-Specific Checks
+Pass:
 
-iPhone:
-- OTP login
-- session persistence after restart
-- push permission prompt
-- arrival notification/banner
-- on-site clock-in and clock-out
+- correction flow works end to end
 
-Android:
-- OTP login
-- session persistence after restart
-- background location permission
-- foreground service behavior if applicable
-- arrival notification/banner
-- on-site clock-in and clock-out
+## Devices
 
-## Suggested Order
+Run the worker flow on:
 
-1. `npm run release:preflight`
-2. deploy staging API and web
-3. `npm run release:smoke -- --base-url=https://your-staging-api.example.com`
-4. manager web manual flow
-5. worker Expo manual flow on iPhone
-6. worker Expo manual flow on Android
+- iPhone
+- Android
 
-Do not call the beta ready until all six steps pass.
+Do not call staging ready until both pass.

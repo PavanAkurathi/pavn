@@ -15,6 +15,13 @@
       "when": 1773124658597,
       "tag": "0001_solid_scorpion",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1773201600000,
+      "tag": "0002_roster_entry_roles",
+      "breakpoints": true
     }
   ]
 }

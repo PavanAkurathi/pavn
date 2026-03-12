@@ -1,10 +1,33 @@
-import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+import { Expo, ExpoPushMessage } from 'expo-server-sdk';
 import { db } from '@repo/database';
 import { deviceToken } from '@repo/database/schema';
 import { eq, and, inArray } from 'drizzle-orm';
 import { PushNotificationPayload, SendResult } from '../types';
 
 const expo = new Expo();
+const RECEIPT_CHECK_DELAY_MS = 15_000;
+const pendingReceiptIds = new Set<string>();
+let receiptCheckTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleReceiptCheck(ticketIds: string[]): void {
+    for (const ticketId of ticketIds) {
+        pendingReceiptIds.add(ticketId);
+    }
+
+    if (receiptCheckTimer) {
+        return;
+    }
+
+    receiptCheckTimer = setTimeout(() => {
+        const ids = Array.from(pendingReceiptIds);
+        pendingReceiptIds.clear();
+        receiptCheckTimer = null;
+
+        if (ids.length > 0) {
+            void checkReceipts(ids);
+        }
+    }, RECEIPT_CHECK_DELAY_MS);
+}
 
 /**
  * Send push notification to a single worker (all their devices)
@@ -55,7 +78,6 @@ export async function sendPushNotification(payload: PushNotificationPayload): Pr
             for (let i = 0; i < ticketChunk.length; i++) {
                 const ticket = ticketChunk[i];
                 if (!ticket) continue;
-                const token = tokens[i]; // Rough mapping, assumes order preserved (usually true for map/filter flow above)
                 // Note: The tokens array might not perfectly align if we filtered non-expo tokens above. 
                 // A more robust map would link token ID to message index, but for MVP this is acceptable.
 
@@ -82,9 +104,7 @@ export async function sendPushNotification(payload: PushNotificationPayload): Pr
 
     // 4. Schedule receipt check (fire and forget as per ticket)
     if (ticketIds.length > 0) {
-        // In a real serverless env, this might not survive. 
-        // But for long-running workers (Railway), it's fine.
-        setTimeout(() => checkReceipts(ticketIds), 15000);
+        scheduleReceiptCheck(ticketIds);
     }
 
     return results;

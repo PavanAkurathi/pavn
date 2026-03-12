@@ -1,65 +1,68 @@
 # EAS Setup
 
-This app already has an Expo project id and build profiles. The missing piece is consistent EAS environments so builds use your variables, not local machine state.
+Run all Expo/EAS commands from [apps/workers](/Users/av/Documents/pavn/apps/workers), not the repo root.
 
-## Build Profiles
+## 1. Log In
 
-The worker app uses these profiles in [eas.json](/Users/av/Documents/pavn/apps/workers/eas.json):
+```bash
+cd /Users/av/Documents/pavn/apps/workers
+eas login
+```
 
-- `development`: development client builds, EAS environment `development`, channel `development`
-- `preview`: internal distribution builds, EAS environment `preview`, channel `preview`
-- `production`: store/release builds, EAS environment `production`, channel `production`
+## 2. Add EAS Variables
 
-## What To Put In EAS
+Set these in both `preview` and `production`:
 
-Set these yourself in EAS for the correct environment. Do not commit them to the repo.
-
-Required public config:
 - `EXPO_PUBLIC_API_URL`
 - `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
-- `EXPO_PUBLIC_DUB_DOMAIN`
 
-Optional only if you intentionally split services:
+Recommended:
+
+- `EXPO_PUBLIC_DUB_DOMAIN`
+- `EXPO_PUBLIC_SENTRY_DSN`
+
+Only add these if you intentionally split services:
+
 - `EXPO_PUBLIC_AUTH_API_URL`
 - `EXPO_PUBLIC_SHIFTS_API_URL`
 - `EXPO_PUBLIC_GEOFENCE_API_URL`
 
-Recommended mobile observability:
-- `EXPO_PUBLIC_SENTRY_DSN`
-
-These values are injected during build. `EXPO_PUBLIC_*` is visible to the app binary, so treat it as configuration, not as a secret.
-
-## How To Add Variables Without Exposing Them Here
-
-Use either the Expo dashboard or the EAS CLI on your machine.
-
-Examples:
+Example:
 
 ```bash
-eas env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://api.example.com"
-eas env:create --environment production --name EXPO_PUBLIC_DUB_PUBLISHABLE_KEY --value "pk_..."
-eas env:create --environment production --name EXPO_PUBLIC_DUB_DOMAIN --value "links.workershive.com"
-eas env:create --environment production --name EXPO_PUBLIC_SENTRY_DSN --value "https://..."
+cd /Users/av/Documents/pavn/apps/workers
+eas env:create --environment preview --name EXPO_PUBLIC_API_URL --value "https://pavn-api.vercel.app"
+eas env:create --environment production --name EXPO_PUBLIC_API_URL --value "https://pavn-api.vercel.app"
 ```
 
-Repeat for `preview` with staging values.
-
-## Recommended Flow
-
-1. Set `preview` env values in EAS.
-2. Build a preview app:
+## 3. Build Preview
 
 ```bash
-cd apps/workers
+cd /Users/av/Documents/pavn/apps/workers
 eas build --platform ios --profile preview
 eas build --platform android --profile preview
 ```
 
-3. Validate login persistence, push, geofence arrival banners, and clock in/out on real devices.
-4. Set `production` env values in EAS.
-5. Build production binaries only after staging `/ready` is healthy.
+Use preview builds for real device checks. Expo Go is fine for basic auth/navigation testing, but not for full push notification behavior.
 
-## Notes
+## 4. Build Production
 
-- Local `.env` values are not enough for EAS cloud builds unless you explicitly create matching EAS environment variables.
-- If you want to use local credentials for a simulator/dev-client build, keep doing that locally. For preview/production, prefer EAS-managed environment variables.
+Only do this after staging is healthy and the manual smoke flow passes.
+
+```bash
+cd /Users/av/Documents/pavn/apps/workers
+eas build --platform ios --profile production
+eas build --platform android --profile production
+```
+
+## 5. What Not To Put In EAS
+
+Do not put backend secrets in EAS:
+
+- `DATABASE_URL`
+- `BETTER_AUTH_SECRET`
+- `TWILIO_*`
+- `RESEND_API_KEY`
+- Stripe secret vars
+
+Those stay in Vercel for `pavn-api` / `pavn-web`.

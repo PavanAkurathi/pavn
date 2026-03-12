@@ -276,7 +276,8 @@ SMS transport is in [src/providers/sms.ts](/Users/av/Documents/pavn/packages/aut
 
 Rules:
 - `MOCK_SMS=true` disables real Twilio delivery
-- development mock writes OTP to `/tmp/latest-otp.txt`
+- mock mode no longer writes OTPs to disk by default
+- `ALLOW_MOCK_OTP_DEBUG=true` is the only opt-in path for local mock OTP debug logging
 - production requires Twilio env
 
 For this product direction:
@@ -295,6 +296,7 @@ Worker-auth relevant env:
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_PHONE_NUMBER`
 - `MOCK_SMS`
+- `ALLOW_MOCK_OTP_DEBUG` local-only, optional
 - `EXPO_PUBLIC_API_URL`
 
 Optional:

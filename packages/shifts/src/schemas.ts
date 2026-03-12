@@ -39,8 +39,23 @@ export const WorkerSchema = z.object({
     status: z.string().optional(),
 });
 
+export const CrewMemberSchema = z.object({
+    id: z.string(),
+    memberId: z.string().optional(),
+    name: z.string(),
+    email: z.string().email(),
+    image: z.string().optional().nullable(),
+    avatar: z.string().optional().nullable(),
+    role: z.string().optional(),
+    roles: z.array(z.string()).optional(),
+    jobTitle: z.string().optional().nullable(),
+    status: z.string().optional(),
+    initials: z.string().optional(),
+    hours: z.number().optional(),
+});
+
 export const CrewListResponseSchema = z.object({
-    crew: z.array(WorkerSchema),
+    crew: z.array(CrewMemberSchema),
     total: z.number(),
     page: z.number(),
 });

@@ -225,6 +225,7 @@ export const rosterEntry = pgTable("roster_entry", {
     role: text("role").default("member"),
     hourlyRate: integer("hourly_rate"), // Stored in cents, nullable
     jobTitle: text("job_title"),
+    roles: jsonb("roles").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     status: text("status").default("uninvited").notNull(), // 'uninvited'
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
 });

@@ -1,129 +1,136 @@
 # Environment Matrix
 
-This matrix lists launch-critical variable names only. Do not commit actual values to the repo.
+This is the shortest project map for where each variable belongs. Store values in the platform, not in committed files.
 
-## Rules
+## Local Root `.env`
 
-- Store secrets in platform secret managers or your local shell, not in committed files.
-- `EXPO_PUBLIC_*` values are public app config, but they should still be changed by you through EAS/build env settings rather than hardcoded in source.
-- Use `npm run check-env` to verify presence without printing values.
+Use [/.env](/Users/av/Documents/pavn/.env) for local development.
 
-## Local
+Core:
 
-Use a private, uncommitted env file or shell session.
-
-Required for local API/web auth flow:
 - `DATABASE_URL`
 - `BETTER_AUTH_SECRET`
 - `BETTER_AUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
+- `NEXT_PUBLIC_API_URL`
+- `EXPO_PUBLIC_API_URL`
 
-Required for real SMS auth testing:
+SMS auth:
+
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_PHONE_NUMBER`
+- `MOCK_SMS`
+- `ALLOW_MOCK_OTP_DEBUG` only if you intentionally want mock OTP debug output locally
 
-Worker app:
-- `EXPO_PUBLIC_API_URL`
+Worker build config:
+
 - `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
 - `EXPO_PUBLIC_DUB_DOMAIN`
-- `EXPO_PUBLIC_AUTH_API_URL` if auth is split from the main API URL
-- `EXPO_PUBLIC_SHIFTS_API_URL` if shifts are split from the main API URL
-- `EXPO_PUBLIC_GEOFENCE_API_URL` if geofence is split from the main API URL
+- `EXPO_PUBLIC_SENTRY_DSN` optional
 
-Recommended:
-- `SENTRY_DSN`
-- `EXPO_PUBLIC_SENTRY_DSN`
-- `CRON_SECRET`
-- `DUB_API_KEY`
+App / email / ops:
+
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
-- `BETTER_AUTH_API_KEY`
-- `BETTER_AUTH_API_URL`
-- `BETTER_AUTH_KV_URL`
+- `SENTRY_DSN`
+- `CRON_SECRET`
+- `DUB_API_KEY`
 
-Launch-optional unless billing is enabled:
+Billing only if enabled:
+
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PRICE_ID_MONTHLY`
 - `STRIPE_WEBHOOK_SECRET`
 
-## Staging
+## Vercel: `pavn-api`
 
-Set these in the staging hosting environment and EAS staging profile.
+Required:
 
-Required runtime:
 - `DATABASE_URL`
 - `BETTER_AUTH_SECRET`
 - `BETTER_AUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
+- `ALLOWED_ORIGINS`
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 - `TWILIO_PHONE_NUMBER`
 
-Required worker build config:
-- `EXPO_PUBLIC_API_URL`
-- `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
-- `EXPO_PUBLIC_DUB_DOMAIN`
-- `EXPO_PUBLIC_AUTH_API_URL` if auth is split from the main API URL
-- `EXPO_PUBLIC_SHIFTS_API_URL` if shifts are split from the main API URL
-- `EXPO_PUBLIC_GEOFENCE_API_URL` if geofence is split from the main API URL
-
 Recommended:
-- `SENTRY_DSN`
-- `EXPO_PUBLIC_SENTRY_DSN`
-- `CRON_SECRET`
-- `DUB_API_KEY`
+
+- `BETTER_AUTH_API_KEY`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
-- `BETTER_AUTH_API_KEY`
+- `SENTRY_DSN`
+- `CRON_SECRET`
+
+Optional:
+
 - `BETTER_AUTH_API_URL`
 - `BETTER_AUTH_KV_URL`
 
-Launch-optional unless billing is enabled:
+Billing only if enabled:
+
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PRICE_ID_MONTHLY`
 - `STRIPE_WEBHOOK_SECRET`
 
-## Production
+## Vercel: `pavn-web`
 
-Set these only in the production secret manager / build system.
+Required:
 
-Required runtime:
-- `DATABASE_URL`
-- `BETTER_AUTH_SECRET`
-- `BETTER_AUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
-- `TWILIO_ACCOUNT_SID`
-- `TWILIO_AUTH_TOKEN`
-- `TWILIO_PHONE_NUMBER`
-
-Required worker build config:
-- `EXPO_PUBLIC_API_URL`
-- `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
-- `EXPO_PUBLIC_DUB_DOMAIN`
-- `EXPO_PUBLIC_AUTH_API_URL` if auth is split from the main API URL
-- `EXPO_PUBLIC_SHIFTS_API_URL` if shifts are split from the main API URL
-- `EXPO_PUBLIC_GEOFENCE_API_URL` if geofence is split from the main API URL
+- `NEXT_PUBLIC_API_URL`
 
 Recommended:
-- `SENTRY_DSN`
+
+- `NEXT_PUBLIC_SENTRY_DSN`
+- `NEXT_PUBLIC_DUB_DOMAIN`
+
+Usually leave unset unless you intentionally move web auth off same-origin:
+
+- `NEXT_PUBLIC_AUTH_URL`
+
+## EAS: `preview` and `production`
+
+Required:
+
+- `EXPO_PUBLIC_API_URL`
+- `EXPO_PUBLIC_DUB_PUBLISHABLE_KEY`
+
+Recommended:
+
+- `EXPO_PUBLIC_DUB_DOMAIN`
 - `EXPO_PUBLIC_SENTRY_DSN`
-- `CRON_SECRET`
-- `DUB_API_KEY`
-- `RESEND_API_KEY`
-- `EMAIL_FROM`
-- `BETTER_AUTH_API_KEY`
-- `BETTER_AUTH_API_URL`
-- `BETTER_AUTH_KV_URL`
 
-Required only if billing is enabled for launch:
-- `STRIPE_SECRET_KEY`
-- `STRIPE_PRICE_ID_MONTHLY`
-- `STRIPE_WEBHOOK_SECRET`
+Only if services are split:
 
-## Where To Change Them
+- `EXPO_PUBLIC_AUTH_API_URL`
+- `EXPO_PUBLIC_SHIFTS_API_URL`
+- `EXPO_PUBLIC_GEOFENCE_API_URL`
 
-- Local API/web: your private `.env` or shell export, never committed.
-- Hosted API/web: your hosting provider's secret/env settings.
-- Expo worker app: EAS secrets or build-profile env settings.
-- After any change, restart the affected app and rerun `npm run check-env`.
+## Current Host Mapping
+
+If you keep the current Vercel setup:
+
+- web app: `https://pavn-web.vercel.app`
+- API: `https://pavn-api.vercel.app`
+
+That means the common values are:
+
+- `BETTER_AUTH_URL=https://pavn-api.vercel.app`
+- `NEXT_PUBLIC_APP_URL=https://pavn-web.vercel.app`
+- `NEXT_PUBLIC_API_URL=https://pavn-api.vercel.app`
+- `EXPO_PUBLIC_API_URL=https://pavn-api.vercel.app`
+
+## After Any Change
+
+1. Restart the affected app.
+2. Run:
+
+```bash
+cd /Users/av/Documents/pavn
+npm run check-env
+```
+
+3. Rebuild the worker app if an `EXPO_PUBLIC_*` value changed.

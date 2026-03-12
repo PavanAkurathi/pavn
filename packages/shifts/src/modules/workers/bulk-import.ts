@@ -1,5 +1,6 @@
 import { db, TxOrDb } from "@repo/database";
 import { member, user } from "@repo/database/schema";
+import { resolveWorkerRoleSet, upsertWorkerRolesForOrganization } from "@repo/database";
 import { eq, and } from "drizzle-orm";
 import { ImportRow } from "./import-parser";
 import { nanoid } from "nanoid";
@@ -19,6 +20,11 @@ export const bulkImportWorkers = async (
         // We process sequentially to avoid deadlocks on User upserts if emails are duplicated in batch
         // For < 500 rows, this is plenty fast (approx 200ms)
         for (const row of rows) {
+            const resolvedRoles = resolveWorkerRoleSet({
+                roles: row.roles,
+                fallbackRole: row.jobTitle,
+            });
+            const primaryRole = resolvedRoles[0] ?? row.jobTitle ?? null;
 
             // 1. Upsert User (Global Identity)
             // If email exists, update phone/name if missing? 
@@ -59,7 +65,7 @@ export const bulkImportWorkers = async (
                 // UPDATE existing member
                 await tx.update(member)
                     .set({
-                        jobTitle: row.jobTitle || existingMember.jobTitle,
+                        jobTitle: primaryRole || existingMember.jobTitle,
                         hourlyRate: row.rate !== undefined ? row.rate : existingMember.hourlyRate,
                         // Don't downgrade admins to members via import
                         role: row.role === 'admin' ? 'admin' : existingMember.role,
@@ -74,7 +80,7 @@ export const bulkImportWorkers = async (
                     organizationId: orgId,
                     userId: userRecord.id,
                     role: row.role,
-                    jobTitle: row.jobTitle || null,
+                    jobTitle: primaryRole,
                     hourlyRate: row.rate || null,
                     status: 'active',
                     createdAt: new Date(),
@@ -82,6 +88,13 @@ export const bulkImportWorkers = async (
                 });
                 results.created++;
             }
+
+            await upsertWorkerRolesForOrganization({
+                workerId: userRecord.id,
+                organizationId: orgId,
+                roles: resolvedRoles,
+                hourlyRate: row.rate,
+            }, tx);
         }
 
         return results;

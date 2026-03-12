@@ -10,11 +10,11 @@ import {
 } from "@repo/ui/components/ui/dialog";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
-import { Badge } from "@repo/ui/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Search, Plus, Check, AlertTriangle } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { CrewMember, Role } from "@/hooks/use-crew-data";
+import { getRoleLabel } from "@/lib/schedule/roles";
 
 export interface PositionItem {
     roleId: string;
@@ -42,13 +42,20 @@ export function PositionSelectorDialog({
 }: PositionSelectorDialogProps) {
     const [activeTab, setActiveTab] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [customRoleName, setCustomRoleName] = useState("");
     const [selectedItems, setSelectedItems] = useState<PositionItem[]>([]);
+
+    const normalizedCustomRole = getRoleLabel(customRoleName);
 
     // Filter Logic
     const filteredCrew = useMemo(() => {
+        const query = searchQuery.trim().toLowerCase();
         return crew.filter(worker => {
             const matchesTab = activeTab === "all" || worker.roles.includes(activeTab);
-            const matchesSearch = worker.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesSearch =
+                query.length === 0 ||
+                worker.name.toLowerCase().includes(query) ||
+                worker.roles.some(role => getRoleLabel(role).toLowerCase().includes(query));
             return matchesTab && matchesSearch;
         });
     }, [crew, activeTab, searchQuery]);
@@ -71,11 +78,29 @@ export function PositionSelectorDialog({
         return selectedItems.some(i => i.workerId === workerId && i.roleId === roleId);
     };
 
-    const getRoleName = (id: string) => roles.find(r => r.id === id)?.label || "Role";
+    const getRoleName = (id: string) => roles.find(r => r.id === id)?.label || getRoleLabel(id);
 
     const handleConfirm = () => {
         onSelect(selectedItems);
         setSelectedItems([]); // Clear buffer
+        setCustomRoleName("");
+        onClose();
+    };
+
+    const handleAddOpenSlot = () => {
+        if (activeTab === "all" && !customRoleName.trim()) {
+            return;
+        }
+
+        onSelect([
+            ...selectedItems,
+            {
+                roleId: customRoleName.trim() ? normalizedCustomRole : activeTab,
+                roleName: customRoleName.trim() ? normalizedCustomRole : getRoleName(activeTab),
+            },
+        ]);
+        setSelectedItems([]);
+        setCustomRoleName("");
         onClose();
     };
 
@@ -93,6 +118,12 @@ export function PositionSelectorDialog({
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
+                    <Input
+                        placeholder="Create custom role, e.g. Cashier or Forklift Operator"
+                        className="mt-3 rounded-full"
+                        value={customRoleName}
+                        onChange={(e) => setCustomRoleName(e.target.value)}
+                    />
                 </DialogHeader>
 
                 {/* Tabs */}
@@ -120,7 +151,9 @@ export function PositionSelectorDialog({
                     <div className="divide-y border rounded-md">
                         {filteredCrew.map(worker => {
                             const isOvertime = worker.hours > 40;
-                            const currentRoleId = activeTab === "all" ? ((worker.roles || [])[0] || "server") : activeTab;
+                            const currentRoleId = customRoleName.trim()
+                                ? normalizedCustomRole
+                                : (activeTab === "all" ? ((worker.roles || [])[0] || "General") : activeTab);
                             const selected = isSelected(worker.id, currentRoleId);
 
                             return (
@@ -205,6 +238,14 @@ export function PositionSelectorDialog({
                 </div>
 
                 <DialogFooter className="p-6 border-t">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleAddOpenSlot}
+                        disabled={activeTab === "all" && !customRoleName.trim()}
+                    >
+                        {customRoleName.trim() ? `Add ${normalizedCustomRole} slot` : "Add open slot"}
+                    </Button>
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
                     <Button onClick={handleConfirm} disabled={selectedItems.length === 0} data-testid="confirm-positions">
                         Done ({selectedItems.length})

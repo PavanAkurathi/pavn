@@ -12,6 +12,12 @@
             "import": "./src/index.ts",
             "default": "./src/index.ts"
         },
+        "./providers/sms": {
+            "types": "./src/providers/sms.ts",
+            "bun": "./src/providers/sms.ts",
+            "import": "./src/providers/sms.ts",
+            "default": "./src/providers/sms.ts"
+        },
         "./client": {
             "types": "./src/client.ts",
             "bun": "./src/client.ts",

@@ -5,8 +5,9 @@ import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@repo/database";
-import { member, user } from "@repo/database/schema";
+import { member, user, workerRole } from "@repo/database/schema";
 import { eq, and, ne } from "@repo/database";
+import { deriveCrewRoles } from "@/lib/schedule/roles";
 
 export default async function CreateSchedulePage() {
     // 0. Auth Check & Org ID
@@ -38,23 +39,39 @@ export default async function CreateSchedulePage() {
 
     // 2. Fetch Crew (Server Side)
     // Reusing logic from RostersPage to ensure consistency
-    const workersResult = await db.select({
-        id: member.id,
-        role: member.role,
-        jobTitle: member.jobTitle,
-        user: {
-            id: user.id,
-            name: user.name,
-            image: user.image,
-        }
-    })
-        .from(member)
-        .leftJoin(user, eq(member.userId, user.id))
-        .where(and(
-            eq(member.organizationId, activeOrgId),
-            ne(member.role, "owner"),
-            ne(member.role, "admin")
-        ));
+    const [workersResult, explicitRoles] = await Promise.all([
+        db.select({
+            id: member.id,
+            role: member.role,
+            jobTitle: member.jobTitle,
+            user: {
+                id: user.id,
+                name: user.name,
+                image: user.image,
+            }
+        })
+            .from(member)
+            .leftJoin(user, eq(member.userId, user.id))
+            .where(and(
+                eq(member.organizationId, activeOrgId),
+                ne(member.role, "owner"),
+                ne(member.role, "admin")
+            )),
+        db.query.workerRole.findMany({
+            where: eq(workerRole.organizationId, activeOrgId),
+            columns: {
+                workerId: true,
+                role: true,
+            },
+        }),
+    ]);
+
+    const rolesByWorker = new Map<string, string[]>();
+    for (const roleRow of explicitRoles) {
+        const list = rolesByWorker.get(roleRow.workerId) || [];
+        list.push(roleRow.role);
+        rolesByWorker.set(roleRow.workerId, list);
+    }
 
     // Map to CrewMember interface expected by UI
     const prefetchedCrew = workersResult
@@ -65,24 +82,10 @@ export default async function CreateSchedulePage() {
             name: r.user!.name,
             avatar: r.user!.image || "",
             initials: r.user!.name.charAt(0).toUpperCase(),
-            title: r.jobTitle,
-            roles: (() => {
-                // 1. Try smart matching on Job Title
-                const t = (r.jobTitle || "").toLowerCase();
-                if (t.includes("server")) return ["server"];
-                if (t.includes("bartender") || t.includes("bar")) return ["bartender"];
-                if (t.includes("chef") || t.includes("cook") || t.includes("kitchen") || t.includes("dish")) return ["kitchen"];
-                if (t.includes("host")) return ["host"];
-
-                // 2. Fallback to DB Role (since jobTitle is currently null in mock data)
-                const dbRole = (r.role || "").toLowerCase();
-                if (dbRole === "server") return ["server"];
-                if (dbRole === "bartender") return ["bartender"];
-                if (dbRole === "kitchen") return ["kitchen"];
-                if (dbRole === "host") return ["host"];
-
-                return ["member"];
-            })(),
+            roles: deriveCrewRoles(
+                rolesByWorker.get(r.user!.id) || [],
+                r.jobTitle || null
+            ),
             hours: 0 // Placeholder for now
         }));
 

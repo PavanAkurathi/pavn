@@ -5,6 +5,29 @@ import { api, WorkerShift } from '../lib/api';
 import { scheduleLocalNotification } from '../utils/notifications';
 
 export const GEOFENCE_TASK_NAME = 'geofence-monitor-task';
+const GEOFENCE_LOGS_KEY = 'geofence_logs';
+const MAX_GEOFENCE_LOG_ENTRIES = 50;
+
+type GeofenceLogEntry = {
+    type: 'ENTER' | 'EXIT';
+    regionId: string;
+    timestamp: string;
+};
+
+async function appendGeofenceLog(entry: GeofenceLogEntry): Promise<void> {
+    try {
+        const existingValue = await AsyncStorage.getItem(GEOFENCE_LOGS_KEY);
+        const existingLogs = existingValue ? JSON.parse(existingValue) : [];
+        const nextLogs = Array.isArray(existingLogs) ? existingLogs : [];
+
+        nextLogs.push(entry);
+        const retainedLogs = nextLogs.slice(-MAX_GEOFENCE_LOG_ENTRIES);
+
+        await AsyncStorage.setItem(GEOFENCE_LOGS_KEY, JSON.stringify(retainedLogs));
+    } catch (error) {
+        console.error('[GEOFENCE] Failed to persist geofence log:', error);
+    }
+}
 
 /**
  * Define the Geofence Task
@@ -22,11 +45,11 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
 
 
         try {
-            await AsyncStorage.setItem(`geofence_log_${Date.now()}`, JSON.stringify({
+            await appendGeofenceLog({
                 type,
-                regionId: region.identifier,
+                regionId: region.identifier || 'unknown-region',
                 timestamp: new Date().toISOString()
-            }));
+            });
 
             if (type === 'ENTER') {
                 await scheduleLocalNotification(

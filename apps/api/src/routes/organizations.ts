@@ -23,6 +23,7 @@ import {
     getSettings,
     updateSettings,
     WorkerSchema,
+    CrewMemberSchema,
     LocationSchema,
 } from "@repo/shifts-service";
 
@@ -45,7 +46,7 @@ const getCrewRoute = createRoute({
         })
     },
     responses: {
-        200: { content: { 'application/json': { schema: z.array(WorkerSchema) } }, description: 'Crew list' },
+        200: { content: { 'application/json': { schema: z.array(CrewMemberSchema) } }, description: 'Crew list' },
         403: { description: 'Forbidden' }
     }
 });
@@ -68,6 +69,23 @@ const inviteWorkerRoute = createRoute({
     path: '/crew/invite',
     summary: 'Invite Worker',
     description: 'Invite a new worker to the organization.',
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        name: z.string().optional(),
+                        email: z.string().email(),
+                        phoneNumber: z.string().optional(),
+                        role: z.enum(["admin", "member"]).optional(),
+                        jobTitle: z.string().optional(),
+                        roles: z.array(z.string()).optional(),
+                        hourlyRate: z.number().int().nonnegative().optional(),
+                    })
+                }
+            }
+        }
+    },
     responses: {
         200: { content: { 'application/json': { schema: z.any() } }, description: 'Invitation sent' },
         403: { description: 'Forbidden' }

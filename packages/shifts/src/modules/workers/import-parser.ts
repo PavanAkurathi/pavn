@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
 import { AppError } from '@repo/observability';
+import { normalizeWorkerRoles } from "@repo/database";
 
 // Validation Schema for a single row
 const ImportRowSchema = z.object({
@@ -8,6 +9,7 @@ const ImportRowSchema = z.object({
     email: z.string().email("Invalid email format"),
     phone: z.string().optional(), // We will normalize this later
     jobTitle: z.string().optional(),
+    roles: z.array(z.string()).optional(),
     rate: z.number().min(0).optional(), // We expect processed numbers (cents)
     role: z.enum(['admin', 'manager', 'member']).default('member')
 });
@@ -59,7 +61,9 @@ export const parseWorkerFile = (fileBuffer: Buffer) => {
             if (cleanKey.includes('email')) normalizedData.email = row[key];
             else if (cleanKey.includes('name') && !cleanKey.includes('user')) normalizedData.name = row[key];
             else if (cleanKey.includes('phone') || cleanKey.includes('mobile')) normalizedData.phone = row[key];
+            else if (cleanKey.includes('primaryrole')) normalizedData.jobTitle = row[key];
             else if (cleanKey.includes('title') || cleanKey.includes('position') || cleanKey.includes('job')) normalizedData.jobTitle = row[key];
+            else if (cleanKey.includes('roles') || cleanKey.includes('skills')) normalizedData.roles = normalizeWorkerRoles(String(row[key]));
             else if (cleanKey.includes('rate') || cleanKey.includes('pay') || cleanKey.includes('wage')) normalizedData.rate = row[key];
             else if (cleanKey.includes('role') || cleanKey.includes('access')) normalizedData.role = row[key];
         });

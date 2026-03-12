@@ -2,7 +2,7 @@
 
 import { auth, isValidPhoneNumber, normalizePhoneNumber } from "@repo/auth";
 import { headers } from "next/headers";
-import { db } from "@repo/database";
+import { db, resolveWorkerRoleSet } from "@repo/database";
 import { member, rosterEntry } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
 import { nanoid } from "nanoid";
@@ -16,6 +16,7 @@ interface BulkImportWorker {
     phoneNumber?: string;
     role: "admin" | "member";
     jobTitle?: string;
+    roles?: string[];
     image?: string;
     emergencyContact?: {
         name: string;
@@ -36,6 +37,7 @@ const bulkImportWorkerSchema = z.object({
     phoneNumber: z.string().optional(),
     role: z.enum(["admin", "member"]),
     jobTitle: z.string().optional(),
+    roles: z.array(z.string().min(1)).optional(),
     image: z.string().optional(),
     emergencyContact: z.object({
         name: z.string(),
@@ -98,6 +100,11 @@ export async function bulkImport(rawWorkers: BulkImportWorker[]) {
                 throw new Error("Invalid phone number");
             }
 
+            const resolvedRoles = resolveWorkerRoleSet({
+                roles: workerData.roles,
+                fallbackRole: workerData.jobTitle,
+            });
+
             await db.insert(rosterEntry).values({
                 id: nanoid(),
                 organizationId: activeOrgId,
@@ -105,7 +112,8 @@ export async function bulkImport(rawWorkers: BulkImportWorker[]) {
                 email: workerData.email,
                 phoneNumber: workerData.phoneNumber ? normalizePhoneNumber(workerData.phoneNumber) : null,
                 role: workerData.role || "member",
-                jobTitle: workerData.jobTitle || null,
+                jobTitle: resolvedRoles[0] || workerData.jobTitle || null,
+                roles: resolvedRoles,
                 hourlyRate: workerData.hourlyRate || null,
                 status: "uninvited"
             });

@@ -1,6 +1,8 @@
 import { test, expect, request as playwrightRequest, type APIRequestContext } from "@playwright/test";
 import { db, and, desc, eq, toLatLng } from "@repo/database";
-import { invitation, location, member, shift, shiftAssignment, user } from "@repo/database/schema";
+import { invitation, location, member, rosterEntry, shift, shiftAssignment, user, workerRole } from "@repo/database/schema";
+import { getWorkerPhoneAccess, syncWorkerMembershipsForPhone } from "../../../auth/src/worker-access";
+import { normalizePhoneNumber } from "../../../auth/src/providers/sms";
 
 async function createSignedInContext(
     baseURL: string,
@@ -16,42 +18,54 @@ async function createSignedInContext(
     return context;
 }
 
+async function createManagerAndOrg(apiBaseUrl: string, runId: number) {
+    const managerEmail = `manager-lifecycle-${runId}@test.workershive.com`;
+    const password = "TestPassword123!";
+    const managerSignupContext = await playwrightRequest.newContext({ baseURL: apiBaseUrl });
+
+    const managerSignUp = await managerSignupContext.post("/api/auth/sign-up/email", {
+        data: {
+            name: "Lifecycle Manager",
+            email: managerEmail,
+            password,
+            companyName: `Lifecycle Org ${runId}`,
+        },
+    });
+    expect(managerSignUp.ok()).toBeTruthy();
+
+    const managerUser = await db.query.user.findFirst({
+        where: eq(user.email, managerEmail),
+    });
+    expect(managerUser).toBeDefined();
+
+    await db.update(user)
+        .set({ emailVerified: true, updatedAt: new Date() })
+        .where(eq(user.email, managerEmail));
+
+    const managerMembership = await db.query.member.findFirst({
+        where: eq(member.userId, managerUser!.id),
+    });
+    expect(managerMembership).toBeDefined();
+
+    const managerContext = await createSignedInContext(apiBaseUrl, managerEmail, password);
+
+    return {
+        managerEmail,
+        password,
+        managerUser: managerUser!,
+        orgId: managerMembership!.organizationId,
+        managerSignupContext,
+        managerContext,
+    };
+}
+
 test.describe("manager/worker lifecycle", () => {
     test("registration to approved shift works across manager and worker roles", async ({ baseURL }) => {
         const apiBaseUrl = baseURL ?? process.env.API_URL ?? "http://localhost:4005";
         const runId = Date.now();
-        const managerEmail = `manager-lifecycle-${runId}@test.workershive.com`;
         const workerEmail = `worker-lifecycle-${runId}@test.workershive.com`;
-        const password = "TestPassword123!";
-        const managerSignupContext = await playwrightRequest.newContext({ baseURL: apiBaseUrl });
+        const { managerEmail, password, orgId, managerSignupContext, managerContext } = await createManagerAndOrg(apiBaseUrl, runId);
         const workerSignupContext = await playwrightRequest.newContext({ baseURL: apiBaseUrl });
-
-        const managerSignUp = await managerSignupContext.post("/api/auth/sign-up/email", {
-            data: {
-                name: "Lifecycle Manager",
-                email: managerEmail,
-                password,
-                companyName: `Lifecycle Org ${runId}`,
-            },
-        });
-        expect(managerSignUp.ok()).toBeTruthy();
-
-        const managerUser = await db.query.user.findFirst({
-            where: eq(user.email, managerEmail),
-        });
-        expect(managerUser).toBeDefined();
-
-        await db.update(user)
-            .set({ emailVerified: true, updatedAt: new Date() })
-            .where(eq(user.email, managerEmail));
-
-        const managerMembership = await db.query.member.findFirst({
-            where: eq(member.userId, managerUser!.id),
-        });
-        expect(managerMembership).toBeDefined();
-
-        const orgId = managerMembership!.organizationId;
-        const managerContext = await createSignedInContext(apiBaseUrl, managerEmail, password);
 
         const locationId = `loc_lifecycle_${runId}`;
         await db.insert(location).values({
@@ -244,5 +258,130 @@ test.describe("manager/worker lifecycle", () => {
         await workerSignupContext.dispose();
         await managerContext.dispose();
         await workerContext.dispose();
+    });
+
+    test("phone activation syncs invited roles and custom-role scheduling supports open slots", async ({ baseURL }) => {
+        const apiBaseUrl = baseURL ?? process.env.API_URL ?? "http://localhost:4005";
+        const runId = Date.now() + 1;
+        const { orgId, managerContext, managerSignupContext } = await createManagerAndOrg(apiBaseUrl, runId);
+        const locationId = `loc_role_lifecycle_${runId}`;
+        const phoneNumber = "+14155552671";
+        const normalizedPhone = normalizePhoneNumber(phoneNumber);
+        const workerUserId = crypto.randomUUID();
+
+        await db.insert(location).values({
+            id: locationId,
+            organizationId: orgId,
+            name: `Role Lifecycle Venue ${runId}`,
+            slug: `role-lifecycle-venue-${runId}`,
+            timezone: "UTC",
+            address: "456 Test Ave, New York, NY",
+            position: toLatLng(40.7128, -74.006),
+            geofenceRadius: 100,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        await db.insert(rosterEntry).values({
+            id: `re_${runId}`,
+            organizationId: orgId,
+            name: "Phone Worker",
+            email: `worker-phone-${runId}@test.workershive.com`,
+            phoneNumber: normalizedPhone,
+            role: "member",
+            jobTitle: "Shift Lead",
+            roles: ["Cashier", "Shift Lead", "Cashier"],
+            hourlyRate: 2400,
+            status: "invited",
+            createdAt: new Date(),
+        });
+
+        const access = await getWorkerPhoneAccess(phoneNumber);
+        expect(access.eligible).toBe(true);
+        expect(access.organizationIds).toContain(orgId);
+        expect(access.rosterAccess[0]?.roles).toEqual(["Cashier", "Shift Lead", "Cashier"]);
+
+        await db.insert(user).values({
+            id: workerUserId,
+            name: normalizedPhone,
+            email: `worker-sync-${runId}@workershive.local`,
+            emailVerified: true,
+            phoneNumber: normalizedPhone,
+            role: "worker",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const syncedOrganizationIds = await syncWorkerMembershipsForPhone(workerUserId, phoneNumber);
+        expect(syncedOrganizationIds).toContain(orgId);
+
+        const workerMembership = await db.query.member.findFirst({
+            where: and(
+                eq(member.userId, workerUserId),
+                eq(member.organizationId, orgId),
+            ),
+        });
+        expect(workerMembership).toBeDefined();
+        expect(workerMembership?.jobTitle).toBe("Shift Lead");
+        expect(workerMembership?.hourlyRate).toBe(2400);
+
+        const syncedRoles = await db.query.workerRole.findMany({
+            where: and(
+                eq(workerRole.workerId, workerUserId),
+                eq(workerRole.organizationId, orgId),
+            ),
+            orderBy: [workerRole.role],
+        });
+        expect(syncedRoles.map((role) => role.role)).toEqual(["Cashier", "Shift Lead"]);
+
+        const syncedRoster = await db.query.rosterEntry.findFirst({
+            where: eq(rosterEntry.id, `re_${runId}`),
+        });
+        expect(syncedRoster?.status).toBe("active");
+
+        const publishResponse = await managerContext.post("/shifts/publish", {
+            headers: { "x-org-id": orgId },
+            data: {
+                organizationId: orgId,
+                locationId,
+                timezone: "UTC",
+                status: "published",
+                schedules: [
+                    {
+                        scheduleName: `Custom Role Shift ${runId}`,
+                        dates: [new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)],
+                        startTime: "09:00",
+                        endTime: "17:00",
+                        positions: [
+                            {
+                                roleName: "Forklift Operator",
+                                workerIds: [workerUserId, null],
+                            },
+                        ],
+                    },
+                ],
+            },
+        });
+        expect(publishResponse.ok()).toBeTruthy();
+
+        const publishedShift = await db.query.shift.findFirst({
+            where: and(
+                eq(shift.organizationId, orgId),
+                eq(shift.title, "Forklift Operator"),
+            ),
+            orderBy: [desc(shift.createdAt)],
+        });
+        expect(publishedShift).toBeDefined();
+        expect(publishedShift?.capacityTotal).toBe(2);
+        expect(publishedShift?.status).toBe("published");
+
+        const assignments = await db.query.shiftAssignment.findMany({
+            where: eq(shiftAssignment.shiftId, publishedShift!.id),
+        });
+        expect(assignments).toHaveLength(1);
+        expect(assignments[0]?.workerId).toBe(workerUserId);
+
+        await managerSignupContext.dispose();
+        await managerContext.dispose();
     });
 });

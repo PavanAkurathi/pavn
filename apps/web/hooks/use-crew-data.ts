@@ -1,4 +1,3 @@
-
 export interface Role {
     id: string;
     label: string;
@@ -14,17 +13,10 @@ export interface CrewMember {
     initials: string;
 }
 
-export const ROLES: Role[] = [
-    { id: "all", label: "All" },
-    { id: "server", label: "Servers" },
-    { id: "bartender", label: "Bartenders" },
-    { id: "kitchen", label: "Kitchen" },
-    { id: "host", label: "Host" },
-];
-
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { useOrganizationId } from "./use-schedule-data";
+import { buildRoleOptions } from "@/lib/schedule/roles";
 
 // Define the shape of a Worker based on your DB Schema
 // Duplicate interface removed
@@ -50,7 +42,7 @@ export function useCrewData() {
     // 3. Return robust state
     return {
         crew: data || [],
-        roles: ROLES, // If you have a separate roles endpoint, fetch it here too
+        roles: buildRoleOptions(data || []),
         isLoading,
         isError: error
     };

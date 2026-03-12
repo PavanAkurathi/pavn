@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { ExitDialog } from "@repo/ui/components/ui/exit-dialog";
 import { AddLocationModal } from "../settings/add-location-modal";
 import { createLocation } from "@/actions/locations";
+import { buildRoleOptions } from "@/lib/schedule/roles";
 
 // Schema Definitions
 const PositionSchema = z.object({
@@ -103,8 +104,9 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     const { data: locations, mutate: mutateLocations } = useLocations();
     const { data: contacts } = useContacts();
     const activeOrganizationId = useOrganizationId();
-    const { roles, crew: hookCrew } = useCrewData();
+    const { crew: hookCrew } = useCrewData();
     const crew = prefetchedCrew && prefetchedCrew.length > 0 ? prefetchedCrew : hookCrew;
+    const roles = buildRoleOptions(crew);
 
     const { data: session } = authClient.useSession();
     const currentUserId = session?.user?.id;

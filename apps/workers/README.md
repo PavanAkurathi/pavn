@@ -1,39 +1,45 @@
-# Pavn Workers App (`apps/workers`)
+# Workers App
 
-The mobile application for gig workers, built with **Expo (React Native)**.
+Expo app for gig workers.
 
-## Features
-- **Shift Discovery**: Browse and accept available shifts.
-- **Schedule**: View upcoming and past shifts.
-- **Clock-In/Out**: Secure, client-side geofence-validated attendance tracking.
-- **Push Notifications**: Real-time Expo push notifications for shift and schedule updates.
-- **Profile**: Manage worker profile and availability.
+## Run Locally
 
-## Running Locally
+From the repo root:
 
-1.  **Install Dependencies**:
-    ```bash
-    # From root
-    bun install
-    ```
+```bash
+bun install
+```
 
-2.  **Start Expo**:
-    ```bash
-    cd apps/workers
-    npx expo start
-    ```
+Start the API/web stack in another terminal, then run Expo:
 
-3.  **Run on Device/Simulator**:
-    - Press `i` to open in iOS Simulator.
-    - Press `a` to open in Android Emulator.
-    - Scan the QR code with Expo Go on a physical device (requires being on the same Wi-Fi).
+```bash
+cd /Users/av/Documents/pavn/apps/workers
+bun run start
+```
 
-## Configuration
+## Local Requirements
 
-- **`app.json`**: Expo configuration (Scheme: `workers://`, Icons, Permissions).
-- **`lib/config.ts`**: API URL configuration (defaults to `localhost:4005` or LAN IP).
+- root [/.env](/Users/av/Documents/pavn/.env) must be set
+- `EXPO_PUBLIC_API_URL` must point to your reachable API
+- for a real phone on local Wi-Fi, use your LAN IP instead of `localhost`
 
-## Troubleshooting
+## Expo Go vs Preview Build
 
-- **"Network request failed"**: Ensure your backend is running (`bun run dev` in root) and your mobile device is on the same network. Check `lib/config.ts` if IP detection is incorrect.
-- **"Invalid Origin"**: Ensure your IP or scheme (`workers://`) is added to the `trustedOrigins` in `packages/auth/src/auth.ts`.
+Expo Go is fine for:
+
+- auth flow
+- navigation
+- API-backed screens
+
+Use a preview/dev build for:
+
+- push notifications
+- full native notification behavior
+- final device validation
+
+## Important Files
+
+- [app.json](/Users/av/Documents/pavn/apps/workers/app.json)
+- [eas.json](/Users/av/Documents/pavn/apps/workers/eas.json)
+- [lib/config.ts](/Users/av/Documents/pavn/apps/workers/lib/config.ts)
+- [EAS_SETUP.md](/Users/av/Documents/pavn/apps/workers/EAS_SETUP.md)

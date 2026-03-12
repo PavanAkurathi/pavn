@@ -22,6 +22,7 @@ interface WorkerRow {
     phone: string;
     role: "member";
     jobTitle: string;
+    roles: string;
     hourlyRate: string;
     // Profile Extensions
     image: string;
@@ -117,7 +118,8 @@ export default function BulkImportPage() {
             email: getValue("email") || getValue("e-mail") || getValue("mail"),
             phone: getValue("phone") || getValue("mobile") || getValue("cell"),
             role: "member" as const,
-            jobTitle: getValue("title") || getValue("job") || getValue("position"),
+            jobTitle: getValue("primary role") || getValue("title") || getValue("job") || getValue("position"),
+            roles: getValue("roles") || getValue("skills") || getValue("positions"),
             hourlyRate: getValue("rate") || getValue("wage") || getValue("pay"),
             // Profile Extensions
             image: getValue("avatar") || getValue("image") || getValue("photo") || getValue("picture"),
@@ -172,11 +174,15 @@ export default function BulkImportPage() {
                 }
 
                 return {
+                    roles: r.roles
+                        .split(/[,;\n|]+/)
+                        .map((role) => role.trim())
+                        .filter(Boolean),
                     name: r.name,
                     email: r.email,
                     phoneNumber: r.phone || undefined,
                     role: r.role,
-                    jobTitle: r.jobTitle || undefined,
+                    jobTitle: r.jobTitle || r.roles.split(/[,;\n|]+/).map((role) => role.trim()).filter(Boolean)[0] || undefined,
                     hourlyRate: hourlyRateCents,
                     image: r.image || undefined,
                     emergencyContact: (r.emergencyName || r.emergencyPhone) ? {
@@ -236,6 +242,7 @@ export default function BulkImportPage() {
                     </div>
                     <p className="text-xs text-muted-foreground mt-4">
                         Supported columns: Name, Email, Phone, Job Title
+                        {", Roles"}
                     </p>
                 </Card>
             )}
@@ -268,7 +275,8 @@ export default function BulkImportPage() {
                                             <TableHead>Name</TableHead>
                                             <TableHead>Email</TableHead>
                                             <TableHead>Phone</TableHead>
-                                            <TableHead>Title</TableHead>
+                                            <TableHead>Primary Role</TableHead>
+                                            <TableHead>Roles</TableHead>
                                             <TableHead>Rate/Hr</TableHead>
                                             <TableHead>Emergency</TableHead>
                                             <TableHead>Cert</TableHead>
@@ -314,6 +322,14 @@ export default function BulkImportPage() {
                                                         value={row.jobTitle}
                                                         onChange={(e) => updateRow(row.id, "jobTitle", e.target.value)}
                                                         placeholder="Guard"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Input
+                                                        className="h-8 bg-transparent border-transparent hover:border-input focus:bg-background"
+                                                        value={row.roles}
+                                                        onChange={(e) => updateRow(row.id, "roles", e.target.value)}
+                                                        placeholder="Guard, Patrol, Dispatch"
                                                     />
                                                 </TableCell>
                                                 <TableCell>

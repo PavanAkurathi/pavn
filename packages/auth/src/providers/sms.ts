@@ -10,6 +10,8 @@ export const normalizePhoneNumber = (phone: string): string =>
 // ── Twilio (lazy ESM-safe initialization) ────────────────────────────────────
 
 let twilioClient: Awaited<ReturnType<typeof buildTwilioClient>> | null = null;
+const allowMockOtpDebug =
+    process.env.NODE_ENV !== "production" && process.env.ALLOW_MOCK_OTP_DEBUG === "true";
 
 async function buildTwilioClient() {
     if (process.env.MOCK_SMS === "true") return null;
@@ -45,24 +47,18 @@ async function getTwilioClient() {
 
 export async function sendSMS(to: string, body: string): Promise<void> {
     const twilio = await getTwilioClient();
+    const normalizedTo = normalizePhoneNumber(to);
 
     if (!twilio) {
-        // Dev mock — write OTP to file for easy access during development
         const code = body.match(/\b(\d{6})\b/)?.[1];
-        console.log(`\n📱 [SMS MOCK] → ${to}\n   ${body}\n`);
+        const target = `***${normalizedTo.slice(-4)}`;
+        console.warn(`[SMS MOCK] Delivery skipped for ${target}`);
 
-        if (process.env.NODE_ENV !== "production" && code) {
-            const { writeFileSync } = await import("fs");
-            try {
-                writeFileSync("/tmp/latest-otp.txt", code);
-            } catch {
-                // Non-critical
-            }
+        if (allowMockOtpDebug && code) {
+            console.warn(`[SMS MOCK] Debug OTP enabled for ${target}`);
         }
         return;
     }
-
-    const normalizedTo = normalizePhoneNumber(to);
 
     await twilio.client.messages.create({
         body,
