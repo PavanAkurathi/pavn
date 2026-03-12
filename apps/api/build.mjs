@@ -25,6 +25,7 @@ if (!existsSync(distDir)) {
 const aliases = {
     '@repo/auth': join(monorepoRoot, 'packages/auth/src/index.ts'),
     '@repo/auth/client': join(monorepoRoot, 'packages/auth/src/client.ts'),
+    '@repo/auth/providers/sms': join(monorepoRoot, 'packages/auth/src/providers/sms.ts'),
     '@repo/database': join(monorepoRoot, 'packages/database/src/index.ts'),
     '@repo/database/schema': join(monorepoRoot, 'packages/database/src/schema.ts'),
     '@repo/config': join(monorepoRoot, 'packages/config/src/index.ts'),

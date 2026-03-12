@@ -21,7 +21,7 @@ import {
     getBetterAuthServerBaseUrl,
     isAuthProd,
     requireAuthEnv,
-} from "./env.js";
+} from "./env";
 
 // In production, crash immediately if secret is missing.
 // In dev/build, use a clearly labeled fallback.

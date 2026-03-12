@@ -4,5 +4,5 @@
             "master": true
         }
     },
-    "ignoreCommand": "npx turbo-ignore web"
+    "ignoreCommand": "npx turbo-ignore pavn-web"
 }
