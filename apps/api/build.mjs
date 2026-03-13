@@ -55,39 +55,6 @@ async function build() {
             // Bundle workspace packages (they're TypeScript)
             packages: 'bundle',
             
-            // ONLY externalize packages that have proper ESM exports
-            // CJS-only packages should NOT be external (esbuild handles CJS→ESM)
-            external: [
-                // Hono - proper ESM
-                'hono',
-                'hono/*',
-                '@hono/*',
-                // Database - proper ESM
-                'drizzle-orm',
-                'drizzle-orm/*',
-                '@neondatabase/serverless',
-                'postgres',
-                // Auth - proper ESM
-                'better-auth',
-                'better-auth/*',
-                '@better-auth/*',
-                // Utils - proper ESM
-                'zod',
-                'nanoid',
-                // Services with native bindings - must be external
-                'twilio',
-                'stripe',
-                'resend',
-                '@sentry/node',
-                'expo-server-sdk',
-                // Date utils - proper ESM
-                'date-fns',
-                'date-fns/*',
-                'date-fns-tz',
-                // NOTE: dotenv removed - Vercel provides env vars natively
-                // NOTE: google-libphonenumber removed - it's CJS, let esbuild bundle it
-            ],
-            
             alias: aliases,
             resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
             loader: { '.ts': 'ts', '.tsx': 'tsx' },
