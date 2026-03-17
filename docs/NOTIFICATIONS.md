@@ -24,14 +24,14 @@ The Notification & Tracking Service (Epic WH-200) provides a robust infrastructu
 ## Setup & Configuration
 
 ### Environment Variables
-Ensure these are set in `packages/api/.env` and `apps/workers/.env`:
+Ensure these are set in `packages/api/.env` and `apps/gig-workers/.env`:
 ```bash
 EXPO_PUBLIC_API_URL=http://localhost:4000
 EXPO_ACCESS_TOKEN=your_expo_token # For sending pushes
 ```
 
 ### Android Permissions
-The mobile app (`apps/workers`) requires the following permissions in `app.json` for foreground tracking:
+The mobile app (`apps/gig-workers`) requires the following permissions in `app.json` for foreground tracking:
 - `android.permission.FOREGROUND_SERVICE`
 - `android.permission.FOREGROUND_SERVICE_LOCATION`
 - `android.permission.ACCESS_BACKGROUND_LOCATION`

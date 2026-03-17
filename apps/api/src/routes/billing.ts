@@ -35,7 +35,7 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
-import { BillingInfoSchema } from "@repo/shifts-service";
+import { BillingInfoSchema } from "@repo/scheduling-timekeeping";
 
 export const billingRouter = new OpenAPIHono<AppContext>();
 

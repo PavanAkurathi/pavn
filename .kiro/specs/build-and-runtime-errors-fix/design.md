@@ -18,7 +18,7 @@ The fix approach is minimal and targeted: enable Material DateTimePicker for new
 - **New Architecture**: React Native's new architecture (Fabric + TurboModules) enabled via `newArchEnabled: true`
 - **TurboModuleRegistry**: React Native's new module system that requires explicit native module configuration
 - **RNCMaterialDatePicker**: The native module name for @react-native-community/datetimepicker on Android
-- **fetchJson**: The API client helper function in `apps/workers/lib/api.ts` that handles HTTP responses
+- **fetchJson**: The API client helper function in `apps/gig-workers/lib/api.ts` that handles HTTP responses
 - **SecureStore**: Expo's secure storage API for storing authentication tokens
 - **react-hook-form**: Form library used in both web app and ui package, causing type conflicts when versions differ
 
@@ -145,7 +145,7 @@ Based on the bug description and code analysis, the most likely issues are:
 
 ### Bug 2: API Unauthorized Error
 
-Based on the code in `apps/workers/lib/api.ts`, the issue is clear:
+Based on the code in `apps/gig-workers/lib/api.ts`, the issue is clear:
 
 1. **Incomplete Error Handling**: The `fetchJson` function at line 126-129 detects 401 status and deletes the session token, but then continues to the error throwing logic at line 131-140. The function throws an error with message "Unauthorized" instead of returning early or redirecting to login.
 
@@ -212,7 +212,7 @@ _For any_ local build of the web app using Bun, the fixed dependency configurati
 
 Assuming our root cause analysis is correct:
 
-**File**: `apps/workers/app.json`
+**File**: `apps/gig-workers/app.json`
 
 **Section**: `plugins` array
 
@@ -234,13 +234,13 @@ Assuming our root cause analysis is correct:
 
 3. **Rebuild Native Project**: After configuration change, run `npx expo prebuild --clean` to regenerate native iOS/Android projects with correct TurboModule configuration
 
-4. **Verify Autolinking**: Check that `apps/workers/ios/build/generated/autolinking/autolinking.json` includes the DateTimePicker module after prebuild
+4. **Verify Autolinking**: Check that `apps/gig-workers/ios/build/generated/autolinking/autolinking.json` includes the DateTimePicker module after prebuild
 
 ### Bug 2: API Unauthorized Error
 
 Assuming our root cause analysis is correct:
 
-**File**: `apps/workers/lib/api.ts`
+**File**: `apps/gig-workers/lib/api.ts`
 
 **Function**: `fetchJson`
 

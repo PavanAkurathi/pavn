@@ -1,20 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    transpilePackages: ["@repo/database", "@repo/auth", "@repo/email", "@repo/shifts-service", "@repo/ui", "@repo/utils", "@repo/notifications", "@repo/observability"],
-    webpack: (config) => {
-        config.resolve.alias["zod/v4"] = "zod";
-        return config;
-    },
+    transpilePackages: ["@repo/database", "@repo/auth", "@repo/email", "@repo/scheduling-timekeeping", "@repo/organizations", "@repo/gig-workers", "@repo/ui", "@repo/utils", "@repo/notifications", "@repo/observability"],
+    // Next 16 uses Turbopack by default. Keep the config explicit so builds
+    // don't fail on the presence of Sentry's webpack hooks.
+    turbopack: {},
 };
 
 import { withSentryConfig } from "@sentry/nextjs";
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
 
-export default withSentryConfig(nextConfig, {
+const sentryConfig = {
     // For all available options, see:
     // https://github.com/getsentry/sentry-webpack-plugin#options
 
     org: "pavn",
     project: "pavn-web",
+    authToken: sentryAuthToken,
 
     // Only print logs for uploading source maps in CI
     silent: !process.env.CI,
@@ -47,4 +48,8 @@ export default withSentryConfig(nextConfig, {
         },
         automaticVercelMonitors: true,
     },
-});
+};
+
+export default sentryAuthToken
+    ? withSentryConfig(nextConfig, sentryConfig)
+    : nextConfig;

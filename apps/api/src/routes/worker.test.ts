@@ -16,12 +16,15 @@ mock.module("@repo/auth", () => ({
     getWorkerPhoneAccess: mockGetWorkerPhoneAccess,
 }));
 
-mock.module("@repo/shifts-service", () => ({
+mock.module("@repo/scheduling-timekeeping", () => ({
     getWorkerShifts: noop,
     getWorkerAllShifts: noopObject,
+    UpcomingShiftsResponseSchema: z.array(z.any()),
+}));
+
+mock.module("@repo/gig-workers", () => ({
     setAvailability: noopObject,
     getAvailability: noopObject,
-    UpcomingShiftsResponseSchema: z.array(z.any()),
     AvailabilityResponseSchema: z.any(),
     WorkerSchema: z.any(),
 }));

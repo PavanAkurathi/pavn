@@ -13,8 +13,8 @@ const steps = [
     command: ["npm", "run", "typecheck", "--workspace=packages/database"],
   },
   {
-    label: "Typecheck packages/shifts",
-    command: ["npm", "run", "typecheck", "--workspace=packages/shifts"],
+    label: "Typecheck packages/scheduling-timekeeping",
+    command: ["npm", "run", "typecheck", "--workspace=packages/scheduling-timekeeping"],
   },
   {
     label: "Typecheck packages/geofence",
@@ -25,8 +25,8 @@ const steps = [
     command: ["npm", "run", "typecheck", "--workspace=apps/api"],
   },
   {
-    label: "Typecheck apps/workers",
-    command: ["npx", "tsc", "--noEmit", "-p", "apps/workers/tsconfig.json"],
+    label: "Typecheck apps/gig-workers",
+    command: ["npx", "tsc", "--noEmit", "-p", "apps/gig-workers/tsconfig.json"],
   },
   {
     label: "Typecheck packages/e2e",
@@ -37,10 +37,10 @@ const steps = [
     command: [
       "bun",
       "test",
-      "packages/shifts/tests/update-timesheet.test.ts",
-      "packages/shifts/tests/worker-all-shifts.test.ts",
-      "packages/shifts/tests/publish.test.ts",
-      "packages/shifts/tests/cross-org-conflict-notifications.test.ts",
+      "packages/scheduling-timekeeping/tests/update-timesheet.test.ts",
+      "packages/scheduling-timekeeping/tests/worker-all-shifts.test.ts",
+      "packages/scheduling-timekeeping/tests/publish.test.ts",
+      "packages/scheduling-timekeeping/tests/cross-org-conflict-notifications.test.ts",
       "apps/api/src/routes/shifts.test.ts",
     ],
   },

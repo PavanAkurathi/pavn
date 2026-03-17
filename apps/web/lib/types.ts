@@ -1,4 +1,4 @@
-export * from "@repo/shifts-service";
+export * from "@repo/scheduling-timekeeping";
 
 export type ViewMode = 'list' | 'calendar';
 

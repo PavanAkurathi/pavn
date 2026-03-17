@@ -15,9 +15,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AvailabilityList } from "@/components/roster/availability-list";
 
 interface PageProps {
-    params: {
+    params: Promise<{
         id: string;
-    };
+    }>;
 }
 
 export default async function WorkerProfilePage({ params }: PageProps) {

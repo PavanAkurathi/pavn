@@ -1,12 +1,13 @@
 // packages/geofence/src/services/ingest-location.ts
 
 import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
-import { workerLocation, shiftAssignment, shift, member, location } from "@repo/database/schema";
+import { workerLocation, shiftAssignment, shift, member, location, organization } from "@repo/database/schema";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { sendPushNotification } from "@repo/notifications";
 import { AppError } from "@repo/observability";
+import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 
 const LocationPingSchema = z.object({
     latitude: z.coerce.number().min(-90).max(90),
@@ -36,6 +37,13 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
     if (!membership) {
         throw new AppError("Worker not in organization", "FORBIDDEN", 403);
     }
+
+    const orgConfig = await db.query.organization.findFirst({
+        where: eq(organization.id, orgId),
+        columns: { attendanceVerificationPolicy: true }
+    });
+    const attendanceVerificationPolicy =
+        orgConfig?.attendanceVerificationPolicy || DEFAULT_ATTENDANCE_VERIFICATION_POLICY;
 
     // 3. Find shift
     const now = new Date();
@@ -81,11 +89,11 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
 
     // 4. Calculate distance
     let distanceMeters: number | null = null;
-    let isOnSite = false;
+    let isOnSite = attendanceVerificationPolicy === "none";
     let eventType = 'ping';
     const point = `POINT(${longitude} ${latitude})`;
 
-    if (venueLocationId) {
+    if (attendanceVerificationPolicy !== "none" && venueLocationId) {
         const [geoResult] = await db.select({
             isWithin: sql<boolean>`ST_DWithin(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
             distance: sql<number>`ST_Distance(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}))`,
@@ -128,7 +136,7 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
     }
 
     // 5. Detect Arrival
-    if (isOnSite && relevantAssignment && !relevantAssignment.actualClockIn) {
+    if (attendanceVerificationPolicy !== "none" && isOnSite && relevantAssignment && !relevantAssignment.actualClockIn) {
         if (!previousPing || !previousPing.isOnSite) {
             eventType = 'arrival';
             sendPushNotification({
@@ -145,7 +153,12 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
     }
 
     // 6. Detect Departure & 7. Store Record (No explicit transaction because neon-http doesn't support .transaction())
-    if (!isOnSite && relevantAssignment?.actualClockIn && !relevantAssignment.actualClockOut) {
+    if (
+        attendanceVerificationPolicy !== "none" &&
+        !isOnSite &&
+        relevantAssignment?.actualClockIn &&
+        !relevantAssignment.actualClockOut
+    ) {
         if (previousPing?.isOnSite) {
             if (relevantAssignment.reviewReason !== 'left_geofence') {
                 eventType = 'departure';
@@ -184,8 +197,14 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
             distanceMeters,
             eventType,
             shiftId: relevantShift?.id || null,
-            canClockIn: isOnSite && relevantAssignment && !relevantAssignment.actualClockIn,
-            canClockOut: isOnSite && relevantAssignment?.actualClockIn && !relevantAssignment.actualClockOut,
+            canClockIn:
+                !!relevantAssignment &&
+                !relevantAssignment.actualClockIn &&
+                (attendanceVerificationPolicy !== "strict_geofence" || isOnSite),
+            canClockOut:
+                !!relevantAssignment?.actualClockIn &&
+                !relevantAssignment.actualClockOut &&
+                (attendanceVerificationPolicy !== "strict_geofence" || isOnSite),
         }
     };
 };

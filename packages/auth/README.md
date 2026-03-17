@@ -5,7 +5,7 @@ Authentication and tenant-aware identity flow for WorkersHive.
 This package is the single auth core for:
 - `apps/web` manager authentication
 - `apps/api` Hono auth/session verification
-- `apps/workers` Expo worker authentication
+- `apps/gig-workers` Expo worker authentication
 
 The backend API stays in Hono. This package stays focused on identity, session, org membership hydration, OTP delivery, and Better Auth configuration.
 
@@ -39,7 +39,7 @@ The backend API stays in Hono. This package stays focused on identity, session, 
 ```mermaid
 flowchart LR
     A["apps/web"] --> B["@repo/auth client"]
-    C["apps/workers"] --> D["Expo auth client"]
+    C["apps/gig-workers"] --> D["Expo auth client"]
     B --> E["Better Auth endpoints"]
     D --> E
     E --> F["apps/web /api/auth/*"]
@@ -151,8 +151,8 @@ The real invite is server-side phone ownership:
 ### Worker login flow
 
 Worker mobile sign-in lives in:
-- [apps/workers/app/(auth)/login.tsx](/Users/av/Documents/pavn/apps/workers/app/(auth)/login.tsx)
-- [apps/workers/lib/worker-auth.ts](/Users/av/Documents/pavn/apps/workers/lib/worker-auth.ts)
+- [apps/gig-workers/app/(auth)/login.tsx](/Users/av/Documents/pavn/apps/gig-workers/app/(auth)/login.tsx)
+- [apps/gig-workers/lib/worker-auth.ts](/Users/av/Documents/pavn/apps/gig-workers/lib/worker-auth.ts)
 
 Flow:
 1. Worker enters phone number.
@@ -203,9 +203,9 @@ After OTP verification, [syncWorkerMembershipsForPhone(...)](/Users/av/Documents
 Worker sessions are sticky by design.
 
 Code path:
-- [apps/workers/lib/auth-client.ts](/Users/av/Documents/pavn/apps/workers/lib/auth-client.ts)
-- [apps/workers/lib/organization-context.ts](/Users/av/Documents/pavn/apps/workers/lib/organization-context.ts)
-- [apps/workers/lib/api.ts](/Users/av/Documents/pavn/apps/workers/lib/api.ts)
+- [apps/gig-workers/lib/auth-client.ts](/Users/av/Documents/pavn/apps/gig-workers/lib/auth-client.ts)
+- [apps/gig-workers/lib/organization-context.ts](/Users/av/Documents/pavn/apps/gig-workers/lib/organization-context.ts)
+- [apps/gig-workers/lib/api.ts](/Users/av/Documents/pavn/apps/gig-workers/lib/api.ts)
 
 Behavior:
 - session token is persisted in SecureStore
@@ -262,7 +262,7 @@ The shared web client lives at:
 ## Mobile Integration
 
 The Expo worker client lives at:
-- [apps/workers/lib/auth-client.ts](/Users/av/Documents/pavn/apps/workers/lib/auth-client.ts)
+- [apps/gig-workers/lib/auth-client.ts](/Users/av/Documents/pavn/apps/gig-workers/lib/auth-client.ts)
 
 Key pieces:
 - `expoClient(...)`

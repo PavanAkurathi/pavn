@@ -2,14 +2,23 @@ import { Resend } from 'resend';
 
 // Initialize Resend with API Key from environment
 const FROM_EMAIL = process.env.EMAIL_FROM || "onboarding@resend.dev"; // Use EMAIL_FROM env var or fallback to default
+const allowEmailOtpDebug =
+    process.env.NODE_ENV !== "production" && process.env.ALLOW_EMAIL_OTP_DEBUG === "true";
+const maskEmail = (email: string) => {
+    const [local, domain] = email.split("@");
+    if (!local || !domain) return "***";
+    return `${local.slice(0, 2)}***@${domain}`;
+};
 
 export const sendOtp = async (email: string, otp: string) => {
     const apiKey = process.env.RESEND_API_KEY;
     const isProd = process.env.NODE_ENV === "production";
 
     if (!apiKey) {
-        console.warn("[Email] RESEND_API_KEY is missing. Logging OTP instead.");
-        console.log(`[Email] To: ${email}, OTP: ${otp}`);
+        console.warn(`[Email] RESEND_API_KEY is missing. OTP delivery skipped for ${maskEmail(email)}.`);
+        if (allowEmailOtpDebug) {
+            console.warn(`[Email] OTP debug enabled for ${maskEmail(email)}.`);
+        }
         return;
     }
 
@@ -38,7 +47,10 @@ export const sendOtp = async (email: string, otp: string) => {
             if (isProd) {
                 throw new Error("Failed to send verification email");
             }
-            console.log(`[Email Fallback] To: ${email}, OTP: ${otp}`);
+            console.warn(`[Email] OTP delivery fallback skipped for ${maskEmail(email)}.`);
+            if (allowEmailOtpDebug) {
+                console.warn(`[Email] OTP debug enabled for ${maskEmail(email)}.`);
+            }
             return;
         }
 
@@ -46,7 +58,10 @@ export const sendOtp = async (email: string, otp: string) => {
     } catch (e) {
         console.error("[Email] Exception sending OTP:", e);
         if (!isProd) {
-            console.log(`[Email Fallback] To: ${email}, OTP: ${otp}`);
+            console.warn(`[Email] OTP delivery fallback skipped for ${maskEmail(email)}.`);
+            if (allowEmailOtpDebug) {
+                console.warn(`[Email] OTP debug enabled for ${maskEmail(email)}.`);
+            }
             return;
         }
         throw e;
@@ -57,8 +72,7 @@ export const sendInvite = async (email: string, role: string, appUrl: string) =>
     const apiKey = process.env.RESEND_API_KEY;
 
     if (!apiKey) {
-        console.warn("[Email] RESEND_API_KEY is missing. Logging Invite instead.");
-        console.log(`[Email Invite] To: ${email}, Role: ${role}, Link: ${appUrl}`);
+        console.warn(`[Email] RESEND_API_KEY is missing. Invite delivery skipped for ${maskEmail(email)}.`);
         return;
     }
 
@@ -87,7 +101,7 @@ export const sendInvite = async (email: string, role: string, appUrl: string) =>
     } catch (e) {
         console.error("[Email] Exception sending Invite:", e);
         if (process.env.NODE_ENV === "development") {
-            console.log(`[Email Invite Fallback] To: ${email}`);
+            console.warn(`[Email] Invite fallback skipped for ${maskEmail(email)}.`);
         }
     }
 }

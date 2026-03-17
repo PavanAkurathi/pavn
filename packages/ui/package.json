@@ -7,7 +7,7 @@
     "src"
   ],
   "engines": {
-    "node": ">=20.9.0"
+    "node": "20.x"
   },
   "exports": {
     "./globals.css": "./src/styles/globals.css",

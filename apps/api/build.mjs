@@ -31,10 +31,12 @@ const aliases = {
     '@repo/config': join(monorepoRoot, 'packages/config/src/index.ts'),
     '@repo/config/cors': join(monorepoRoot, 'packages/config/src/cors.ts'),
     '@repo/geofence': join(monorepoRoot, 'packages/geofence/src/index.ts'),
-    '@repo/shifts-service': join(monorepoRoot, 'packages/shifts/src/index.ts'),
+    '@repo/organizations': join(monorepoRoot, 'packages/organizations/src/index.ts'),
+    '@repo/scheduling-timekeeping': join(monorepoRoot, 'packages/scheduling-timekeeping/src/index.ts'),
     '@repo/observability': join(monorepoRoot, 'packages/observability/src/index.ts'),
     '@repo/notifications': join(monorepoRoot, 'packages/notifications/src/index.ts'),
     '@repo/utils': join(monorepoRoot, 'packages/utils/src/index.ts'),
+    '@repo/gig-workers': join(monorepoRoot, 'packages/gig-workers/src/index.ts'),
     '@repo/email': join(monorepoRoot, 'packages/email/src/index.ts'),
 };
 

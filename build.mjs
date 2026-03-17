@@ -28,7 +28,7 @@ const aliases = {
     '@repo/config': join(__dirname, 'packages/config/src/index.ts'),
     '@repo/config/cors': join(__dirname, 'packages/config/src/cors.ts'),
     '@repo/geofence': join(__dirname, 'packages/geofence/src/index.ts'),
-    '@repo/shifts-service': join(__dirname, 'packages/shifts/src/index.ts'),
+    '@repo/scheduling-timekeeping': join(__dirname, 'packages/scheduling-timekeeping/src/index.ts'),
     '@repo/observability': join(__dirname, 'packages/observability/src/index.ts'),
     '@repo/notifications': join(__dirname, 'packages/notifications/src/index.ts'),
     '@repo/utils': join(__dirname, 'packages/utils/src/index.ts'),

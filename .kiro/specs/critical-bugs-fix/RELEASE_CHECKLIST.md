@@ -10,7 +10,7 @@ Supporting docs:
 
 ## 1. Code Gate
 
-- [ ] `packages/database`, `packages/shifts`, `packages/geofence`, `apps/api`, and `apps/workers` typecheck clean
+- [ ] `packages/database`, `packages/scheduling-timekeeping`, `packages/geofence`, `apps/api`, and `apps/gig-workers` typecheck clean
 - [ ] targeted regression tests pass
 - [ ] local lifecycle E2E passes
 

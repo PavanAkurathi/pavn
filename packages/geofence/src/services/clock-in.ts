@@ -5,7 +5,11 @@ import { shift, shiftAssignment, workerLocation, organization, location } from "
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
-import { applyClockInRules, validateShiftTransition } from "@repo/config";
+import {
+    applyClockInRules,
+    validateShiftTransition,
+    DEFAULT_ATTENDANCE_VERIFICATION_POLICY,
+} from "@repo/config";
 import { cancelNotificationByType } from "@repo/notifications";
 import { notifyManagers } from "../utils/manager-notifications"; // Ensure this util exists or is moved
 import { logAudit } from "@repo/database";
@@ -78,30 +82,52 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
         });
     }
 
-    // 3. Verify geofence using PostGIS
-    if (!shiftRecord.locationId) {
-        throw new AppError("Venue location not configured", "VENUE_NOT_GEOCODED", 400);
+    // 3. Resolve org policy and time buffer
+    const orgConfig = await db.query.organization.findFirst({
+        where: eq(organization.id, orgId),
+        columns: {
+            earlyClockInBufferMinutes: true,
+            attendanceVerificationPolicy: true,
+        }
+    });
+
+    const attendanceVerificationPolicy =
+        orgConfig?.attendanceVerificationPolicy || DEFAULT_ATTENDANCE_VERIFICATION_POLICY;
+
+    let distanceMeters = 0;
+    let radius = shiftRecord.location?.geofenceRadius || 100;
+    let isWithinGeofence = attendanceVerificationPolicy === "none";
+    let locationAvailable = false;
+
+    if (attendanceVerificationPolicy !== "none") {
+        if (!shiftRecord.locationId) {
+            if (attendanceVerificationPolicy === "strict_geofence") {
+                throw new AppError("Venue location not configured", "VENUE_NOT_GEOCODED", 400);
+            }
+        } else {
+            const point = `POINT(${longitude} ${latitude})`;
+            const [geoResult] = await db.select({
+                isWithin: sql<boolean>`ST_DWithin(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
+                distance: sql<number>`ST_Distance(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}))`,
+                radius: location.geofenceRadius
+            })
+                .from(location)
+                .where(eq(location.id, shiftRecord.locationId));
+
+            if (!geoResult) {
+                if (attendanceVerificationPolicy === "strict_geofence") {
+                    throw new AppError("Venue location not found", "VENUE_NOT_FOUND", 404);
+                }
+            } else {
+                locationAvailable = true;
+                distanceMeters = Math.round(geoResult.distance || 0);
+                radius = geoResult.radius || 100;
+                isWithinGeofence = !!geoResult.isWithin;
+            }
+        }
     }
 
-    const point = `POINT(${longitude} ${latitude})`;
-
-    // Use SQL to check distance against the venue location
-    const [geoResult] = await db.select({
-        isWithin: sql<boolean>`ST_DWithin(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
-        distance: sql<number>`ST_Distance(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}))`,
-        radius: location.geofenceRadius
-    })
-        .from(location)
-        .where(eq(location.id, shiftRecord.locationId));
-
-    if (!geoResult) {
-        throw new AppError("Venue location not found", "VENUE_NOT_FOUND", 404);
-    }
-
-    const distanceMeters = Math.round(geoResult.distance || 0);
-    const radius = geoResult.radius || 100;
-
-    if (!geoResult.isWithin) {
+    if (attendanceVerificationPolicy === "strict_geofence" && !isWithinGeofence) {
         throw new AppError("You must be at the venue to clock in", "OUTSIDE_GEOFENCE", 400, {
             distanceMeters,
             requiredRadius: radius
@@ -111,13 +137,6 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
     // 4. Time Validation
     const now = new Date();
     const scheduledStart = new Date(shiftRecord.startTime);
-
-    // Fetch org config for buffer
-    const orgConfig = await db.query.organization.findFirst({
-        where: eq(organization.id, orgId),
-        columns: { earlyClockInBufferMinutes: true }
-    });
-
     const EARLY_BUFFER_MINUTES = orgConfig?.earlyClockInBufferMinutes || 60;
     const earliestClockIn = new Date(scheduledStart.getTime() - EARLY_BUFFER_MINUTES * 60 * 1000);
 
@@ -132,6 +151,17 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
 
     // 5. Transaction
     const effectiveStart = now < scheduledStart ? scheduledStart : now;
+    const shouldFlagClockIn =
+        attendanceVerificationPolicy === "soft_geofence" &&
+        (!locationAvailable || !isWithinGeofence);
+    const clockInMethod =
+        attendanceVerificationPolicy === "strict_geofence"
+            ? "geofence"
+            : attendanceVerificationPolicy === "soft_geofence"
+              ? (isWithinGeofence ? "geofence" : "soft_geofence")
+              : "policy_none";
+    const reviewReason =
+        assignment.reviewReason ?? (shouldFlagClockIn ? "geofence_mismatch" : null);
 
     await db.transaction(async (tx) => {
         // A. Update Assignment
@@ -142,8 +172,12 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
                 actualClockIn: clockInResult.recordedTime,
                 effectiveClockIn: effectiveStart,
                 clockInPosition: toLatLng(latitude, longitude),
-                clockInVerified: true,
-                clockInMethod: 'geofence',
+                clockInVerified: attendanceVerificationPolicy === "strict_geofence" || isWithinGeofence,
+                clockInMethod,
+                needsReview: assignment.needsReview || shouldFlagClockIn,
+                reviewReason,
+                lastKnownPosition: shouldFlagClockIn ? toLatLng(latitude, longitude) : assignment.lastKnownPosition,
+                lastKnownAt: shouldFlagClockIn ? now : assignment.lastKnownAt,
                 updatedAt: now,
             })
             .where(eq(shiftAssignment.id, assignment.id));

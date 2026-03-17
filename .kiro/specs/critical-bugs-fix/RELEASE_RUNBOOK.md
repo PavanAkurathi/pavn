@@ -5,7 +5,7 @@ This is the order of operations for a beta or production release.
 ## 1. Prepare Config
 
 1. Confirm the env values in [ENVIRONMENT_MATRIX.md](/Users/av/Documents/pavn/.kiro/specs/critical-bugs-fix/ENVIRONMENT_MATRIX.md).
-2. Confirm EAS setup in [apps/workers/EAS_SETUP.md](/Users/av/Documents/pavn/apps/workers/EAS_SETUP.md).
+2. Confirm EAS setup in [apps/gig-workers/EAS_SETUP.md](/Users/av/Documents/pavn/apps/gig-workers/EAS_SETUP.md).
 3. Keep unfinished surfaces hidden unless they are fully enabled.
 
 ## 2. Run Local Gates
@@ -47,7 +47,7 @@ Minimum required checks:
 
 ## 5. Build Mobile
 
-From [apps/workers](/Users/av/Documents/pavn/apps/workers):
+From [apps/gig-workers](/Users/av/Documents/pavn/apps/gig-workers):
 
 ```bash
 eas build --platform ios --profile preview

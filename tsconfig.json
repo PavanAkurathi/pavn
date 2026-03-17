@@ -14,7 +14,10 @@
             "path": "./apps/web"
         },
         {
-            "path": "./apps/workers"
+            "path": "./apps/gig-workers"
+        },
+        {
+            "path": "./packages/gig-workers"
         },
         {
             "path": "./packages/auth"
@@ -44,7 +47,7 @@
             "path": "./packages/observability"
         },
         {
-            "path": "./packages/shifts"
+            "path": "./packages/scheduling-timekeeping"
         },
         {
             "path": "./packages/ui"

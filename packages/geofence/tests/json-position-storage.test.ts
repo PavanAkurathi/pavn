@@ -3,7 +3,10 @@ import { clockIn } from "../src/services/clock-in";
 import { clockOut } from "../src/services/clock-out";
 
 const shiftFindMock = mock();
-const orgFindMock = mock(() => Promise.resolve({ earlyClockInBufferMinutes: 60 }));
+const orgFindMock = mock(() => Promise.resolve({
+    earlyClockInBufferMinutes: 60,
+    attendanceVerificationPolicy: "strict_geofence",
+}));
 const assignmentListMock = mock(() => Promise.resolve([{ actualClockOut: new Date(), status: "completed" }]));
 const updatePayloads: any[] = [];
 const insertPayloads: any[] = [];
@@ -186,5 +189,103 @@ describe("clock-in/out JSON position storage", () => {
         expect(updatePayloads.some((payload) => payload.clockOutPosition?.lat === 34.0522 && payload.clockOutPosition?.lng === -118.2437)).toBe(true);
         expect(insertPayloads[0]?.position).toEqual({ lat: 34.0522, lng: -118.2437 });
         expect(insertPayloads[0]?.venuePosition).toEqual({ lat: 34.0522, lng: -118.2437 });
+    });
+
+    test("soft geofence clockIn allows an off-site punch and flags it for review", async () => {
+        const now = Date.now();
+        orgFindMock.mockResolvedValueOnce({
+            earlyClockInBufferMinutes: 60,
+            attendanceVerificationPolicy: "soft_geofence",
+        });
+        shiftFindMock.mockResolvedValueOnce({
+            id: "shift-3",
+            status: "assigned",
+            locationId: "location-3",
+            startTime: new Date(now + 15 * 60 * 1000),
+            location: {
+                id: "location-3",
+                position: { lat: 40.7128, lng: -74.006 },
+                geofenceRadius: 100,
+            },
+            assignments: [
+                {
+                    id: "assignment-3",
+                    actualClockIn: null,
+                    needsReview: false,
+                    reviewReason: null,
+                    lastKnownPosition: null,
+                    lastKnownAt: null,
+                    worker: { name: "Taylor Worker" },
+                },
+            ],
+        });
+        selectMock.mockImplementationOnce(() => ({
+            from: () => ({
+                where: () =>
+                    Promise.resolve([
+                        { isWithin: false, distance: 260, radius: 100 },
+                    ]),
+            }),
+        }));
+
+        const result = await clockIn(
+            {
+                shiftId: "shift-3",
+                latitude: 40.7,
+                longitude: -74.1,
+                accuracyMeters: 12,
+                deviceTimestamp: new Date(now).toISOString(),
+            },
+            "worker-1",
+            "org-1"
+        );
+
+        expect(result.success).toBe(true);
+        expect(updatePayloads.some((payload) => payload.clockInMethod === "soft_geofence")).toBe(true);
+        expect(updatePayloads.some((payload) => payload.needsReview === true)).toBe(true);
+        expect(updatePayloads.some((payload) => payload.reviewReason === "geofence_mismatch")).toBe(true);
+    });
+
+    test("no location check clockOut allows a shift without venue coordinates", async () => {
+        const now = Date.now();
+        orgFindMock.mockResolvedValueOnce({
+            earlyClockInBufferMinutes: 60,
+            attendanceVerificationPolicy: "none",
+        });
+        shiftFindMock.mockResolvedValueOnce({
+            id: "shift-4",
+            status: "in-progress",
+            locationId: null,
+            endTime: new Date(now + 60 * 60 * 1000),
+            location: null,
+            assignments: [
+                {
+                    id: "assignment-4",
+                    actualClockIn: new Date(now - 20 * 60 * 1000),
+                    actualClockOut: null,
+                    breakMinutes: 0,
+                    status: "active",
+                    needsReview: false,
+                    reviewReason: null,
+                    lastKnownPosition: null,
+                    lastKnownAt: null,
+                },
+            ],
+        });
+
+        const result = await clockOut(
+            {
+                shiftId: "shift-4",
+                latitude: 34.0522,
+                longitude: -118.2437,
+                accuracyMeters: 10,
+                deviceTimestamp: new Date(now).toISOString(),
+            },
+            "worker-1",
+            "org-1"
+        );
+
+        expect(result.success).toBe(true);
+        expect(updatePayloads.some((payload) => payload.clockOutMethod === "policy_none")).toBe(true);
     });
 });

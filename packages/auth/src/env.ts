@@ -97,7 +97,7 @@ export function buildTrustedOrigins(): string[] {
         "exp://",
         "exp://**",
         "myapp://",
-        "workers://",
+        "gig-workers://",
     ]);
 
     for (const candidate of [

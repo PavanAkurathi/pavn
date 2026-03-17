@@ -8,7 +8,7 @@ Shared internal package for handling secure, client-side geofence validation and
 
 ## Usage
 
-Import the utility functions directly into your application (e.g., `apps/workers` or `apps/api`):
+Import the utility functions directly into your application (e.g., `apps/gig-workers` or `apps/api`):
 
 ```typescript
 import { isWithinGeofence, calculateDistance } from "@repo/geofence";

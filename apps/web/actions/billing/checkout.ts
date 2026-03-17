@@ -5,18 +5,18 @@ import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
 import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
-import Stripe from "stripe";
 import { requireServerEnv } from "@/lib/server-env";
-
-const stripe = new Stripe(requireServerEnv("STRIPE_SECRET_KEY"), {
-    apiVersion: "2025-01-27.acacia" as any,
-});
+import { getStripe, isBillingConfigured } from "./stripe";
 
 async function getSession() {
     return await auth.api.getSession({ headers: await headers() });
 }
 
 export async function createCheckoutSession() {
+    if (!isBillingConfigured()) {
+        return { error: "Billing is not enabled" };
+    }
+
     const session = await getSession();
     const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
 
@@ -28,6 +28,11 @@ export async function createCheckoutSession() {
     });
 
     if (!org) return { error: "Organization not found" };
+
+    const stripe = getStripe();
+    if (!stripe) {
+        return { error: "Billing is not enabled" };
+    }
 
     let customerId = org.stripeCustomerId;
 

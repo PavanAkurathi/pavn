@@ -5,7 +5,7 @@
  * Endpoints for workers (members) to view their shifts, set availability,
  * submit adjustment requests, and manage their profile.
  * 
- * @requires @repo/shifts-service
+ * @requires @repo/scheduling-timekeeping
  * @requires @repo/geofence
  */
 
@@ -17,12 +17,14 @@ import { getWorkerPhoneAccess } from "@repo/auth";
 import {
     getWorkerShifts,
     getWorkerAllShifts,
-    setAvailability,
-    getAvailability,
     UpcomingShiftsResponseSchema,
+} from "@repo/scheduling-timekeeping";
+import {
     AvailabilityResponseSchema,
-    WorkerSchema
-} from "@repo/shifts-service";
+    getAvailability,
+    setAvailability,
+    WorkerSchema,
+} from "@repo/gig-workers";
 
 import {
     requestCorrection,

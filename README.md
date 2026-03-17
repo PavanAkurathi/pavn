@@ -23,7 +23,7 @@ This is a monorepo managed by [Turbo](https://turbo.build/).
 
 ### Apps
 - **`apps/web`**: The main web application (Next.js) for business admins and managers.
-- **`apps/workers`**: The mobile application (Expo/React Native) for gig workers.
+- **`apps/gig-workers`**: The mobile application (Expo/React Native) for gig workers.
 - **`apps/api`**: The backend API server (Hono) handling authentication, shifts, and logic.
 - **`apps/docs`**: Documentation site (Next.js).
 
@@ -34,7 +34,7 @@ This is a monorepo managed by [Turbo](https://turbo.build/).
 - **`email`**: Transactional email templates and logic.
 - **`notifications`**: Push notification services.
 - **`geofence`**: Geofencing and location verification logic.
-- **`shifts-service`**: Core shift management logic.
+- **`scheduling-timekeeping`**: Scheduling, assignments, approvals, and timesheet logic.
 - **`config`**: Shared configuration files.
 - **`utils`**: Common utility functions.
 
@@ -65,7 +65,7 @@ To start the development environment:
 2.  **Mobile App**:
     Open a *separate* terminal:
     ```bash
-    cd apps/workers
+    cd apps/gig-workers
     npx expo start
     ```
     Press `i` for iOS Simulator or `a` for Android Emulator.

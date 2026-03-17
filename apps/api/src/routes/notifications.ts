@@ -8,7 +8,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { dispatchPendingNotifications } from "@repo/notifications";
-import { bulkImportWorkers, parseWorkerFile } from "@repo/shifts-service";
+import { bulkImportWorkers, parseWorkerFile } from "@repo/gig-workers";
 
 export const notificationsRouter = new OpenAPIHono<AppContext>();
 

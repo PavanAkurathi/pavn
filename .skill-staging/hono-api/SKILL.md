@@ -32,7 +32,7 @@ For this repo, default to this structure:
 - Hono app shell in `apps/api/src/index.ts`
 - Route modules in `apps/api/src/routes/*.ts`
 - Middleware in `apps/api/src/middleware/*.ts`
-- Business logic in `packages/shifts`, `packages/geofence`, `packages/auth`, `packages/notifications`, `packages/database`
+- Business logic in `packages/scheduling-timekeeping`, `packages/geofence`, `packages/auth`, `packages/notifications`, `packages/database`
 
 Do not move Hono request handling into packages. Packages should accept plain inputs and return plain data or throw domain errors.
 
@@ -49,4 +49,3 @@ In this repo specifically, read [references/hono-notes.md](references/hono-notes
 ## When To Read References
 
 - Read [references/hono-notes.md](references/hono-notes.md) when touching route architecture, middleware boundaries, runtime adapters, or OpenAPI generation.
-

@@ -32,7 +32,7 @@
 
 ### Phase 2: Tenant Isolation (In Progress)
 5. ✅ **Started Exploration Test for TENANT-001**
-   - File: `packages/shifts/tests/exploration-tenant-001-availability-leak.test.ts`
+   - File: `packages/scheduling-timekeeping/tests/exploration-tenant-001-availability-leak.test.ts`
    - Tests cross-tenant availability query leak
    - Expected to fail on unfixed code
 
@@ -108,7 +108,7 @@
 2. `packages/database/tests/exploration-geo-002-missing-spatial-index.test.ts`
 3. `packages/database/tests/preservation-geo-003-valid-radius.test.ts`
 4. `packages/database/tests/preservation-geo-002-spatial-correctness.test.ts`
-5. `packages/shifts/tests/exploration-tenant-001-availability-leak.test.ts`
+5. `packages/scheduling-timekeeping/tests/exploration-tenant-001-availability-leak.test.ts`
 
 ### Migration & Scripts (2)
 6. `packages/database/drizzle/0010_critical_bugs_fix_phase1.sql`
@@ -153,7 +153,7 @@
 ```bash
 # Run exploration tests (should FAIL on unfixed code)
 bun --env-file=.env test packages/database/tests/exploration-*.test.ts
-bun --env-file=.env test packages/shifts/tests/exploration-*.test.ts
+bun --env-file=.env test packages/scheduling-timekeeping/tests/exploration-*.test.ts
 
 # Run preservation tests (should PASS always)
 bun --env-file=.env test packages/database/tests/preservation-*.test.ts

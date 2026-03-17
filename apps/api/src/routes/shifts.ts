@@ -8,9 +8,9 @@
  * @description
  * This router provides the core scheduling functionality for WorkersHive.
  * Most endpoints require manager role or above. Business logic is delegated
- * to services in @repo/shifts-service package.
+ * to services in @repo/scheduling-timekeeping package.
  * 
- * @requires @repo/shifts-service - Shift business logic services
+ * @requires @repo/scheduling-timekeeping - Shift business logic services
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
@@ -36,12 +36,10 @@ import {
     duplicateShift,
     getOpenShifts,
     unassignWorker,
-    bulkImportWorkers,
-    parseWorkerFile,
     UpcomingShiftsResponseSchema,
     ShiftSchema,
     TimesheetSchema,
-} from "@repo/shifts-service";
+} from "@repo/scheduling-timekeeping";
 
 export const shiftsRouter = new OpenAPIHono<AppContext>();
 

@@ -11,21 +11,24 @@ import type { AppContext } from "../index.js";
 
 // Import from packages (Services)
 import {
-    getCrew,
     createLocation,
-    getLocations,
-    updateLocation,
     deleteLocation,
-    inviteWorker,
-    updateWorker,
-    deactivateWorker,
-    reactivateWorker,
     getSettings,
-    updateSettings,
-    WorkerSchema,
-    CrewMemberSchema,
     LocationSchema,
-} from "@repo/shifts-service";
+    UpdateOrganizationSettingsSchema,
+    OrganizationSettingsSchema,
+    updateLocation,
+    getLocations,
+    updateSettings,
+} from "@repo/organizations";
+import {
+    CrewMemberSchema,
+    deactivateWorker,
+    getCrew,
+    inviteWorker,
+    reactivateWorker,
+    updateWorker,
+} from "@repo/gig-workers";
 
 export const organizationsRouter = new OpenAPIHono<AppContext>();
 
@@ -271,8 +274,17 @@ const updateSettingsRoute = createRoute({
     path: '/settings',
     summary: 'Update Settings',
     description: 'Update organization settings.',
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: UpdateOrganizationSettingsSchema,
+                }
+            }
+        }
+    },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Settings updated' },
+        200: { content: { 'application/json': { schema: OrganizationSettingsSchema } }, description: 'Settings updated' },
         403: { description: 'Forbidden' }
     }
 });
@@ -293,7 +305,7 @@ const getSettingsRoute = createRoute({
     summary: 'Get Settings',
     description: 'Get organization settings.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Settings' },
+        200: { content: { 'application/json': { schema: OrganizationSettingsSchema } }, description: 'Settings' },
         403: { description: 'Forbidden' }
     }
 });

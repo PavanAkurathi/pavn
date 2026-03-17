@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { DraftBanner } from "@/components/dashboard/draft-banner";
-import { getLocations } from "@repo/shifts-service";
+import { getLocations } from "@repo/organizations";
 import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>

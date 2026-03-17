@@ -48,7 +48,7 @@
   - [ ] 3.2 Rebuild native project with updated configuration
     - Run `npx expo prebuild --clean` to regenerate native iOS/Android projects
     - Verify autolinking includes DateTimePicker module in generated files
-    - Check `apps/workers/ios/build/generated/autolinking/autolinking.json` for DateTimePicker entry
+    - Check `apps/gig-workers/ios/build/generated/autolinking/autolinking.json` for DateTimePicker entry
     - _Requirements: 2.1_
 
   - [ ] 3.3 Verify bug condition exploration test now passes
@@ -112,7 +112,7 @@
 - [ ] 7. Fix API 401 error handling in fetchJson
 
   - [x] 7.1 Add navigation import and update 401 handling logic
-    - Import router from expo-router at top of apps/workers/lib/api.ts
+    - Import router from expo-router at top of apps/gig-workers/lib/api.ts
     - Update 401 handling block (lines 126-129) to redirect to login after deleting token
     - Add `router.replace('/login')` after token deletion
     - Throw descriptive error: "Session expired. Please log in again."

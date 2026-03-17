@@ -9,6 +9,7 @@ import { headers } from "next/headers";
 import { eq } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { ATTENDANCE_VERIFICATION_POLICY_VALUES } from "@repo/config";
 
 async function getSession() {
     return await auth.api.getSession({
@@ -18,7 +19,8 @@ async function getSession() {
 
 const updateOrgSchema = z.object({
     name: z.string().min(2).max(50),
-    metadata: z.string().optional()
+    metadata: z.string().optional(),
+    attendanceVerificationPolicy: z.enum(ATTENDANCE_VERIFICATION_POLICY_VALUES).optional(),
 });
 
 export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) {
@@ -41,6 +43,7 @@ export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) 
             .set({
                 name: safeData.name,
                 metadata: safeData.metadata,
+                attendanceVerificationPolicy: safeData.attendanceVerificationPolicy,
             })
             .where(eq(organization.id, activeOrganizationId));
 

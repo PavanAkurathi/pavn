@@ -108,11 +108,12 @@ export default async function SettingsPage(props: { params: Promise<{ tab?: stri
         .where(eq(sessionSchema.userId, session.user.id))
         .orderBy(desc(sessionSchema.createdAt));
 
-    // Parallel Fetch for Billing Data
-    const [subscription, invoices] = await Promise.all([
-        getSubscriptionDetails(),
-        getInvoiceHistory()
-    ]);
+    const [subscription, invoices] = role === "admin" && activeTab === "billing"
+        ? await Promise.all([
+            getSubscriptionDetails(),
+            getInvoiceHistory()
+        ])
+        : [{ status: "inactive" }, []];
 
     return (
         <SettingsView

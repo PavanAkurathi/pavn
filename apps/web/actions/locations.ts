@@ -4,8 +4,13 @@ import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createLocation as createLocationService, updateLocation as updateLocationService, deleteLocation as deleteLocationService, getLocations } from "@repo/shifts-service";
-import { createLocationSchema } from "@repo/shifts-service/schemas";
+import {
+    createLocation as createLocationService,
+    createLocationSchema,
+    deleteLocation as deleteLocationService,
+    getLocations,
+    updateLocation as updateLocationService,
+} from "@repo/organizations";
 import { PLAN_LIMITS, SUPPORT_EMAIL } from "@repo/config";
 
 async function getSession() {
@@ -82,4 +87,3 @@ export async function deleteLocation(locationId: string) {
         return { error: error.message || "Failed to delete location" };
     }
 }
-

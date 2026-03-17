@@ -1,12 +1,16 @@
 // packages/geofence/src/services/clock-out.ts
 
 import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
-import { shiftAssignment, shift, workerLocation, location } from "@repo/database/schema";
+import { shiftAssignment, shift, workerLocation, location, organization } from "@repo/database/schema";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { logAudit } from "@repo/database";
-import { applyClockOutRules, validateShiftTransition } from "@repo/config";
+import {
+    applyClockOutRules,
+    validateShiftTransition,
+    DEFAULT_ATTENDANCE_VERIFICATION_POLICY,
+} from "@repo/config";
 import { AppError } from "@repo/observability";
 
 const ClockOutSchema = z.object({
@@ -79,12 +83,20 @@ export const clockOut = async (data: any, workerId: string, orgId: string) => {
         });
     }
 
-    // 3. Verify geofence using PostGIS
-    const venueLocationId = shiftRecord.locationId;
-    let isOnSite = true;
-    let distanceMeters = 0;
+    // 3. Resolve org policy and verify geofence
+    const orgConfig = await db.query.organization.findFirst({
+        where: eq(organization.id, orgId),
+        columns: { attendanceVerificationPolicy: true }
+    });
+    const attendanceVerificationPolicy =
+        orgConfig?.attendanceVerificationPolicy || DEFAULT_ATTENDANCE_VERIFICATION_POLICY;
 
-    if (venueLocationId) {
+    const venueLocationId = shiftRecord.locationId;
+    let isOnSite = attendanceVerificationPolicy === "none";
+    let distanceMeters = 0;
+    let locationAvailable = false;
+
+    if (attendanceVerificationPolicy !== "none" && venueLocationId) {
         const point = `POINT(${longitude} ${latitude})`;
         const [geoResult] = await db.select({
             isWithin: sql<boolean>`ST_DWithin(${jsonPositionToGeography(location.position)}, ST_GeogFromText(${point}), ${location.geofenceRadius}::integer)`,
@@ -95,29 +107,41 @@ export const clockOut = async (data: any, workerId: string, orgId: string) => {
             .where(eq(location.id, venueLocationId));
 
         if (geoResult) {
+            locationAvailable = true;
             distanceMeters = Math.round(geoResult.distance || 0);
             isOnSite = !!geoResult.isWithin;
             const radius = geoResult.radius || 100;
 
-            if (!isOnSite) {
+            if (attendanceVerificationPolicy === "strict_geofence" && !isOnSite) {
                 throw new AppError("You must be at the venue to clock out", "OUTSIDE_GEOFENCE", 400, {
                     distanceMeters,
                     requiredRadius: radius,
                     hint: "If you left early, ask your manager to adjust your timesheet"
                 });
             }
+        } else if (attendanceVerificationPolicy === "strict_geofence") {
+            throw new AppError("Venue location not found", "VENUE_NOT_FOUND", 404);
         }
+    } else if (attendanceVerificationPolicy === "strict_geofence") {
+        throw new AppError("Venue location not configured", "VENUE_NOT_GEOCODED", 400);
     }
 
     // 4. Apply time rules
     const now = new Date();
     const scheduledEnd = new Date(shiftRecord.endTime);
     const clockOutResult = applyClockOutRules(now, scheduledEnd);
+    const shouldFlagClockOut =
+        attendanceVerificationPolicy === "soft_geofence" &&
+        (!locationAvailable || !isOnSite);
+    const clockOutMethod =
+        attendanceVerificationPolicy === "strict_geofence"
+            ? "geofence"
+            : attendanceVerificationPolicy === "soft_geofence"
+              ? (isOnSite ? "geofence" : "soft_geofence")
+              : "policy_none";
 
     // 5. Transaction
     await db.transaction(async (tx) => {
-        const point = `POINT(${longitude} ${latitude})`;
-
         // A. Update Assignment
         // Worker self clock-out: effective = actual (no snapping, record real departure time)
         const updatedArgs = await tx.update(shiftAssignment)
@@ -125,8 +149,12 @@ export const clockOut = async (data: any, workerId: string, orgId: string) => {
                 actualClockOut: clockOutResult.recordedTime,
                 effectiveClockOut: clockOutResult.recordedTime,
                 clockOutPosition: toLatLng(latitude, longitude),
-                clockOutVerified: true,
-                clockOutMethod: 'geofence',
+                clockOutVerified: attendanceVerificationPolicy === "strict_geofence" || isOnSite,
+                clockOutMethod,
+                needsReview: assignment.needsReview || shouldFlagClockOut,
+                reviewReason: assignment.reviewReason ?? (shouldFlagClockOut ? "geofence_mismatch" : null),
+                lastKnownPosition: shouldFlagClockOut ? toLatLng(latitude, longitude) : assignment.lastKnownPosition,
+                lastKnownAt: shouldFlagClockOut ? now : assignment.lastKnownAt,
                 status: 'completed',
                 updatedAt: now,
             })

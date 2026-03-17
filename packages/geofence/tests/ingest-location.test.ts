@@ -7,6 +7,11 @@ const memberFindMock = mock(() =>
         user: { id: "worker-1", name: "Taylor Worker" },
     })
 );
+const orgFindMock = mock(() =>
+    Promise.resolve({
+        attendanceVerificationPolicy: "strict_geofence",
+    })
+);
 const previousPingFindMock = mock(() => Promise.resolve(null));
 const updatePayloads: any[] = [];
 const insertPayloads: any[] = [];
@@ -37,6 +42,7 @@ mock.module("@repo/database", () => ({
     db: {
         query: {
             member: { findFirst: memberFindMock },
+            organization: { findFirst: orgFindMock },
             workerLocation: { findFirst: previousPingFindMock },
         },
         select: selectMock,
@@ -59,6 +65,7 @@ describe("ingestLocation", () => {
     beforeEach(() => {
         pushNotificationMock.mockClear();
         memberFindMock.mockClear();
+        orgFindMock.mockClear();
         previousPingFindMock.mockClear();
         updateMock.mockClear();
         insertMock.mockClear();
@@ -126,7 +133,7 @@ describe("ingestLocation", () => {
         );
 
         expect(result.success).toBe(true);
-        expect(result.data.eventType).toBe("arrival");
+        expect(result.data?.eventType).toBe("arrival");
         expect(pushNotificationMock).toHaveBeenCalledTimes(1);
         expect(insertPayloads[0]?.position).toEqual({ lat: 40.7128, lng: -74.006 });
         expect(insertPayloads[0]?.venuePosition).toEqual({ lat: 40.7128, lng: -74.006 });
@@ -159,7 +166,7 @@ describe("ingestLocation", () => {
             },
         ];
 
-        previousPingFindMock.mockResolvedValueOnce({ isOnSite: true });
+        previousPingFindMock.mockResolvedValueOnce({ isOnSite: true } as any);
 
         selectMock
             .mockImplementationOnce(() => ({
@@ -194,7 +201,7 @@ describe("ingestLocation", () => {
         );
 
         expect(result.success).toBe(true);
-        expect(result.data.eventType).toBe("departure");
+        expect(result.data?.eventType).toBe("departure");
         expect(pushNotificationMock).not.toHaveBeenCalled();
         expect(updatePayloads[0]?.reviewReason).toBe("left_geofence");
         expect(updatePayloads[0]?.lastKnownPosition).toEqual({ lat: 40.5, lng: -74.2 });

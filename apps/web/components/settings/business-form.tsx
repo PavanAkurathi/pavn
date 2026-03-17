@@ -6,6 +6,13 @@ import { useState } from "react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Textarea } from "@repo/ui/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@repo/ui/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import {
     Field,
@@ -21,6 +28,7 @@ export interface BusinessFormProps {
     organization: {
         name: string;
         metadata?: string | null; // metadata is text in schema, usually JSON string
+        attendanceVerificationPolicy?: "strict_geofence" | "soft_geofence" | "none" | null;
     } | null;
 }
 
@@ -46,6 +54,9 @@ export function BusinessForm({ organization }: BusinessFormProps) {
     };
 
     const [description, setDescription] = useState(getInitialDescription());
+    const [attendanceVerificationPolicy, setAttendanceVerificationPolicy] = useState<
+        "strict_geofence" | "soft_geofence" | "none"
+    >(organization?.attendanceVerificationPolicy || "strict_geofence");
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,7 +64,8 @@ export function BusinessForm({ organization }: BusinessFormProps) {
         try {
             const result = await updateOrganization({
                 name: businessName,
-                metadata: description
+                metadata: description,
+                attendanceVerificationPolicy,
             });
 
             if (result.error) {
@@ -97,6 +109,27 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                 placeholder="Describe your business..."
                                 className="bg-white min-h-[100px]"
                             />
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="attendance_verification_policy">Clock-in verification</FieldLabel>
+                            <Select
+                                value={attendanceVerificationPolicy}
+                                onValueChange={(value) =>
+                                    setAttendanceVerificationPolicy(value as "strict_geofence" | "soft_geofence" | "none")
+                                }
+                            >
+                                <SelectTrigger id="attendance_verification_policy" className="bg-white">
+                                    <SelectValue placeholder="Select verification rule" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="strict_geofence">On-site required</SelectItem>
+                                    <SelectItem value="soft_geofence">Flexible on-site</SelectItem>
+                                    <SelectItem value="none">No location check</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <p className="text-sm text-muted-foreground">
+                                On-site required blocks punches outside the job location. Flexible on-site allows the punch and flags it for review. No location check records time without enforcing venue location.
+                            </p>
                         </Field>
                     </FieldGroup>
                     <div className="flex justify-end">

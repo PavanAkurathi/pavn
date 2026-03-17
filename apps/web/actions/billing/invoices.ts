@@ -5,18 +5,17 @@ import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
 import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
-import Stripe from "stripe";
-import { requireServerEnv } from "@/lib/server-env";
-
-const stripe = new Stripe(requireServerEnv("STRIPE_SECRET_KEY"), {
-    apiVersion: "2025-01-27.acacia" as any,
-});
+import { getStripe, isBillingConfigured } from "./stripe";
 
 async function getSession() {
     return await auth.api.getSession({ headers: await headers() });
 }
 
 export async function getInvoiceHistory() {
+    if (!isBillingConfigured()) {
+        return [];
+    }
+
     const session = await getSession();
     const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
 
@@ -30,6 +29,11 @@ export async function getInvoiceHistory() {
     if (!org?.stripeCustomerId) return [];
 
     try {
+        const stripe = getStripe();
+        if (!stripe) {
+            return [];
+        }
+
         const invoices = await stripe.invoices.list({
             customer: org.stripeCustomerId,
             limit: 6,

@@ -18,7 +18,7 @@ const mockUpdateTimesheet = mock(() => Promise.resolve({ success: true }));
 const noop = mock(() => Promise.resolve([]));
 const noopObject = mock(() => Promise.resolve({}));
 
-mock.module("@repo/shifts-service", () => {
+mock.module("@repo/scheduling-timekeeping", () => {
     const ShiftSchema = z.object({
         id: z.string(),
         title: z.string(),
@@ -62,8 +62,6 @@ mock.module("@repo/shifts-service", () => {
         duplicateShift: noopObject,
         getOpenShifts: noop,
         unassignWorker: noopObject,
-        bulkImportWorkers: noopObject,
-        parseWorkerFile: noopObject,
         UpcomingShiftsResponseSchema: z.array(ShiftSchema),
         ShiftSchema,
         TimesheetSchema: z.object({

@@ -3,19 +3,21 @@ import { getShiftById, getShiftTimesheets } from "@/lib/api/shifts";
 import { ShiftTimesheetClient } from "./client";
 
 interface PageProps {
-    params: {
+    params: Promise<{
         shiftId: string;
-    };
+    }>;
 }
 
 export default async function ShiftTimesheetPage({ params }: PageProps) {
-    if (!params.shiftId) {
+    const { shiftId } = await params;
+
+    if (!shiftId) {
         redirect("/dashboard/shifts");
     }
 
     const [shift, timesheets] = await Promise.all([
-        getShiftById(params.shiftId),
-        getShiftTimesheets(params.shiftId)
+        getShiftById(shiftId),
+        getShiftTimesheets(shiftId)
     ]);
 
     if (!shift) {

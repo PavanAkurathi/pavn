@@ -129,7 +129,13 @@ export const organization = pgTable("organization", {
     timezone: text("timezone").notNull().default("America/New_York"), // Default to EST/EDT or UTC? User said 'timezone'. Falling back to a safe default.
     breakThresholdMinutes: integer("break_threshold_minutes"), // Custom rule override
     regionalOvertimePolicy: text("regional_overtime_policy").notNull().default("weekly_40"), // 'weekly_40' | 'daily_8'
-});
+    attendanceVerificationPolicy: text("attendance_verification_policy").notNull().default("strict_geofence"),
+}, (table) => ({
+    attendanceVerificationPolicyCheck: check(
+        "check_attendance_verification_policy",
+        sql`${table.attendanceVerificationPolicy} in ('strict_geofence', 'soft_geofence', 'none')`
+    ),
+}));
 
 export const location = pgTable("location", {
     id: text("id").primaryKey(),

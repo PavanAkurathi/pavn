@@ -37,9 +37,12 @@ function buildStripePlugin() {
     const secretKey = process.env.STRIPE_SECRET_KEY;
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     const priceId = process.env.STRIPE_PRICE_ID_MONTHLY;
+    const hasAnyStripeEnv = Boolean(secretKey || webhookSecret || priceId);
 
     if (!secretKey || !webhookSecret || !priceId) {
-        if (isAuthProd) throw new Error("[AUTH FATAL] Missing Stripe env vars in production");
+        if (isAuthProd && hasAnyStripeEnv) {
+            throw new Error("[AUTH FATAL] Stripe env vars are incomplete");
+        }
         console.warn("[AUTH] Stripe not initialized — missing env vars. Skipping plugin.");
         return null;
     }

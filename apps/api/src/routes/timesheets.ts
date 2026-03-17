@@ -5,7 +5,7 @@
  * Provides timesheet reporting, filtering, and export functionality
  * for managers to review and export worker time records.
  * 
- * @requires @repo/shifts-service
+ * @requires @repo/scheduling-timekeeping
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
@@ -18,7 +18,7 @@ import {
     getReportFilters,
     exportTimesheets,
     TimesheetReportSchema,
-} from "@repo/shifts-service";
+} from "@repo/scheduling-timekeeping";
 
 export const timesheetsRouter = new OpenAPIHono<AppContext>();
 

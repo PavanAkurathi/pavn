@@ -11,7 +11,7 @@ export const getAllowedOrigins = (): string[] => {
         'http://10.0.0.38:8081', // Expo Web (LAN)
         'exp://10.0.0.38:8081', // Expo Go (LAN)
         'exp://',
-        'workers://',
+        'gig-workers://',
         'http://localhost:19000', // Expo Go (Legacy)
         'http://localhost:19006', // Expo Web (Legacy)
         // Vercel preview deployments

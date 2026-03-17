@@ -10,7 +10,7 @@
 
 ## Worker App
 
-- `EXPO_PUBLIC_SENTRY_DSN` enables mobile crash reporting in [apps/workers/app/_layout.tsx](/Users/av/Documents/pavn/apps/workers/app/_layout.tsx).
+- `EXPO_PUBLIC_SENTRY_DSN` enables mobile crash reporting in [apps/gig-workers/app/_layout.tsx](/Users/av/Documents/pavn/apps/gig-workers/app/_layout.tsx).
 - EAS environments should hold the public DSN for `preview` and `production`.
 
 ## External Checks
