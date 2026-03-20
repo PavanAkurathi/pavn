@@ -1,6 +1,7 @@
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { shift, shiftAssignment, location, organization } from "@repo/database/schema";
 import { eq, and, inArray, gte, lte, asc, desc, sql } from "drizzle-orm";
+import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 
 interface WorkerShiftFilters {
     status: 'upcoming' | 'history' | 'all';
@@ -93,6 +94,7 @@ interface WorkerShiftDto {
     endTime: string;
     status: string;
     assignmentStatus: string;
+    attendanceVerificationPolicy: "strict_geofence" | "soft_geofence" | "none";
     location: {
         id: string;
         name: string;
@@ -134,6 +136,8 @@ const mapWorkerShiftDto = (assignment: any): WorkerShiftDto => {
         endTime: s.endTime.toISOString(),
         status: s.status,
         assignmentStatus: assignment.status,
+        attendanceVerificationPolicy:
+            s.organization?.attendanceVerificationPolicy || DEFAULT_ATTENDANCE_VERIFICATION_POLICY,
         location: {
             id: s.location?.id || 'unknown',
             name: s.location?.name || 'Unknown Location',

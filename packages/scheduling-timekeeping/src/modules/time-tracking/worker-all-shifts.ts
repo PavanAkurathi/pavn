@@ -3,6 +3,7 @@
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { shift, shiftAssignment, location, organization, member } from "@repo/database/schema";
 import { eq, and, inArray, gte, lte, asc, desc, ne, sql } from "drizzle-orm";
+import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 
 interface WorkerAllShiftsFilters {
     status: 'upcoming' | 'history' | 'in-progress' | 'all';
@@ -86,6 +87,7 @@ export const getWorkerAllShifts = async (
             organization: {
                 id: organization.id,
                 name: organization.name,
+                attendanceVerificationPolicy: organization.attendanceVerificationPolicy,
             },
         })
         .from(shiftAssignment)
@@ -209,6 +211,8 @@ const mapWorkerShiftDto = (row: any) => {
         endTime: s.endTime.toISOString(),
         status: s.status,
         assignmentStatus: a.status,
+        attendanceVerificationPolicy:
+            row.organization?.attendanceVerificationPolicy || DEFAULT_ATTENDANCE_VERIFICATION_POLICY,
         organization: {
             id: row.organization.id,
             name: row.organization.name,

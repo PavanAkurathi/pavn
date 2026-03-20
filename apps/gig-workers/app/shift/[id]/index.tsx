@@ -7,6 +7,8 @@ import { api, WorkerShift } from "../../../lib/api";
 import { useGeofence } from "../../../hooks/useGeofence";
 import { workerTheme } from "../../../lib/theme";
 
+type LocationStatus = 'checking' | 'verified' | 'failed' | 'optional' | 'not_required';
+
 // =============================================================================
 // HELPERS
 // =============================================================================
@@ -68,12 +70,14 @@ export default function ShiftDetailScreen() {
     const [shift, setShift] = useState<WorkerShift | null>(null);
     const [loading, setLoading] = useState(true);
     const { clockIn, clockOut, loading: geoLoading } = useGeofence();
-    const [locStatus, setLocStatus] = useState<'checking' | 'verified' | 'failed'>('checking');
+    const [locStatus, setLocStatus] = useState<LocationStatus>('checking');
 
     const isClockedIn = !!shift?.timesheet.clockIn;
     const isClockedOut = !!shift?.timesheet.clockOut;
     const isActive = isClockedIn && !isClockedOut;
     const elapsed = useRunningTimer(isActive ? shift?.timesheet.clockIn : undefined);
+    const attendancePolicy = shift?.attendanceVerificationPolicy || 'strict_geofence';
+    const requiresOnSite = attendancePolicy === 'strict_geofence';
 
     // Late calculation
     const lateMinutes = shift?.timesheet.clockIn
@@ -85,7 +89,7 @@ export default function ShiftDetailScreen() {
     useEffect(() => {
         if (!shift || isClockedIn) return;
         verifyLocation();
-    }, [shift?.id]);
+    }, [shift?.id, shift?.attendanceVerificationPolicy, isClockedIn]);
 
     const loadShift = async () => {
         try {
@@ -100,12 +104,18 @@ export default function ShiftDetailScreen() {
     };
 
     const verifyLocation = async () => {
+        const policy = shift?.attendanceVerificationPolicy || 'strict_geofence';
+        if (policy === 'none') {
+            setLocStatus('not_required');
+            return;
+        }
+
         setLocStatus('checking');
         try {
             const { LocationService } = require('../../../services/location');
             const loc = await LocationService.getCurrentLocation();
             if (!loc || !shift?.location.latitude || !shift?.location.longitude) {
-                setLocStatus('failed'); return;
+                setLocStatus(policy === 'strict_geofence' ? 'failed' : 'optional'); return;
             }
             const R = 6371e3;
             const p1 = loc.coords.latitude * Math.PI / 180;
@@ -114,9 +124,13 @@ export default function ShiftDetailScreen() {
             const dl = (shift.location.longitude - loc.coords.longitude) * Math.PI / 180;
             const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
             const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            setLocStatus(dist <= (shift.location.geofenceRadius || 150) ? 'verified' : 'failed');
+            if (dist <= (shift.location.geofenceRadius || 150)) {
+                setLocStatus('verified');
+            } else {
+                setLocStatus(policy === 'strict_geofence' ? 'failed' : 'optional');
+            }
         } catch {
-            setLocStatus('failed');
+            setLocStatus(policy === 'strict_geofence' ? 'failed' : 'optional');
         }
     };
 
@@ -127,6 +141,7 @@ export default function ShiftDetailScreen() {
                 latitude: shift.location.latitude,
                 longitude: shift.location.longitude,
                 geofenceRadius: shift.location.geofenceRadius,
+                attendanceVerificationPolicy: shift.attendanceVerificationPolicy,
             });
             loadShift();
         } catch (e: any) {
@@ -141,6 +156,7 @@ export default function ShiftDetailScreen() {
                 latitude: shift.location.latitude,
                 longitude: shift.location.longitude,
                 geofenceRadius: shift.location.geofenceRadius,
+                attendanceVerificationPolicy: shift.attendanceVerificationPolicy,
             });
             loadShift();
         } catch (e: any) {
@@ -177,7 +193,7 @@ export default function ShiftDetailScreen() {
         );
     }
 
-    const canClockIn = locStatus === 'verified' && !isClockedIn && !isClockedOut;
+    const canClockIn = !isClockedIn && !isClockedOut && (!requiresOnSite || locStatus === 'verified');
 
     return (
         <View style={s.container}>
@@ -343,14 +359,24 @@ export default function ShiftDetailScreen() {
                 {!isClockedIn && !isClockedOut && (
                     <View>
                         <View style={s.locRow}>
-                            {locStatus === 'checking' && <Text style={s.locText}>Verifying location...</Text>}
+                        {locStatus === 'checking' && <Text style={s.locText}>Verifying location...</Text>}
                             {locStatus === 'verified' && (
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                                     <Ionicons name="wifi" size={14} color={workerTheme.colors.success} />
                                     <Text style={[s.locText, { color: workerTheme.colors.success }]}>
-                                        At venue, ready to clock in
+                                        {requiresOnSite ? 'At venue, ready to clock in' : 'At venue, ready to clock in'}
                                     </Text>
                                 </View>
+                            )}
+                            {locStatus === 'optional' && (
+                                <Text style={[s.locText, { color: workerTheme.colors.mutedForeground }]}>
+                                    Flexible on-site: you can clock in away from the venue. It may be reviewed.
+                                </Text>
+                            )}
+                            {locStatus === 'not_required' && (
+                                <Text style={[s.locText, { color: workerTheme.colors.mutedForeground }]}>
+                                    Location check is disabled for this organization.
+                                </Text>
                             )}
                             {locStatus === 'failed' && (
                                 <Text style={[s.locText, { color: workerTheme.colors.primary }]}>
@@ -367,7 +393,7 @@ export default function ShiftDetailScreen() {
                                 <Text style={canClockIn ? s.btnText : s.btnTextDisabled}>Clock in</Text>
                             )}
                         </TouchableOpacity>
-                        {locStatus === 'failed' && (
+                        {locStatus === 'failed' && requiresOnSite && (
                             <TouchableOpacity onPress={verifyLocation} style={{ alignItems: "center", marginTop: 8 }}>
                                 <Text style={{ color: workerTheme.colors.primary, fontSize: 13 }}>
                                     Retry location check

@@ -180,17 +180,17 @@ export async function addMember(rawInput: AddMemberInput) {
             }
         }
 
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
         // 5. Handle Invitations
         if (invites.email) {
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
             await sendInvite(email, role, appUrl);
             console.log(`[Email] Dispatched invite to ${email} for role ${role}`);
         }
         if (invites.sms && phoneNumber) {
             try {
-                // In a real app, this link would be dynamic or point to the app store
-                const downloadLink = "exp://pavn.link/invite";
-                const message = `You've been invited to join ${activeOrgId}'s team on Pavn! Download the app to get started: ${downloadLink}`;
+                const loginUrl = `${appUrl}/auth/login`;
+                const message = `You've been invited to join your team on Workers Hive. Sign in here: ${loginUrl}`;
                 await sendSMS(phoneNumber, message);
                 console.log(`[Team] Sent SMS invite to ${phoneNumber}`);
             } catch (error) {

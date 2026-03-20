@@ -1,7 +1,8 @@
 import { Shift as ApiShift } from "../types";
 import { getInitials } from "./formatting";
-import { shift, location, user, shiftAssignment } from "@repo/database/schema";
+import { shift, location, user, shiftAssignment, organization } from "@repo/database/schema";
 import { InferSelectModel } from "drizzle-orm";
+import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 
 // 1. Base Shift Type
 type BaseShift = InferSelectModel<typeof shift>;
@@ -9,12 +10,15 @@ type BaseShift = InferSelectModel<typeof shift>;
 // 2. Relations (matches the `with: { ... }` in controllers)
 interface ShiftWithRelations extends BaseShift {
     location: InferSelectModel<typeof location> | null;
+    organization?: InferSelectModel<typeof organization> | null;
     assignments: Array<
         InferSelectModel<typeof shiftAssignment> & {
             worker: InferSelectModel<typeof user> | null;
         }
     >;
 }
+
+type AttendanceVerificationPolicy = "strict_geofence" | "soft_geofence" | "none";
 
 export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
     // Calculate capacity based on assignments count
@@ -28,6 +32,9 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
         locationId: dbShift.locationId || "unknown",
         locationAddress: dbShift.location?.address || undefined,
         geofenceRadius: dbShift.location?.geofenceRadius || 150, // [UX-008] Default to 150m (Consistent with Create)
+        attendanceVerificationPolicy:
+            (dbShift.organization?.attendanceVerificationPolicy as AttendanceVerificationPolicy | null | undefined)
+            || DEFAULT_ATTENDANCE_VERIFICATION_POLICY,
         contactId: dbShift.contactId,
         // Convert Date objects to ISO Strings
         startTime: dbShift.startTime.toISOString(),

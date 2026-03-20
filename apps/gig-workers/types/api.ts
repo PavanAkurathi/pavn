@@ -46,6 +46,7 @@ export interface WorkerShift {
     startTime: string;
     endTime: string;
     status: ShiftStatus;
+    attendanceVerificationPolicy?: 'strict_geofence' | 'soft_geofence' | 'none';
     location: Location;
     organization: Organization;
     timesheet: Timesheet;

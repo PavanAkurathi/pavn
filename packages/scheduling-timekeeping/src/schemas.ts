@@ -10,6 +10,7 @@ export const ShiftSchema = z.object({
     locationName: z.string(),
     locationAddress: z.string().optional(),
     geofenceRadius: z.number().optional(),
+    attendanceVerificationPolicy: z.enum(["strict_geofence", "soft_geofence", "none"]).optional(),
     contactId: z.string().nullable().optional(),
     startTime: z.string().datetime(),
     endTime: z.string().datetime(),

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { LocationService } from '../services/location';
 import { api } from '../lib/api';
 import { z } from 'zod';
+import type { AttendanceVerificationPolicy } from '../lib/api';
 
 const ClockRequestSchema = z.object({
     shiftId: z.string().min(1, "Shift ID required"),
@@ -31,7 +32,12 @@ export function useGeofence() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    async function clockIn(shiftId: string, targetLocation?: { latitude?: number; longitude?: number; geofenceRadius?: number }) {
+    async function clockIn(shiftId: string, targetLocation?: {
+        latitude?: number;
+        longitude?: number;
+        geofenceRadius?: number;
+        attendanceVerificationPolicy?: AttendanceVerificationPolicy;
+    }) {
         setLoading(true);
         setError(null);
         try {
@@ -47,7 +53,12 @@ export function useGeofence() {
             }
 
             // 2. Validate Proximity (if target provided)
-            if (targetLocation?.latitude && targetLocation?.longitude) {
+            const policy = targetLocation?.attendanceVerificationPolicy || "strict_geofence";
+            if (
+                policy === "strict_geofence" &&
+                targetLocation?.latitude != null &&
+                targetLocation?.longitude != null
+            ) {
                 const distance = haversineDistance(
                     location.coords.latitude,
                     location.coords.longitude,
@@ -91,7 +102,12 @@ export function useGeofence() {
         }
     }
 
-    async function clockOut(shiftId: string, targetLocation?: { latitude?: number; longitude?: number; geofenceRadius?: number }) {
+    async function clockOut(shiftId: string, targetLocation?: {
+        latitude?: number;
+        longitude?: number;
+        geofenceRadius?: number;
+        attendanceVerificationPolicy?: AttendanceVerificationPolicy;
+    }) {
         setLoading(true);
         setError(null);
         try {
@@ -109,7 +125,12 @@ export function useGeofence() {
             }
 
             // 2. Validate Proximity (if target provided)
-            if (targetLocation?.latitude && targetLocation?.longitude) {
+            const policy = targetLocation?.attendanceVerificationPolicy || "strict_geofence";
+            if (
+                policy === "strict_geofence" &&
+                targetLocation?.latitude != null &&
+                targetLocation?.longitude != null
+            ) {
                 const distance = haversineDistance(
                     location.coords.latitude,
                     location.coords.longitude,

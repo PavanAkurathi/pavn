@@ -3,9 +3,10 @@
 import { auth, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
-import { member, user } from "@repo/database/schema";
+import { member } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
 import { revalidatePath } from "next/cache";
+import { sendInvite } from "@repo/email";
 
 export async function resendInvite(memberId: string) {
     const session = await auth.api.getSession({
@@ -32,24 +33,34 @@ export async function resendInvite(memberId: string) {
     }
 
     const { phoneNumber, email } = memberRecord.user;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const methods: string[] = [];
+
+    if (email && process.env.RESEND_API_KEY) {
+        await sendInvite(email, memberRecord.role, appUrl);
+        methods.push("email");
+    }
 
     if (phoneNumber) {
-        // Dynamic link logic would go here
-        const downloadLink = "exp://pavn.link/invite";
-        const message = `REMINDER: You've been invited to join ${activeOrgId?.slice(0, 8)}...'s team on Pavn! Download the app: ${downloadLink}`;
+        const loginUrl = `${appUrl}/auth/login`;
+        const message = `REMINDER: You've been invited to join your team on Workers Hive. Sign in here: ${loginUrl}`;
 
         try {
             await sendSMS(phoneNumber, message);
-            return { success: true, method: "SMS" };
+            methods.push("sms");
         } catch (e) {
             console.error("Failed to resend SMS", e);
-            throw new Error("Failed to send SMS");
+            if (methods.length === 0) {
+                throw new Error("Failed to send invite");
+            }
         }
     }
 
-    // TODO: Add Email Resend logic here if needed
+    if (methods.length === 0) {
+        throw new Error("No invite delivery method is configured for this member");
+    }
 
-    return { success: true, method: "Email (Mock)" };
+    return { success: true, method: methods.join("+") };
 }
 
 export async function deleteMemberAction(memberId: string) {

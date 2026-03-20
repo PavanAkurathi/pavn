@@ -11,6 +11,7 @@ export interface Shift {
     locationName: string;
     locationAddress?: string;
     geofenceRadius?: number; // [UX-008] Enforce consistency
+    attendanceVerificationPolicy?: "strict_geofence" | "soft_geofence" | "none";
     contactId?: string | null;  // For re-hydrating drafts
     startTime: string; // ISO string
     endTime: string;   // ISO string

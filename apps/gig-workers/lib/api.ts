@@ -45,6 +45,11 @@ export interface ShiftLocation {
     geofenceRadius?: number;
 }
 
+export type AttendanceVerificationPolicy =
+    | "strict_geofence"
+    | "soft_geofence"
+    | "none";
+
 export interface ShiftOrganization {
     id: string;
     name: string;
@@ -59,6 +64,7 @@ export interface WorkerShift {
     endTime: string;
     status: string;
     assignmentStatus: string;
+    attendanceVerificationPolicy?: AttendanceVerificationPolicy;
     organization: ShiftOrganization;
     location: ShiftLocation;
     hours: ShiftHours;

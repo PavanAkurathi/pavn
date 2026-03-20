@@ -1,8 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
+import path from 'path';
 
 // Load environment variables
-dotenv.config({ path: '.env.test' });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
 /**
  * Playwright E2E Test Configuration for WorkersHive
