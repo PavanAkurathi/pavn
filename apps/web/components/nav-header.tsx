@@ -12,7 +12,7 @@ import { NotificationsPopover } from "./notifications/notifications-popover";
 
 const NAV_ITEMS = [
     { label: "Shifts", href: "/dashboard/shifts" },
-    { label: "Rosters", href: "/rosters" },
+    { label: "Roster", href: "/rosters" },
     { label: "Reports", href: "/reports" },
     { label: "Availability", href: "/dashboard/availability" }, // [AVL-006]
 ];
@@ -30,8 +30,11 @@ export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
     const { data: clientOrg } = authClient.useActiveOrganization();
     const activeOrg = clientOrg || serverOrg;
 
-    // Distraction-free mode for creation flows
-    if (pathname.startsWith("/dashboard/schedule/create")) {
+    // Distraction-free mode for focused creation/setup flows
+    if (
+        pathname.startsWith("/dashboard/schedule/create") ||
+        pathname.startsWith("/dashboard/onboarding")
+    ) {
         return null;
     }
 

@@ -7,11 +7,24 @@ import { eq, and, ne, inArray } from "@repo/database";
 import { DataTable } from "../../../components/roster/data-table";
 import { columns, WorkerDetails } from "../../../components/roster/columns";
 import { Button } from "@repo/ui/components/ui/button";
-import { Plus, Upload } from "lucide-react";
+import { Badge } from "@repo/ui/components/ui/badge";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@repo/ui/components/ui/card";
+import { ArrowRight, Plus, ShieldCheck, Upload, Users } from "lucide-react";
 import Link from "next/link";
 import { AddWorkerDialog } from "../../../components/roster/add-worker-dialog";
 
-export default async function RostersPage() {
+type RosterSearchParams = {
+    onboarding?: "roster" | "roles";
+};
+
+export default async function RostersPage(props: { searchParams: Promise<RosterSearchParams> }) {
+    const searchParams = await props.searchParams;
     const sessionResponse = await auth.api.getSession({
         headers: await headers()
     });
@@ -164,23 +177,89 @@ export default async function RostersPage() {
     // Sort workers by joinedAt descending
     workers.sort((a, b) => b.joinedAt.getTime() - a.joinedAt.getTime());
 
+    const onboardingMode = searchParams.onboarding === "roles"
+        ? "roles"
+        : searchParams.onboarding === "roster"
+            ? "roster"
+            : null;
+
+    const rosterHeaderDescription = onboardingMode === "roles"
+        ? "Review the roles attached to your frontline workforce before you publish your first schedule."
+        : onboardingMode === "roster"
+            ? "This is your frontline workforce workspace. Add or import the people you plan to schedule."
+            : "Manage your frontline workforce and workers.";
+
     return (
         <div className="space-y-6 max-w-5xl">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Roster</h2>
-                    <p className="text-muted-foreground">Manage your field staff and workers.</p>
+                    <p className="text-muted-foreground">{rosterHeaderDescription}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Link href="/rosters/import">
-                        <Button variant="outline" size="sm">
-                            <Upload className="mr-2 h-4 w-4" />
-                            Import CSV
-                        </Button>
-                    </Link>
-                    <AddWorkerDialog />
-                </div>
+                {!onboardingMode && (
+                    <div className="flex items-center gap-2">
+                        <Link href="/rosters/import">
+                            <Button variant="outline" size="sm">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Import CSV
+                            </Button>
+                        </Link>
+                        <AddWorkerDialog />
+                    </div>
+                )}
             </div>
+
+            {onboardingMode && (
+                <Card className="border-primary/20 bg-primary/5 shadow-sm">
+                    <CardHeader className="space-y-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge className="rounded-full bg-primary px-3 py-1 text-white hover:bg-primary">
+                                Onboarding
+                            </Badge>
+                            <Badge variant="outline" className="rounded-full border-primary/20 bg-white/70 text-primary">
+                                Workforce setup
+                            </Badge>
+                        </div>
+                        <div className="space-y-2">
+                            <CardTitle className="flex items-center gap-2 text-slate-950">
+                                <Users className="h-5 w-5 text-primary" />
+                                {onboardingMode === "roles" ? "Review workforce roles" : "Build your roster"}
+                            </CardTitle>
+                            <CardDescription className="max-w-3xl text-sm leading-6 text-slate-600">
+                                {onboardingMode === "roles"
+                                    ? "Confirm the job roles attached to your workforce here so schedules reflect real staffing demand."
+                                    : "Import your workforce by CSV/XLSX or add the first few workers manually. Pending invites and roster entries are enough to move forward."}
+                            </CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm text-slate-700">
+                            <div className="flex items-start gap-3">
+                                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+                                <p>
+                                    <span className="font-medium text-slate-900">Roster</span> is for your frontline workforce.
+                                    <span className="text-slate-600"> Settings &gt; Team stays separate for admin and manager access.</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            <Link href="/rosters/import">
+                                <Button variant="outline">
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Import roster CSV
+                                </Button>
+                            </Link>
+                            <AddWorkerDialog />
+                            <Link href="/dashboard/onboarding">
+                                <Button variant="ghost" className="gap-2 text-slate-700 hover:text-slate-900">
+                                    Return to onboarding
+                                    <ArrowRight className="h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             <DataTable columns={columns} data={workers} />
         </div>

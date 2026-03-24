@@ -7,6 +7,7 @@ import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
 import { requireServerEnv } from "@/lib/server-env";
 import { getStripe, isBillingConfigured } from "./stripe";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 async function getSession() {
     return await auth.api.getSession({ headers: await headers() });
@@ -18,7 +19,12 @@ export async function createCheckoutSession() {
     }
 
     const session = await getSession();
-    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+    const activeOrganizationId = session
+        ? await resolveActiveOrganizationId(
+            session.user.id,
+            (session.session as any)?.activeOrganizationId as string | undefined,
+        )
+        : null;
 
     if (!activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
 

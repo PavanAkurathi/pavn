@@ -16,21 +16,11 @@ export const createLocation = async (body: unknown, orgId: string) => {
     const finalRadius = geofenceRadiusMeters || geofenceRadius;
 
     const geocodeResult = await geocodeAddress(address);
+    const coords = geocodeResult.success ? geocodeResult.data : null;
 
     if (!geocodeResult.success) {
-        const failure = geocodeResult as {
-            error?: string;
-            code?: string;
-        };
-        throw new AppError(
-            failure.error || "Could not verify address. Please check and try again.",
-            failure.code || "GEOCODING_FAILED",
-            400
-        );
-    }
-
-    const coords = geocodeResult.data;
-    if (coords.confidence === "low") {
+        console.warn(`[CREATE-LOC] Geocoding failed for "${address}", saving raw address without coordinates`);
+    } else if (geocodeResult.data.confidence === "low") {
         console.warn(`[GEOCODE] Low confidence for "${address}"`);
     }
 
@@ -44,11 +34,11 @@ export const createLocation = async (body: unknown, orgId: string) => {
         name,
         slug,
         timezone,
-        address: coords.formattedAddress,
-        position: toLatLng(Number(coords.latitude), Number(coords.longitude)),
+        address: coords?.formattedAddress ?? address,
+        position: coords ? toLatLng(Number(coords.latitude), Number(coords.longitude)) : null,
         geofenceRadius: finalRadius,
-        geocodedAt: new Date(),
-        geocodeSource: coords.source,
+        geocodedAt: coords ? new Date() : null,
+        geocodeSource: coords?.source ?? null,
         createdAt: new Date(),
         updatedAt: new Date()
     });
@@ -58,11 +48,14 @@ export const createLocation = async (body: unknown, orgId: string) => {
         location: {
             id: locationId,
             name,
-            address: coords.formattedAddress,
-            latitude: coords.latitude,
-            longitude: coords.longitude,
+            address: coords?.formattedAddress ?? address,
+            latitude: coords?.latitude ?? null,
+            longitude: coords?.longitude ?? null,
             geofenceRadius: finalRadius,
-            confidence: coords.confidence
-        }
+            confidence: coords?.confidence ?? null
+        },
+        warning: coords
+            ? undefined
+            : "Location saved without verified coordinates. You can refine geofence details later in Settings."
     };
 };

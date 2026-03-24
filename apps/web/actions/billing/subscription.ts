@@ -5,6 +5,7 @@ import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
 import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 async function getSession() {
     return await auth.api.getSession({ headers: await headers() });
@@ -12,7 +13,12 @@ async function getSession() {
 
 export async function getSubscriptionDetails() {
     const session = await getSession();
-    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+    const activeOrganizationId = session
+        ? await resolveActiveOrganizationId(
+            session.user.id,
+            (session.session as any)?.activeOrganizationId as string | undefined,
+        )
+        : null;
 
     if (!activeOrganizationId) return { status: "inactive" };
 

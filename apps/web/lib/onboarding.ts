@@ -1,15 +1,15 @@
 import { auth } from "@repo/auth";
 import { db, eq, and, ne } from "@repo/database";
 import {
-    invitation,
     location,
     member,
     organization,
-    rosterEntry,
     shift,
-    workerRole,
 } from "@repo/database/schema";
 import { headers } from "next/headers";
+import type { AttendanceVerificationPolicy } from "@repo/config";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import { parseOrganizationMetadata } from "@/lib/organization-metadata";
 
 export type OnboardingStep = {
     id: string;
@@ -18,11 +18,15 @@ export type OnboardingStep = {
     href: string;
     complete: boolean;
     supportingText: string;
+    optional?: boolean;
 };
 
 export type BusinessOnboardingState = {
     orgId: string;
     organizationName: string;
+    organizationTimezone: string;
+    attendanceVerificationPolicy: AttendanceVerificationPolicy;
+    billingHandled: boolean;
     registrationSummary: string[];
     steps: OnboardingStep[];
     completedCount: number;
@@ -30,21 +34,6 @@ export type BusinessOnboardingState = {
     isComplete: boolean;
     settingsHref: string;
 };
-
-async function resolveActiveOrgId(userId: string, activeOrgId?: string) {
-    if (activeOrgId) {
-        return activeOrgId;
-    }
-
-    const firstMembership = await db.query.member.findFirst({
-        where: eq(member.userId, userId),
-        columns: {
-            organizationId: true,
-        },
-    });
-
-    return firstMembership?.organizationId ?? null;
-}
 
 export async function getCurrentBusinessOnboardingState() {
     const session = await auth.api.getSession({
@@ -55,7 +44,7 @@ export async function getCurrentBusinessOnboardingState() {
         return { session: null, onboarding: null as BusinessOnboardingState | null };
     }
 
-    const activeOrgId = await resolveActiveOrgId(
+    const activeOrgId = await resolveActiveOrganizationId(
         session.user.id,
         (session.session as any)?.activeOrganizationId as string | undefined
     );
@@ -67,10 +56,6 @@ export async function getCurrentBusinessOnboardingState() {
     const [
         org,
         firstLocation,
-        memberRows,
-        firstInvitation,
-        rosterRows,
-        firstWorkerRole,
         firstPublishedShift,
     ] = await Promise.all([
         db.query.organization.findFirst({
@@ -78,6 +63,10 @@ export async function getCurrentBusinessOnboardingState() {
             columns: {
                 id: true,
                 name: true,
+                timezone: true,
+                attendanceVerificationPolicy: true,
+                metadata: true,
+                subscriptionStatus: true,
             },
         }),
         db.query.location.findFirst({
@@ -85,33 +74,6 @@ export async function getCurrentBusinessOnboardingState() {
             columns: {
                 id: true,
                 name: true,
-            },
-        }),
-        db.query.member.findMany({
-            where: eq(member.organizationId, activeOrgId),
-            columns: {
-                role: true,
-                jobTitle: true,
-            },
-        }),
-        db.query.invitation.findFirst({
-            where: eq(invitation.organizationId, activeOrgId),
-            columns: {
-                id: true,
-            },
-        }),
-        db.query.rosterEntry.findMany({
-            where: eq(rosterEntry.organizationId, activeOrgId),
-            columns: {
-                id: true,
-                jobTitle: true,
-                roles: true,
-            },
-        }),
-        db.query.workerRole.findFirst({
-            where: eq(workerRole.organizationId, activeOrgId),
-            columns: {
-                id: true,
             },
         }),
         db.query.shift.findFirst({
@@ -130,16 +92,34 @@ export async function getCurrentBusinessOnboardingState() {
         return { session, onboarding: null as BusinessOnboardingState | null };
     }
 
-    const activeWorkerMembers = memberRows.filter(
-        (row) => !["admin", "owner"].includes(row.role)
-    );
-    const hasTeam = activeWorkerMembers.length > 0 || Boolean(firstInvitation) || rosterRows.length > 0;
-    const hasAssignedRoles =
-        Boolean(firstWorkerRole) ||
-        activeWorkerMembers.some((row) => Boolean(row.jobTitle)) ||
-        rosterRows.some((row) => Boolean(row.jobTitle) || (row.roles?.length ?? 0) > 0);
+    const metadata = parseOrganizationMetadata(org.metadata);
+    const hasExistingOperationalSetup = Boolean(firstLocation) || Boolean(firstPublishedShift);
+    const businessInformationComplete =
+        Boolean(metadata.onboarding?.businessInformationCompleted) || hasExistingOperationalSetup;
+    const billingHandled =
+        Boolean(metadata.onboarding?.billingPromptHandled) ||
+        org.subscriptionStatus === "active" ||
+        org.subscriptionStatus === "trialing";
 
     const steps: OnboardingStep[] = [
+        {
+            id: "account",
+            title: "Account ready",
+            description: "Your admin account, business workspace, and free trial are active.",
+            href: "/dashboard/onboarding",
+            complete: true,
+            supportingText: "Workspace created and admin access active",
+        },
+        {
+            id: "business",
+            title: "Business information",
+            description: "Confirm the settings that control timezone handling and clock-in verification for your business.",
+            href: "/settings/business",
+            complete: businessInformationComplete,
+            supportingText: businessInformationComplete
+                ? "Business details reviewed"
+                : "Review business name, timezone, and clock-in rule",
+        },
         {
             id: "location",
             title: "Add your first location",
@@ -151,54 +131,40 @@ export async function getCurrentBusinessOnboardingState() {
                 : "No locations added yet",
         },
         {
-            id: "team",
-            title: "Add your team",
-            description: "Invite workers or import your roster so you have people to schedule.",
-            href: "/rosters",
-            complete: hasTeam,
-            supportingText: hasTeam
-                ? "Workers, invites, or roster entries exist"
-                : "No workers, invites, or roster imports yet",
-        },
-        {
-            id: "roles",
-            title: "Assign worker roles",
-            description: "Set the roles you schedule against, like cashier, security, cleaner, or custom roles.",
-            href: "/rosters",
-            complete: hasAssignedRoles,
-            supportingText: hasAssignedRoles
-                ? "At least one worker role or job title is set"
-                : "No worker roles have been assigned yet",
-        },
-        {
-            id: "schedule",
-            title: "Publish your first shift",
-            description: "Create the first live schedule block so your business becomes operational.",
-            href: "/dashboard/schedule/create",
-            complete: Boolean(firstPublishedShift),
-            supportingText: firstPublishedShift
-                ? `First live shift created (${firstPublishedShift.status})`
-                : "No published or assigned shifts yet",
+            id: "billing",
+            title: "Trial & billing",
+            description: "Billing is optional right now. Add it now or skip and return later from Settings.",
+            href: "/settings/billing",
+            complete: billingHandled,
+            optional: true,
+            supportingText: billingHandled
+                ? "Billing decision recorded"
+                : "7-day free trial active — no card required today",
         },
     ];
 
-    const completedCount = steps.filter((step) => step.complete).length;
+    const requiredSteps = steps.filter((step) => !step.optional);
+    const completedCount = requiredSteps.filter((step) => step.complete).length;
+    const totalCount = requiredSteps.length;
 
     return {
         session,
         onboarding: {
             orgId: activeOrgId,
             organizationName: org.name,
+            organizationTimezone: org.timezone || "America/New_York",
+            attendanceVerificationPolicy: (org.attendanceVerificationPolicy || "strict_geofence") as AttendanceVerificationPolicy,
+            billingHandled,
             registrationSummary: [
-                "Your manager account is created",
+                "Your admin account is created",
                 "Your business workspace is created",
                 "Your admin access is active",
                 "Your free trial has started",
             ],
             steps,
             completedCount,
-            totalCount: steps.length,
-            isComplete: completedCount === steps.length,
+            totalCount,
+            isComplete: completedCount === totalCount,
             settingsHref: "/settings/business",
         },
     };

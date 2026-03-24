@@ -11,7 +11,7 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 2
+      "actualWorkers": 1
     },
     "preserveOutput": "always",
     "projects": [
@@ -20,7 +20,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "api",
         "name": "api",
@@ -36,7 +36,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "web",
         "name": "web",
@@ -52,7 +52,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "web-firefox",
         "name": "web-firefox",
@@ -68,7 +68,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "web-safari",
         "name": "web-safari",
@@ -84,7 +84,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "mobile-chrome",
         "name": "mobile-chrome",
@@ -100,7 +100,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 2
+          "actualWorkers": 1
         },
         "id": "mobile-safari",
         "name": "mobile-safari",
@@ -146,84 +146,56 @@
   },
   "suites": [
     {
-      "title": "api/lifecycle.spec.ts",
-      "file": "api/lifecycle.spec.ts",
+      "title": "web/signup-auth-flow.spec.ts",
+      "file": "web/signup-auth-flow.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "manager/worker lifecycle",
-          "file": "api/lifecycle.spec.ts",
-          "line": 62,
+          "title": "manager browser signup flow",
+          "file": "web/signup-auth-flow.spec.ts",
+          "line": 27,
           "column": 6,
           "specs": [
             {
-              "title": "registration to approved shift works across manager and worker roles",
+              "title": "landing page signup reaches onboarding for a fresh business",
               "ok": true,
               "tags": [],
               "tests": [
                 {
-                  "timeout": 30000,
+                  "timeout": 120000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "api",
-                  "projectName": "api",
+                  "projectId": "web",
+                  "projectName": "web",
                   "results": [
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "passed",
-                      "duration": 8388,
+                      "duration": 16631,
                       "errors": [],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2026-03-12T04:05:48.795Z",
+                      "startTime": "2026-03-23T02:41:19.250Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "signup-response.txt",
+                          "contentType": "text/plain",
+                          "body": "eyJ0b2tlbiI6Im5hUzZxaGFqU0RRVkwyMHRRYlRGRlZuU045eE5VeDRXIiwidXNlciI6eyJuYW1lIjoiQnJvd3NlciBNYW5hZ2VyIiwiZW1haWwiOiJicm93c2VyLW1hbmFnZXItMTc3NDIzMzY3OTU0N0BleGFtcGxlLmNvbSIsImVtYWlsVmVyaWZpZWQiOmZhbHNlLCJpbWFnZSI6bnVsbCwiY3JlYXRlZEF0IjoiMjAyNi0wMy0yM1QwMjo0MToyMC40OTRaIiwidXBkYXRlZEF0IjoiMjAyNi0wMy0yM1QwMjo0MToyMC40OTRaIiwicGhvbmVOdW1iZXIiOiIrMTYxNzU1NTAxOTkiLCJzdHJpcGVDdXN0b21lcklkIjpudWxsLCJyb2xlIjoiYWRtaW4iLCJpZCI6IlNoMXhhTDdhRlA1dTRwUGJlbXNUYnB3ZGk2VGY5cWV3In19"
+                        }
+                      ]
                     }
                   ],
                   "status": "expected"
                 }
               ],
-              "id": "1f1785dee40219527314-a9f2ad9b66cc11aa6a7a",
-              "file": "api/lifecycle.spec.ts",
-              "line": 63,
-              "column": 9
-            },
-            {
-              "title": "phone activation syncs invited roles and custom-role scheduling supports open slots",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 30000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "api",
-                  "projectName": "api",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 4818,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-03-12T04:05:48.772Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "1f1785dee40219527314-6f05c9b2382642d0d402",
-              "file": "api/lifecycle.spec.ts",
-              "line": 263,
+              "id": "69878c259ee94cb29881-195b0199e679cc18afb6",
+              "file": "web/signup-auth-flow.spec.ts",
+              "line": 28,
               "column": 9
             }
           ]
@@ -233,9 +205,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-03-12T04:05:47.382Z",
-    "duration": 9838.466,
-    "expected": 2,
+    "startTime": "2026-03-23T02:41:18.444Z",
+    "duration": 17706.701,
+    "expected": 1,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

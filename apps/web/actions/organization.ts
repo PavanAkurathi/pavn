@@ -10,6 +10,11 @@ import { eq } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ATTENDANCE_VERIFICATION_POLICY_VALUES } from "@repo/config";
+import {
+    parseOrganizationMetadata,
+    serializeOrganizationMetadata,
+} from "@/lib/organization-metadata";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 async function getSession() {
     return await auth.api.getSession({
@@ -19,14 +24,20 @@ async function getSession() {
 
 const updateOrgSchema = z.object({
     name: z.string().min(2).max(50),
-    metadata: z.string().optional(),
+    description: z.string().optional(),
+    timezone: z.string().min(1).optional(),
     attendanceVerificationPolicy: z.enum(ATTENDANCE_VERIFICATION_POLICY_VALUES).optional(),
+    markBusinessInformationComplete: z.boolean().optional(),
 });
 
 export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) {
     const session = await getSession();
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+    const activeOrganizationId = session
+        ? await resolveActiveOrganizationId(
+            session.user.id,
+            (session.session as any)?.activeOrganizationId as string | undefined,
+        )
+        : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
@@ -39,18 +50,81 @@ export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) 
     const safeData = valResult.data;
 
     try {
+        const currentOrg = await db.query.organization.findFirst({
+            where: eq(organization.id, activeOrganizationId),
+            columns: {
+                metadata: true,
+            },
+        });
+        const metadata = parseOrganizationMetadata(currentOrg?.metadata);
+
+        if (safeData.description !== undefined) {
+            metadata.description = safeData.description;
+        }
+
+        if (safeData.markBusinessInformationComplete) {
+            metadata.onboarding = {
+                ...metadata.onboarding,
+                businessInformationCompleted: true,
+            };
+        }
+
         await db.update(organization)
             .set({
                 name: safeData.name,
-                metadata: safeData.metadata,
+                metadata: serializeOrganizationMetadata(metadata),
+                timezone: safeData.timezone,
                 attendanceVerificationPolicy: safeData.attendanceVerificationPolicy,
             })
             .where(eq(organization.id, activeOrganizationId));
 
         revalidatePath("/settings");
+        revalidatePath("/dashboard/onboarding");
         return { success: true };
     } catch (error) {
         console.error("Failed to update organization:", error);
         return { error: "Failed to update organization" };
+    }
+}
+
+export async function markBillingPromptHandled() {
+    const session = await getSession();
+    const activeOrganizationId = session
+        ? await resolveActiveOrganizationId(
+            session.user.id,
+            (session.session as any)?.activeOrganizationId as string | undefined,
+        )
+        : null;
+
+    if (!activeOrganizationId) {
+        return { error: "No active organization" };
+    }
+
+    try {
+        const currentOrg = await db.query.organization.findFirst({
+            where: eq(organization.id, activeOrganizationId),
+            columns: {
+                metadata: true,
+            },
+        });
+        const metadata = parseOrganizationMetadata(currentOrg?.metadata);
+        metadata.onboarding = {
+            ...metadata.onboarding,
+            billingPromptHandled: true,
+        };
+
+        await db.update(organization)
+            .set({
+                metadata: serializeOrganizationMetadata(metadata),
+            })
+            .where(eq(organization.id, activeOrganizationId));
+
+        revalidatePath("/settings");
+        revalidatePath("/dashboard");
+        revalidatePath("/dashboard/onboarding");
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to mark billing prompt handled:", error);
+        return { error: "Failed to update onboarding progress" };
     }
 }

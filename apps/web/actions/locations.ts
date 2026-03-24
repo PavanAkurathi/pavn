@@ -12,6 +12,7 @@ import {
     updateLocation as updateLocationService,
 } from "@repo/organizations";
 import { PLAN_LIMITS, SUPPORT_EMAIL } from "@repo/config";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 async function getSession() {
     return await auth.api.getSession({
@@ -21,7 +22,12 @@ async function getSession() {
 
 export async function createLocation(data: z.input<typeof createLocationSchema>) {
     const session = await getSession();
-    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+    const activeOrganizationId = session
+        ? await resolveActiveOrganizationId(
+            session.user.id,
+            (session.session as any)?.activeOrganizationId as string | undefined,
+        )
+        : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
@@ -41,9 +47,13 @@ export async function createLocation(data: z.input<typeof createLocationSchema>)
     }
 
     try {
-        await createLocationService(data, activeOrganizationId);
+        const result = await createLocationService(data, activeOrganizationId);
         revalidatePath("/settings");
-        return { success: true };
+        revalidatePath("/dashboard/onboarding");
+        return {
+            success: true,
+            warning: result.warning,
+        };
     } catch (error: any) {
         console.error("Failed to create location:", error);
         return { error: error.message || "Failed to create location" };
@@ -52,8 +62,12 @@ export async function createLocation(data: z.input<typeof createLocationSchema>)
 
 export async function updateLocation(id: string, data: z.input<typeof createLocationSchema>) {
     const session = await getSession();
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+    const activeOrganizationId = session
+        ? await resolveActiveOrganizationId(
+            session.user.id,
+            (session.session as any)?.activeOrganizationId as string | undefined,
+        )
+        : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
@@ -62,6 +76,7 @@ export async function updateLocation(id: string, data: z.input<typeof createLoca
     try {
         await updateLocationService(data, id, activeOrganizationId);
         revalidatePath("/settings");
+        revalidatePath("/dashboard/onboarding");
         return { success: true };
     } catch (error: any) {
         console.error("Failed to update location:", error);
@@ -71,8 +86,12 @@ export async function updateLocation(id: string, data: z.input<typeof createLoca
 
 export async function deleteLocation(locationId: string) {
     const session = await getSession();
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    const activeOrganizationId = (session?.session as any)?.activeOrganizationId as string | undefined;
+    const activeOrganizationId = session
+        ? await resolveActiveOrganizationId(
+            session.user.id,
+            (session.session as any)?.activeOrganizationId as string | undefined,
+        )
+        : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
@@ -81,6 +100,7 @@ export async function deleteLocation(locationId: string) {
     try {
         await deleteLocationService(locationId, activeOrganizationId);
         revalidatePath("/settings");
+        revalidatePath("/dashboard/onboarding");
         return { success: true };
     } catch (error: any) {
         console.error("Failed to delete location:", error);

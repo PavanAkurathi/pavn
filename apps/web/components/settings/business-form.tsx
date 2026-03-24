@@ -23,11 +23,13 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { updateOrganization } from "@/actions/organization";
+import { getOrganizationDescription } from "@/lib/organization-metadata";
 
 export interface BusinessFormProps {
     organization: {
         name: string;
         metadata?: string | null; // metadata is text in schema, usually JSON string
+        timezone?: string | null;
         attendanceVerificationPolicy?: "strict_geofence" | "soft_geofence" | "none" | null;
     } | null;
 }
@@ -35,25 +37,9 @@ export interface BusinessFormProps {
 export function BusinessForm({ organization }: BusinessFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [businessName, setBusinessName] = useState(organization?.name || "");
+    const [timezone, setTimezone] = useState(organization?.timezone || "America/New_York");
 
-    // Parse metadata if it's a JSON string
-    const getInitialDescription = () => {
-        if (!organization?.metadata) return "";
-        try {
-            const parsed = JSON.parse(organization.metadata);
-            // If it's an object with a description field, use that
-            if (typeof parsed === "object" && parsed !== null && "description" in parsed) {
-                return parsed.description;
-            }
-            // If it's just a string wrapped in JSON
-            if (typeof parsed === "string") return parsed;
-            return organization.metadata;
-        } catch {
-            return organization.metadata;
-        }
-    };
-
-    const [description, setDescription] = useState(getInitialDescription());
+    const [description, setDescription] = useState(getOrganizationDescription(organization?.metadata));
     const [attendanceVerificationPolicy, setAttendanceVerificationPolicy] = useState<
         "strict_geofence" | "soft_geofence" | "none"
     >(organization?.attendanceVerificationPolicy || "strict_geofence");
@@ -64,7 +50,8 @@ export function BusinessForm({ organization }: BusinessFormProps) {
         try {
             const result = await updateOrganization({
                 name: businessName,
-                metadata: description,
+                description,
+                timezone,
                 attendanceVerificationPolicy,
             });
 
@@ -99,6 +86,19 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                 placeholder="Acme Inc."
                                 className="bg-white"
                             />
+                        </Field>
+                        <Field>
+                            <FieldLabel htmlFor="timezone">Timezone</FieldLabel>
+                            <Input
+                                id="timezone"
+                                value={timezone}
+                                onChange={(e) => setTimezone(e.target.value)}
+                                placeholder="America/New_York"
+                                className="bg-white"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                                Use an IANA timezone like <span className="font-medium text-slate-700">America/New_York</span> or <span className="font-medium text-slate-700">America/Los_Angeles</span>.
+                            </p>
                         </Field>
                         <Field>
                             <FieldLabel htmlFor="description">Description</FieldLabel>

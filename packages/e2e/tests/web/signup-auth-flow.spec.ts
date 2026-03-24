@@ -100,11 +100,44 @@ test.describe("manager browser signup flow", () => {
         await page.getByRole("button", { name: /verify email/i }).click();
 
         await page.waitForURL(/\/dashboard\/onboarding/, { timeout: 30000 });
-        await expect(page.getByRole("heading", { name: /finish setting up/i })).toBeVisible();
-        await expect(page.getByText(/add your first location/i)).toBeVisible();
-        await expect(page.getByText(/add your team/i)).toBeVisible();
-        await expect(page.getByText(/assign worker roles/i)).toBeVisible();
-        await expect(page.getByText(/publish your first shift/i)).toBeVisible();
+        await expect(page.getByRole("heading", { name: new RegExp(`welcome to ${businessName}`, "i") })).toBeVisible();
+        await expect(page.getByRole("heading", { name: /one focused step at a time/i })).toBeVisible();
+        await expect(page.getByText(/account ready/i).first()).toBeVisible();
+        await expect(page.getByText(/business information/i).first()).toBeVisible();
+        await expect(page.getByText(/first location/i).first()).toBeVisible();
+        await expect(page.getByText(/trial & billing/i).first()).toBeVisible();
+        await expect(page.locator("#onboarding_business_name")).toHaveValue(businessName);
+        await expect(page.locator("#onboarding_timezone")).toBeVisible();
+        await expect(page.getByText(/clock-in verification/i).first()).toBeVisible();
+        await expect(page.getByRole("button", { name: /save and continue/i })).toBeVisible();
+        await expect(page.getByText(/business basics/i).first()).toBeVisible();
+        await expect(page.getByText(/business information/i).first()).toBeVisible();
+        await expect(page.getByRole("link", { name: /open business settings/i }).first()).toBeVisible();
+        await expect(page.locator("#onboarding_location_name")).toHaveCount(0);
+        await expect(page.getByText(/workspace created and admin access active/i)).toBeVisible();
+
+        await page.getByRole("button", { name: /save and continue/i }).click();
+
+        await expect(page.locator("#onboarding_location_name")).toBeVisible();
+        await expect(page.locator("#onboarding_location_address")).toBeVisible();
+        await expect(page.getByText(/add the first place where schedules are published and workers clock in/i)).toBeVisible();
+        await page.locator("#onboarding_location_name").fill("Downtown Boston");
+        await page.locator("#onboarding_location_address").fill("4 Yawkey Way, Boston, MA 02215");
+        await page.getByRole("button", { name: /save location and continue/i }).click();
+
+        await expect(page.getByRole("heading", { name: /ready for your first schedule/i })).toBeVisible();
+        await expect(page.getByText(/let's create your first schedule/i).first()).toBeVisible();
+        await expect(page.getByText(/business setup complete/i).first()).toBeVisible();
+        await expect(page.getByRole("link", { name: /create your first schedule/i })).toBeVisible();
+        await expect(page.getByText(/no credit card is required to finish setup/i)).toBeVisible();
+
+        await page.context().clearCookies();
+        await page.goto("/auth/login");
+        await page.locator('input[name="email"]').fill(email);
+        await page.locator('input[name="password"]').fill(password);
+        await page.getByRole("button", { name: /sign in/i }).click();
+
+        await page.waitForURL(/\/dashboard\/shifts/, { timeout: 30000 });
 
         const createdUser = await db.query.user.findFirst({
             where: eq(user.email, email),
