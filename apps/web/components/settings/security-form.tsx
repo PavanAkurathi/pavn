@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Laptop, Smartphone, Globe, Shield, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@repo/ui/components/ui/empty";
 import { format } from "date-fns";
 import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
@@ -37,7 +39,7 @@ export function SecurityForm({ sessions, accounts }: SecurityFormProps) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Connected Accounts</CardTitle>
@@ -45,26 +47,33 @@ export function SecurityForm({ sessions, accounts }: SecurityFormProps) {
                         Manage the accounts linked to your profile.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="flex flex-col gap-4">
                     {accounts.length === 0 ? (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground bg-slate-50 p-3 rounded-md">
-                            <AlertCircle className="h-4 w-4" />
-                            You are using password-based authentication.
-                        </div>
+                        <Empty className="border border-dashed">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <AlertCircle />
+                                </EmptyMedia>
+                                <EmptyTitle>Password-based authentication</EmptyTitle>
+                                <EmptyDescription>
+                                    You are currently using email and password sign-in only.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
                     ) : (
-                        <div className="space-y-2">
+                        <div className="flex flex-col gap-2">
                             {accounts.map((account) => (
                                 <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
                                     <div className="flex items-center gap-3">
-                                        <div className="bg-primary/10 p-2 rounded-full">
+                                        <div className="rounded-full bg-primary/10 p-2">
                                             <Shield className="h-4 w-4 text-primary" />
                                         </div>
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-col gap-0.5">
                                             <span className="font-medium capitalize">{account.providerId}</span>
                                             <span className="text-xs text-muted-foreground">Connected {format(new Date(account.createdAt), 'MMM d, yyyy')}</span>
                                         </div>
                                     </div>
-                                    <Badge variant="outline" className="bg-green-50 text-green-700 hover:bg-green-50 border-green-200">
+                                    <Badge variant="secondary">
                                         Connected
                                     </Badge>
                                 </div>
@@ -81,22 +90,30 @@ export function SecurityForm({ sessions, accounts }: SecurityFormProps) {
                         Devices where you are currently logged in.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {sessions.map((session) => {
+                <CardContent className="flex flex-col gap-4">
+                    {sessions.length === 0 ? (
+                        <Alert>
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>No active sessions</AlertTitle>
+                            <AlertDescription>
+                                We could not find any other active sessions for this account.
+                            </AlertDescription>
+                        </Alert>
+                    ) : sessions.map((session) => {
                         const isCurrent = currentSession?.session?.token === session.token;
                         return (
                             <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg">
                                 <div className="flex items-center gap-4">
-                                    <div className="bg-slate-100 p-2 rounded-full text-slate-600">
+                                    <div className="rounded-full bg-muted p-2 text-muted-foreground">
                                         {getDeviceIcon(session.userAgent)}
                                     </div>
-                                    <div className="space-y-1">
+                                    <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2">
                                             <p className="font-medium text-sm">
                                                 {session.ipAddress || "Unknown IP"}
                                             </p>
                                             {isCurrent && (
-                                                <Badge variant="default" className="text-[10px] h-5 px-1.5">
+                                                <Badge variant="default" className="h-5 px-1.5 text-[10px]">
                                                     Current Device
                                                 </Badge>
                                             )}
@@ -110,7 +127,7 @@ export function SecurityForm({ sessions, accounts }: SecurityFormProps) {
                                     </div>
                                 </div>
                                 {!isCurrent && (
-                                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/90" onClick={() => handleSignOutSession(session.token)}>
+                                    <Button variant="ghost" size="sm" onClick={() => handleSignOutSession(session.token)}>
                                         Revoke
                                     </Button>
                                 )}

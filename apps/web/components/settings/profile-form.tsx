@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
@@ -24,10 +25,17 @@ import {
     FormLabel,
     FormMessage,
 } from "@repo/ui/components/ui/form";
+import { Separator } from "@repo/ui/components/ui/separator";
 import { toast } from "sonner";
 import { authClient } from "@repo/auth/client";
-import { Loader2, Lock } from "lucide-react";
-import { Badge } from "@repo/ui/components/ui/badge";
+import { Lock } from "lucide-react";
+import { Spinner } from "@repo/ui/components/ui/spinner";
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from "@repo/ui/components/ui/input-group";
 
 const profileSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
@@ -106,7 +114,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6">
             {/* General Profile Info */}
             <Card>
                 <CardHeader>
@@ -115,7 +123,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 </CardHeader>
                 <CardContent>
                     <Form {...(form as any)}>
-                        <form onSubmit={form.handleSubmit(onProfileSubmit)} className="space-y-6">
+                        <form onSubmit={form.handleSubmit(onProfileSubmit)} className="flex flex-col gap-6">
                             <FormField
                                 control={form.control as any}
                                 name="name"
@@ -123,7 +131,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                     <FormItem>
                                         <FormLabel>Full Name</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="John Doe" className="bg-white" {...field} />
+                                            <Input placeholder="John Doe" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -136,7 +144,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                     <FormItem>
                                         <FormLabel>Email Address</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="user@example.com" type="email" className="bg-white" {...field} />
+                                            <Input placeholder="user@example.com" type="email" {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -149,39 +157,53 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                     <FormItem>
                                         <FormLabel>Contact Number</FormLabel>
                                         <FormControl>
-                                            <div className="relative">
-                                                <Input placeholder="+1 (555) 000-0000" type="tel" className="bg-white pr-24" {...field} />
+                                            <div className="flex flex-col gap-2">
+                                                <InputGroup>
+                                                    <InputGroupInput placeholder="+1 (555) 000-0000" type="tel" {...field} />
+                                                    {field.value && (
+                                                        <InputGroupAddon align="inline-end">
+                                                            <Dialog open={isPhoneVerifyOpen} onOpenChange={setIsPhoneVerifyOpen}>
+                                                                <DialogTrigger asChild>
+                                                                    <InputGroupButton size="sm" variant="outline">
+                                                                        Verify phone
+                                                                    </InputGroupButton>
+                                                                </DialogTrigger>
+                                                                <DialogContent>
+                                                                    <DialogHeader>
+                                                                        <DialogTitle>Verify phone number</DialogTitle>
+                                                                        <DialogDescription>
+                                                                            We need to verify your phone number to secure your account.
+                                                                        </DialogDescription>
+                                                                    </DialogHeader>
+                                                                    <div className="flex flex-col gap-4 py-4">
+                                                                        <Alert>
+                                                                            <AlertTitle>Verification required</AlertTitle>
+                                                                            <AlertDescription>
+                                                                                Would you like us to send a verification code to{" "}
+                                                                                <span className="font-medium text-foreground">{field.value}</span>?
+                                                                            </AlertDescription>
+                                                                        </Alert>
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <Button type="button" variant="outline" onClick={() => setIsPhoneVerifyOpen(false)}>
+                                                                                Cancel
+                                                                            </Button>
+                                                                            <Button type="button" onClick={() => {
+                                                                                toast.success("Verification code sent!");
+                                                                                setIsPhoneVerifyOpen(false);
+                                                                            }}>
+                                                                                Send code
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+                                                                </DialogContent>
+                                                            </Dialog>
+                                                        </InputGroupAddon>
+                                                    )}
+                                                </InputGroup>
                                                 {field.value && (
-                                                    <Dialog open={isPhoneVerifyOpen} onOpenChange={setIsPhoneVerifyOpen}>
-                                                        <DialogTrigger asChild>
-                                                            <Badge
-                                                                variant="secondary"
-                                                                className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer hover:bg-red-100 bg-red-50 text-red-600 hover:text-red-700 border-red-100"
-                                                            >
-                                                                Not Verified
-                                                            </Badge>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Verify Phone Number</DialogTitle>
-                                                                <DialogDescription>
-                                                                    We need to verify your phone number to secure your account.
-                                                                </DialogDescription>
-                                                            </DialogHeader>
-                                                            <div className="py-4 space-y-4">
-                                                                <p className="text-sm text-slate-600">
-                                                                    Would you like us to send a verification code to <span className="font-bold">{field.value}</span>?
-                                                                </p>
-                                                                <div className="flex justify-end gap-2">
-                                                                    <Button type="button" variant="outline" onClick={() => setIsPhoneVerifyOpen(false)}>Cancel</Button>
-                                                                    <Button type="button" onClick={() => {
-                                                                        toast.success("Verification code sent!");
-                                                                        setIsPhoneVerifyOpen(false);
-                                                                    }}>Send Code</Button>
-                                                                </div>
-                                                            </div>
-                                                        </DialogContent>
-                                                    </Dialog>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        This number is still unverified.
+                                                    </p>
                                                 )}
                                             </div>
                                         </FormControl>
@@ -190,11 +212,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                 )}
                             />
 
-                            <div className="flex justify-between items-center pt-4 border-t">
+                            <Separator />
+
+                            <div className="flex items-center justify-between gap-3">
                                 <Dialog open={isPasswordOpen} onOpenChange={setIsPasswordOpen}>
                                     <DialogTrigger asChild>
                                         <Button type="button" variant="outline" size="sm">
-                                            <Lock className="w-3 h-3 mr-2" />
+                                            <Lock data-icon="inline-start" />
                                             Change Password
                                         </Button>
                                     </DialogTrigger>
@@ -206,7 +230,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                             </DialogDescription>
                                         </DialogHeader>
                                         <Form {...(passwordForm as any)}>
-                                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4 py-4">
+                                            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="flex flex-col gap-4 py-4">
                                                 <FormField
                                                     control={passwordForm.control as any}
                                                     name="currentPassword"
@@ -248,7 +272,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                                 />
                                                 <DialogFooter>
                                                     <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
-                                                        {passwordForm.formState.isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                                                        {passwordForm.formState.isSubmitting ? <Spinner data-icon="inline-start" /> : null}
                                                         Update Password
                                                     </Button>
                                                 </DialogFooter>
@@ -258,7 +282,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                 </Dialog>
 
                                 <Button type="submit" disabled={isLoading}>
-                                    {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                                    {isLoading ? <Spinner data-icon="inline-start" /> : null}
                                     Save Changes
                                 </Button>
                             </div>

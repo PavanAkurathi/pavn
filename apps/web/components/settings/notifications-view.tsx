@@ -1,18 +1,26 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from "@repo/ui/components/ui/form";
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import {
-    Card, CardContent, CardDescription, CardHeader, CardTitle
+    Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card';
 import { Button } from '@repo/ui/components/ui/button';
 import { Switch } from '@repo/ui/components/ui/switch';
-import { RadioGroup, RadioGroupItem } from '@repo/ui/components/ui/radio-group';
-import { Label } from '@repo/ui/components/ui/label';
 import { Separator } from '@repo/ui/components/ui/separator';
+import { Skeleton } from '@repo/ui/components/ui/skeleton';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@repo/ui/components/ui/field';
+import { ToggleGroup, ToggleGroupItem } from '@repo/ui/components/ui/toggle-group';
 import { API_BASE_URL } from '@/lib/constants';
 
 const PreferencesSchema = z.object({
@@ -75,113 +83,126 @@ export function NotificationsView() {
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    if (loading) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Notification options</CardTitle>
+                    <CardDescription>Loading your current notification preferences.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                    <Skeleton className="h-20 w-full" />
+                    <Skeleton className="h-32 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </CardContent>
+            </Card>
+        );
+    }
 
     return (
-        <div className="space-y-6">
-            <div className="space-y-0.5">
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-0.5">
                 <h3 className="text-lg font-medium">Notification options</h3>
                 <p className="text-sm text-muted-foreground">Manage how and when you receive alerts about your shifts.</p>
             </div>
             <Separator />
 
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manager notifications</CardTitle>
+                    <CardDescription>
+                        Choose which live updates should reach managers and how broad the alert scope should be.
+                    </CardDescription>
+                </CardHeader>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    <CardContent className="flex flex-col gap-6">
+                        <FieldSet>
+                            <FieldLegend>Live shift notifications</FieldLegend>
+                            <FieldGroup>
+                                <Field orientation="horizontal" className="items-start justify-between">
+                                    <div className="flex flex-col gap-1">
+                                        <FieldLabel htmlFor="clock-in">Clock-in alerts</FieldLabel>
+                                        <FieldDescription>
+                                            Get notified when workers clock in to a shift you are watching.
+                                        </FieldDescription>
+                                    </div>
+                                    <Controller
+                                        control={form.control}
+                                        name="clockInAlertsEnabled"
+                                        render={({ field }) => (
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} id="clock-in" />
+                                        )}
+                                    />
+                                </Field>
 
-                {/* Live Shift Notifications */}
-                <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Live shift notifications</h4>
-                    <div className="grid gap-4">
-                        <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-card">
-                            <div className="flex flex-col space-y-1">
-                                <Label htmlFor="clock-in" className="font-medium text-base">Clock-in alerts</Label>
-                                <span className="text-sm text-muted-foreground">Get notified when Pros clock in to your shift.</span>
-                            </div>
-                            <Controller
-                                control={form.control}
-                                name="clockInAlertsEnabled"
-                                render={({ field }) => (
-                                    <Switch checked={field.value} onCheckedChange={field.onChange} id="clock-in" />
-                                )}
-                            />
-                        </div>
+                                <Field orientation="horizontal" className="items-start justify-between">
+                                    <div className="flex flex-col gap-1">
+                                        <FieldLabel htmlFor="clock-out">Clock-out alerts</FieldLabel>
+                                        <FieldDescription>
+                                            Get notified when workers complete shifts you are watching.
+                                        </FieldDescription>
+                                    </div>
+                                    <Controller
+                                        control={form.control}
+                                        name="clockOutAlertsEnabled"
+                                        render={({ field }) => (
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} id="clock-out" />
+                                        )}
+                                    />
+                                </Field>
+                            </FieldGroup>
+                        </FieldSet>
 
-                        <div className="flex items-center justify-between space-x-2 border p-4 rounded-lg bg-card">
-                            <div className="flex flex-col space-y-1">
-                                <Label htmlFor="clock-out" className="font-medium text-base">Clock-out alerts</Label>
-                                <span className="text-sm text-muted-foreground">Get notified when Pros complete their shifts.</span>
-                            </div>
-                            <Controller
-                                control={form.control}
-                                name="clockOutAlertsEnabled"
-                                render={({ field }) => (
-                                    <Switch checked={field.value} onCheckedChange={field.onChange} id="clock-out" />
-                                )}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Scope Filters */}
-                <div className="space-y-4">
-                    <h4 className="text-sm font-medium">Filter Scope</h4>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Shift Scope</CardTitle>
-                            <CardDescription>Choose which shifts trigger the alerts above.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                        <FieldSet>
+                            <FieldLegend>Shift scope</FieldLegend>
+                            <FieldDescription>
+                                Choose which shifts can trigger live notifications.
+                            </FieldDescription>
                             <Controller
                                 control={form.control}
                                 name="shiftScope"
                                 render={({ field }) => (
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-3">
-                                        <div className="flex items-center space-x-3 space-y-0">
-                                            <RadioGroupItem value="all" id="scope-all" />
-                                            <Label htmlFor="scope-all" className="font-normal">All shifts</Label>
-                                        </div>
-                                        <div className="flex items-center space-x-3 space-y-0">
-                                            <RadioGroupItem value="booked_by_me" id="scope-booked" />
-                                            <Label htmlFor="scope-booked" className="font-normal">Shifts I book or am onsite contact for</Label>
-                                        </div>
-                                        <div className="flex items-center space-x-3 space-y-0">
-                                            <RadioGroupItem value="onsite_contact" id="scope-onsite" />
-                                            <Label htmlFor="scope-onsite" className="font-normal">Only shifts I'm onsite contact for</Label>
-                                        </div>
-                                    </RadioGroup>
+                                    <ToggleGroup
+                                        type="single"
+                                        value={field.value}
+                                        onValueChange={(value) => value && field.onChange(value)}
+                                        className="justify-start"
+                                    >
+                                        <ToggleGroupItem value="all">All shifts</ToggleGroupItem>
+                                        <ToggleGroupItem value="booked_by_me">Booked by me</ToggleGroupItem>
+                                        <ToggleGroupItem value="onsite_contact">On-site contact</ToggleGroupItem>
+                                    </ToggleGroup>
                                 )}
                             />
-                        </CardContent>
-                    </Card>
+                        </FieldSet>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base">Location Scope</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+                        <FieldSet>
+                            <FieldLegend>Location scope</FieldLegend>
+                            <FieldDescription>
+                                Limit alerts across all locations or prepare for a selected-location mode later.
+                            </FieldDescription>
                             <Controller
                                 control={form.control}
                                 name="locationScope"
                                 render={({ field }) => (
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-3">
-                                        <div className="flex items-center space-x-3 space-y-0">
-                                            <RadioGroupItem value="all" id="loc-all" />
-                                            <Label htmlFor="loc-all" className="font-normal">All locations</Label>
-                                        </div>
-                                        <div className="flex items-center space-x-3 space-y-0">
-                                            <RadioGroupItem value="selected" id="loc-selected" />
-                                            <Label htmlFor="loc-selected" className="font-normal">Selected locations (Coming Soon)</Label>
-                                        </div>
-                                    </RadioGroup>
+                                    <ToggleGroup
+                                        type="single"
+                                        value={field.value}
+                                        onValueChange={(value) => value && field.onChange(value)}
+                                        className="justify-start"
+                                    >
+                                        <ToggleGroupItem value="all">All locations</ToggleGroupItem>
+                                        <ToggleGroupItem value="selected">Selected locations</ToggleGroupItem>
+                                    </ToggleGroup>
                                 )}
                             />
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="flex justify-end">
-                    <Button type="submit">Save Preferences</Button>
-                </div>
-            </form>
+                        </FieldSet>
+                    </CardContent>
+                    <CardFooter className="justify-end">
+                        <Button type="submit">Save preferences</Button>
+                    </CardFooter>
+                </form>
+            </Card>
         </div>
     );
 }

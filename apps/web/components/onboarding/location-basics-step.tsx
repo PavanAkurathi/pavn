@@ -1,23 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import {
     Card,
     CardContent,
+    CardFooter,
     CardDescription,
     CardHeader,
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import {
     Field,
+    FieldDescription,
     FieldGroup,
     FieldLabel,
 } from "@repo/ui/components/ui/field";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 import { createLocation } from "@/actions/locations";
 
 export function LocationBasicsStep({
@@ -29,13 +32,8 @@ export function LocationBasicsStep({
 }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
-    const [isHydrated, setIsHydrated] = useState(false);
     const [name, setName] = useState("");
     const [address, setAddress] = useState("");
-
-    useEffect(() => {
-        setIsHydrated(true);
-    }, []);
 
     const handleSubmit = async () => {
         setIsSaving(true);
@@ -66,71 +64,63 @@ export function LocationBasicsStep({
     };
 
     return (
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="shadow-sm">
             <CardHeader>
                 <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-slate-500" />
                     <CardTitle>First location</CardTitle>
                 </div>
                 <CardDescription>
-                    Add the first place where schedules are published and workers clock in. Keep this step minimal: a clear location name and a real street address. You can refine geofence details later if needed.
+                    Add the first place where schedules are published and workers clock in. Keep this step minimal: a clear location name and a real street address.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="space-y-6">
-                    <FieldGroup>
-                        <Field>
-                            <FieldLabel htmlFor="onboarding_location_name">Location name</FieldLabel>
-                            <Input
-                                id="onboarding_location_name"
-                                value={name}
-                                onChange={(event) => setName(event.target.value)}
-                                placeholder="Downtown Store"
-                                className="bg-white"
-                            />
-                        </Field>
+            <CardContent className="flex flex-col gap-6">
+                <FieldGroup>
+                    <Field>
+                        <FieldLabel htmlFor="onboarding_location_name">Location name</FieldLabel>
+                        <Input
+                            id="onboarding_location_name"
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            placeholder="Downtown Store"
+                        />
+                    </Field>
 
-                        <Field>
-                            <FieldLabel htmlFor="onboarding_location_address">Street address</FieldLabel>
-                            <Input
-                                id="onboarding_location_address"
-                                value={address}
-                                onChange={(event) => setAddress(event.target.value)}
-                                placeholder="123 Main St, Boston, MA 02116"
-                                className="bg-white"
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                We will try to verify this address now and use your business timezone of <span className="font-medium text-slate-700">{timezone}</span>.
-                            </p>
-                        </Field>
-                    </FieldGroup>
-
-                    <div className="flex flex-wrap gap-3">
-                        <Button
-                            type="button"
-                            size="lg"
-                            className="gap-2 rounded-full px-8"
-                            disabled={isSaving || !isHydrated || !name.trim() || !address.trim()}
-                            onClick={() => {
-                                void handleSubmit();
-                            }}
-                        >
-                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            Save location and continue
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="lg"
-                            className="rounded-full px-8"
-                            disabled={isSaving}
-                            onClick={() => router.push("/settings/locations")}
-                        >
-                            Open full location settings
-                        </Button>
-                    </div>
-                </div>
+                    <Field>
+                        <FieldLabel htmlFor="onboarding_location_address">Street address</FieldLabel>
+                        <Input
+                            id="onboarding_location_address"
+                            value={address}
+                            onChange={(event) => setAddress(event.target.value)}
+                            placeholder="123 Main St, Boston, MA 02116"
+                        />
+                        <FieldDescription>
+                            We&apos;ll verify this address now and use your business timezone of{" "}
+                            <span className="font-medium text-foreground">{timezone}</span>.
+                        </FieldDescription>
+                    </Field>
+                </FieldGroup>
             </CardContent>
+            <CardFooter className="justify-between gap-3">
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push("/dashboard/onboarding")}
+                >
+                    Back
+                </Button>
+                <Button
+                    type="button"
+                    size="lg"
+                    disabled={isSaving || !name.trim() || !address.trim()}
+                    onClick={() => {
+                        void handleSubmit();
+                    }}
+                >
+                    {isSaving ? <Spinner data-icon="inline-start" /> : null}
+                    Save location and continue
+                </Button>
+            </CardFooter>
         </Card>
     );
 }

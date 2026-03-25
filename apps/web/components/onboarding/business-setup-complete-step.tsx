@@ -4,16 +4,19 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowRight, CheckCircle2, CreditCard, Loader2, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, CreditCard, Sparkles } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     Card,
     CardContent,
+    CardFooter,
     CardDescription,
     CardHeader,
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 import { SUBSCRIPTION } from "@repo/config";
 import { markBillingPromptHandled } from "@/actions/organization";
 
@@ -45,74 +48,68 @@ export function BusinessSetupCompleteStep({
     };
 
     return (
-        <div className="space-y-6">
-            <Card className="border-emerald-200 bg-emerald-50/70 shadow-sm">
-                <CardHeader>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                        <Badge className="rounded-full bg-emerald-100 text-emerald-800 shadow-none hover:bg-emerald-100">
-                            Business setup complete
-                        </Badge>
-                    </div>
+        <Card className="shadow-sm">
+            <CardHeader className="gap-4">
+                <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="secondary">Business setup complete</Badge>
+                    <Badge variant="outline">{SUBSCRIPTION.TRIAL_DAYS}-day free trial active</Badge>
+                </div>
+                <div className="flex flex-col gap-2">
                     <CardTitle>Let&apos;s create your first schedule</CardTitle>
                     <CardDescription>
                         Your business settings are ready. Next, create your first schedule. You can add workforce later when the schedule actually needs people.
                     </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-3">
-                    <Button asChild size="lg" className="gap-2 rounded-full px-8">
-                        <Link href="/dashboard/schedule/create">
-                            Create your first schedule
-                            <ArrowRight className="h-4 w-4" />
-                        </Link>
-                    </Button>
-                    <Button asChild variant="outline" size="lg" className="rounded-full px-8">
-                        <Link href="/dashboard/shifts">Go to dashboard</Link>
-                    </Button>
-                </CardContent>
-            </Card>
+                </div>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-6">
+                <Alert>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertTitle>Business essentials are finished</AlertTitle>
+                    <AlertDescription>
+                        Timezone, attendance policy, and your first location are now in place. Billing is optional right now.
+                    </AlertDescription>
+                </Alert>
 
-            {!billingHandled && (
-                <Card className="border-slate-200 shadow-sm">
-                    <CardHeader>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 text-primary">
-                                Optional
-                            </Badge>
-                            <Badge className="rounded-full bg-white text-slate-700 shadow-none hover:bg-white">
-                                {SUBSCRIPTION.TRIAL_DAYS}-day free trial active
-                            </Badge>
-                        </div>
-                        <div className="space-y-2">
-                            <CardTitle className="flex items-center gap-2">
-                                <CreditCard className="h-5 w-5 text-slate-500" />
-                                Add billing now or skip for now
-                            </CardTitle>
-                            <CardDescription>
-                                No credit card is required to finish setup. Add billing now if you want to lock in your subscription details, or skip and return later from Settings.
-                            </CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex flex-wrap gap-3">
+                {!billingHandled && (
+                    <Alert>
+                        <CreditCard className="h-4 w-4" />
+                        <AlertTitle>Add billing now or skip for now</AlertTitle>
+                        <AlertDescription>
+                            No credit card is required to finish setup. Add billing now if you want to lock in subscription details early, or return later from Settings.
+                        </AlertDescription>
+                    </Alert>
+                )}
+            </CardContent>
+            <CardFooter className="flex flex-wrap gap-3">
+                <Button asChild size="lg">
+                    <Link href="/dashboard/schedule/create">
+                        Create your first schedule
+                        <ArrowRight data-icon="inline-end" />
+                    </Link>
+                </Button>
+                <Button asChild variant="outline" size="lg">
+                    <Link href="/dashboard/shifts">Go to dashboard</Link>
+                </Button>
+                {!billingHandled && (
+                    <>
                         <Button asChild variant="outline">
                             <Link href="/settings/billing">
                                 Review billing options
-                                <ArrowRight className="ml-2 h-4 w-4" />
+                                <ArrowRight data-icon="inline-end" />
                             </Link>
                         </Button>
                         <Button
                             type="button"
                             variant="ghost"
-                            className="gap-2 text-slate-700"
                             onClick={handleSkipBilling}
                             disabled={isSkippingBilling}
                         >
-                            {isSkippingBilling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                            {isSkippingBilling ? <Spinner data-icon="inline-start" /> : <Sparkles data-icon="inline-start" />}
                             Skip for now
                         </Button>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
+                    </>
+                )}
+            </CardFooter>
+        </Card>
     );
 }

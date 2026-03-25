@@ -6,21 +6,18 @@ import { useState } from "react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Textarea } from "@repo/ui/components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@repo/ui/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import {
     Field,
+    FieldDescription,
     FieldGroup,
+    FieldLegend,
     FieldLabel,
+    FieldSet,
 } from "@repo/ui/components/ui/field";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@repo/ui/components/ui/spinner";
+import { ToggleGroup, ToggleGroupItem } from "@repo/ui/components/ui/toggle-group";
 
 import { updateOrganization } from "@/actions/organization";
 import { getOrganizationDescription } from "@/lib/organization-metadata";
@@ -74,17 +71,16 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                 <CardTitle>Business Information</CardTitle>
                 <CardDescription>Update your company details and public profile.</CardDescription>
             </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSave} className="space-y-6">
+            <form onSubmit={handleSave}>
+                <CardContent className="flex flex-col gap-6">
                     <FieldGroup>
                         <Field>
-                            <FieldLabel htmlFor="business_name">Business Name</FieldLabel>
+                            <FieldLabel htmlFor="business_name">Business name</FieldLabel>
                             <Input
                                 id="business_name"
                                 value={businessName}
                                 onChange={(e) => setBusinessName(e.target.value)}
                                 placeholder="Acme Inc."
-                                className="bg-white"
                             />
                         </Field>
                         <Field>
@@ -94,11 +90,11 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                 value={timezone}
                                 onChange={(e) => setTimezone(e.target.value)}
                                 placeholder="America/New_York"
-                                className="bg-white"
                             />
-                            <p className="text-sm text-muted-foreground">
-                                Use an IANA timezone like <span className="font-medium text-slate-700">America/New_York</span> or <span className="font-medium text-slate-700">America/Los_Angeles</span>.
-                            </p>
+                            <FieldDescription>
+                                Use an IANA timezone like <span className="font-medium text-foreground">America/New_York</span> or{" "}
+                                <span className="font-medium text-foreground">America/Los_Angeles</span>.
+                            </FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel htmlFor="description">Description</FieldLabel>
@@ -107,39 +103,38 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Describe your business..."
-                                className="bg-white min-h-[100px]"
+                                className="min-h-[100px]"
                             />
                         </Field>
-                        <Field>
-                            <FieldLabel htmlFor="attendance_verification_policy">Clock-in verification</FieldLabel>
-                            <Select
-                                value={attendanceVerificationPolicy}
-                                onValueChange={(value) =>
-                                    setAttendanceVerificationPolicy(value as "strict_geofence" | "soft_geofence" | "none")
-                                }
-                            >
-                                <SelectTrigger id="attendance_verification_policy" className="bg-white">
-                                    <SelectValue placeholder="Select verification rule" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="strict_geofence">On-site required</SelectItem>
-                                    <SelectItem value="soft_geofence">Flexible on-site</SelectItem>
-                                    <SelectItem value="none">No location check</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p className="text-sm text-muted-foreground">
+                        <FieldSet>
+                            <FieldLegend>Clock-in verification</FieldLegend>
+                            <FieldDescription>
                                 On-site required blocks punches outside the job location. Flexible on-site allows the punch and flags it for review. No location check records time without enforcing venue location.
-                            </p>
-                        </Field>
+                            </FieldDescription>
+                            <ToggleGroup
+                                type="single"
+                                value={attendanceVerificationPolicy}
+                                onValueChange={(value) => {
+                                    if (value) {
+                                        setAttendanceVerificationPolicy(value as "strict_geofence" | "soft_geofence" | "none");
+                                    }
+                                }}
+                                className="justify-start"
+                            >
+                                <ToggleGroupItem value="strict_geofence">On-site required</ToggleGroupItem>
+                                <ToggleGroupItem value="soft_geofence">Flexible on-site</ToggleGroupItem>
+                                <ToggleGroupItem value="none">No location check</ToggleGroupItem>
+                            </ToggleGroup>
+                        </FieldSet>
                     </FieldGroup>
-                    <div className="flex justify-end">
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                            Save Changes
-                        </Button>
-                    </div>
-                </form>
-            </CardContent>
+                </CardContent>
+                <CardFooter className="justify-end">
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? <Spinner data-icon="inline-start" /> : null}
+                        Save changes
+                    </Button>
+                </CardFooter>
+            </form>
         </Card>
     );
 }

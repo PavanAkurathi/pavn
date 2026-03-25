@@ -1,30 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@repo/ui/components/ui/select";
-import {
     Card,
     CardContent,
+    CardFooter,
     CardDescription,
     CardHeader,
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import {
     Field,
+    FieldDescription,
     FieldGroup,
+    FieldLegend,
     FieldLabel,
+    FieldSet,
 } from "@repo/ui/components/ui/field";
+import { Spinner } from "@repo/ui/components/ui/spinner";
+import { ToggleGroup, ToggleGroupItem } from "@repo/ui/components/ui/toggle-group";
 import { updateOrganization } from "@/actions/organization";
 
 type AttendancePolicy = "strict_geofence" | "soft_geofence" | "none";
@@ -42,14 +40,9 @@ export function BusinessBasicsStep({
 }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
-    const [isHydrated, setIsHydrated] = useState(false);
     const [businessName, setBusinessName] = useState(organizationName);
     const [businessTimezone, setBusinessTimezone] = useState(timezone);
     const [attendancePolicy, setAttendancePolicy] = useState<AttendancePolicy>(attendanceVerificationPolicy);
-
-    useEffect(() => {
-        setIsHydrated(true);
-    }, []);
 
     const handleSubmit = async () => {
         setIsSaving(true);
@@ -78,78 +71,73 @@ export function BusinessBasicsStep({
     };
 
     return (
-        <Card className="border-slate-200 shadow-sm">
+        <Card className="shadow-sm">
             <CardHeader>
                 <CardTitle>Business basics</CardTitle>
                 <CardDescription>
-                    Confirm the business settings that affect schedules, timezone handling, and clock-in behavior before you move into location setup and your first schedule.
+                    Confirm the business settings that affect schedules, timezone handling, and clock-in behavior before you move into location setup.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="space-y-6">
-                    <FieldGroup>
-                        <Field>
-                            <FieldLabel htmlFor="onboarding_business_name">Business Name</FieldLabel>
-                            <Input
-                                id="onboarding_business_name"
-                                value={businessName}
-                                onChange={(event) => setBusinessName(event.target.value)}
-                                placeholder="Acme Staffing"
-                                className="bg-white"
-                            />
-                        </Field>
+            <CardContent className="flex flex-col gap-6">
+                <FieldGroup>
+                    <Field>
+                        <FieldLabel htmlFor="onboarding_business_name">Business name</FieldLabel>
+                        <Input
+                            id="onboarding_business_name"
+                            value={businessName}
+                            onChange={(event) => setBusinessName(event.target.value)}
+                            placeholder="Acme Staffing"
+                        />
+                    </Field>
 
-                        <Field>
-                            <FieldLabel htmlFor="onboarding_timezone">Timezone</FieldLabel>
-                            <Input
-                                id="onboarding_timezone"
-                                value={businessTimezone}
-                                onChange={(event) => setBusinessTimezone(event.target.value)}
-                                placeholder="America/New_York"
-                                className="bg-white"
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                Use an IANA timezone like <span className="font-medium text-slate-700">America/New_York</span>.
-                            </p>
-                        </Field>
+                    <Field>
+                        <FieldLabel htmlFor="onboarding_timezone">Timezone</FieldLabel>
+                        <Input
+                            id="onboarding_timezone"
+                            value={businessTimezone}
+                            onChange={(event) => setBusinessTimezone(event.target.value)}
+                            placeholder="America/New_York"
+                        />
+                        <FieldDescription>
+                            Use an IANA timezone like <span className="font-medium text-foreground">America/New_York</span>.
+                        </FieldDescription>
+                    </Field>
 
-                        <Field>
-                            <FieldLabel htmlFor="onboarding_attendance_policy">Clock-in verification</FieldLabel>
-                            <Select
-                                value={attendancePolicy}
-                                onValueChange={(value) => setAttendancePolicy(value as AttendancePolicy)}
-                            >
-                                <SelectTrigger id="onboarding_attendance_policy" className="bg-white">
-                                    <SelectValue placeholder="Select verification rule" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="strict_geofence">On-site required</SelectItem>
-                                    <SelectItem value="soft_geofence">Flexible on-site</SelectItem>
-                                    <SelectItem value="none">No location check</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <p className="text-sm text-muted-foreground">
-                                Choose whether workers must be on-site, can clock in flexibly, or can record time without location enforcement.
-                            </p>
-                        </Field>
-                    </FieldGroup>
-
-                    <div className="flex flex-wrap gap-3">
-                        <Button
-                            type="button"
-                            size="lg"
-                            className="gap-2 rounded-full px-8"
-                            disabled={isSaving || !isHydrated}
-                            onClick={() => {
-                                void handleSubmit();
+                    <FieldSet>
+                        <FieldLegend>Clock-in verification</FieldLegend>
+                        <FieldDescription>
+                            Choose whether workers must be on-site, can clock in flexibly, or can record time without location enforcement.
+                        </FieldDescription>
+                        <ToggleGroup
+                            type="single"
+                            value={attendancePolicy}
+                            onValueChange={(value) => {
+                                if (value) {
+                                    setAttendancePolicy(value as AttendancePolicy);
+                                }
                             }}
+                            className="justify-start"
                         >
-                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            Save and continue
-                        </Button>
-                    </div>
-                </div>
+                            <ToggleGroupItem value="strict_geofence">On-site required</ToggleGroupItem>
+                            <ToggleGroupItem value="soft_geofence">Flexible on-site</ToggleGroupItem>
+                            <ToggleGroupItem value="none">No location check</ToggleGroupItem>
+                        </ToggleGroup>
+                    </FieldSet>
+                </FieldGroup>
             </CardContent>
+            <CardFooter>
+                <Button
+                    type="button"
+                    size="lg"
+                    disabled={isSaving}
+                    onClick={() => {
+                        void handleSubmit();
+                    }}
+                >
+                    {isSaving ? <Spinner data-icon="inline-start" /> : null}
+                    Save and continue
+                </Button>
+            </CardFooter>
         </Card>
     );
 }

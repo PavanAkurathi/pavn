@@ -3,17 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
-import posthog from "posthog-js";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
-import { Card } from "@repo/ui/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import {
     Field,
     FieldGroup,
     FieldLabel,
 } from "@repo/ui/components/ui/field";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
 
@@ -55,69 +54,84 @@ export function LoginForm() {
     };
 
     return (
-        <Card className="py-8 px-4 shadow-none border-0 sm:border sm:shadow-sm sm:px-10 bg-white/50 sm:bg-white mt-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <FieldGroup>
-                    <Field>
-                        <FieldLabel htmlFor="email">Email address</FieldLabel>
-                        <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            autoComplete="email"
-                            required
-                            placeholder="name@venue.com"
-                            className="bg-white"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </Field>
-
-                    <Field>
-                        <FieldLabel htmlFor="password">Password</FieldLabel>
-                        <Input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            className="bg-white"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </Field>
-
-                    <div className="flex items-center justify-between pt-2">
-                        <Field orientation="horizontal" className="gap-2">
-                            <Checkbox
-                                id="remember_me"
-                                checked={rememberMe}
-                                onCheckedChange={(checked) => setRememberMe(checked === true)}
+        <Card className="mt-8 shadow-sm">
+            <CardHeader>
+                <CardTitle>Sign in to Workers Hive</CardTitle>
+                <CardDescription>
+                    Use your business email and password to continue to your workspace.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    <FieldGroup>
+                        <Field>
+                            <FieldLabel htmlFor="email">Email address</FieldLabel>
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                autoComplete="email"
+                                required
+                                placeholder="name@venue.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
-                            <FieldLabel htmlFor="remember_me" className="font-normal text-slate-900 text-sm">
-                                Remember me
-                            </FieldLabel>
                         </Field>
 
-                        <div className="text-sm">
+                        <Field>
+                            <FieldLabel htmlFor="password">Password</FieldLabel>
+                            <Input
+                                id="password"
+                                name="password"
+                                type="password"
+                                autoComplete="current-password"
+                                required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </Field>
+
+                        <div className="flex items-center justify-between gap-3 pt-1">
+                            <Field orientation="horizontal" className="gap-2">
+                                <Checkbox
+                                    id="remember_me"
+                                    checked={rememberMe}
+                                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                                />
+                                <FieldLabel htmlFor="remember_me" className="text-sm font-normal">
+                                    Remember me
+                                </FieldLabel>
+                            </Field>
+
                             <Link
                                 href="/auth/forgot-password"
-                                className="font-medium text-red-600 hover:text-red-500"
+                                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
                             >
                                 Forgot password?
                             </Link>
                         </div>
-                    </div>
+                    </FieldGroup>
 
                     <Button
                         type="submit"
-                        className="w-full bg-red-600 hover:bg-red-700 font-bold"
+                        className="w-full"
+                        size="lg"
                         disabled={isLoading}
                     >
-                        {isLoading ? <Loader2 className="animate-spin" /> : "Sign in"}
+                        {isLoading ? <Spinner data-icon="inline-start" /> : null}
+                        Sign in
                     </Button>
-                </FieldGroup>
-            </form>
+                </form>
+            </CardContent>
+            <CardFooter>
+                <p className="text-sm text-muted-foreground">
+                    New to Workers Hive?{" "}
+                    <Link href="/auth/signup" className="font-medium text-primary underline-offset-4 hover:underline">
+                        Create an account
+                    </Link>
+                    .
+                </p>
+            </CardFooter>
         </Card>
     );
 }
