@@ -6,13 +6,15 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogFooter
 } from "@repo/ui/components/ui/dialog";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
-import { Search, Plus, Check, AlertTriangle } from "lucide-react";
-import { cn } from "@repo/ui/lib/utils";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@repo/ui/components/ui/empty";
+import { Search, Plus, Check, AlertTriangle, Users } from "lucide-react";
 import { CrewMember, Role } from "@/hooks/use-crew-data";
 import { getRoleLabel } from "@/lib/schedule/roles";
 
@@ -109,6 +111,9 @@ export function PositionSelectorDialog({
             <DialogContent className="max-w-2xl h-[600px] flex flex-col p-0 gap-0">
                 <DialogHeader className="p-6 pb-2">
                     <DialogTitle>Select positions</DialogTitle>
+                    <DialogDescription>
+                        Assign crew members to this schedule block or add open slots for uncovered roles.
+                    </DialogDescription>
                     <div className="relative mt-2">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -128,20 +133,18 @@ export function PositionSelectorDialog({
 
                 {/* Tabs */}
                 <div className="px-6 border-b">
-                    <div className="flex space-x-2 overflow-x-auto pb-2 no-scrollbar">
+                    <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
                         {roles.map(role => (
-                            <button
+                            <Button
                                 key={role.id}
+                                type="button"
+                                size="sm"
+                                variant={activeTab === role.id ? "default" : "outline"}
                                 onClick={() => setActiveTab(role.id)}
-                                className={cn(
-                                    "px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap",
-                                    activeTab === role.id
-                                        ? "bg-black text-white"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                )}
+                                className="whitespace-nowrap"
                             >
                                 {role.label}
-                            </button>
+                            </Button>
                         ))}
                     </div>
                 </div>
@@ -159,7 +162,7 @@ export function PositionSelectorDialog({
                             return (
                                 <div
                                     key={worker.id}
-                                    className="grid grid-cols-[1fr_auto_auto] items-center gap-4 p-3 hover:bg-slate-50 transition-colors cursor-pointer group bg-white"
+                                    className="grid cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-4 bg-background p-3 transition-colors hover:bg-accent/30"
                                     onClick={() => toggleSelection({
                                         roleId: currentRoleId,
                                         roleName: getRoleName(currentRoleId),
@@ -170,35 +173,32 @@ export function PositionSelectorDialog({
                                     })}
                                     data-testid="position-item"
                                 >
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <Avatar className="h-9 w-9 shrink-0">
+                                    <div className="flex min-w-0 items-center gap-3">
+                                        <Avatar className="size-9 shrink-0">
                                             <AvatarImage src={worker.avatar} />
                                             <AvatarFallback className="text-xs">{worker.initials}</AvatarFallback>
                                         </Avatar>
                                         <div className="min-w-0 truncate">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="font-medium text-sm text-slate-900 leading-none truncate">{worker.name}</p>
+                                            <div className="flex flex-wrap items-center gap-2">
+                                                <p className="truncate text-sm font-medium leading-none text-foreground">{worker.name}</p>
                                             </div>
-                                            {/* Since CrewMember doesn't expose joinedAt or email directly in the interface yet 
-                                                (based on previous read), we'll keep it simple or use hours if relevant.
-                                                Ideally we'd fetch more data, but this matches available types. */}
                                         </div>
                                     </div>
 
-                                    <div className="text-right hidden sm:block whitespace-nowrap px-4">
-                                        <span className={cn("text-xs font-medium", isOvertime ? "text-red-600 flex items-center gap-1" : "text-muted-foreground")}>
+                                    <div className="hidden whitespace-nowrap px-4 text-right sm:block">
+                                        <Badge variant={isOvertime ? "destructive" : "secondary"} className="gap-1">
+                                            {isOvertime ? <AlertTriangle className="size-3" /> : null}
                                             {worker.hours} hrs
-                                            {isOvertime && <AlertTriangle className="h-3 w-3" />}
-                                        </span>
+                                        </Badge>
                                     </div>
 
                                     <div className="shrink-0">
                                         <Button
                                             size="sm"
                                             variant={selected ? "default" : "outline"}
-                                            className={cn(selected && "bg-green-600 hover:bg-green-700 w-[90px]")}
+                                            className="min-w-[90px]"
                                             onClick={(e) => {
-                                                e.stopPropagation(); // Avoid double toggle if row click handles it
+                                                e.stopPropagation();
                                                 toggleSelection({
                                                     roleId: currentRoleId,
                                                     roleName: getRoleName(currentRoleId),
@@ -211,11 +211,11 @@ export function PositionSelectorDialog({
                                         >
                                             {selected ? (
                                                 <>
-                                                    Added <Check className="ml-2 h-3 w-3" />
+                                                    Added <Check data-icon="inline-end" className="size-3" />
                                                 </>
                                             ) : (
                                                 <>
-                                                    Add <Plus className="ml-2 h-3 w-3" />
+                                                    Add <Plus data-icon="inline-end" className="size-3" />
                                                 </>
                                             )}
                                         </Button>
@@ -225,14 +225,30 @@ export function PositionSelectorDialog({
                         })}
 
                         {filteredCrew.length === 0 && activeTab !== "all" && (
-                            <div className="text-center py-8 text-muted-foreground">
-                                No active crew found for {getRoleName(activeTab)}.
-                            </div>
+                            <Empty className="border-0 rounded-none py-10">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <Users />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No active crew for {getRoleName(activeTab)}</EmptyTitle>
+                                    <EmptyDescription>
+                                        Switch roles, create an open slot, or add workers for this role first.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         )}
                         {filteredCrew.length === 0 && activeTab === "all" && (
-                            <div className="text-center py-8 text-muted-foreground">
-                                No crew members found.
-                            </div>
+                            <Empty className="border-0 rounded-none py-10">
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <Users />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No crew members found</EmptyTitle>
+                                    <EmptyDescription>
+                                        Add workers first, or create an open slot to keep this schedule moving.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         )}
                     </div>
                 </div>

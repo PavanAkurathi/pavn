@@ -8,7 +8,7 @@ import { useForm } from "@repo/ui/components/ui/form";
 import { useFieldArray } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import posthog from "posthog-js";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
@@ -19,12 +19,6 @@ import {
     FormItem,
     FormMessage,
 } from "@repo/ui/components/ui/form";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@repo/ui/components/ui/tooltip";
 import { authClient } from "@repo/auth/client";
 import { useLocations, useContacts, useOrganizationId } from "@/hooks/use-schedule-data";
 import { useCrewData } from "@/hooks/use-crew-data";
@@ -127,7 +121,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
         },
     });
 
-    const { fields, append, remove, insert } = useFieldArray({
+    const { fields, append, remove } = useFieldArray({
         control: form.control as any,
         name: "schedules",
     });
@@ -183,16 +177,10 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     }, [contacts, currentUserId, form]);
 
     const handleReview = async () => {
-        console.log("DEBUG: handleReview clicked");
         const isValid = await form.trigger();
-        console.log(`DEBUG: form.trigger() result: ${isValid}`);
         if (isValid) {
-            console.log("DEBUG: Setting isReviewOpen = true");
             setIsReviewOpen(true);
         } else {
-            const errors = form.formState.errors;
-            console.error("VALIDATION ERROR:", JSON.stringify(errors, null, 2));
-            const missingFields = Object.keys(errors).map(key => key).join(", ");
             toast.error(`Please check missing fields.`);
         }
     };
@@ -273,9 +261,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                 schedules: apiSchedules
             };
 
-            console.log("DEBUG: Calling publishSchedule API", payload);
             await publishSchedule(payload, activeOrganizationId);
-            console.log("DEBUG: publishSchedule API success");
 
             // Track schedule publish
             posthog.capture('schedule_published', {
@@ -287,11 +273,9 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
             toast.success(status === 'published' ? "Schedule published successfully!" : "Draft saved successfully!");
             localStorage.removeItem("schedule-layout-draft");
 
-            console.log("DEBUG: Calling router.push");
             router.push("/dashboard/shifts");
-            console.log("DEBUG: router.push called");
         } catch (error) {
-            console.error("Publish error:", error);
+            console.error("Schedule publish failed", error);
             toast.error("Failed to publish schedule.");
         } finally {
             setIsSubmitting(false);
@@ -345,12 +329,12 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     };
 
     return (
-        <div className="max-w-5xl mx-auto py-6 space-y-8">
+        <div className="mx-auto flex max-w-5xl flex-col gap-8 py-6">
 
             <Form {...(form as any)}>
 
                 {/* SECTION 1: WORK LOCATION */}
-                <div className="space-y-4">
+                <div className="flex flex-col gap-4">
                     <h2 className="text-xl font-semibold tracking-tight">Work Location</h2>
                     <Card>
                         <CardContent className="pt-6">
@@ -394,10 +378,10 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                 </div>
 
                 {/* SECTION 2: BUILD SCHEDULE */}
-                <div className="space-y-4">
+                <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-semibold tracking-tight">Build your schedule</h2>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center gap-2">
                             <Label htmlFor="recurring-mode" className="text-sm font-medium text-muted-foreground">Recurring schedule</Label>
                             <Switch
                                 id="recurring-mode"
@@ -451,10 +435,10 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
 
                             append({ ...DEFAULT_SCHEDULE_BLOCK } as any);
                         }}
-                        className="w-full py-8 text-indigo-600 hover:text-indigo-700 bg-white border-dashed border-2 hover:bg-gray-50 flex items-center justify-center gap-2 group h-auto"
+                        className="h-auto w-full border-dashed py-8 text-muted-foreground hover:text-foreground"
                     >
-                        <Plus className="h-5 w-5 transition-transform group-hover:scale-110" />
-                        <span className="text-base font-medium">+ Add Schedule</span>
+                        <Plus data-icon="inline-start" className="size-5" />
+                        <span className="text-base font-medium">Add schedule block</span>
                     </Button>
                 </div>
 
@@ -464,7 +448,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                         type="button"
                         onClick={handleReview}
                         data-testid="review-publish"
-                        className="bg-indigo-600 hover:bg-indigo-700 min-w-[200px]"
+                        className="min-w-[200px]"
                     >
                         Review & Publish
                     </Button>

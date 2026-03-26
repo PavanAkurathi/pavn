@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { MoreVertical, Mail, Upload, Trash2, Send } from "lucide-react";
+import { MoreVertical, Upload, Trash2, Send, Users } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { AddWorkerDialog } from "./add-worker-dialog";
@@ -20,6 +20,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator
 } from "@repo/ui/components/ui/dropdown-menu";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@repo/ui/components/ui/empty";
 
 interface RosterListProps {
     workers: WorkerDetails[];
@@ -72,28 +73,28 @@ export function RosterList({ workers }: RosterListProps) {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                     {workers.map((worker) => (
                         <div
                             key={worker.id}
-                            className="grid grid-cols-[1fr_auto_auto] items-center gap-4 p-4 border rounded-xl hover:shadow-md transition-all cursor-pointer group bg-white"
+                            className="grid cursor-pointer grid-cols-[1fr_auto_auto] items-center gap-4 rounded-xl border bg-card p-4 transition-colors hover:bg-accent/30"
                             onClick={() => setSelectedWorker(worker)}
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                <Avatar className="h-10 w-10 shrink-0">
+                                <Avatar className="size-10 shrink-0">
                                     <AvatarImage src={worker.image || ""} />
                                     <AvatarFallback className="text-xs">{worker.name.charAt(0).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div className="min-w-0 truncate">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="font-medium text-sm text-slate-900 leading-none truncate">{worker.name}</p>
+                                        <p className="truncate text-sm font-medium leading-none text-foreground">{worker.name}</p>
                                         {worker.jobTitle && (
-                                            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 h-auto font-normal shrink-0 rounded-full">
+                                            <Badge variant="secondary" className="h-auto shrink-0 px-2 py-0.5 text-[10px] font-normal">
                                                 {worker.jobTitle}
                                             </Badge>
                                         )}
                                         {worker.status === "invited" && (
-                                            <Badge variant="outline" className="text-[10px] px-2 py-0.5 h-auto text-amber-600 bg-amber-50 shrink-0 rounded-full">
+                                            <Badge variant="outline" className="h-auto shrink-0 px-2 py-0.5 text-[10px]">
                                                 Invited
                                             </Badge>
                                         )}
@@ -119,7 +120,6 @@ export function RosterList({ workers }: RosterListProps) {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
                                             onClick={(e) => e.stopPropagation()}
                                         >
                                             <MoreVertical className="h-4 w-4" />
@@ -135,7 +135,7 @@ export function RosterList({ workers }: RosterListProps) {
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
-                                            className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                                            className="cursor-pointer text-destructive focus:text-destructive"
                                             onClick={(e) => handleDelete(e, worker.id)}
                                         >
                                             <Trash2 className="mr-2 h-4 w-4" />
@@ -147,10 +147,28 @@ export function RosterList({ workers }: RosterListProps) {
                         </div>
                     ))}
                     {workers.length === 0 && (
-                        <div className="text-center py-12 text-muted-foreground border rounded-xl border-dashed">
-                            <p>No workers found.</p>
-                            <p className="text-sm">Add a worker or import a CSV to get started.</p>
-                        </div>
+                        <Empty className="rounded-xl border border-dashed">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <Users />
+                                </EmptyMedia>
+                                <EmptyTitle>No workers yet</EmptyTitle>
+                                <EmptyDescription>
+                                    Add a worker or import a CSV to start building your workforce.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                            <EmptyContent>
+                                <div className="flex flex-wrap justify-center gap-3">
+                                    <Button asChild variant="outline" size="sm">
+                                        <Link href="/rosters/import">
+                                            <Upload data-icon="inline-start" />
+                                            Import CSV
+                                        </Link>
+                                    </Button>
+                                    <AddWorkerDialog />
+                                </div>
+                            </EmptyContent>
+                        </Empty>
                     )}
                 </div>
             </CardContent>

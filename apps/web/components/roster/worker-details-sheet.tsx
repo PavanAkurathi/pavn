@@ -7,8 +7,10 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@repo/ui/components/ui/sheet";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Badge } from "@repo/ui/components/ui/badge";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@repo/ui/components/ui/empty";
 import { Separator } from "@repo/ui/components/ui/separator";
 import { Mail, Phone, MapPin, AlertCircle, Calendar, Award } from "lucide-react";
 import { format } from "date-fns";
@@ -58,18 +60,18 @@ export function WorkerDetailsSheet({ worker, isOpen, onClose }: WorkerDetailsShe
             <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
                 <SheetHeader className="pb-6">
                     <div className="flex items-center gap-4">
-                        <Avatar className="h-16 w-16">
+                        <Avatar className="size-16">
                             <AvatarImage src={worker.image || ""} />
                             <AvatarFallback className="text-lg">{worker.name.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <div>
+                        <div className="flex flex-col gap-2">
                             <SheetTitle className="text-xl">{worker.name}</SheetTitle>
                             <SheetDescription>
                                 {worker.jobTitle || worker.role} • Joined {format(new Date(worker.joinedAt), "PP")}
                             </SheetDescription>
-                            <div className="flex gap-2 mt-2">
+                            <div className="flex gap-2">
                                 {worker.status === "invited" && (
-                                    <Badge variant="outline" className="text-amber-600 bg-amber-50 border-amber-200">
+                                    <Badge variant="outline">
                                         Invited
                                     </Badge>
                                 )}
@@ -81,24 +83,24 @@ export function WorkerDetailsSheet({ worker, isOpen, onClose }: WorkerDetailsShe
                     </div>
                 </SheetHeader>
 
-                <div className="space-y-6">
+                <div className="flex flex-col gap-6">
                     {/* Contact Info */}
-                    <div>
-                        <h4 className="text-sm font-medium mb-3 text-muted-foreground uppercase tracking-wider">Contact Information</h4>
-                        <div className="space-y-3">
+                    <div className="flex flex-col gap-3">
+                        <h4 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">Contact Information</h4>
+                        <div className="flex flex-col gap-3">
                             <div className="flex items-center gap-3 text-sm">
-                                <Mail className="h-4 w-4 text-slate-500" />
+                                <Mail className="h-4 w-4 text-muted-foreground" />
                                 <span>{worker.email}</span>
                             </div>
                             {worker.phone && (
                                 <div className="flex items-center gap-3 text-sm">
-                                    <Phone className="h-4 w-4 text-slate-500" />
+                                    <Phone className="h-4 w-4 text-muted-foreground" />
                                     <span>{worker.phone}</span>
                                 </div>
                             )}
                             {worker.address && (
                                 <div className="flex items-start gap-3 text-sm">
-                                    <MapPin className="h-4 w-4 text-slate-500 mt-0.5" />
+                                    <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
                                     <span>
                                         {worker.address.street}<br />
                                         {worker.address.city}, {worker.address.state} {worker.address.zip}
@@ -111,46 +113,49 @@ export function WorkerDetailsSheet({ worker, isOpen, onClose }: WorkerDetailsShe
                     <Separator />
 
                     {/* Emergency Contact */}
-                    <div>
-                        <h4 className="flex items-center gap-2 text-sm font-medium mb-3 text-muted-foreground uppercase tracking-wider">
+                    <div className="flex flex-col gap-3">
+                        <h4 className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-foreground">
                             <AlertCircle className="h-4 w-4" /> Emergency Contact
                         </h4>
                         {worker.emergencyContact ? (
-                            <div className="bg-red-50 p-3 rounded-md border border-red-100 dark:bg-red-950/10 dark:border-red-900/20">
-                                <p className="font-medium text-sm text-red-900 dark:text-red-200">{worker.emergencyContact.name}</p>
-                                <div className="flex gap-4 mt-1 text-xs text-red-700 dark:text-red-400">
-                                    <span>{worker.emergencyContact.relation}</span>
-                                    <span>•</span>
-                                    <span>{worker.emergencyContact.phone}</span>
-                                </div>
-                            </div>
+                            <Alert>
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>{worker.emergencyContact.name}</AlertTitle>
+                                <AlertDescription>
+                                    {worker.emergencyContact.relation} • {worker.emergencyContact.phone}
+                                </AlertDescription>
+                            </Alert>
                         ) : (
-                            <p className="text-sm text-muted-foreground italic">No emergency contact on file.</p>
+                            <Empty className="rounded-md border border-dashed p-4">
+                                <EmptyHeader className="max-w-none items-start text-left">
+                                    <EmptyMedia variant="icon">
+                                        <AlertCircle />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No emergency contact</EmptyTitle>
+                                    <EmptyDescription>No emergency contact is on file for this worker.</EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         )}
                     </div>
 
                     <Separator />
 
                     {/* Certifications */}
-                    <div>
-                        <h4 className="flex items-center gap-2 text-sm font-medium mb-3 text-muted-foreground uppercase tracking-wider">
+                    <div className="flex flex-col gap-3">
+                        <h4 className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-foreground">
                             <Award className="h-4 w-4" /> Certifications
                         </h4>
                         {worker.certifications && worker.certifications.length > 0 ? (
-                            <div className="space-y-3">
+                            <div className="flex flex-col gap-3">
                                 {worker.certifications.map((cert) => (
-                                    <div key={cert.id} className="flex items-center justify-between p-3 border rounded-md bg-slate-50/50">
+                                    <div key={cert.id} className="flex items-center justify-between rounded-md border bg-muted/30 p-3">
                                         <div>
                                             <p className="font-medium text-sm">{cert.name}</p>
                                             <p className="text-xs text-muted-foreground">{cert.issuer}</p>
                                         </div>
                                         {cert.expiresAt && (
                                             <div className="text-right">
-                                                <Badge variant="outline" className={
-                                                    new Date(cert.expiresAt) < new Date()
-                                                        ? "text-red-600 border-red-200 bg-red-50"
-                                                        : "text-green-600 border-green-200 bg-green-50"
-                                                }>
+                                                <Badge variant={new Date(cert.expiresAt) < new Date() ? "destructive" : "secondary"}>
                                                     {new Date(cert.expiresAt) < new Date() ? "Expired" : "Valid"}
                                                 </Badge>
                                                 <p className="text-[10px] text-muted-foreground mt-1">
@@ -162,7 +167,15 @@ export function WorkerDetailsSheet({ worker, isOpen, onClose }: WorkerDetailsShe
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-muted-foreground italic">No certifications on file.</p>
+                            <Empty className="rounded-md border border-dashed p-4">
+                                <EmptyHeader className="max-w-none items-start text-left">
+                                    <EmptyMedia variant="icon">
+                                        <Award />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No certifications</EmptyTitle>
+                                    <EmptyDescription>No certifications are on file for this worker.</EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         )}
 
                     </div>
@@ -170,8 +183,8 @@ export function WorkerDetailsSheet({ worker, isOpen, onClose }: WorkerDetailsShe
                     <Separator />
 
                     {/* Availability */}
-                    <div>
-                        <h4 className="flex items-center gap-2 text-sm font-medium mb-3 text-muted-foreground uppercase tracking-wider">
+                    <div className="flex flex-col gap-3">
+                        <h4 className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted-foreground">
                             <Calendar className="h-4 w-4" /> Availability (Next 30 Days)
                         </h4>
                         <AvailabilityList workerId={worker.id} />

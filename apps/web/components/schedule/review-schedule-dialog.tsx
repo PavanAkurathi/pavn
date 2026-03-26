@@ -5,12 +5,14 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
+    DialogDescription,
     DialogFooter
 } from "@repo/ui/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Button } from "@repo/ui/components/ui/button";
-import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import { Separator } from "@repo/ui/components/ui/separator";
-import { AlertTriangle, CalendarDays, Users, DollarSign, Loader2 } from "lucide-react";
+import { Spinner } from "@repo/ui/components/ui/spinner";
+import { AlertTriangle, CalendarDays, Users } from "lucide-react";
 import { format } from "date-fns";
 import { useMemo } from "react";
 
@@ -26,24 +28,18 @@ interface ReviewScheduleDialogProps {
 }
 
 export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmitting }: ReviewScheduleDialogProps) {
-
-    // Calculate Stats
     const stats = useMemo(() => {
-        console.log("ReviewScheduleDialog Data:", JSON.stringify(data, null, 2));
         let totalShifts = 0;
         let totalAssigned = 0;
         let totalOpen = 0;
-        let uniqueDates = new Set<string>();
-        let estimatedCost = 0;
+        const uniqueDates = new Set<string>();
 
         data.schedules.forEach(schedule => {
-            // Determine effective dates
             let effectiveDates: Date[] = [];
 
             if (schedule.dates && schedule.dates.length > 0) {
                 effectiveDates = schedule.dates;
             } else if (schedule.startDate && schedule.endDate && schedule.daysOfWeek) {
-                // Expand Pattern
                 let current = new Date(schedule.startDate);
                 const end = new Date(schedule.endDate);
                 while (current <= end) {
@@ -60,23 +56,6 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
             const shiftCountForBlock = positionCount * effectiveDates.length;
 
             totalShifts += shiftCountForBlock;
-
-            // Cost Calculation REMOVED per WOR-26
-            /*
-            const startH = parseInt(schedule.startTime.split(':')[0] || "0");
-            const endH = parseInt(schedule.endTime.split(':')[0] || "0");
-            const breakM = parseInt(schedule.breakDuration || "0");
-
-            let durationHours = (endH - startH);
-            if (durationHours < 0) durationHours += 24;
-            durationHours -= (breakM / 60);
-
-            if (durationHours > 0) {
-                estimatedCost += (durationHours * 20 * shiftCountForBlock);
-            }
-            */
-
-            // Positions * Occurrences
             schedule.positions.forEach(pos => {
                 if (pos.workerId) totalAssigned += effectiveDates.length;
                 else totalOpen += effectiveDates.length;
@@ -88,11 +67,8 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
             totalAssigned,
             totalOpen,
             uniqueDates: Array.from(uniqueDates).sort(),
-            // estimatedCost // REMOVED per WOR-26
         };
     }, [data]);
-
-    console.log("ReviewScheduleDialog Stats:", JSON.stringify(stats, null, 2));
 
     const formattedDates = stats.uniqueDates.map(d => format(new Date(d + "T00:00:00"), "EEEE, MMM d"));
 
@@ -101,12 +77,14 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>Ready to publish?</DialogTitle>
+                    <DialogDescription>
+                        Review the dates and staffing summary before notifications go out.
+                    </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6 py-4">
-                    {/* 1. Dates */}
-                    <div className="space-y-2">
-                        <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <div className="flex flex-col gap-6 py-4">
+                    <div className="flex flex-col gap-2">
+                        <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                             <CalendarDays className="h-4 w-4" />
                             Dates
                         </h4>
@@ -117,10 +95,9 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
 
                     <Separator />
 
-                    {/* 2. Stats Grid */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                        <div className="flex flex-col gap-1">
+                            <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                                 <Users className="h-4 w-4" />
                                 Staffing
                             </h4>
@@ -131,32 +108,15 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
                                 {stats.totalAssigned} Assigned • {stats.totalOpen} Open
                             </div>
                         </div>
-                        {/* 
-                        <div className="space-y-1">
-                            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                <DollarSign className="h-4 w-4" />
-                                Est. Cost
-                            </h4>
-                            <div className="text-sm font-bold">
-                                ${stats.estimatedCost.toFixed(2)}
-                            </div>
-                            <div className="text-xs text-muted-foreground pl-6">
-                                Based on $20/hr avg
-                            </div>
-                        </div> 
-                        */}
                     </div>
 
-                    {/* 3. Warning */}
-                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 flex gap-3 text-amber-800 text-sm">
+                    <Alert className="bg-muted/40">
                         <AlertTriangle className="h-5 w-5 shrink-0" />
-                        <div>
-                            <p className="font-medium">Notifications will be sent</p>
-                            <p className="opacity-90 mt-1">
-                                {stats.totalAssigned} assigned crew members will be notified immediately.
-                            </p>
-                        </div>
-                    </div>
+                        <AlertTitle>Notifications will be sent</AlertTitle>
+                        <AlertDescription>
+                            {stats.totalAssigned} assigned crew members will be notified immediately.
+                        </AlertDescription>
+                    </Alert>
                 </div>
 
                 <DialogFooter>
@@ -164,7 +124,7 @@ export function ReviewScheduleDialog({ isOpen, onClose, data, onConfirm, isSubmi
                         Cancel
                     </Button>
                     <Button onClick={() => onConfirm()} disabled={isSubmitting || stats.totalShifts === 0} data-testid="confirm-publish">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isSubmitting ? <Spinner data-icon="inline-start" /> : null}
                         Confirm & Publish
                     </Button>
                 </DialogFooter>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, User, Plus, Phone } from "lucide-react";
+import { Check, User, Phone } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@repo/ui/components/ui/popover";
 import { Contact } from "@/lib/types";
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar";
-import { Checkbox } from "@repo/ui/components/ui/checkbox";
+import { Badge } from "@repo/ui/components/ui/badge";
 
 interface ContactPickerProps {
     contacts: Contact[];
@@ -43,7 +43,7 @@ export function ContactPicker({ contacts, value = [], onValueChange }: ContactPi
     };
 
     return (
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Onsite Managers
             </label>
@@ -54,7 +54,7 @@ export function ContactPicker({ contacts, value = [], onValueChange }: ContactPi
                         role="combobox"
                         aria-expanded={open}
                         className={cn(
-                            "w-full justify-between h-auto min-h-16 py-3 text-left font-normal",
+                            "h-auto min-h-16 w-full justify-between py-3 text-left font-normal",
                             value.length === 0 && "text-muted-foreground"
                         )}
                     >
@@ -62,14 +62,14 @@ export function ContactPicker({ contacts, value = [], onValueChange }: ContactPi
                             {selectedContacts.length > 0 ? (
                                 <div className="flex -space-x-2">
                                     {selectedContacts.slice(0, 3).map((c) => (
-                                        <Avatar key={c.id} className="h-6 w-6 border-2 border-background">
+                                        <Avatar key={c.id} className="size-6 border-2 border-background">
                                             <AvatarFallback className="text-[10px]">{c.initials}</AvatarFallback>
                                         </Avatar>
                                     ))}
                                     {selectedContacts.length > 3 && (
-                                        <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] border-2 border-background">
+                                        <Badge variant="secondary" className="size-6 rounded-full border-2 border-background p-0 text-[10px]">
                                             +{selectedContacts.length - 3}
-                                        </div>
+                                        </Badge>
                                     )}
                                 </div>
                             ) : null}
@@ -93,23 +93,23 @@ export function ContactPicker({ contacts, value = [], onValueChange }: ContactPi
                                             onSelect={() => handleToggle(contact.id)}
                                             className="cursor-pointer"
                                         >
-                                            <div className="flex items-center gap-3 w-full">
+                                            <div className="flex w-full items-center gap-3">
                                                 <div className={cn(
-                                                    "flex items-center justify-center h-4 w-4 rounded-sm border border-primary",
-                                                    isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                                                    "flex size-4 items-center justify-center rounded-sm border border-primary",
+                                                    isSelected ? "bg-primary text-primary-foreground" : "border-muted-foreground/30 text-transparent"
                                                 )}>
-                                                    <Check className={cn("h-3 w-3")} />
+                                                    <Check className="size-3" />
                                                 </div>
 
-                                                <Avatar className="h-8 w-8">
+                                                <Avatar className="size-8">
                                                     <AvatarFallback>{contact.initials}</AvatarFallback>
                                                 </Avatar>
-                                                <div className="flex flex-col gap-0.5 flex-1">
+                                                <div className="flex flex-1 flex-col gap-0.5">
                                                     <div className="flex items-center justify-between">
                                                         <span className="font-medium">{contact.name}</span>
                                                     </div>
-                                                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                                        <Phone className="h-3 w-3" />
+                                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                        <Phone className="size-3" />
                                                         {contact.phone}
                                                     </span>
                                                 </div>

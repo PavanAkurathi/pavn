@@ -32,7 +32,7 @@ export function LocationPicker({ locations, value, onValueChange, onAddLocation 
     const selectedLocation = locations.find((loc) => loc.id === value);
 
     return (
-        <div className="space-y-2">
+        <div className="flex flex-col gap-2">
             <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Work Location
             </label>
@@ -91,9 +91,9 @@ export function LocationPicker({ locations, value, onValueChange, onAddLocation 
                                         onAddLocation?.();
                                         setOpen(false);
                                     }}
-                                    className="cursor-pointer text-primary"
+                                    className="cursor-pointer"
                                 >
-                                    <Plus className="mr-2 h-4 w-4" />
+                                    <Plus data-icon="inline-start" />
                                     Add new work location
                                 </CommandItem>
                             </CommandGroup>

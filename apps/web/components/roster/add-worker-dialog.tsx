@@ -5,7 +5,7 @@ import { useForm } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { Plus, UserPlus, Loader2 } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@repo/ui/components/ui/button";
@@ -13,6 +13,7 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -26,6 +27,8 @@ import {
     FormLabel,
     FormMessage,
 } from "@repo/ui/components/ui/form";
+import { Separator } from "@repo/ui/components/ui/separator";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 import { Input } from "@repo/ui/components/ui/input";
 import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import { inviteWorker } from "@/actions/workers";
@@ -102,20 +105,20 @@ export function AddWorkerDialog() {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button size="sm">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Worker
+                    <Plus data-icon="inline-start" />
+                    Add worker
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
-                    <DialogTitle>Add Worker</DialogTitle>
+                    <DialogTitle>Add worker</DialogTitle>
                     <DialogDescription>
                         Enter the worker's information. A secure invitation link will be generated for them.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <FormField
                                 control={form.control}
                                 name="name"
@@ -144,7 +147,7 @@ export function AddWorkerDialog() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <FormField
                                 control={form.control}
                                 name="phoneNumber"
@@ -175,7 +178,7 @@ export function AddWorkerDialog() {
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <FormField
                                 control={form.control}
                                 name="hourlyRate"
@@ -192,21 +195,23 @@ export function AddWorkerDialog() {
                             />
                         </div>
 
-                        <div className="space-y-4 pt-4 border-t">
-                            <h3 className="text-sm font-medium">Invitation Methods</h3>
+                        <Separator />
+
+                        <div className="flex flex-col gap-4">
+                            <h3 className="text-sm font-medium">Invitation methods</h3>
                             <div className="flex flex-col gap-3">
                                 <FormField
                                     control={form.control}
                                     name="sendEmail"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                                        <FormItem className="flex flex-row items-start gap-3 rounded-md border p-4 shadow-sm">
                                             <FormControl>
                                                 <Checkbox
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
                                                 />
                                             </FormControl>
-                                            <div className="space-y-1 pl-2">
+                                            <div className="flex flex-col gap-1 pl-2">
                                                 <FormLabel>Send Email Invitation</FormLabel>
                                                 <FormDescription>
                                                     Secure deep link delivered via email.
@@ -219,14 +224,14 @@ export function AddWorkerDialog() {
                                     control={form.control}
                                     name="sendSms"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm">
+                                        <FormItem className="flex flex-row items-start gap-3 rounded-md border p-4 shadow-sm">
                                             <FormControl>
                                                 <Checkbox
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
                                                 />
                                             </FormControl>
-                                            <div className="space-y-1 pl-2">
+                                            <div className="flex flex-col gap-1 pl-2">
                                                 <FormLabel>Send SMS Invitation (Recommended)</FormLabel>
                                                 <FormDescription>
                                                     Text message containing a direct deferred deep link to the app store.
@@ -238,21 +243,12 @@ export function AddWorkerDialog() {
                             </div>
                         </div>
 
-                        <div className="flex justify-end pt-4">
+                        <DialogFooter>
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Inviting...
-                                    </>
-                                ) : (
-                                    <>
-                                        <UserPlus className="mr-2 h-4 w-4" />
-                                        Send Invitation
-                                    </>
-                                )}
+                                {isSubmitting ? <Spinner data-icon="inline-start" /> : <UserPlus data-icon="inline-start" />}
+                                {isSubmitting ? "Inviting..." : "Send invitation"}
                             </Button>
-                        </div>
+                        </DialogFooter>
                     </form>
                 </Form>
             </DialogContent>
