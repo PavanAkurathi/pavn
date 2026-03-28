@@ -3,16 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { MapPin } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import {
     Card,
     CardContent,
     CardFooter,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@repo/ui/components/ui/card";
 import {
     Field,
@@ -21,19 +17,33 @@ import {
     FieldLabel,
 } from "@repo/ui/components/ui/field";
 import { Spinner } from "@repo/ui/components/ui/spinner";
+import { PlaceAutocompleteInput } from "@/components/locations/place-autocomplete-input";
 import { createLocation } from "@/actions/locations";
 
 export function LocationBasicsStep({
     timezone,
+    backHref,
     nextHref,
 }: {
     timezone: string;
+    backHref: string;
     nextHref: string;
 }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [name, setName] = useState("");
     const [address, setAddress] = useState("");
+    const [autocompleteConfirmed, setAutocompleteConfirmed] = useState(false);
+
+    const handlePlaceSelect = (place: google.maps.places.PlaceResult) => {
+        const formattedAddress = place.formatted_address || "";
+        setAddress(formattedAddress);
+        setAutocompleteConfirmed(Boolean(formattedAddress));
+
+        if (!name.trim() && place.name && place.name !== formattedAddress) {
+            setName(place.name);
+        }
+    };
 
     const handleSubmit = async () => {
         setIsSaving(true);
@@ -64,17 +74,8 @@ export function LocationBasicsStep({
     };
 
     return (
-        <Card className="shadow-sm">
-            <CardHeader>
-                <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-slate-500" />
-                    <CardTitle>First location</CardTitle>
-                </div>
-                <CardDescription>
-                    Add the first place where schedules are published and workers clock in. Keep this step minimal: a clear location name and a real street address.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-6">
+        <Card className="rounded-[28px] border-border/70 shadow-lg shadow-black/5">
+            <CardContent className="pt-6">
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor="onboarding_location_name">Location name</FieldLabel>
@@ -88,24 +89,29 @@ export function LocationBasicsStep({
 
                     <Field>
                         <FieldLabel htmlFor="onboarding_location_address">Street address</FieldLabel>
-                        <Input
+                        <PlaceAutocompleteInput
                             id="onboarding_location_address"
                             value={address}
-                            onChange={(event) => setAddress(event.target.value)}
-                            placeholder="123 Main St, Boston, MA 02116"
+                            onChange={(value) => {
+                                setAddress(value);
+                                setAutocompleteConfirmed(false);
+                            }}
+                            onAddressSelect={handlePlaceSelect}
+                            placeholder="Search for your business address"
                         />
                         <FieldDescription>
-                            We&apos;ll verify this address now and use your business timezone of{" "}
-                            <span className="font-medium text-foreground">{timezone}</span>.
+                            {autocompleteConfirmed
+                                ? "Address selected from Google Maps. We’ll use it for schedules and clock-in verification."
+                                : <>Use Google Maps autocomplete for the cleanest address match. Your business timezone stays <span className="font-medium text-foreground">{timezone}</span>.</>}
                         </FieldDescription>
                     </Field>
                 </FieldGroup>
             </CardContent>
-            <CardFooter className="justify-between gap-3">
+            <CardFooter className="justify-between gap-3 border-t border-border/60 pt-6">
                 <Button
                     type="button"
                     variant="outline"
-                    onClick={() => router.push("/dashboard/onboarding")}
+                    onClick={() => router.push(backHref)}
                 >
                     Back
                 </Button>

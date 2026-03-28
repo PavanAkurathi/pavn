@@ -9,9 +9,6 @@ import {
     Card,
     CardContent,
     CardFooter,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@repo/ui/components/ui/card";
 import {
     Field,
@@ -71,14 +68,8 @@ export function BusinessBasicsStep({
     };
 
     return (
-        <Card className="shadow-sm">
-            <CardHeader>
-                <CardTitle>Business basics</CardTitle>
-                <CardDescription>
-                    Confirm the business settings that affect schedules, timezone handling, and clock-in behavior before you move into location setup.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-6">
+        <Card className="rounded-[28px] border-border/70 shadow-lg shadow-black/5">
+            <CardContent className="pt-6">
                 <FieldGroup>
                     <Field>
                         <FieldLabel htmlFor="onboarding_business_name">Business name</FieldLabel>
@@ -116,7 +107,7 @@ export function BusinessBasicsStep({
                                     setAttendancePolicy(value as AttendancePolicy);
                                 }
                             }}
-                            className="justify-start"
+                            className="flex flex-wrap justify-start gap-2"
                         >
                             <ToggleGroupItem value="strict_geofence">On-site required</ToggleGroupItem>
                             <ToggleGroupItem value="soft_geofence">Flexible on-site</ToggleGroupItem>
@@ -125,7 +116,7 @@ export function BusinessBasicsStep({
                     </FieldSet>
                 </FieldGroup>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="justify-end border-t border-border/60 pt-6">
                 <Button
                     type="button"
                     size="lg"

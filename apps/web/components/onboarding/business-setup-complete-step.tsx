@@ -48,16 +48,16 @@ export function BusinessSetupCompleteStep({
     };
 
     return (
-        <Card className="shadow-sm">
+        <Card className="rounded-[28px] border-border/70 shadow-lg shadow-black/5">
             <CardHeader className="gap-4">
                 <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary">Business setup complete</Badge>
                     <Badge variant="outline">{SUBSCRIPTION.TRIAL_DAYS}-day free trial active</Badge>
                 </div>
                 <div className="flex flex-col gap-2">
-                    <CardTitle>Let&apos;s create your first schedule</CardTitle>
+                    <CardTitle>Ready for your first schedule</CardTitle>
                     <CardDescription>
-                        Your business settings are ready. Next, create your first schedule. You can add workforce later when the schedule actually needs people.
+                        Your business settings are in place. Create your first schedule next, and add workforce only when that schedule actually needs people.
                     </CardDescription>
                 </div>
             </CardHeader>
@@ -73,9 +73,9 @@ export function BusinessSetupCompleteStep({
                 {!billingHandled && (
                     <Alert>
                         <CreditCard className="h-4 w-4" />
-                        <AlertTitle>Add billing now or skip for now</AlertTitle>
+                        <AlertTitle>Your free trial is active</AlertTitle>
                         <AlertDescription>
-                            No credit card is required to finish setup. Add billing now if you want to lock in subscription details early, or return later from Settings.
+                            No credit card is required to keep moving. Add billing now if you want to lock in subscription details early, or skip and return later from Settings.
                         </AlertDescription>
                     </Alert>
                 )}
@@ -87,14 +87,11 @@ export function BusinessSetupCompleteStep({
                         <ArrowRight data-icon="inline-end" />
                     </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg">
-                    <Link href="/dashboard/shifts">Go to dashboard</Link>
-                </Button>
                 {!billingHandled && (
                     <>
                         <Button asChild variant="outline">
                             <Link href="/settings/billing">
-                                Review billing options
+                                Add billing now
                                 <ArrowRight data-icon="inline-end" />
                             </Link>
                         </Button>
@@ -109,6 +106,9 @@ export function BusinessSetupCompleteStep({
                         </Button>
                     </>
                 )}
+                <Button asChild variant="ghost">
+                    <Link href="/dashboard/shifts">Go to dashboard</Link>
+                </Button>
             </CardFooter>
         </Card>
     );

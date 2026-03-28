@@ -1,24 +1,24 @@
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    Modal,
-    Alert,
-    ActivityIndicator,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
-import { api, WorkerShift, WorkerOrg } from "../lib/api";
+
+import { Button } from "heroui-native/button";
+import { Card } from "heroui-native/card";
+import { Chip } from "heroui-native/chip";
+import { Spinner } from "heroui-native/spinner";
+
+import { EmptyState } from "../components/ui/empty-state";
+import { LoadingScreen } from "../components/ui/loading-screen";
+import { PageHeader } from "../components/ui/page-header";
+import { Screen } from "../components/ui/screen";
+import { Icon } from "../components/ui/icon";
+import { api, WorkerOrg, WorkerShift } from "../lib/api";
 import { workerTheme } from "../lib/theme";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const ORG_COLORS = workerTheme.roleColors;
 
-function getWeekDates(offset: number = 0): Date[] {
+function getWeekDates(offset = 0): Date[] {
     const now = new Date();
     const start = new Date(now);
     start.setDate(now.getDate() - now.getDay() + offset * 7);
@@ -54,11 +54,14 @@ export default function AvailabilityScreen() {
 
     const weekDates = getWeekDates(weekOffset);
     const today = new Date();
-    const orgColorMap = new Map<string, string>();
 
-    orgs.forEach((org, index) => {
-        orgColorMap.set(org.id, ORG_COLORS[index % ORG_COLORS.length]);
-    });
+    const orgColorMap = useMemo(() => {
+        const map = new Map<string, string>();
+        orgs.forEach((org, index) => {
+            map.set(org.id, ORG_COLORS[index % ORG_COLORS.length]);
+        });
+        return map;
+    }, [orgs]);
 
     useEffect(() => {
         void loadData();
@@ -82,20 +85,17 @@ export default function AvailabilityScreen() {
 
     const dayHasConflict = (date: Date) => {
         const dayShifts = shiftsForDay(date);
-
         for (let i = 0; i < dayShifts.length; i += 1) {
             for (let j = i + 1; j < dayShifts.length; j += 1) {
                 const aStart = new Date(dayShifts[i].startTime).getTime();
                 const aEnd = new Date(dayShifts[i].endTime).getTime();
                 const bStart = new Date(dayShifts[j].startTime).getTime();
                 const bEnd = new Date(dayShifts[j].endTime).getTime();
-
                 if (aStart < bEnd && bStart < aEnd) {
                     return true;
                 }
             }
         }
-
         return false;
     };
 
@@ -105,12 +105,8 @@ export default function AvailabilityScreen() {
     };
 
     const handleBlockDay = async () => {
-        if (!selectedDate) {
-            return;
-        }
-
+        if (!selectedDate) return;
         setBlocking(true);
-
         try {
             const start = new Date(selectedDate);
             start.setHours(0, 0, 0, 0);
@@ -133,127 +129,126 @@ export default function AvailabilityScreen() {
         }
     };
 
+    if (loading) {
+        return <LoadingScreen label="Loading your availability" />;
+    }
+
     return (
-        <SafeAreaView style={s.container} edges={["top"]}>
-            <View style={s.header}>
-                <TouchableOpacity onPress={() => router.back()}>
-                    <Ionicons name="arrow-back" size={24} color={workerTheme.colors.foreground} />
-                </TouchableOpacity>
-                <Text style={s.title}>My availability</Text>
-                <View style={{ width: 24 }} />
-            </View>
+        <Screen>
+            <PageHeader title="My availability" showBack onBack={() => router.back()} />
 
-            <View style={s.weekNav}>
-                <TouchableOpacity onPress={() => setWeekOffset((value) => value - 1)} style={s.navButton}>
-                    <Ionicons name="chevron-back" size={18} color={workerTheme.colors.foreground} />
-                </TouchableOpacity>
+            <View className="px-5 pb-3 pt-2">
+                <View className="flex-row items-center justify-between">
+                    <Button variant="secondary" onPress={() => setWeekOffset((value) => value - 1)}>
+                        <Icon name="chevron-back" size={18} className="text-foreground" />
+                    </Button>
 
-                <TouchableOpacity onPress={() => setWeekOffset(0)} activeOpacity={0.7}>
-                    <Text style={s.weekLabel}>{fmtWeekRange(weekDates)}</Text>
-                </TouchableOpacity>
+                    <Pressable onPress={() => setWeekOffset(0)}>
+                        <Text className="text-base font-semibold text-foreground">{fmtWeekRange(weekDates)}</Text>
+                    </Pressable>
 
-                <TouchableOpacity onPress={() => setWeekOffset((value) => value + 1)} style={s.navButton}>
-                    <Ionicons name="chevron-forward" size={18} color={workerTheme.colors.foreground} />
-                </TouchableOpacity>
+                    <Button variant="secondary" onPress={() => setWeekOffset((value) => value + 1)}>
+                        <Icon name="chevron-forward" size={18} className="text-foreground" />
+                    </Button>
+                </View>
             </View>
 
             {orgs.length > 1 ? (
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={s.legendRow}
-                    contentContainerStyle={s.legendContent}
+                    contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 12, gap: 10 }}
+                    style={{ maxHeight: 46 }}
                 >
                     {orgs.map((org) => (
-                        <View key={org.id} style={s.legendItem}>
-                            <View
-                                style={[
-                                    s.legendDot,
-                                    { backgroundColor: orgColorMap.get(org.id) || workerTheme.roleColors[0] },
-                                ]}
-                            />
-                            <Text style={s.legendText}>{org.name}</Text>
-                        </View>
+                        <Chip key={org.id} variant="secondary" color="default" size="sm">
+                            <View className="mr-2 h-2 w-2 rounded-full" style={{ backgroundColor: orgColorMap.get(org.id) || ORG_COLORS[0] }} />
+                            <Chip.Label>{org.name}</Chip.Label>
+                        </Chip>
                     ))}
                 </ScrollView>
             ) : null}
 
-            {loading ? (
-                <View style={s.centered}>
-                    <ActivityIndicator size="large" color={workerTheme.colors.primary} />
-                </View>
-            ) : (
-                <ScrollView contentContainerStyle={s.listContent}>
-                    {weekDates.map((date) => {
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, gap: 12 }}>
+                {weekDates.length === 0 ? (
+                    <EmptyState
+                        icon="calendar-clear-outline"
+                        title="No shifts this week"
+                        description="When your managers publish shifts, they will appear here."
+                    />
+                ) : (
+                    weekDates.map((date) => {
                         const dayShifts = shiftsForDay(date);
                         const isToday = isSameDay(date, today);
                         const hasConflict = dayHasConflict(date);
 
                         return (
-                            <View key={date.toISOString()} style={[s.dayRow, isToday ? s.dayRowToday : null]}>
-                                <View style={s.dayLabel}>
-                                    <Text style={[s.dayName, isToday ? s.dayNameToday : null]}>
-                                        {DAYS[date.getDay()]}
-                                    </Text>
-                                    <Text style={[s.dayNum, isToday ? s.dayNumToday : null]}>
-                                        {date.getDate()}
-                                    </Text>
-                                    {hasConflict ? <View style={s.conflictDot} /> : null}
-                                </View>
+                            <Card key={date.toISOString()} variant={isToday ? "secondary" : "default"} className="rounded-[28px]">
+                                <Card.Body className="gap-4 p-5">
+                                    <View className="flex-row items-center justify-between">
+                                        <View>
+                                            <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-muted">
+                                                {DAYS[date.getDay()]}
+                                            </Text>
+                                            <Text className="text-xl font-semibold text-foreground">{date.getDate()}</Text>
+                                        </View>
 
-                                <View style={s.dayContent}>
+                                        <View className="flex-row items-center gap-2">
+                                            {isToday ? (
+                                                <Chip size="sm" variant="soft" color="accent">
+                                                    <Chip.Label>Today</Chip.Label>
+                                                </Chip>
+                                            ) : null}
+                                            {hasConflict ? (
+                                                <Chip size="sm" variant="soft" color="warning">
+                                                    <Chip.Label>Overlap</Chip.Label>
+                                                </Chip>
+                                            ) : null}
+                                        </View>
+                                    </View>
+
                                     {dayShifts.length === 0 ? (
-                                        <TouchableOpacity style={s.emptySlot} onPress={() => openBlockModal(date)}>
-                                            <Text style={s.emptyText}>Available</Text>
-                                            <Ionicons
-                                                name="remove-circle-outline"
-                                                size={16}
-                                                color={workerTheme.colors.mutedForeground}
-                                            />
-                                        </TouchableOpacity>
+                                        <Pressable
+                                            onPress={() => openBlockModal(date)}
+                                            className="flex-row items-center justify-between rounded-[20px] bg-default px-4 py-3"
+                                        >
+                                            <Text className="text-sm font-medium text-secondary">Available</Text>
+                                            <Icon name="remove-circle-outline" size={16} className="text-muted" />
+                                        </Pressable>
                                     ) : (
-                                        dayShifts.map((shift) => (
-                                            <TouchableOpacity
-                                                key={shift.assignmentId}
-                                                style={[
-                                                    s.shiftBlock,
-                                                    {
-                                                        borderLeftColor:
-                                                            orgColorMap.get(shift.organization.id) ||
-                                                            workerTheme.roleColors[0],
-                                                    },
-                                                ]}
-                                                onPress={() => router.push(`/shift/${shift.id}`)}
-                                            >
-                                                <Text style={s.shiftTitle} numberOfLines={1}>
-                                                    {shift.title}
-                                                </Text>
-                                                <Text style={s.shiftTime}>
-                                                    {fmtTime(shift.startTime)} - {fmtTime(shift.endTime)}
-                                                </Text>
-                                                <Text style={s.shiftOrg} numberOfLines={1}>
-                                                    {shift.organization.name}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))
+                                        <View className="gap-3">
+                                            {dayShifts.map((shift) => (
+                                                <Pressable key={shift.assignmentId} onPress={() => router.push(`/shift/${shift.id}`)}>
+                                                    <View
+                                                        className="gap-1 rounded-[20px] border border-border bg-default px-4 py-3"
+                                                        style={{
+                                                            borderLeftWidth: 4,
+                                                            borderLeftColor: orgColorMap.get(shift.organization.id) || ORG_COLORS[0],
+                                                        }}
+                                                    >
+                                                        <Text className="text-sm font-semibold text-foreground">{shift.title}</Text>
+                                                        <Text className="text-xs font-medium text-secondary">
+                                                            {fmtTime(shift.startTime)} - {fmtTime(shift.endTime)}
+                                                        </Text>
+                                                        <Text className="text-xs text-muted">{shift.organization.name}</Text>
+                                                    </View>
+                                                </Pressable>
+                                            ))}
+                                        </View>
                                     )}
 
                                     {hasConflict ? (
-                                        <View style={s.conflictWarning}>
-                                            <Ionicons
-                                                name="alert-circle-outline"
-                                                size={13}
-                                                color={workerTheme.colors.primary}
-                                            />
-                                            <Text style={s.conflictText}>Overlap to review</Text>
+                                        <View className="flex-row items-center gap-2 rounded-[18px] bg-warning-soft px-3 py-2">
+                                            <Icon name="alert-circle-outline" size={13} className="text-warning" />
+                                            <Text className="text-xs font-medium text-warning">Overlap to review</Text>
                                         </View>
                                     ) : null}
-                                </View>
-                            </View>
+                                </Card.Body>
+                            </Card>
                         );
-                    })}
-                </ScrollView>
-            )}
+                    })
+                )}
+            </ScrollView>
 
             <Modal
                 visible={showBlockModal}
@@ -261,274 +256,39 @@ export default function AvailabilityScreen() {
                 animationType="fade"
                 onRequestClose={() => setShowBlockModal(false)}
             >
-                <TouchableOpacity
-                    activeOpacity={1}
-                    style={s.modalOverlay}
-                    onPress={() => setShowBlockModal(false)}
-                >
-                    <TouchableOpacity activeOpacity={1} style={s.modalCard}>
-                        <Text style={s.modalTitle}>Block this day?</Text>
-                        <Text style={s.modalBody}>
-                            Mark{" "}
-                            {selectedDate?.toLocaleDateString("en-US", {
-                                weekday: "long",
-                                month: "long",
-                                day: "numeric",
-                            })}{" "}
-                            as unavailable. Your organizations will see you as unavailable for that day.
-                        </Text>
+                <View className="flex-1 justify-center bg-black/30 px-6">
+                    <Card className="rounded-[30px]">
+                        <Card.Body className="gap-5 p-6">
+                            <View className="gap-2">
+                                <Text className="text-xl font-semibold text-foreground">Block this day?</Text>
+                                <Text className="text-sm leading-6 text-muted">
+                                    Mark{" "}
+                                    {selectedDate?.toLocaleDateString("en-US", {
+                                        weekday: "long",
+                                        month: "long",
+                                        day: "numeric",
+                                    })}{" "}
+                                    as unavailable. Your organizations will see you as unavailable for that day.
+                                </Text>
+                            </View>
 
-                        <View style={s.modalActions}>
-                            <TouchableOpacity
-                                style={s.modalSecondary}
-                                onPress={() => setShowBlockModal(false)}
-                            >
-                                <Text style={s.modalSecondaryText}>Cancel</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                style={s.modalPrimary}
-                                onPress={handleBlockDay}
-                                disabled={blocking}
-                            >
-                                {blocking ? (
-                                    <ActivityIndicator size="small" color={workerTheme.colors.white} />
-                                ) : (
-                                    <Text style={s.modalPrimaryText}>Block day</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    </TouchableOpacity>
-                </TouchableOpacity>
+                            <View className="flex-row gap-3">
+                                <View className="flex-1">
+                                    <Button variant="secondary" onPress={() => setShowBlockModal(false)}>
+                                        <Button.Label>Cancel</Button.Label>
+                                    </Button>
+                                </View>
+                                <View className="flex-1">
+                                    <Button onPress={handleBlockDay} isDisabled={blocking}>
+                                        {blocking ? <Spinner size="sm" /> : null}
+                                        <Button.Label>{blocking ? "Blocking" : "Block day"}</Button.Label>
+                                    </Button>
+                                </View>
+                            </View>
+                        </Card.Body>
+                    </Card>
+                </View>
             </Modal>
-        </SafeAreaView>
+        </Screen>
     );
 }
-
-const s = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: workerTheme.colors.background,
-    },
-    centered: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: workerTheme.colors.border,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: workerTheme.colors.foreground,
-    },
-    weekNav: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-    },
-    navButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.surface,
-    },
-    weekLabel: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: workerTheme.colors.foreground,
-    },
-    legendRow: {
-        maxHeight: 40,
-    },
-    legendContent: {
-        paddingHorizontal: 16,
-        paddingBottom: 8,
-        gap: 16,
-    },
-    legendItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-    legendDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 999,
-    },
-    legendText: {
-        fontSize: 12,
-        color: workerTheme.colors.mutedForeground,
-    },
-    listContent: {
-        paddingBottom: 40,
-    },
-    dayRow: {
-        flexDirection: "row",
-        minHeight: 84,
-        borderBottomWidth: 1,
-        borderBottomColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.surface,
-    },
-    dayRowToday: {
-        backgroundColor: workerTheme.colors.secondarySoft,
-    },
-    dayLabel: {
-        width: 58,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 12,
-        borderRightWidth: 1,
-        borderRightColor: workerTheme.colors.border,
-    },
-    dayName: {
-        fontSize: 11,
-        fontWeight: "600",
-        color: workerTheme.colors.mutedForeground,
-        textTransform: "uppercase",
-    },
-    dayNameToday: {
-        color: workerTheme.colors.secondary,
-    },
-    dayNum: {
-        fontSize: 18,
-        fontWeight: "700",
-        color: workerTheme.colors.foreground,
-        marginTop: 2,
-    },
-    dayNumToday: {
-        color: workerTheme.colors.secondary,
-    },
-    conflictDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 999,
-        backgroundColor: workerTheme.colors.primary,
-        marginTop: 6,
-    },
-    dayContent: {
-        flex: 1,
-        padding: 10,
-        gap: 6,
-    },
-    emptySlot: {
-        minHeight: 44,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 12,
-        borderRadius: 12,
-        backgroundColor: workerTheme.colors.surfaceInset,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-    },
-    emptyText: {
-        fontSize: 13,
-        color: workerTheme.colors.secondary,
-    },
-    shiftBlock: {
-        borderLeftWidth: 4,
-        borderRadius: 12,
-        padding: 12,
-        backgroundColor: workerTheme.colors.surfaceInset,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-    },
-    shiftTitle: {
-        fontSize: 14,
-        fontWeight: "700",
-        color: workerTheme.colors.foreground,
-    },
-    shiftTime: {
-        fontSize: 12,
-        color: workerTheme.colors.secondary,
-        marginTop: 4,
-    },
-    shiftOrg: {
-        fontSize: 12,
-        color: workerTheme.colors.mutedForeground,
-        marginTop: 4,
-    },
-    conflictWarning: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 5,
-        paddingHorizontal: 4,
-        paddingTop: 2,
-    },
-    conflictText: {
-        fontSize: 11,
-        fontWeight: "600",
-        color: workerTheme.colors.primary,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(13, 13, 13, 0.28)",
-        justifyContent: "center",
-        padding: 24,
-    },
-    modalCard: {
-        backgroundColor: workerTheme.colors.surface,
-        borderRadius: 20,
-        padding: 24,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: workerTheme.colors.foreground,
-        marginBottom: 10,
-    },
-    modalBody: {
-        fontSize: 14,
-        lineHeight: 21,
-        color: workerTheme.colors.mutedForeground,
-    },
-    modalActions: {
-        flexDirection: "row",
-        gap: 12,
-        marginTop: 20,
-    },
-    modalSecondary: {
-        flex: 1,
-        minHeight: 46,
-        borderRadius: 14,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.surfaceMuted,
-    },
-    modalSecondaryText: {
-        fontSize: 15,
-        fontWeight: "600",
-        color: workerTheme.colors.foreground,
-    },
-    modalPrimary: {
-        flex: 1,
-        minHeight: 46,
-        borderRadius: 14,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: workerTheme.colors.primary,
-    },
-    modalPrimaryText: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: workerTheme.colors.white,
-    },
-});

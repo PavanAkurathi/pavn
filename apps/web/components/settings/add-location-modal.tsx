@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@repo/ui/components/ui/dialog";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Bold, Italic, Link as LinkIcon, Paperclip } from "lucide-react";
-import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps";
+import { PlaceAutocompleteInput } from "@/components/locations/place-autocomplete-input";
 
 interface AddLocationModalProps {
     open: boolean;
@@ -28,51 +28,6 @@ interface AddLocationModalProps {
         specifics?: string[];
         instructions?: string
     } | null;
-}
-
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-function PlaceAutocomplete({ value, onChange, onAddressSelect }: {
-    value: string,
-    onChange: (val: string) => void,
-    onAddressSelect: (place: google.maps.places.PlaceResult) => void
-}) {
-    const inputRef = useRef<HTMLInputElement>(null);
-    const places = useMapsLibrary("places");
-    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
-
-    useEffect(() => {
-        if (!places || !inputRef.current) return;
-
-        const options = {
-            fields: ["formatted_address", "name", "geometry", "address_components"],
-        };
-
-        setAutocomplete(new places.Autocomplete(inputRef.current, options));
-    }, [places]);
-
-    useEffect(() => {
-        if (!autocomplete) return;
-
-        const listener = autocomplete.addListener("place_changed", () => {
-            const place = autocomplete.getPlace();
-            onAddressSelect(place);
-        });
-
-        return () => {
-            google.maps.event.removeListener(listener);
-        };
-    }, [autocomplete, onAddressSelect]);
-
-    return (
-        <Input
-            ref={inputRef}
-            placeholder="Search for an address"
-            className="h-11"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-        />
-    );
 }
 
 export function AddLocationModal({ open, onOpenChange, onSave, initialData }: AddLocationModalProps) {
@@ -160,22 +115,12 @@ export function AddLocationModal({ open, onOpenChange, onSave, initialData }: Ad
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-6">
                         <div className="space-y-2">
                             <Label className="font-semibold text-slate-900">Street address<span className="text-red-500">*</span></Label>
-                            {API_KEY ? (
-                                <APIProvider apiKey={API_KEY}>
-                                    <PlaceAutocomplete
-                                        value={address}
-                                        onChange={setAddress}
-                                        onAddressSelect={handlePlaceSelect}
-                                    />
-                                </APIProvider>
-                            ) : (
-                                <Input
-                                    placeholder="Address"
-                                    className="h-11"
-                                    value={address}
-                                    onChange={(e) => setAddress(e.target.value)}
-                                />
-                            )}
+                            <PlaceAutocompleteInput
+                                value={address}
+                                placeholder="Search for an address"
+                                onChange={setAddress}
+                                onAddressSelect={handlePlaceSelect}
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label className="font-semibold text-slate-900">Zipcode<span className="text-red-500">*</span></Label>

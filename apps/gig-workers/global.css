@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@import "heroui-native/styles";
+
+@source "./app";
+@source "./components";
+@source "./hooks";
+@source "./lib";
+@source "./screens";
+@source "./node_modules/heroui-native/lib/module";
+
+@theme {
+  --radius: 0.875rem;
+  --field-radius: 1rem;
+  --field-border-width: 2px;
+}
+
+@layer theme {
+  :root {
+    @variant light {
+      --background: #ffffff;
+      --foreground: #0d0d0d;
+
+      --surface: #ffffff;
+      --surface-foreground: #0d0d0d;
+      --surface-secondary: #f2f2f2;
+      --surface-secondary-foreground: #0d0d0d;
+      --surface-tertiary: #fafafa;
+      --surface-tertiary-foreground: #0d0d0d;
+
+      --overlay: #ffffff;
+      --overlay-foreground: #0d0d0d;
+
+      --muted: #64748b;
+      --default: #eef2f7;
+      --default-foreground: #182540;
+
+      --accent: #d92b3a;
+      --accent-foreground: #ffffff;
+
+      --field-background: #ffffff;
+      --field-foreground: #0d0d0d;
+      --field-placeholder: #94a3b8;
+      --field-border: #e2e2e2;
+
+      --success: #166534;
+      --success-foreground: #ffffff;
+      --warning: #92400e;
+      --warning-foreground: #ffffff;
+      --danger: #bf1111;
+      --danger-foreground: #ffffff;
+
+      --segment: #ffffff;
+      --segment-foreground: #0d0d0d;
+
+      --border: #e2e2e2;
+      --separator: #e2e2e2;
+      --focus: #d92b3a;
+      --link: #182540;
+
+      --surface-shadow:
+        0 16px 40px 0 rgba(24, 37, 64, 0.08),
+        0 6px 18px 0 rgba(24, 37, 64, 0.06);
+      --overlay-shadow:
+        0 18px 48px 0 rgba(24, 37, 64, 0.12),
+        0 8px 24px 0 rgba(24, 37, 64, 0.1);
+      --field-shadow:
+        0 2px 6px 0 rgba(24, 37, 64, 0.04);
+    }
+  }
+}

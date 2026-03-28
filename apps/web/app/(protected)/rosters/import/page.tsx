@@ -4,16 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@repo/ui/components/ui/empty";
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@repo/ui/components/ui/table";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
-import { Upload, X, Check, FileSpreadsheet, Loader2, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Upload, X, Check, FileSpreadsheet, AlertTriangle, ArrowLeft } from "lucide-react";
 import { bulkImport } from "@/actions/team";
 import Link from "next/link";
 import { cn } from "@repo/ui/lib/utils";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 
 interface WorkerRow {
     id: string; // Internal ID for tracking edits
@@ -211,7 +215,7 @@ export default function BulkImportPage() {
     };
 
     return (
-        <div className="container max-w-5xl py-8 space-y-6">
+        <div className="container flex max-w-5xl flex-col gap-6 py-8">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" asChild>
                     <Link href="/rosters"><ArrowLeft className="h-4 w-4" /></Link>
@@ -223,32 +227,36 @@ export default function BulkImportPage() {
             </div>
 
             {step === "upload" && (
-                <Card className="border-dashed border-2 py-12 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="bg-slate-100 p-4 rounded-full">
-                        <FileSpreadsheet className="h-8 w-8 text-slate-500" />
-                    </div>
-                    <div className="space-y-1">
-                        <h3 className="font-semibold text-lg">Upload your roster</h3>
-                        <p className="text-sm text-muted-foreground">Drag and drop or click to browse (CSV, XLSX)</p>
-                    </div>
-                    <div className="relative">
-                        <input
-                            type="file"
-                            accept=".csv, .xlsx, .xls"
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                            onChange={handleFile}
-                        />
-                        <Button>Select File</Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-4">
-                        Supported columns: Name, Email, Phone, Job Title
-                        {", Roles"}
-                    </p>
+                <Card className="border-dashed">
+                    <CardContent className="pt-6">
+                        <Empty className="border-0 p-8 md:p-12">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <FileSpreadsheet />
+                                </EmptyMedia>
+                                <EmptyTitle>Upload your roster</EmptyTitle>
+                                <EmptyDescription>
+                                    Drag and drop or click to browse a CSV or Excel file. Supported columns include Name, Email, Phone, Job Title, and Roles.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                            <EmptyContent>
+                                <div className="relative">
+                                    <input
+                                        type="file"
+                                        accept=".csv, .xlsx, .xls"
+                                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                                        onChange={handleFile}
+                                    />
+                                    <Button>Select file</Button>
+                                </div>
+                            </EmptyContent>
+                        </Empty>
+                    </CardContent>
                 </Card>
             )}
 
             {step === "review" && (
-                <div className="space-y-4">
+                <div className="flex flex-col gap-4">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
@@ -261,7 +269,7 @@ export default function BulkImportPage() {
                             <div className="flex gap-2">
                                 <Button variant="ghost" onClick={() => setStep("upload")}>Cancel</Button>
                                 <Button onClick={handleImport} disabled={loading || rows.filter(r => r.isValid).length === 0}>
-                                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {loading ? <Spinner data-icon="inline-start" /> : null}
                                     Import {rows.filter(r => r.isValid).length} Valid Workers
                                 </Button>
                             </div>
@@ -285,26 +293,26 @@ export default function BulkImportPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {rows.map((row) => (
-                                            <TableRow key={row.id} className={cn(!row.isValid && "bg-red-50 hover:bg-red-100")}>
+                                            <TableRow key={row.id} className={cn(!row.isValid && "bg-destructive/5 hover:bg-destructive/10")}>
                                                 <TableCell>
                                                     {row.isValid ? (
-                                                        <Check className="h-4 w-4 text-green-500" />
+                                                        <Check className="h-4 w-4 text-primary" />
                                                     ) : (
-                                                        <div className="flex items-center gap-1 text-red-500" title={row.errors.join(", ")}>
+                                                        <div className="flex items-center gap-1 text-destructive" title={row.errors.join(", ")}>
                                                             <AlertTriangle className="h-4 w-4" />
                                                         </div>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
                                                     <Input
-                                                        className={cn("h-8 bg-transparent border-transparent hover:border-input focus:bg-background", !row.name && "border-red-300")}
+                                                        className={cn("h-8 border-transparent bg-transparent hover:border-input focus:bg-background", !row.name && "border-destructive/30")}
                                                         value={row.name}
                                                         onChange={(e) => updateRow(row.id, "name", e.target.value)}
                                                     />
                                                 </TableCell>
                                                 <TableCell>
                                                     <Input
-                                                        className={cn("h-8 bg-transparent border-transparent hover:border-input focus:bg-background", (!row.email || row.errors.includes("Invalid Email")) && "border-red-300")}
+                                                        className={cn("h-8 border-transparent bg-transparent hover:border-input focus:bg-background", (!row.email || row.errors.includes("Invalid Email")) && "border-destructive/30")}
                                                         value={row.email}
                                                         onChange={(e) => updateRow(row.id, "email", e.target.value)}
                                                     />
@@ -357,7 +365,7 @@ export default function BulkImportPage() {
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-500" onClick={() => removeRow(row.id)}>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeRow(row.id)}>
                                                         <X className="h-4 w-4" />
                                                     </Button>
                                                 </TableCell>
@@ -372,30 +380,37 @@ export default function BulkImportPage() {
             )}
 
             {step === "success" && (
-                <div className="flex flex-col items-center justify-center space-y-4 py-12">
-                    <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-                        <Check className="h-8 w-8" />
-                    </div>
-                    <h2 className="text-2xl font-bold">Import Complete!</h2>
-                    <p className="text-center text-muted-foreground">
-                        Successfully added {importStats.success} workers.<br />
-                        {importStats.failed > 0 && <span className="text-red-500">Failed to add {importStats.failed} workers.</span>}
-                    </p>
+                <div className="flex flex-col items-center justify-center gap-4 py-12">
+                    <Empty className="border-0 p-0">
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                                <Check />
+                            </EmptyMedia>
+                            <EmptyTitle>Import complete</EmptyTitle>
+                            <EmptyDescription>
+                                Successfully added {importStats.success} workers.
+                            </EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                            {importStats.failed > 0 ? (
+                                <Badge variant="destructive">Failed to add {importStats.failed} workers</Badge>
+                            ) : null}
+                            <Button onClick={() => router.push("/rosters")}>
+                                Back to Roster
+                            </Button>
+                        </EmptyContent>
+                    </Empty>
 
                     {importStats.errors.length > 0 && (
-                        <Card className="w-full max-w-lg mt-4">
-                            <CardHeader><CardTitle className="text-base">Errors</CardTitle></CardHeader>
-                            <CardContent>
-                                <ul className="list-disc list-inside text-sm text-red-500 space-y-1">
+                        <Alert variant="destructive" className="w-full max-w-lg">
+                            <AlertTitle>Import errors</AlertTitle>
+                            <AlertDescription>
+                                <ul className="list-disc list-inside text-sm">
                                     {importStats.errors.map((err, i) => <li key={i}>{err}</li>)}
                                 </ul>
-                            </CardContent>
-                        </Card>
+                            </AlertDescription>
+                        </Alert>
                     )}
-
-                    <Button onClick={() => router.push("/rosters")}>
-                        Back to Roster
-                    </Button>
                 </div>
             )}
         </div>

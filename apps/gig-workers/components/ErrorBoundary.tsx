@@ -1,8 +1,12 @@
-// apps/gig-workers/components/ErrorBoundary.tsx
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { ScrollView, Text, View } from "react-native";
+import * as Sentry from "@sentry/react-native";
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import * as Sentry from '@sentry/react-native';
+import { Button } from "heroui-native/button";
+import { Card } from "heroui-native/card";
+
+import { Icon } from "./ui/icon";
+import { Screen } from "./ui/screen";
 
 interface Props {
     children: ReactNode;
@@ -15,12 +19,6 @@ interface State {
     errorInfo: ErrorInfo | null;
 }
 
-/**
- * Global Error Boundary for React Native
- * 
- * Catches JavaScript errors anywhere in the child component tree,
- * logs them to Sentry, and displays a fallback UI.
- */
 export class ErrorBoundary extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
@@ -37,17 +35,15 @@ export class ErrorBoundary extends Component<Props, State> {
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         this.setState({ errorInfo });
-        
-        // Log to Sentry
+
         Sentry.captureException(error, {
             extra: {
                 componentStack: errorInfo.componentStack,
             },
         });
-        
-        // Also log to console for development
-        console.error('[ERROR_BOUNDARY] Caught error:', error);
-        console.error('[ERROR_BOUNDARY] Component stack:', errorInfo.componentStack);
+
+        console.error("[ERROR_BOUNDARY] Caught error:", error);
+        console.error("[ERROR_BOUNDARY] Component stack:", errorInfo.componentStack);
     }
 
     handleRetry = () => {
@@ -60,42 +56,45 @@ export class ErrorBoundary extends Component<Props, State> {
 
     render() {
         if (this.state.hasError) {
-            // Custom fallback provided
             if (this.props.fallback) {
                 return this.props.fallback;
             }
 
-            // Default error UI
             return (
-                <View style={styles.container}>
-                    <View style={styles.content}>
-                        <Text style={styles.emoji}>😕</Text>
-                        <Text style={styles.title}>Something went wrong</Text>
-                        <Text style={styles.message}>
-                            We've logged this error and will look into it.
-                        </Text>
-                        
-                        {__DEV__ && this.state.error && (
-                            <ScrollView style={styles.errorDetails}>
-                                <Text style={styles.errorText}>
-                                    {this.state.error.toString()}
+                <Screen className="justify-center px-6">
+                    <Card className="rounded-[32px]">
+                        <Card.Body className="items-center gap-5 px-6 py-8">
+                            <View className="h-18 w-18 items-center justify-center rounded-[28px] bg-danger-soft">
+                                <Icon name="warning-outline" size={30} className="text-danger" />
+                            </View>
+                            <View className="items-center gap-2">
+                                <Text className="text-center text-2xl font-semibold text-foreground">
+                                    Something went wrong
                                 </Text>
-                                {this.state.errorInfo && (
-                                    <Text style={styles.stackText}>
-                                        {this.state.errorInfo.componentStack}
+                                <Text className="text-center text-sm leading-6 text-muted">
+                                    We logged this issue and will look into it.
+                                </Text>
+                            </View>
+
+                            {__DEV__ && this.state.error ? (
+                                <ScrollView className="max-h-52 w-full rounded-[20px] bg-danger-soft px-4 py-3">
+                                    <Text className="font-mono text-xs text-danger">
+                                        {this.state.error.toString()}
                                     </Text>
-                                )}
-                            </ScrollView>
-                        )}
-                        
-                        <TouchableOpacity 
-                            style={styles.retryButton}
-                            onPress={this.handleRetry}
-                        >
-                            <Text style={styles.retryText}>Try Again</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                                    {this.state.errorInfo ? (
+                                        <Text className="mt-2 font-mono text-[10px] text-danger">
+                                            {this.state.errorInfo.componentStack}
+                                        </Text>
+                                    ) : null}
+                                </ScrollView>
+                            ) : null}
+
+                            <Button onPress={this.handleRetry}>
+                                <Button.Label>Try again</Button.Label>
+                            </Button>
+                        </Card.Body>
+                    </Card>
+                </Screen>
             );
         }
 
@@ -103,71 +102,6 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    content: {
-        alignItems: 'center',
-        maxWidth: 300,
-    },
-    emoji: {
-        fontSize: 64,
-        marginBottom: 20,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: '#1F2937',
-        marginBottom: 12,
-        textAlign: 'center',
-    },
-    message: {
-        fontSize: 16,
-        color: '#6B7280',
-        textAlign: 'center',
-        marginBottom: 24,
-        lineHeight: 24,
-    },
-    errorDetails: {
-        backgroundColor: '#FEF2F2',
-        borderRadius: 8,
-        padding: 12,
-        maxHeight: 200,
-        width: '100%',
-        marginBottom: 24,
-    },
-    errorText: {
-        fontSize: 12,
-        color: '#991B1B',
-        fontFamily: 'monospace',
-    },
-    stackText: {
-        fontSize: 10,
-        color: '#7F1D1D',
-        fontFamily: 'monospace',
-        marginTop: 8,
-    },
-    retryButton: {
-        backgroundColor: '#3B82F6',
-        paddingHorizontal: 32,
-        paddingVertical: 14,
-        borderRadius: 8,
-    },
-    retryText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-});
-
-/**
- * HOC to wrap any component with error boundary
- */
 export function withErrorBoundary<P extends object>(
     WrappedComponent: React.ComponentType<P>,
     fallback?: ReactNode

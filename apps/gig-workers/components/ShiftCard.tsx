@@ -1,74 +1,128 @@
-import { View, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Pressable, Text, View } from "react-native";
+
+import { Card } from "heroui-native/card";
+import { Chip } from "heroui-native/chip";
+
+import type { ConflictInfo, WorkerShift } from "../lib/api";
+import { Icon } from "./ui/icon";
 
 interface ShiftCardProps {
-    role: string;
-    time: string;
-    venue: string;
-    status: "upcoming" | "completed" | "open";
-
+    shift: WorkerShift;
+    conflict?: ConflictInfo;
+    orgColor?: string;
+    onPress?: () => void;
 }
 
-export function ShiftCard({ role, time, venue, status }: ShiftCardProps) {
+const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+
+const isInProgress = (shift: WorkerShift): boolean =>
+    !!shift.timesheet.clockIn &&
+    !shift.timesheet.clockOut &&
+    new Date(shift.endTime) > new Date(Date.now() - 2 * 60 * 60 * 1000);
+
+const isCancelled = (shift: WorkerShift): boolean => shift.status === "cancelled";
+
+function renderStatusChip(shift: WorkerShift) {
+    if (isInProgress(shift)) {
+        return (
+            <Chip size="sm" variant="soft" color="success">
+                <Chip.Label>Live</Chip.Label>
+            </Chip>
+        );
+    }
+
+    if (isCancelled(shift)) {
+        return (
+            <Chip size="sm" variant="soft" color="danger">
+                <Chip.Label>Cancelled</Chip.Label>
+            </Chip>
+        );
+    }
+
+    if (shift.assignmentStatus === "open") {
+        return (
+            <Chip size="sm" variant="soft" color="warning">
+                <Chip.Label>Open</Chip.Label>
+            </Chip>
+        );
+    }
+
+    if (new Date(shift.endTime) <= new Date()) {
+        return (
+            <Chip size="sm" variant="soft" color="default">
+                <Chip.Label>Completed</Chip.Label>
+            </Chip>
+        );
+    }
+
     return (
-        <View style={styles.container}>
-            <View style={styles.leftColumn}>
-                <Text style={styles.role}>{role}</Text>
-                <Text style={styles.details}>{time} • {venue}</Text>
-            </View>
-            <View style={styles.rightColumn}>
-                <View style={styles.statusBadge}>
-                    {status === "upcoming" && <Ionicons name="checkmark-circle" size={14} color="#4CAF50" />}
-                    <Text style={[styles.statusText, status === "upcoming" && styles.statusConfirmed]}>
-                        {status === "upcoming" ? "Confirmed" : status}
-                    </Text>
-                </View>
-            </View>
-        </View>
+        <Chip size="sm" variant="soft" color="success">
+            <Chip.Label>Confirmed</Chip.Label>
+        </Chip>
     );
 }
 
-const styles = StyleSheet.create({
-    container: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 10, // Very compact
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: "#222",
-        backgroundColor: "#000",
-    },
-    leftColumn: {
-        flex: 1,
-        justifyContent: "center",
-    },
-    role: {
-        fontSize: 15, // Sleek, readable but small
-        fontWeight: "600",
-        color: "#fff",
-        marginBottom: 2,
-    },
-    details: {
-        fontSize: 13,
-        color: "#888",
-    },
-    rightColumn: {
-        alignItems: "flex-end",
-        justifyContent: "center",
-        minWidth: 80,
-    },
+export function ShiftCard({ shift, conflict, orgColor, onPress }: ShiftCardProps) {
+    const venueLabel = shift.location.name || shift.organization.name;
+    const addressLabel = shift.location.address || shift.organization.name;
+    const needsAttention =
+        shift.timesheetFlags.missingClockIn ||
+        shift.timesheetFlags.missingClockOut ||
+        shift.timesheetFlags.needsReview;
 
-    statusBadge: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
-    },
-    statusText: {
-        fontSize: 13,
-        fontWeight: "500",
-        color: "#666",
-    },
-    statusConfirmed: {
-        color: "#4CAF50",
+    const body = (
+        <Card className="rounded-[28px]">
+            <Card.Body className="gap-4 p-5">
+                <View className="flex-row items-start justify-between gap-3">
+                    <Text className="flex-1 text-lg font-semibold text-foreground">{shift.title}</Text>
+                    {renderStatusChip(shift)}
+                </View>
+
+                <View className="gap-1">
+                    <Text className="text-base font-medium text-foreground">
+                        {formatTime(shift.startTime)} - {formatTime(shift.endTime)}
+                    </Text>
+                    <Text className="text-sm font-medium text-secondary">{venueLabel}</Text>
+                    <Text className="text-sm text-muted">{addressLabel}</Text>
+                </View>
+
+                <View className="flex-row flex-wrap items-center gap-2">
+                    {orgColor ? (
+                        <View
+                            className="flex-row items-center gap-2 rounded-full px-3 py-1.5"
+                            style={{ backgroundColor: `${orgColor}18` }}
+                        >
+                            <View className="h-2 w-2 rounded-full" style={{ backgroundColor: orgColor }} />
+                            <Text className="text-xs font-medium text-foreground">{shift.organization.name}</Text>
+                        </View>
+                    ) : null}
+
+                    {needsAttention ? (
+                        <Chip size="sm" variant="soft" color="warning">
+                            <Chip.Label>Needs review</Chip.Label>
+                        </Chip>
+                    ) : null}
+                </View>
+
+                {conflict ? (
+                    <View className="flex-row items-center gap-2 rounded-[18px] bg-danger-soft px-3 py-2">
+                        <Icon name="alert-circle-outline" size={14} className="text-danger" />
+                        <Text className="flex-1 text-xs leading-5 text-danger">
+                            Overlaps with another shift at {conflict.overlapsWithOrg}
+                        </Text>
+                    </View>
+                ) : null}
+            </Card.Body>
+        </Card>
+    );
+
+    if (!onPress) {
+        return body;
     }
-});
+
+    return <Pressable onPress={onPress}>{body}</Pressable>;
+}

@@ -3,16 +3,14 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { organization, emailOTP, phoneNumber } from "better-auth/plugins";
-import { stripe } from "@better-auth/stripe";
 import { dash } from "@better-auth/infra";
-import Stripe from "stripe";
 import { expo } from "@better-auth/expo";
 import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
 import { sendOtp } from "@repo/email";
-import { SUBSCRIPTION, OTP } from "@repo/config";
+import { OTP } from "@repo/config";
 import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 import { getWorkerPhoneAccess, getWorkerTempEmail, syncWorkerMembershipsForPhone } from "./worker-access";
 import {
@@ -30,43 +28,6 @@ const authSecret = isAuthProd
     : (process.env.BETTER_AUTH_SECRET ?? "dev_only_secret_not_for_production");
 
 const trustedOrigins = buildTrustedOrigins();
-
-// ─── Stripe (conditionally initialized — no placeholder SDK) ─────────────────
-
-function buildStripePlugin() {
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    const priceId = process.env.STRIPE_PRICE_ID_MONTHLY;
-    const hasAnyStripeEnv = Boolean(secretKey || webhookSecret || priceId);
-
-    if (!secretKey || !webhookSecret || !priceId) {
-        if (isAuthProd && hasAnyStripeEnv) {
-            throw new Error("[AUTH FATAL] Stripe env vars are incomplete");
-        }
-        console.warn("[AUTH] Stripe not initialized — missing env vars. Skipping plugin.");
-        return null;
-    }
-
-    return stripe({
-        stripeClient: new Stripe(secretKey, {
-            apiVersion: "2025-12-15.clover" as any,
-        }),
-        stripeWebhookSecret: webhookSecret,
-        createCustomerOnSignUp: true,
-        subscription: {
-            enabled: true,
-            plans: [
-                {
-                    name: SUBSCRIPTION.PLAN_NAME,
-                    priceId: priceId,
-                    freeTrial: { days: SUBSCRIPTION.TRIAL_DAYS },
-                }
-            ]
-        }
-    });
-}
-
-const stripePlugin = buildStripePlugin();
 
 function buildInfraPlugins() {
     const connection = getBetterAuthInfraConnection();
@@ -107,7 +68,6 @@ export const auth = betterAuth({
             organization: schema.organization,
             member: schema.member,
             invitation: schema.invitation,
-            subscription: schema.subscription,
         },
     }),
 
@@ -308,6 +268,5 @@ export const auth = betterAuth({
             },
         }),
         ...infraPlugins,
-        ...(stripePlugin ? [stripePlugin] : []),
     ],
 });

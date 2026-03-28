@@ -29,8 +29,6 @@
     "zod": "^4.3.6",
     "better-auth": "1.5.1-beta.3",
     "@better-auth/expo": "1.5.1-beta.3",
-    "@better-auth/stripe": "1.5.1-beta.3",
-    "stripe": "^17.7.0",
     "twilio": "^5.4.4",
     "resend": "^4.0.0",
     "@sentry/node": "^9.32.0",

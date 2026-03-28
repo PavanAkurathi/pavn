@@ -5,10 +5,9 @@
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Check, CreditCard, Loader2 } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import posthog from "posthog-js";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { SUBSCRIPTION } from "@repo/config";
 import { createCheckoutSession, createCustomerPortal } from "@/actions/billing";
@@ -20,15 +19,23 @@ interface BillingFormProps {
 
 export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFormProps) {
     const [loading, setLoading] = useState(false);
-    const isActive = subscriptionStatus === "active";
+    const isManagedSubscription =
+        subscriptionStatus === "active" ||
+        subscriptionStatus === "trialing" ||
+        subscriptionStatus === "past_due";
+    const statusLabel = subscriptionStatus === "trialing"
+        ? "Trialing"
+        : subscriptionStatus === "past_due"
+            ? "Past due"
+            : "Active";
 
     const handleAction = async () => {
         setLoading(true);
         try {
-            if (!isActive) {
+            if (!isManagedSubscription) {
                 posthog.capture('checkout_started', { price: SUBSCRIPTION.MONTHLY_PRICE_USD });
             }
-            const res = isActive ? await createCustomerPortal() : await createCheckoutSession();
+            const res = isManagedSubscription ? await createCustomerPortal() : await createCheckoutSession();
 
             if (res?.error) {
                 toast.error(res.error);
@@ -51,16 +58,16 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
 
     return (
         <div className="space-y-6">
-            <Card className={isActive ? "border-slate-200" : "border-slate-900 shadow-md"}>
+            <Card className={isManagedSubscription ? "border-slate-200" : "border-slate-900 shadow-md"}>
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
                             <CardTitle className="text-xl">Workers Hive Pro</CardTitle>
                             <CardDescription>
-                                {isActive ? "Your plan is active." : "Upgrade to unlock unlimited usage."}
+                                {isManagedSubscription ? "Your plan is managed through Stripe." : "Upgrade to unlock unlimited usage."}
                             </CardDescription>
                         </div>
-                        {isActive && <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Active</Badge>}
+                        {isManagedSubscription && <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{statusLabel}</Badge>}
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -75,7 +82,7 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
                             </li>
                         ))}
                     </ul>
-                    {isActive && currentPeriodEnd && (
+                    {isManagedSubscription && currentPeriodEnd && (
                         <div className="text-xs text-muted-foreground">
                             Renews on {new Date(currentPeriodEnd).toLocaleDateString()}
                         </div>
@@ -85,11 +92,11 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
                     <Button
                         onClick={handleAction}
                         disabled={loading}
-                        className={isActive ? "w-auto" : "w-full bg-slate-900 text-white hover:bg-slate-800"}
-                        variant={isActive ? "outline" : "default"}
+                        className={isManagedSubscription ? "w-auto" : "w-full bg-slate-900 text-white hover:bg-slate-800"}
+                        variant={isManagedSubscription ? "outline" : "default"}
                     >
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isActive ? "Manage Subscription" : "Upgrade via Stripe"}
+                        {isManagedSubscription ? "Manage Subscription" : "Upgrade via Stripe"}
                     </Button>
                 </CardFooter>
             </Card>

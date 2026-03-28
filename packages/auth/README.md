@@ -84,16 +84,16 @@ Server behavior:
 
 ### Billing / trial shape
 
-This auth package is configured for subscription bootstrap, not marketplace payouts.
+This auth package is not the source of truth for subscription billing.
 
 Current intent:
-- create a Stripe customer behind the scenes
-- give the business a 7-day trial
-- require no card at signup
+- business admins can finish signup without a card
+- billing is owned by the web app's org-scoped Stripe flow
+- webhook updates sync subscription status back to the organization record
 
-Auth-side config lives in [src/auth.ts](/Users/av/Documents/pavn/packages/auth/src/auth.ts) through the Stripe plugin:
-- `createCustomerOnSignUp: true`
-- free trial days from `SUBSCRIPTION.TRIAL_DAYS`
+Billing config lives outside auth:
+- checkout and portal actions in [apps/web/actions/billing](/Users/av/Documents/pavn/apps/web/actions/billing)
+- Stripe webhook sync in [apps/web/app/api/webhooks/stripe/route.ts](/Users/av/Documents/pavn/apps/web/app/api/webhooks/stripe/route.ts)
 
 Important distinction:
 - this is a Stripe **customer/subscription** flow
@@ -119,10 +119,10 @@ flowchart TD
     C --> D["Assign default role: admin"]
     D --> E["Create organization"]
     E --> F["Create member row for org admin"]
-    F --> G["Create Stripe customer / start trial when billing env is enabled"]
-    G --> H["Email verification"]
-    H --> I["Manager signs in"]
-    I --> J["Protected web + API access with org context"]
+    F --> G["Email verification"]
+    G --> H["Manager signs in"]
+    H --> I["Protected web + API access with org context"]
+    I --> J["Org-scoped billing handled later in web checkout flow"]
 ```
 
 ## Worker Auth Lifecycle

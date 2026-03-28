@@ -2,6 +2,25 @@
 
 Expo app for gig workers.
 
+## Mobile Design System
+
+The official mobile design system is now:
+
+- `HeroUI Native` for components
+- `Uniwind` for styling and tokens
+- Workers Hive brand tokens mapped in [global.css](/Users/av/Documents/pavn/apps/gig-workers/global.css)
+
+Migration rules:
+
+- every user-facing mobile surface should use `HeroUI Native` primitives or local wrappers built on top of them
+- do not introduce a second custom UI language with one-off `StyleSheet` form/card/button implementations
+- use `className` with Uniwind for layout and spacing
+- keep app-specific wrappers in [components/ui](/Users/av/Documents/pavn/apps/gig-workers/components/ui)
+- shared surfaces like shift cards, settings rows, headers, and empty states should live in reusable HeroUI-based components instead of being reimplemented inline per screen
+- only fall back to raw React Native primitives when the behavior is platform-native or HeroUI does not provide an equivalent building block cleanly
+
+The first canonical migrated screen is [app/(auth)/login.tsx](/Users/av/Documents/pavn/apps/gig-workers/app/%28auth%29/login.tsx).
+
 ## Run Locally
 
 From the repo root:

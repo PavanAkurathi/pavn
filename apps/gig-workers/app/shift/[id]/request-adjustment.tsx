@@ -1,19 +1,21 @@
-import {
-    View,
-    Text,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    ScrollView,
-    Alert,
-    ActivityIndicator,
-} from "react-native";
-import { useLocalSearchParams, useRouter, Stack } from "expo-router";
 import { useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Alert, ScrollView, Text, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
+
+import { Button } from "heroui-native/button";
+import { Description } from "heroui-native/description";
+import { FieldError } from "heroui-native/field-error";
+import { Input } from "heroui-native/input";
+import { Label } from "heroui-native/label";
+import { Spinner } from "heroui-native/spinner";
+import { TextField } from "heroui-native/text-field";
+
+import { PageHeader } from "../../../components/ui/page-header";
+import { Screen } from "../../../components/ui/screen";
+import { SectionCard } from "../../../components/ui/section-card";
+import { SectionTitle } from "../../../components/ui/section-title";
 import { api } from "../../../lib/api";
-import { workerTheme } from "../../../lib/theme";
 
 export default function RequestAdjustmentScreen() {
     const { id, shiftTitle, assignmentId } = useLocalSearchParams<{
@@ -28,10 +30,11 @@ export default function RequestAdjustmentScreen() {
     const [clockIn, setClockIn] = useState<Date | null>(null);
     const [clockOut, setClockOut] = useState<Date | null>(null);
     const [showPicker, setShowPicker] = useState<"in" | "out" | null>(null);
+    const [reasonError, setReasonError] = useState<string | null>(null);
 
     const handleSubmit = async () => {
         if (!reason || reason.length < 5) {
-            Alert.alert("Error", "Please provide a valid reason with at least 5 characters.");
+            setReasonError("Please provide a valid reason with at least 5 characters.");
             return;
         }
 
@@ -73,180 +76,85 @@ export default function RequestAdjustmentScreen() {
     };
 
     return (
-        <View style={s.container}>
-            <Stack.Screen
-                options={{
-                    headerShown: true,
-                    title: "Request Adjustment",
-                    headerStyle: { backgroundColor: workerTheme.colors.background },
-                    headerTintColor: workerTheme.colors.foreground,
-                    headerShadowVisible: false,
-                }}
-            />
+        <>
+            <Stack.Screen options={{ headerShown: false }} />
+            <Screen>
+                <PageHeader title="Request adjustment" showBack onBack={() => router.back()} />
 
-            <ScrollView contentContainerStyle={s.content}>
-                <View style={s.hero}>
-                    <Text style={s.eyebrow}>Shift correction</Text>
-                    <Text style={s.heroTitle}>{shiftTitle || "Shift"}</Text>
-                    <Text style={s.heroBody}>
-                        Submit the times you actually worked and explain what needs to be corrected.
-                    </Text>
-                </View>
-
-                <View style={s.card}>
-                    <Text style={s.sectionTitle}>Reason</Text>
-                    <TextInput
-                        style={s.textArea}
-                        value={reason}
-                        onChangeText={setReason}
-                        placeholder="For example: forgot to clock out, clock-in banner did not appear, GPS check failed..."
-                        placeholderTextColor={workerTheme.colors.subtleForeground}
-                        multiline
-                        numberOfLines={5}
-                        textAlignVertical="top"
-                    />
-                </View>
-
-                <View style={s.card}>
-                    <Text style={s.sectionTitle}>Corrected times</Text>
-
-                    <TouchableOpacity style={s.timeButton} onPress={() => setShowPicker("in")}>
-                        <Text style={s.timeLabel}>Clock in</Text>
-                        <Text style={s.timeValue}>
-                            {clockIn ? clockIn.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "No change"}
+                <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48, gap: 20 }}>
+                    <View className="gap-2">
+                        <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-accent">
+                            Shift correction
                         </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={s.timeButton} onPress={() => setShowPicker("out")}>
-                        <Text style={s.timeLabel}>Clock out</Text>
-                        <Text style={s.timeValue}>
-                            {clockOut ? clockOut.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "No change"}
+                        <Text className="text-2xl font-semibold text-foreground">
+                            {shiftTitle || "Shift"}
                         </Text>
-                    </TouchableOpacity>
-                </View>
+                        <Text className="text-sm leading-6 text-muted">
+                            Submit the times you actually worked and explain what needs to be corrected.
+                        </Text>
+                    </View>
 
-                {showPicker ? (
-                    <DateTimePicker
-                        value={new Date()}
-                        mode="time"
-                        display="default"
-                        onChange={onDateChange}
-                    />
-                ) : null}
-            </ScrollView>
+                    <View className="gap-3">
+                        <SectionTitle label="Reason" />
+                        <SectionCard>
+                            <TextField isRequired isInvalid={Boolean(reasonError)}>
+                                <Label>What needs to be corrected?</Label>
+                                <Input
+                                    value={reason}
+                                    onChangeText={(value) => {
+                                        setReason(value);
+                                        setReasonError(null);
+                                    }}
+                                    placeholder="Forgot to clock out, location check failed, banner did not appear..."
+                                    multiline
+                                    numberOfLines={5}
+                                    textAlignVertical="top"
+                                    className="min-h-32"
+                                />
+                                <Description>Include enough detail for your manager to review the adjustment.</Description>
+                                {reasonError ? <FieldError>{reasonError}</FieldError> : null}
+                            </TextField>
+                        </SectionCard>
+                    </View>
 
-            <SafeAreaView edges={["bottom"]} style={s.footer}>
-                <TouchableOpacity
-                    style={[s.submitButton, loading ? s.submitButtonDisabled : null]}
-                    onPress={handleSubmit}
-                    disabled={loading}
-                >
-                    {loading ? (
-                        <ActivityIndicator size="small" color={workerTheme.colors.white} />
-                    ) : (
-                        <Text style={s.submitText}>Submit request</Text>
-                    )}
-                </TouchableOpacity>
-            </SafeAreaView>
-        </View>
+                    <View className="gap-3">
+                        <SectionTitle label="Corrected times" />
+                        <SectionCard>
+                            <Button variant="secondary" onPress={() => setShowPicker("in")}>
+                                <Button.Label>
+                                    Clock in:{" "}
+                                    {clockIn
+                                        ? clockIn.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+                                        : "No change"}
+                                </Button.Label>
+                            </Button>
+
+                            <Button variant="secondary" onPress={() => setShowPicker("out")}>
+                                <Button.Label>
+                                    Clock out:{" "}
+                                    {clockOut
+                                        ? clockOut.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+                                        : "No change"}
+                                </Button.Label>
+                            </Button>
+                        </SectionCard>
+                    </View>
+
+                    {showPicker ? (
+                        <DateTimePicker
+                            value={new Date()}
+                            mode="time"
+                            display="default"
+                            onChange={onDateChange}
+                        />
+                    ) : null}
+
+                    <Button onPress={handleSubmit} isDisabled={loading}>
+                        {loading ? <Spinner size="sm" /> : null}
+                        <Button.Label>{loading ? "Submitting" : "Submit request"}</Button.Label>
+                    </Button>
+                </ScrollView>
+            </Screen>
+        </>
     );
 }
-
-const s = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: workerTheme.colors.background,
-    },
-    content: {
-        padding: 20,
-        paddingBottom: 28,
-        gap: 16,
-    },
-    hero: {
-        paddingTop: 8,
-    },
-    eyebrow: {
-        fontSize: 12,
-        fontWeight: "700",
-        letterSpacing: 1.2,
-        textTransform: "uppercase",
-        color: workerTheme.colors.primary,
-        marginBottom: 10,
-    },
-    heroTitle: {
-        fontSize: 24,
-        fontWeight: "700",
-        color: workerTheme.colors.foreground,
-        marginBottom: 8,
-    },
-    heroBody: {
-        fontSize: 14,
-        lineHeight: 21,
-        color: workerTheme.colors.mutedForeground,
-    },
-    card: {
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.surface,
-        padding: 16,
-        gap: 12,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: workerTheme.colors.foreground,
-    },
-    textArea: {
-        minHeight: 120,
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.surfaceInset,
-        padding: 14,
-        fontSize: 15,
-        color: workerTheme.colors.foreground,
-    },
-    timeButton: {
-        minHeight: 52,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderRadius: 14,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.surfaceInset,
-        paddingHorizontal: 14,
-    },
-    timeLabel: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: workerTheme.colors.foreground,
-    },
-    timeValue: {
-        fontSize: 14,
-        color: workerTheme.colors.secondary,
-    },
-    footer: {
-        paddingHorizontal: 16,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.background,
-    },
-    submitButton: {
-        minHeight: 52,
-        borderRadius: 26,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: workerTheme.colors.primary,
-    },
-    submitButtonDisabled: {
-        opacity: 0.7,
-    },
-    submitText: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: workerTheme.colors.white,
-    },
-});

@@ -5,7 +5,7 @@ import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
 import { eq } from "@repo/database";
 import { auth } from "@repo/auth";
-import { getStripe, isBillingConfigured } from "./stripe";
+import { getStripe, isBillingConfigured } from "@/lib/billing/stripe";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 async function getSession() {

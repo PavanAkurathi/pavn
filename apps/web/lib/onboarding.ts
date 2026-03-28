@@ -106,46 +106,34 @@ export async function getCurrentBusinessOnboardingState() {
             id: "account",
             title: "Account ready",
             description: "Your admin account, business workspace, and free trial are active.",
-            href: "/dashboard/onboarding",
+            href: "/dashboard/onboarding?step=account",
             complete: true,
             supportingText: "Workspace created and admin access active",
         },
         {
             id: "business",
-            title: "Business information",
-            description: "Confirm the settings that control timezone handling and clock-in verification for your business.",
-            href: "/settings/business",
+            title: "Business profile",
+            description: "Set the business name, timezone, and clock-in rules that shape how the app operates.",
+            href: "/dashboard/onboarding?step=business",
             complete: businessInformationComplete,
             supportingText: businessInformationComplete
-                ? "Business details reviewed"
-                : "Review business name, timezone, and clock-in rule",
+                ? "Business profile ready"
+                : "Business name, timezone, and clock-in rule",
         },
         {
             id: "location",
-            title: "Add your first location",
-            description: "Schedules and clock-in verification depend on having at least one location.",
-            href: "/settings/locations",
+            title: "First location",
+            description: "Add the first place where schedules will be created and workers usually clock in.",
+            href: "/dashboard/onboarding?step=location",
             complete: Boolean(firstLocation),
             supportingText: firstLocation
                 ? `Location ready: ${firstLocation.name}`
-                : "No locations added yet",
-        },
-        {
-            id: "billing",
-            title: "Trial & billing",
-            description: "Billing is optional right now. Add it now or skip and return later from Settings.",
-            href: "/settings/billing",
-            complete: billingHandled,
-            optional: true,
-            supportingText: billingHandled
-                ? "Billing decision recorded"
-                : "7-day free trial active — no card required today",
+                : "Choose the main address",
         },
     ];
 
-    const requiredSteps = steps.filter((step) => !step.optional);
-    const completedCount = requiredSteps.filter((step) => step.complete).length;
-    const totalCount = requiredSteps.length;
+    const completedCount = steps.filter((step) => step.complete).length;
+    const totalCount = steps.length;
 
     return {
         session,

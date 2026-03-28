@@ -1,5 +1,4 @@
 const LOCAL_WEB_URL = "http://localhost:3000";
-const LOCAL_API_URL = "http://localhost:4005";
 const LOCAL_EXPO_WEB_URL = "http://localhost:8081";
 
 export const isAuthProd = process.env.NODE_ENV === "production";
@@ -65,7 +64,11 @@ export function getBetterAuthServerBaseUrl(): string {
         return compat;
     }
 
-    return LOCAL_API_URL;
+    if (isAuthProd) {
+        throw new Error("[AUTH FATAL] Missing BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL for Better Auth base URL.");
+    }
+
+    return LOCAL_WEB_URL;
 }
 
 export function getWebAuthClientBaseUrl(): string {

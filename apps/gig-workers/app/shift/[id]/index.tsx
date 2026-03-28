@@ -1,26 +1,38 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, Platform } from "react-native";
-import { useLocalSearchParams, Stack, useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useRef, useState } from "react";
+import { Alert, Linking, Platform, ScrollView, Text, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useState, useEffect, useRef } from "react";
+
+import { Alert as HeroAlert } from "heroui-native/alert";
+import { Button } from "heroui-native/button";
+import { Card } from "heroui-native/card";
+import { Chip } from "heroui-native/chip";
+import { Spinner } from "heroui-native/spinner";
+
+import { EmptyState } from "../../../components/ui/empty-state";
+import { LoadingScreen } from "../../../components/ui/loading-screen";
+import { PageHeader } from "../../../components/ui/page-header";
+import { Screen } from "../../../components/ui/screen";
+import { Icon } from "../../../components/ui/icon";
+import { SectionTitle } from "../../../components/ui/section-title";
 import { api, WorkerShift } from "../../../lib/api";
 import { useGeofence } from "../../../hooks/useGeofence";
-import { workerTheme } from "../../../lib/theme";
 
-type LocationStatus = 'checking' | 'verified' | 'failed' | 'optional' | 'not_required';
+type LocationStatus = "checking" | "verified" | "failed" | "optional" | "not_required";
 
-// =============================================================================
-// HELPERS
-// =============================================================================
+const fmt = (iso: string) =>
+    new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
-const fmt = (iso: string) => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 const fmtDate = (iso: string) => {
-    const d = new Date(iso);
+    const date = new Date(iso);
     const now = new Date();
-    const tmr = new Date(now); tmr.setDate(now.getDate() + 1);
-    if (d.toDateString() === now.toDateString()) return "Today";
-    if (d.toDateString() === tmr.toDateString()) return "Tomorrow";
-    return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+
+    if (date.toDateString() === now.toDateString()) return "Today";
+    if (date.toDateString() === tomorrow.toDateString()) return "Tomorrow";
+
+    return date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 };
 
 const formatTimer = (ms: number): string => {
@@ -31,18 +43,14 @@ const formatTimer = (ms: number): string => {
     return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 };
 
-const formatHours = (n: number | null): string => {
-    if (n === null) return "—";
-    const h = Math.floor(n);
-    const m = Math.round((n - h) * 60);
+const formatHours = (value: number | null): string => {
+    if (value === null) return "—";
+    const h = Math.floor(value);
+    const m = Math.round((value - h) * 60);
     if (h === 0) return `${m} min`;
     if (m === 0) return `${h} hrs`;
     return `${h} hrs ${m} min`;
 };
-
-// =============================================================================
-// RUNNING TIMER HOOK
-// =============================================================================
 
 function useRunningTimer(clockInIso: string | undefined) {
     const [elapsed, setElapsed] = useState(0);
@@ -54,15 +62,48 @@ function useRunningTimer(clockInIso: string | undefined) {
         const tick = () => setElapsed(Date.now() - start);
         tick();
         interval.current = setInterval(tick, 1000);
-        return () => { if (interval.current) clearInterval(interval.current); };
+        return () => {
+            if (interval.current) clearInterval(interval.current);
+        };
     }, [clockInIso]);
 
     return elapsed;
 }
 
-// =============================================================================
-// MAIN SCREEN
-// =============================================================================
+function InfoRow({
+    icon,
+    label,
+    value,
+    tag,
+    highlight = false,
+}: {
+    icon: string;
+    label: string;
+    value: string;
+    tag?: string;
+    highlight?: boolean;
+}) {
+    return (
+        <View className="flex-row gap-3">
+            <View className="mt-0.5">
+                <Icon name={icon as any} size={18} className="text-muted" />
+            </View>
+            <View className="flex-1 gap-1">
+                <Text className="text-xs text-muted">{label}</Text>
+                <View className="flex-row items-center gap-2">
+                    <Text className={highlight ? "text-[15px] font-medium text-success" : "text-[15px] font-medium text-foreground"}>
+                        {value}
+                    </Text>
+                    {tag ? (
+                        <Chip size="sm" variant="soft" color="default">
+                            <Chip.Label>{tag}</Chip.Label>
+                        </Chip>
+                    ) : null}
+                </View>
+            </View>
+        </View>
+    );
+}
 
 export default function ShiftDetailScreen() {
     const { id } = useLocalSearchParams();
@@ -70,25 +111,31 @@ export default function ShiftDetailScreen() {
     const [shift, setShift] = useState<WorkerShift | null>(null);
     const [loading, setLoading] = useState(true);
     const { clockIn, clockOut, loading: geoLoading } = useGeofence();
-    const [locStatus, setLocStatus] = useState<LocationStatus>('checking');
+    const [locStatus, setLocStatus] = useState<LocationStatus>("checking");
 
     const isClockedIn = !!shift?.timesheet.clockIn;
     const isClockedOut = !!shift?.timesheet.clockOut;
     const isActive = isClockedIn && !isClockedOut;
     const elapsed = useRunningTimer(isActive ? shift?.timesheet.clockIn : undefined);
-    const attendancePolicy = shift?.attendanceVerificationPolicy || 'strict_geofence';
-    const requiresOnSite = attendancePolicy === 'strict_geofence';
+    const attendancePolicy = shift?.attendanceVerificationPolicy || "strict_geofence";
+    const requiresOnSite = attendancePolicy === "strict_geofence";
 
-    // Late calculation
     const lateMinutes = shift?.timesheet.clockIn
-        ? Math.max(0, Math.round((new Date(shift.timesheet.clockIn).getTime() - new Date(shift.startTime).getTime()) / 60000))
+        ? Math.max(
+            0,
+            Math.round(
+                (new Date(shift.timesheet.clockIn).getTime() - new Date(shift.startTime).getTime()) / 60000
+            )
+        )
         : 0;
 
-    useEffect(() => { loadShift(); }, [id]);
+    useEffect(() => {
+        void loadShift();
+    }, [id]);
 
     useEffect(() => {
         if (!shift || isClockedIn) return;
-        verifyLocation();
+        void verifyLocation();
     }, [shift?.id, shift?.attendanceVerificationPolicy, isClockedIn]);
 
     const loadShift = async () => {
@@ -96,7 +143,7 @@ export default function ShiftDetailScreen() {
             setLoading(true);
             const data = await api.shifts.getById(id as string);
             setShift(data);
-        } catch (e: any) {
+        } catch {
             Alert.alert("Error", "Failed to load shift");
         } finally {
             setLoading(false);
@@ -104,33 +151,37 @@ export default function ShiftDetailScreen() {
     };
 
     const verifyLocation = async () => {
-        const policy = shift?.attendanceVerificationPolicy || 'strict_geofence';
-        if (policy === 'none') {
-            setLocStatus('not_required');
+        const policy = shift?.attendanceVerificationPolicy || "strict_geofence";
+        if (policy === "none") {
+            setLocStatus("not_required");
             return;
         }
 
-        setLocStatus('checking');
+        setLocStatus("checking");
         try {
-            const { LocationService } = require('../../../services/location');
+            const { LocationService } = require("../../../services/location");
             const loc = await LocationService.getCurrentLocation();
             if (!loc || !shift?.location.latitude || !shift?.location.longitude) {
-                setLocStatus(policy === 'strict_geofence' ? 'failed' : 'optional'); return;
+                setLocStatus(policy === "strict_geofence" ? "failed" : "optional");
+                return;
             }
+
             const R = 6371e3;
-            const p1 = loc.coords.latitude * Math.PI / 180;
-            const p2 = shift.location.latitude * Math.PI / 180;
-            const dp = (shift.location.latitude - loc.coords.latitude) * Math.PI / 180;
-            const dl = (shift.location.longitude - loc.coords.longitude) * Math.PI / 180;
-            const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+            const p1 = (loc.coords.latitude * Math.PI) / 180;
+            const p2 = (shift.location.latitude * Math.PI) / 180;
+            const dp = ((shift.location.latitude - loc.coords.latitude) * Math.PI) / 180;
+            const dl = ((shift.location.longitude - loc.coords.longitude) * Math.PI) / 180;
+            const a =
+                Math.sin(dp / 2) ** 2 +
+                Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
             const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             if (dist <= (shift.location.geofenceRadius || 150)) {
-                setLocStatus('verified');
+                setLocStatus("verified");
             } else {
-                setLocStatus(policy === 'strict_geofence' ? 'failed' : 'optional');
+                setLocStatus(policy === "strict_geofence" ? "failed" : "optional");
             }
         } catch {
-            setLocStatus(policy === 'strict_geofence' ? 'failed' : 'optional');
+            setLocStatus(policy === "strict_geofence" ? "failed" : "optional");
         }
     };
 
@@ -143,9 +194,9 @@ export default function ShiftDetailScreen() {
                 geofenceRadius: shift.location.geofenceRadius,
                 attendanceVerificationPolicy: shift.attendanceVerificationPolicy,
             });
-            loadShift();
-        } catch (e: any) {
-            Alert.alert("Clock In Failed", e.message);
+            await loadShift();
+        } catch (error: any) {
+            Alert.alert("Clock In Failed", error.message);
         }
     };
 
@@ -158,9 +209,9 @@ export default function ShiftDetailScreen() {
                 geofenceRadius: shift.location.geofenceRadius,
                 attendanceVerificationPolicy: shift.attendanceVerificationPolicy,
             });
-            loadShift();
-        } catch (e: any) {
-            Alert.alert("Clock Out Failed", e.message);
+            await loadShift();
+        } catch (error: any) {
+            Alert.alert("Clock Out Failed", error.message);
         }
     };
 
@@ -168,403 +219,279 @@ export default function ShiftDetailScreen() {
         if (!shift?.location.latitude || !shift?.location.longitude) return;
         const lat = shift.location.latitude;
         const lng = shift.location.longitude;
-        const url = Platform.select({
-            ios: `maps://app?daddr=${lat},${lng}`,
-            android: `google.navigation:q=${lat},${lng}`,
-        }) || `https://maps.google.com/?daddr=${lat},${lng}`;
-        Linking.openURL(url);
+        const url =
+            Platform.select({
+                ios: `maps://app?daddr=${lat},${lng}`,
+                android: `google.navigation:q=${lat},${lng}`,
+            }) || `https://maps.google.com/?daddr=${lat},${lng}`;
+        void Linking.openURL(url);
     };
 
     if (loading) {
-        return (
-            <View style={s.centered}>
-                <ActivityIndicator size="large" color={workerTheme.colors.primary} />
-            </View>
-        );
+        return <LoadingScreen label="Loading shift details" />;
     }
+
     if (!shift) {
         return (
-            <View style={s.centered}>
-                <Text style={{ color: workerTheme.colors.mutedForeground }}>Shift not found</Text>
-                <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-                    <Text style={{ color: workerTheme.colors.primary }}>Go back</Text>
-                </TouchableOpacity>
-            </View>
+            <Screen className="justify-center px-5">
+                <EmptyState
+                    icon="calendar-clear-outline"
+                    title="Shift not found"
+                    description="This shift is no longer available or could not be loaded."
+                    actionLabel="Go back"
+                    onAction={() => router.back()}
+                />
+            </Screen>
         );
     }
 
-    const canClockIn = !isClockedIn && !isClockedOut && (!requiresOnSite || locStatus === 'verified');
+    const canClockIn = !isClockedIn && !isClockedOut && (!requiresOnSite || locStatus === "verified");
 
     return (
-        <View style={s.container}>
+        <>
             <Stack.Screen options={{ headerShown: false }} />
-
-            {/* Back + Adjust buttons */}
-            <SafeAreaView edges={["top"]} style={s.topBar}>
-                <TouchableOpacity onPress={() => router.back()} style={s.topBtn}>
-                    <Ionicons name="arrow-back" size={22} color={workerTheme.colors.foreground} />
-                </TouchableOpacity>
-                {isClockedOut && (
-                    <TouchableOpacity
-                        onPress={() =>
-                            router.push({
-                                pathname: `/shift/${id}/request-adjustment`,
-                                params: {
-                                    shiftTitle: shift.title,
-                                    assignmentId: shift.assignmentId,
+            <Screen>
+                <PageHeader
+                    title={shift.title}
+                    subtitle={shift.organization.name}
+                    showBack
+                    onBack={() => router.back()}
+                    actions={
+                        isClockedOut
+                            ? [
+                                {
+                                    icon: "create-outline",
+                                    label: "Request adjustment",
+                                    onPress: () =>
+                                        router.push({
+                                            pathname: `/shift/${id}/request-adjustment`,
+                                            params: {
+                                                shiftTitle: shift.title,
+                                                assignmentId: shift.assignmentId,
+                                            },
+                                        }),
                                 },
-                            })
-                        }
-                        style={s.topBtn}
-                    >
-                        <Ionicons name="create-outline" size={22} color={workerTheme.colors.foreground} />
-                    </TouchableOpacity>
-                )}
-            </SafeAreaView>
+                            ]
+                            : undefined
+                    }
+                />
 
-            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 100, paddingBottom: 120 }}>
-                {/* Title Block */}
-                <View style={s.section}>
-                    <Text style={s.shiftTitle}>{shift.title}</Text>
-                    <Text style={s.orgName}>{shift.organization.name}</Text>
-                    <Text style={s.locationName}>{shift.location.name}</Text>
-                    {shift.location.address && <Text style={s.address}>{shift.location.address}</Text>}
-                </View>
-
-                {/* Status Badge */}
-                <View style={s.section}>
-                    <View style={[s.statusBadge, isActive ? s.statusActive : isClockedOut ? s.statusDone : s.statusUpcoming]}>
-                        <Ionicons
-                            name={isActive ? "radio-button-on" : isClockedOut ? "checkmark-circle" : "time-outline"}
-                            size={16}
-                            color={
-                                isActive
-                                    ? workerTheme.colors.success
-                                    : isClockedOut
-                                      ? workerTheme.colors.secondary
-                                      : workerTheme.colors.mutedForeground
-                            }
-                        />
-                        <Text
-                            style={[
-                                s.statusText,
-                                isActive
-                                    ? { color: workerTheme.colors.success }
-                                    : isClockedOut
-                                      ? { color: workerTheme.colors.secondary }
-                                      : null,
-                            ]}
-                        >
-                            {isActive ? "In Progress" : isClockedOut ? "Completed" : shift.status.toUpperCase()}
-                        </Text>
+                <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 32, gap: 16 }}>
+                    <View className="gap-1">
+                        <Text className="text-sm font-medium text-secondary">{shift.location.name}</Text>
+                        {shift.location.address ? (
+                            <Text className="text-sm text-muted">{shift.location.address}</Text>
+                        ) : null}
                     </View>
-                </View>
 
-                {/* Hours Info */}
-                <View style={s.infoCard}>
-                    <InfoRow icon="time-outline" label="Scheduled" value={`${fmt(shift.startTime)} - ${fmt(shift.endTime)}`} />
-                    <InfoRow icon="calendar-outline" label="Date" value={fmtDate(shift.startTime)} tag={
-                        new Date(shift.startTime).toDateString() === new Date().toDateString() ? "today" : undefined
-                    } />
-                    <InfoRow icon="hourglass-outline" label="Scheduled hours" value={formatHours(shift.hours.scheduled)} />
-                    {shift.hours.breakMinutes > 0 && (
-                        <InfoRow icon="cafe-outline" label="Break" value={`${shift.hours.breakMinutes} min (unpaid)`} />
-                    )}
-                    {shift.hours.worked !== null && (
-                        <InfoRow icon="checkmark-done-outline" label="Hours worked" value={formatHours(shift.hours.worked)} highlight />
-                    )}
-                </View>
-
-                {/* Running Timer (when clocked in) */}
-                {isActive && (
-                    <View style={s.timerCard}>
-                        <Text style={s.timerLabel}>Time on shift</Text>
-                        <Text style={s.timerValue}>{formatTimer(elapsed)}</Text>
-                        {locStatus === 'verified' && (
-                            <View style={s.proximityRow}>
-                                <Ionicons name="wifi" size={14} color={workerTheme.colors.success} />
-                                <Text style={s.proximityText}>Close to location</Text>
-                            </View>
+                    <View className="flex-row">
+                        {isActive ? (
+                            <Chip variant="soft" color="success">
+                                <Chip.Label>In progress</Chip.Label>
+                            </Chip>
+                        ) : isClockedOut ? (
+                            <Chip variant="soft" color="default">
+                                <Chip.Label>Completed</Chip.Label>
+                            </Chip>
+                        ) : (
+                            <Chip variant="soft" color="accent">
+                                <Chip.Label>{shift.status.toUpperCase()}</Chip.Label>
+                            </Chip>
                         )}
                     </View>
-                )}
 
-                {/* Late Indicator */}
-                {lateMinutes > 0 && lateMinutes < 120 && (
-                    <View style={s.warningCard}>
-                        <Ionicons name="warning" size={16} color={workerTheme.colors.primary} />
-                        <Text style={s.warningText}>Clocked in {lateMinutes} min late</Text>
-                    </View>
-                )}
-
-                {/* Clock times (completed) */}
-                {isClockedOut && (
-                    <View style={s.infoCard}>
-                        <InfoRow icon="log-in-outline" label="Clock in" value={fmt(shift.timesheet.clockIn!)} />
-                        <InfoRow icon="log-out-outline" label="Clock out" value={fmt(shift.timesheet.clockOut!)} />
-                    </View>
-                )}
-
-                {/* Missing flags */}
-                {shift.timesheetFlags.missingClockIn && (
-                    <View style={s.warningCard}>
-                        <Ionicons name="alert-circle" size={16} color={workerTheme.colors.warning} />
-                        <Text style={[s.warningText, { color: workerTheme.colors.warning }]}>
-                            No clock-in recorded, your manager will update this
-                        </Text>
-                    </View>
-                )}
-                {shift.timesheetFlags.missingClockOut && (
-                    <View style={s.warningCard}>
-                        <Ionicons name="alert-circle" size={16} color={workerTheme.colors.warning} />
-                        <Text style={[s.warningText, { color: workerTheme.colors.warning }]}>
-                            No clock-out recorded, your manager will update this
-                        </Text>
-                    </View>
-                )}
-
-                {/* Map area + Get Directions */}
-                {shift.location.latitude && shift.location.longitude ? (
-                    <View style={s.mapSection}>
-                    <View style={s.mapPlaceholder}>
-                            <Ionicons name="location" size={32} color={workerTheme.colors.primary} />
-                            <Text style={s.mapCoords}>
-                                {shift.location.latitude.toFixed(4)}, {shift.location.longitude.toFixed(4)}
-                            </Text>
-                        </View>
-                        <TouchableOpacity style={s.directionsBtn} onPress={openDirections}>
-                            <Ionicons
-                                name="navigate-outline"
-                                size={18}
-                                color={workerTheme.colors.primary}
+                    <Card className="rounded-[28px]">
+                        <Card.Body className="gap-5 p-5">
+                            <InfoRow icon="time-outline" label="Scheduled" value={`${fmt(shift.startTime)} - ${fmt(shift.endTime)}`} />
+                            <InfoRow
+                                icon="calendar-outline"
+                                label="Date"
+                                value={fmtDate(shift.startTime)}
+                                tag={new Date(shift.startTime).toDateString() === new Date().toDateString() ? "today" : undefined}
                             />
-                            <Text style={s.directionsText}>Get directions</Text>
-                        </TouchableOpacity>
-                    </View>
-                ) : null}
+                            <InfoRow icon="hourglass-outline" label="Scheduled hours" value={formatHours(shift.hours.scheduled)} />
+                            {shift.hours.breakMinutes > 0 ? (
+                                <InfoRow icon="cafe-outline" label="Break" value={`${shift.hours.breakMinutes} min (unpaid)`} />
+                            ) : null}
+                            {shift.hours.worked !== null ? (
+                                <InfoRow icon="checkmark-done-outline" label="Hours worked" value={formatHours(shift.hours.worked)} highlight />
+                            ) : null}
+                        </Card.Body>
+                    </Card>
 
-                {/* Hours adjustment info */}
-                {isClockedOut && (
-                    <View style={[s.infoCard, { marginTop: 16 }]}>
-                        <Text style={s.adjustLabel}>Hours adjustments</Text>
-                        <Text style={s.adjustText}>
-                            You have 12 hours after the shift to request any adjustments to your working hours.
-                        </Text>
-                    </View>
-                )}
-            </ScrollView>
+                    {isActive ? (
+                        <Card variant="secondary" className="rounded-[28px]">
+                            <Card.Body className="items-center gap-3 px-5 py-6">
+                                <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-success">
+                                    Time on shift
+                                </Text>
+                                <Text className="text-[40px] font-semibold text-foreground">
+                                    {formatTimer(elapsed)}
+                                </Text>
+                                {locStatus === "verified" ? (
+                                    <View className="flex-row items-center gap-2">
+                                        <Icon name="wifi" size={14} className="text-success" />
+                                        <Text className="text-xs text-success">Close to location</Text>
+                                    </View>
+                                ) : null}
+                            </Card.Body>
+                        </Card>
+                    ) : null}
 
-            {/* Footer CTA */}
-            <SafeAreaView edges={["bottom"]} style={s.footer}>
-                {!isClockedIn && !isClockedOut && (
-                    <View>
-                        <View style={s.locRow}>
-                        {locStatus === 'checking' && <Text style={s.locText}>Verifying location...</Text>}
-                            {locStatus === 'verified' && (
-                                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                                    <Ionicons name="wifi" size={14} color={workerTheme.colors.success} />
-                                    <Text style={[s.locText, { color: workerTheme.colors.success }]}>
-                                        {requiresOnSite ? 'At venue, ready to clock in' : 'At venue, ready to clock in'}
-                                    </Text>
-                                </View>
-                            )}
-                            {locStatus === 'optional' && (
-                                <Text style={[s.locText, { color: workerTheme.colors.mutedForeground }]}>
-                                    Flexible on-site: you can clock in away from the venue. It may be reviewed.
-                                </Text>
-                            )}
-                            {locStatus === 'not_required' && (
-                                <Text style={[s.locText, { color: workerTheme.colors.mutedForeground }]}>
-                                    Location check is disabled for this organization.
-                                </Text>
-                            )}
-                            {locStatus === 'failed' && (
-                                <Text style={[s.locText, { color: workerTheme.colors.primary }]}>
-                                    You must be at the venue to clock in
-                                </Text>
-                            )}
+                    {lateMinutes > 0 && lateMinutes < 120 ? (
+                        <HeroAlert status="warning">
+                            <HeroAlert.Indicator />
+                            <HeroAlert.Content>
+                                <HeroAlert.Title>Late arrival</HeroAlert.Title>
+                                <HeroAlert.Description>Clocked in {lateMinutes} min late.</HeroAlert.Description>
+                            </HeroAlert.Content>
+                        </HeroAlert>
+                    ) : null}
+
+                    {isClockedOut ? (
+                        <Card className="rounded-[28px]">
+                            <Card.Body className="gap-5 p-5">
+                                <InfoRow icon="log-in-outline" label="Clock in" value={fmt(shift.timesheet.clockIn!)} />
+                                <InfoRow icon="log-out-outline" label="Clock out" value={fmt(shift.timesheet.clockOut!)} />
+                            </Card.Body>
+                        </Card>
+                    ) : null}
+
+                    {shift.timesheetFlags.missingClockIn ? (
+                        <HeroAlert status="warning">
+                            <HeroAlert.Indicator />
+                            <HeroAlert.Content>
+                                <HeroAlert.Title>Missing clock-in</HeroAlert.Title>
+                                <HeroAlert.Description>No clock-in was recorded. Your manager will update this.</HeroAlert.Description>
+                            </HeroAlert.Content>
+                        </HeroAlert>
+                    ) : null}
+
+                    {shift.timesheetFlags.missingClockOut ? (
+                        <HeroAlert status="warning">
+                            <HeroAlert.Indicator />
+                            <HeroAlert.Content>
+                                <HeroAlert.Title>Missing clock-out</HeroAlert.Title>
+                                <HeroAlert.Description>No clock-out was recorded. Your manager will update this.</HeroAlert.Description>
+                            </HeroAlert.Content>
+                        </HeroAlert>
+                    ) : null}
+
+                    {shift.location.latitude && shift.location.longitude ? (
+                        <View className="gap-3">
+                            <SectionTitle label="Location" />
+                            <Card className="rounded-[28px]">
+                                <Card.Body className="gap-4 p-5">
+                                    <View className="items-center gap-2 rounded-[22px] bg-default px-4 py-8">
+                                        <Icon name="location-outline" size={30} className="text-accent" />
+                                        <Text className="text-sm font-medium text-foreground">
+                                            {shift.location.latitude.toFixed(4)}, {shift.location.longitude.toFixed(4)}
+                                        </Text>
+                                        <Text className="text-xs text-muted">Directions open in your device map app.</Text>
+                                    </View>
+                                    <Button variant="secondary" onPress={openDirections}>
+                                        <Icon name="navigate-outline" size={16} className="text-foreground" />
+                                        <Button.Label>Get directions</Button.Label>
+                                    </Button>
+                                </Card.Body>
+                            </Card>
                         </View>
-                        <TouchableOpacity
-                            style={[s.actionBtn, canClockIn ? s.btnGreen : s.btnDisabled]}
-                            disabled={!canClockIn || geoLoading}
-                            onPress={handleClockIn}
-                        >
-                            {geoLoading ? <ActivityIndicator color={workerTheme.colors.white} /> : (
-                                <Text style={canClockIn ? s.btnText : s.btnTextDisabled}>Clock in</Text>
-                            )}
-                        </TouchableOpacity>
-                        {locStatus === 'failed' && requiresOnSite && (
-                            <TouchableOpacity onPress={verifyLocation} style={{ alignItems: "center", marginTop: 8 }}>
-                                <Text style={{ color: workerTheme.colors.primary, fontSize: 13 }}>
-                                    Retry location check
+                    ) : null}
+
+                    {isClockedOut ? (
+                        <Card className="rounded-[28px]">
+                            <Card.Body className="gap-2 p-5">
+                                <Text className="text-sm font-semibold text-foreground">Hours adjustments</Text>
+                                <Text className="text-sm leading-6 text-muted">
+                                    You have 12 hours after the shift to request any adjustments to your working hours.
                                 </Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                )}
-                {isActive && (
-                    <TouchableOpacity style={[s.actionBtn, s.btnRed]} disabled={geoLoading} onPress={handleClockOut}>
-                        {geoLoading ? <ActivityIndicator color={workerTheme.colors.white} /> : (
-                            <Text style={[s.btnText, { color: workerTheme.colors.white }]}>Clock out</Text>
-                        )}
-                    </TouchableOpacity>
-                )}
-            </SafeAreaView>
-        </View>
+                            </Card.Body>
+                        </Card>
+                    ) : null}
+                </ScrollView>
+
+                <SafeAreaView edges={["bottom"]} className="border-t border-border bg-background px-4 pb-4 pt-3">
+                    {!isClockedIn && !isClockedOut ? (
+                        <View className="gap-3">
+                            {locStatus === "checking" ? (
+                                <HeroAlert>
+                                    <HeroAlert.Indicator />
+                                    <HeroAlert.Content>
+                                        <HeroAlert.Title>Verifying location</HeroAlert.Title>
+                                        <HeroAlert.Description>Checking whether you are close enough to clock in.</HeroAlert.Description>
+                                    </HeroAlert.Content>
+                                </HeroAlert>
+                            ) : null}
+
+                            {locStatus === "verified" ? (
+                                <HeroAlert status="success">
+                                    <HeroAlert.Indicator />
+                                    <HeroAlert.Content>
+                                        <HeroAlert.Title>Ready to clock in</HeroAlert.Title>
+                                        <HeroAlert.Description>
+                                            {requiresOnSite
+                                                ? "You are at the venue and can clock in now."
+                                                : "You are near the venue and ready to clock in."}
+                                        </HeroAlert.Description>
+                                    </HeroAlert.Content>
+                                </HeroAlert>
+                            ) : null}
+
+                            {locStatus === "optional" ? (
+                                <HeroAlert>
+                                    <HeroAlert.Indicator />
+                                    <HeroAlert.Content>
+                                        <HeroAlert.Title>Flexible on-site</HeroAlert.Title>
+                                        <HeroAlert.Description>
+                                            You can clock in away from the venue. Your manager may review it later.
+                                        </HeroAlert.Description>
+                                    </HeroAlert.Content>
+                                </HeroAlert>
+                            ) : null}
+
+                            {locStatus === "not_required" ? (
+                                <HeroAlert>
+                                    <HeroAlert.Indicator />
+                                    <HeroAlert.Content>
+                                        <HeroAlert.Title>Location check disabled</HeroAlert.Title>
+                                        <HeroAlert.Description>
+                                            This organization does not require location verification for clock-in.
+                                        </HeroAlert.Description>
+                                    </HeroAlert.Content>
+                                </HeroAlert>
+                            ) : null}
+
+                            {locStatus === "failed" ? (
+                                <HeroAlert status="danger">
+                                    <HeroAlert.Indicator />
+                                    <HeroAlert.Content>
+                                        <HeroAlert.Title>On-site required</HeroAlert.Title>
+                                        <HeroAlert.Description>You must be at the venue to clock in.</HeroAlert.Description>
+                                    </HeroAlert.Content>
+                                </HeroAlert>
+                            ) : null}
+
+                            <Button onPress={handleClockIn} isDisabled={!canClockIn || geoLoading}>
+                                {geoLoading ? <Spinner size="sm" /> : null}
+                                <Button.Label>Clock in</Button.Label>
+                            </Button>
+
+                            {locStatus === "failed" && requiresOnSite ? (
+                                <Button variant="secondary" onPress={() => void verifyLocation()}>
+                                    <Button.Label>Retry location check</Button.Label>
+                                </Button>
+                            ) : null}
+                        </View>
+                    ) : null}
+
+                    {isActive ? (
+                        <Button variant="danger" onPress={handleClockOut} isDisabled={geoLoading}>
+                            {geoLoading ? <Spinner size="sm" /> : null}
+                            <Button.Label>Clock out</Button.Label>
+                        </Button>
+                    ) : null}
+                </SafeAreaView>
+            </Screen>
+        </>
     );
 }
-
-// =============================================================================
-// INFO ROW COMPONENT
-// =============================================================================
-
-function InfoRow({ icon, label, value, tag, highlight }: {
-    icon: string; label: string; value: string; tag?: string; highlight?: boolean;
-}) {
-    return (
-        <View style={s.infoRow}>
-            <Ionicons
-                name={icon as any}
-                size={18}
-                color={workerTheme.colors.mutedForeground}
-                style={{ marginTop: 1 }}
-            />
-            <View style={{ flex: 1 }}>
-                <Text style={s.infoLabel}>{label}</Text>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                    <Text style={[s.infoValue, highlight && { color: workerTheme.colors.success }]}>
-                        {value}
-                    </Text>
-                    {tag && <View style={s.tag}><Text style={s.tagText}>{tag}</Text></View>}
-                </View>
-            </View>
-        </View>
-    );
-}
-
-// =============================================================================
-// STYLES
-// =============================================================================
-
-const s = StyleSheet.create({
-    container: { flex: 1, backgroundColor: workerTheme.colors.background },
-    centered: {
-        flex: 1,
-        backgroundColor: workerTheme.colors.background,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-
-    topBar: {
-        position: "absolute", top: 0, left: 0, right: 0, zIndex: 10,
-        flexDirection: "row", justifyContent: "space-between",
-        paddingHorizontal: 16, paddingBottom: 8,
-    },
-    topBtn: {
-        padding: 8,
-        backgroundColor: "rgba(255,255,255,0.92)",
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-    },
-
-    section: { paddingHorizontal: 20, marginBottom: 16 },
-    shiftTitle: { fontSize: 24, fontWeight: "700", color: workerTheme.colors.foreground, marginBottom: 4 },
-    orgName: { fontSize: 15, color: workerTheme.colors.primary, marginBottom: 2 },
-    locationName: { fontSize: 14, color: workerTheme.colors.secondary },
-    address: { fontSize: 13, color: workerTheme.colors.mutedForeground, marginTop: 2 },
-
-    statusBadge: {
-        flexDirection: "row", alignItems: "center", gap: 6,
-        alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 5,
-        borderRadius: 999, backgroundColor: workerTheme.colors.surfaceMuted,
-    },
-    statusActive: { backgroundColor: workerTheme.colors.successSoft },
-    statusDone: { backgroundColor: workerTheme.colors.secondarySoft },
-    statusUpcoming: {},
-    statusText: { fontSize: 12, fontWeight: "600", color: workerTheme.colors.mutedForeground },
-
-    infoCard: {
-        marginHorizontal: 16,
-        backgroundColor: workerTheme.colors.surface,
-        borderRadius: 18,
-        padding: 14,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-    },
-    infoRow: { flexDirection: "row", gap: 10, paddingVertical: 8 },
-    infoLabel: { fontSize: 12, color: workerTheme.colors.mutedForeground },
-    infoValue: { fontSize: 15, color: workerTheme.colors.foreground, fontWeight: "500" },
-    tag: {
-        backgroundColor: workerTheme.colors.secondarySoft,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 999,
-    },
-    tagText: { fontSize: 10, color: workerTheme.colors.secondary, fontWeight: "600" },
-
-    timerCard: {
-        marginHorizontal: 16,
-        backgroundColor: workerTheme.colors.successSoft,
-        borderRadius: 18,
-        padding: 20,
-        alignItems: "center",
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: "#BFE3C4",
-    },
-    timerLabel: { fontSize: 12, color: workerTheme.colors.success, marginBottom: 4 },
-    timerValue: { fontSize: 36, fontWeight: "700", color: workerTheme.colors.foreground, fontVariant: ["tabular-nums"] },
-    proximityRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 8 },
-    proximityText: { fontSize: 12, color: workerTheme.colors.success },
-
-    warningCard: {
-        flexDirection: "row", alignItems: "center", gap: 8,
-        marginHorizontal: 16,
-        backgroundColor: workerTheme.colors.warningSoft,
-        borderRadius: 14,
-        padding: 12,
-        marginBottom: 12,
-    },
-    warningText: { fontSize: 13, color: workerTheme.colors.primary, flex: 1 },
-
-    mapSection: { marginHorizontal: 16, marginBottom: 12 },
-    mapPlaceholder: {
-        height: 140,
-        backgroundColor: workerTheme.colors.surfaceMuted,
-        borderRadius: 18,
-        justifyContent: "center", alignItems: "center", gap: 6,
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-    },
-    mapCoords: { fontSize: 11, color: workerTheme.colors.mutedForeground },
-    directionsBtn: {
-        flexDirection: "row", alignItems: "center", gap: 4,
-        paddingVertical: 8, paddingHorizontal: 12, marginTop: 6,
-    },
-    directionsText: { fontSize: 14, color: workerTheme.colors.primary, fontWeight: "600" },
-
-    adjustLabel: { fontSize: 14, fontWeight: "600", color: workerTheme.colors.foreground, marginBottom: 6 },
-    adjustText: { fontSize: 13, color: workerTheme.colors.mutedForeground, lineHeight: 18 },
-
-    footer: {
-        padding: 16,
-        borderTopWidth: 1,
-        borderTopColor: workerTheme.colors.border,
-        backgroundColor: workerTheme.colors.background,
-    },
-    locRow: { alignItems: "center", marginBottom: 10 },
-    locText: { fontSize: 12, color: workerTheme.colors.mutedForeground },
-    actionBtn: {
-        height: 52,
-        borderRadius: 26,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    btnGreen: { backgroundColor: workerTheme.colors.success },
-    btnRed: { backgroundColor: workerTheme.colors.secondary },
-    btnDisabled: { backgroundColor: workerTheme.colors.surfaceMuted },
-    btnText: { fontSize: 16, fontWeight: "700", color: workerTheme.colors.white },
-    btnTextDisabled: { fontSize: 16, fontWeight: "600", color: workerTheme.colors.subtleForeground },
-});

@@ -7,41 +7,34 @@ export default function AuthLayout({
     children: React.ReactNode;
 }) {
     return (
-        <div className="flex min-h-screen w-full bg-slate-50">
-            {/* Left Side - Visuals (Desktop Only) */}
-            <div className="hidden lg:flex w-1/2 bg-slate-900 flex-col justify-between p-12 text-white relative overflow-hidden">
+        <div className="flex min-h-screen w-full bg-muted/20">
+            <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-foreground p-12 text-background lg:flex">
                 <div className="relative z-10">
                     <h2 className="text-3xl font-extrabold mb-4">The OS for Modern Hospitality</h2>
-                    <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+                    <p className="max-w-md text-lg leading-relaxed text-background/70">
                         Flat-rate scheduling and GPS timekeeping built for hospitality. No per-user fees. No contracts.
                     </p>
                 </div>
 
-                {/* Abstract pattern or decoration could go here */}
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-red-600/10 rounded-full blur-3xl rounded-bl-none"></div>
-                <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-slate-600/10 rounded-full blur-3xl"></div>
+                <div className="absolute right-0 top-0 -mr-20 -mt-20 h-96 w-96 rounded-full rounded-bl-none bg-primary/15 blur-3xl"></div>
+                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 h-80 w-80 rounded-full bg-background/10 blur-3xl"></div>
 
-                <div className="relative z-10">
-                    {/* Testimonial Removed */}
-                </div>
+                <div className="relative z-10" />
             </div>
 
-            {/* Right Side - Form Content */}
-            <div className="w-full lg:w-1/2 flex flex-col h-screen">
-                {/* Minimal Header */}
-                <header className="flex-none p-6 md:p-8 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-xl text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
-                        <div className="bg-black text-white p-1 rounded-md">
+            <div className="flex h-screen w-full flex-col lg:w-1/2">
+                <header className="flex-none p-6 md:p-8">
+                    <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground transition-opacity hover:opacity-80">
+                        <div className="rounded-md bg-primary p-1 text-primary-foreground">
                             <Command className="w-5 h-5" />
                         </div>
                         Workers Hive
                     </Link>
                 </header>
 
-                {/* Scrollable Content Area */}
                 <div className="flex-1 overflow-y-auto">
-                    <div className="flex flex-col items-center justify-center min-h-full p-6 md:p-12 lg:px-24">
-                        <div className="w-full max-w-md space-y-8">
+                    <div className="flex min-h-full flex-col items-center justify-center p-6 md:p-12 lg:px-24">
+                        <div className="flex w-full max-w-md flex-col gap-8">
                             {children}
                         </div>
                     </div>

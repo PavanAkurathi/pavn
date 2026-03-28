@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
-import { Card } from "@repo/ui/components/ui/card";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
 import { Suspense } from "react";
 import { OtpForm } from "@/components/auth/otp-form";
 import { Field, FieldGroup, FieldLabel } from "@repo/ui/components/ui/field";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 
 type AuthClientErrorContext = { error: { message: string } };
 
@@ -65,32 +66,36 @@ function ResetPasswordForm() {
     };
 
     return (
-        <Card className="py-8 px-4 shadow-none border-0 sm:border sm:shadow-sm sm:px-10 bg-white/50 sm:bg-white mt-8 flex flex-col items-center">
+        <Card className="border bg-background/90 shadow-sm backdrop-blur-sm">
+            <CardContent className="flex flex-col items-center gap-6 pt-6">
 
             {!email && (
-                <div className="mb-4 text-red-500 text-sm">Error: No email provided. Please restart functionality.</div>
+                <Alert variant="destructive">
+                    <AlertTitle>Email missing</AlertTitle>
+                    <AlertDescription>Please restart the password reset flow so we know which account to update.</AlertDescription>
+                </Alert>
             )}
 
             {step === "otp" && (
                 <>
-                    <div className="mb-6 text-center">
-                        <p className="text-sm text-slate-500">
-                            Enter the code sent to <span className="font-bold text-slate-700">{email}</span>.
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">
+                            Enter the code sent to <span className="font-bold text-foreground">{email}</span>.
                         </p>
                     </div>
                     <OtpForm
                         value={otp}
                         onChange={setOtp}
                         onSubmit={handleVerifyOtp}
-                        submitLabel="Verify Code"
+                        submitLabel="Verify code"
                     />
                 </>
             )}
 
             {step === "password" && (
-                <form onSubmit={handleResetPassword} className="w-full space-y-6">
-                    <div className="text-center mb-4">
-                        <p className="text-2xl font-bold tracking-tight text-slate-900">New Password</p>
+                <form onSubmit={handleResetPassword} className="flex w-full flex-col gap-6">
+                    <div className="text-center">
+                        <p className="text-2xl font-bold tracking-tight text-foreground">New password</p>
                     </div>
 
                     <FieldGroup>
@@ -102,7 +107,6 @@ function ResetPasswordForm() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="bg-white"
                                 disabled={loading}
                             />
                         </Field>
@@ -114,23 +118,18 @@ function ResetPasswordForm() {
                                 required
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="bg-white"
                                 disabled={loading}
                             />
                         </Field>
 
-                        <Button type="submit" disabled={loading} className="w-full bg-red-600 hover:bg-red-700 font-bold">
-                            {loading ? (
-                                <>
-                                    <Loader2 className="animate-spin mr-2" /> Resetting...
-                                </>
-                            ) : (
-                                "Reset Password"
-                            )}
+                        <Button type="submit" disabled={loading} className="w-full">
+                            {loading ? <Spinner data-icon="inline-start" /> : null}
+                            Reset password
                         </Button>
                     </FieldGroup>
                 </form>
             )}
+            </CardContent>
         </Card>
     );
 }
@@ -139,11 +138,11 @@ export default function ResetPasswordPage() {
     return (
         <>
             <div className="text-center">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">
                     Secure your account
                 </h2>
             </div>
-            <Suspense fallback={<div className="mt-8 text-center">Loading...</div>}>
+            <Suspense fallback={<div className="mt-8 text-center text-sm text-muted-foreground">Loading...</div>}>
                 <ResetPasswordForm />
             </Suspense>
         </>

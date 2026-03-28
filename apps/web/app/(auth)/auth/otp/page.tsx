@@ -8,7 +8,7 @@ import {
     InputOTPSeparator,
     InputOTPSlot,
 } from "@repo/ui/components/ui/input-otp";
-import { Card } from "@repo/ui/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Spinner } from "@repo/ui/components/ui/spinner";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -37,16 +37,22 @@ export default function OTPPage() {
     return (
         <>
             <div className="text-center">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">
                     Check your email
                 </h2>
-                <p className="mt-2 text-sm text-slate-600">
-                    We've sent a 6-digit verification code to <span className="font-semibold text-slate-900">name@venue.com</span>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    We&apos;ve sent a 6-digit verification code to <span className="font-semibold text-foreground">name@venue.com</span>
                 </p>
             </div>
 
-            <Card className="py-8 px-4 shadow-none border-0 sm:border sm:shadow-sm sm:px-10 bg-white/50 sm:bg-white mt-8 flex flex-col items-center">
-                <div className="space-y-6 w-full flex flex-col items-center">
+            <Card className="border bg-background/90 shadow-sm backdrop-blur-sm">
+                <CardHeader>
+                    <CardTitle className="text-xl">Enter verification code</CardTitle>
+                    <CardDescription>
+                        Use the 6-digit code from your inbox to keep going.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-6">
                     <InputOTP
                         maxLength={6}
                         value={value}
@@ -69,30 +75,25 @@ export default function OTPPage() {
                     <Button
                         onClick={onVerify}
                         disabled={loading}
-                        className="w-full bg-red-600 hover:bg-red-700 font-bold"
+                        className="w-full"
                     >
-                        {loading ? (
-                            <>
-                                <Spinner className="mr-2 text-white" /> Verifying...
-                            </>
-                        ) : (
-                            "Verify Code"
-                        )}
+                        {loading ? <Spinner data-icon="inline-start" /> : null}
+                        Verify code
                     </Button>
 
                     <div className="text-center text-sm">
-                        <span className="text-slate-500">Didn't receive code?</span>{" "}
-                        <button className="font-medium text-red-600 hover:text-red-500">
-                            Result
+                        <span className="text-muted-foreground">Didn&apos;t receive code?</span>{" "}
+                        <button className="font-medium text-primary hover:text-primary/80">
+                            Resend
                         </button>
                     </div>
-                </div>
+                </CardContent>
             </Card>
 
             <div className="mt-6 text-center">
                 <Link
                     href="/auth/login"
-                    className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                     Back to Login
                 </Link>

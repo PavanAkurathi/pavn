@@ -2,7 +2,7 @@ import { db, resolveWorkerRoleSet } from "@repo/database";
 import { invitation, user, member, rosterEntry } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { normalizePhoneNumber } from "@repo/auth/providers/sms";
+import { normalizePhoneNumber } from "@repo/auth";
 import { z } from "zod";
 
 const InviteWorkerInputSchema = z.object({

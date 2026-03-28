@@ -1,8 +1,12 @@
+import "react-native-gesture-handler";
 import { Stack, useRouter } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import Toast from 'react-native-toast-message';
+import { HeroUINativeProvider } from "heroui-native/provider";
 import "../services/location";
+import "../global.css";
 import { type ReactNode, useEffect } from "react";
 
 import * as Sentry from '@sentry/react-native';
@@ -94,16 +98,28 @@ function RootLayout() {
 
     return (
         <DubProviderWrapper>
-            <SafeAreaProvider>
-                <StatusBar style="dark" backgroundColor={workerTheme.colors.background} />
-                <ErrorBoundary>
-                    <Stack screenOptions={{ headerShown: false }}>
-                        <Stack.Screen name="index" />
-                        <Stack.Screen name="(auth)" />
-                    </Stack>
-                </ErrorBoundary>
-                <Toast />
-            </SafeAreaProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+                <HeroUINativeProvider
+                    config={{
+                        toast: "disabled",
+                        textProps: {
+                            allowFontScaling: false,
+                            maxFontSizeMultiplier: 1.2,
+                        },
+                    }}
+                >
+                    <SafeAreaProvider>
+                        <StatusBar style="dark" backgroundColor={workerTheme.colors.background} />
+                        <ErrorBoundary>
+                            <Stack screenOptions={{ headerShown: false }}>
+                                <Stack.Screen name="index" />
+                                <Stack.Screen name="(auth)" />
+                            </Stack>
+                        </ErrorBoundary>
+                        <Toast />
+                    </SafeAreaProvider>
+                </HeroUINativeProvider>
+            </GestureHandlerRootView>
         </DubProviderWrapper>
     );
 }

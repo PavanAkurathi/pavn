@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     InputOTP,
     InputOTPGroup,
     InputOTPSlot,
 } from "@repo/ui/components/ui/input-otp";
-import { Card } from "@repo/ui/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
 import { Suspense } from "react";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 
 type AuthClientErrorContext = { error: { message: string } };
 
@@ -50,38 +50,38 @@ function VerifyEmailForm() {
     };
 
     return (
-        <Card className="py-8 px-4 shadow-none border-0 sm:border sm:shadow-sm sm:px-10 bg-white/50 sm:bg-white mt-8 flex flex-col items-center">
-            <div className="mb-6 text-center">
-                <p className="text-sm text-slate-500">
-                    We sent a verification code to <span className="font-bold text-slate-700">{email}</span>.
-                </p>
-                <p className="text-xs text-slate-400 mt-1">
-                    Check your spam folder if you don't see it.
-                </p>
-            </div>
+        <Card className="border bg-background/90 shadow-sm backdrop-blur-sm">
+            <CardHeader>
+                <CardTitle className="text-xl">Enter verification code</CardTitle>
+                <CardDescription>
+                    We sent a verification code to <span className="font-semibold text-foreground">{email}</span>. Check your spam folder if you don&apos;t see it.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col items-center gap-6">
+                <InputOTP
+                    maxLength={6}
+                    value={otp}
+                    onChange={(value) => setOtp(value)}
+                >
+                    <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                        <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                </InputOTP>
 
-            <InputOTP
-                maxLength={6}
-                value={otp}
-                onChange={(value) => setOtp(value)}
-            >
-                <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                </InputOTPGroup>
-            </InputOTP>
-
-            <Button
-                className="w-full mt-6 bg-red-600 hover:bg-red-700 font-bold"
-                onClick={handleVerify}
-                disabled={isLoading || otp.length < 6}
-            >
-                {isLoading ? <Loader2 className="animate-spin" /> : "Verify Email"}
-            </Button>
+                <Button
+                    className="w-full"
+                    onClick={handleVerify}
+                    disabled={isLoading || otp.length < 6}
+                >
+                    {isLoading ? <Spinner data-icon="inline-start" /> : null}
+                    Verify email
+                </Button>
+            </CardContent>
         </Card>
     );
 }
@@ -90,12 +90,12 @@ export default function VerifyEmailPage() {
     return (
         <>
             <div className="text-center">
-                <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                <h2 className="text-2xl font-bold tracking-tight text-foreground">
                     Verify your email
                 </h2>
             </div>
 
-            <Suspense fallback={<div className="mt-8 text-center text-sm text-slate-500">Loading...</div>}>
+            <Suspense fallback={<div className="mt-8 text-center text-sm text-muted-foreground">Loading...</div>}>
                 <VerifyEmailForm />
             </Suspense>
         </>

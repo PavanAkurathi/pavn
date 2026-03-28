@@ -3,7 +3,6 @@
 import { createAuthClient } from "better-auth/react";
 import { organizationClient, emailOTPClient, phoneNumberClient } from "better-auth/client/plugins";
 import { dashClient } from "@better-auth/infra/client";
-import { stripeClient } from "@better-auth/stripe/client";
 
 import type { auth } from "./auth"; // Import type for inference
 
@@ -20,10 +19,7 @@ export const authClient = createAuthClient({
         organizationClient(),
         emailOTPClient(),
         phoneNumberClient(),
-        stripeClient({
-            subscription: true
-        })
-    ]
+    ],
 });
 
 // Helper to export Session type for use in apps

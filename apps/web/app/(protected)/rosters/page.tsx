@@ -6,6 +6,7 @@ import { member, user, organization, certification, invitation, rosterEntry } fr
 import { eq, and, ne, inArray } from "@repo/database";
 import { DataTable } from "../../../components/roster/data-table";
 import { columns, WorkerDetails } from "../../../components/roster/columns";
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import {
@@ -190,7 +191,7 @@ export default async function RostersPage(props: { searchParams: Promise<RosterS
             : "Manage your frontline workforce and workers.";
 
     return (
-        <div className="space-y-6 max-w-5xl">
+        <div className="flex max-w-5xl flex-col gap-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Roster</h2>
@@ -211,7 +212,7 @@ export default async function RostersPage(props: { searchParams: Promise<RosterS
 
             {onboardingMode && (
                 <Card className="border-primary/20 bg-primary/5 shadow-sm">
-                    <CardHeader className="space-y-4">
+                    <CardHeader className="gap-4">
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge className="rounded-full bg-primary px-3 py-1 text-white hover:bg-primary">
                                 Onboarding
@@ -220,28 +221,27 @@ export default async function RostersPage(props: { searchParams: Promise<RosterS
                                 Workforce setup
                             </Badge>
                         </div>
-                        <div className="space-y-2">
-                            <CardTitle className="flex items-center gap-2 text-slate-950">
+                        <div className="flex flex-col gap-2">
+                            <CardTitle className="flex items-center gap-2">
                                 <Users className="h-5 w-5 text-primary" />
                                 {onboardingMode === "roles" ? "Review workforce roles" : "Build your roster"}
                             </CardTitle>
-                            <CardDescription className="max-w-3xl text-sm leading-6 text-slate-600">
+                            <CardDescription className="max-w-3xl text-sm leading-6">
                                 {onboardingMode === "roles"
                                     ? "Confirm the job roles attached to your workforce here so schedules reflect real staffing demand."
                                     : "Import your workforce by CSV/XLSX or add the first few workers manually. Pending invites and roster entries are enough to move forward."}
                             </CardDescription>
                         </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm text-slate-700">
-                            <div className="flex items-start gap-3">
-                                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                                <p>
-                                    <span className="font-medium text-slate-900">Roster</span> is for your frontline workforce.
-                                    <span className="text-slate-600"> Settings &gt; Team stays separate for admin and manager access.</span>
-                                </p>
-                            </div>
-                        </div>
+                    <CardContent className="flex flex-col gap-4">
+                        <Alert className="bg-background/70">
+                            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                            <AlertTitle>Keep Team and Roster separate</AlertTitle>
+                            <AlertDescription>
+                                <span className="font-medium text-foreground">Roster</span> is for your frontline workforce.{" "}
+                                <span>Settings &gt; Team stays separate for admin and manager access.</span>
+                            </AlertDescription>
+                        </Alert>
                         <div className="flex flex-wrap gap-3">
                             <Link href="/rosters/import">
                                 <Button variant="outline">
@@ -251,7 +251,7 @@ export default async function RostersPage(props: { searchParams: Promise<RosterS
                             </Link>
                             <AddWorkerDialog />
                             <Link href="/dashboard/onboarding">
-                                <Button variant="ghost" className="gap-2 text-slate-700 hover:text-slate-900">
+                                <Button variant="ghost" className="gap-2">
                                     Return to onboarding
                                     <ArrowRight className="h-4 w-4" />
                                 </Button>

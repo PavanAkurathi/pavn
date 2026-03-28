@@ -5,23 +5,22 @@ import { db } from "@repo/database";
 import { organization } from "@repo/database/schema";
 import { eq } from "@repo/database";
 import Stripe from "stripe";
+import { requireStripe } from "@/lib/billing/stripe";
 
-const getStripe = () => {
-    const apiKey = process.env.STRIPE_SECRET_KEY;
-    if (!apiKey) {
-        throw new Error("STRIPE_SECRET_KEY is not set");
-    }
-    return new Stripe(apiKey, {
-        apiVersion: "2025-01-27.acacia" as any,
-        typescript: true,
-    });
-};
+export const runtime = "nodejs";
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+function toPeriodEndDate(unixSeconds?: number | null) {
+    if (!unixSeconds) {
+        return null;
+    }
+
+    return new Date(unixSeconds * 1000);
+}
+
 export async function POST(req: Request) {
     const body = await req.text();
-    // Await headers() to get the ReadonlyHeaders object
     const headersList = await headers();
     const sig = headersList.get("stripe-signature")!;
 
@@ -33,59 +32,61 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
         }
 
-        const stripe = getStripe();
+        const stripe = requireStripe();
         event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
     } catch (err: any) {
         console.error(`Webhook Signature Error: ${err.message}`);
         return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
     }
 
-    // Handle the event
     try {
         switch (event.type) {
-            // 1. Checkout Completed -> Link Sub to Org
             case "checkout.session.completed": {
                 const session = event.data.object as Stripe.Checkout.Session;
                 if (session.subscription) {
-                    const subscriptionId = typeof session.subscription === 'string'
+                    const stripe = requireStripe();
+                    const subscriptionId = typeof session.subscription === "string"
                         ? session.subscription
                         : session.subscription.id;
-
                     const orgId = session.metadata?.orgId;
+                    const customerId = typeof session.customer === "string"
+                        ? session.customer
+                        : session.customer?.id ?? null;
 
                     if (orgId && subscriptionId) {
+                        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
                         await db.update(organization)
                             .set({
+                                stripeCustomerId: customerId,
                                 stripeSubscriptionId: subscriptionId,
-                                subscriptionStatus: "active", // Assume active on creation
-                                // Retrieve the subscription object to get current_period_end if needed,
-                                // or wait for the 'customer.subscription.created' event which usually fires too.
-                                // For immediate UX, "active" is good enough.
+                                subscriptionStatus: subscription.status,
+                                currentPeriodEnd: toPeriodEndDate((subscription as any).current_period_end),
                             })
                             .where(eq(organization.id, orgId));
+
                         console.log(`[Webhook] Linked subscription ${subscriptionId} to org ${orgId}`);
                     }
                 }
                 break;
             }
 
-            // 2. Subscription Created/Updated -> Sync Status & Period
             case "customer.subscription.created":
             case "customer.subscription.updated": {
                 const sub = event.data.object as Stripe.Subscription;
-                const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+                const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
-                // Find org by Stripe Customer ID
                 const org = await db.query.organization.findFirst({
-                    where: eq(organization.stripeCustomerId, customerId)
+                    where: eq(organization.stripeCustomerId, customerId),
                 });
 
                 if (org) {
                     await db.update(organization)
                         .set({
+                            stripeCustomerId: customerId,
                             stripeSubscriptionId: sub.id,
                             subscriptionStatus: sub.status,
-                            currentPeriodEnd: new Date((sub as any).current_period_end * 1000)
+                            currentPeriodEnd: toPeriodEndDate((sub as any).current_period_end),
                         })
                         .where(eq(organization.id, org.id));
                     console.log(`[Webhook] Synced subscription ${sub.id} for org ${org.id}. Status: ${sub.status}`);
@@ -93,35 +94,33 @@ export async function POST(req: Request) {
                 break;
             }
 
-            // 3. Subscription Deleted -> Set Inactive
             case "customer.subscription.deleted": {
                 const sub = event.data.object as Stripe.Subscription;
-                const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id;
+                const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
                 const org = await db.query.organization.findFirst({
-                    where: eq(organization.stripeCustomerId, customerId)
+                    where: eq(organization.stripeCustomerId, customerId),
                 });
 
                 if (org) {
                     await db.update(organization)
                         .set({
-                            subscriptionStatus: "inactive",
-                            currentPeriodEnd: undefined, // Clear or keep as last known? Usually clear to avoid confusion.
-                            stripeSubscriptionId: null
+                            stripeCustomerId: customerId,
+                            subscriptionStatus: sub.status,
+                            currentPeriodEnd: null,
+                            stripeSubscriptionId: null,
                         })
                         .where(eq(organization.id, org.id));
-                    console.log(`[Webhook] Subscription ${sub.id} deleted. Marked org ${org.id} inactive.`);
+                    console.log(`[Webhook] Subscription ${sub.id} deleted. Synced org ${org.id} to ${sub.status}.`);
                 }
                 break;
             }
 
             default:
-            // console.log(`[Webhook] Unhandled event type ${event.type}`);
         }
     } catch (error) {
-        // Return 200 anyway so Stripe doesn't retry infinitely on logic errors
         console.error("[Webhook] Handler Error:", error);
-        return NextResponse.json({ received: true, error: "Logic Error" });
+        return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
     }
 
     return NextResponse.json({ received: true });

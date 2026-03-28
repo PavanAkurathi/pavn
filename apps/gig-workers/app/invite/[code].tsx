@@ -1,12 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import { useLocalSearchParams, useRouter, Stack } from "expo-router";
-import { authClient } from "../../lib/auth-client";
-import { Ionicons } from "@expo/vector-icons";
+import { Alert, Text, View } from "react-native";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
+
+import { Alert as HeroAlert } from "heroui-native/alert";
+import { Button } from "heroui-native/button";
+import { Description } from "heroui-native/description";
+import { FieldError } from "heroui-native/field-error";
+import { Input } from "heroui-native/input";
+import { InputOTP, REGEXP_ONLY_DIGITS } from "heroui-native/input-otp";
+import { Label } from "heroui-native/label";
+import { Spinner } from "heroui-native/spinner";
+import { TextField } from "heroui-native/text-field";
+
+import { AuthShell } from "../../components/ui/auth-shell";
+import { Icon } from "../../components/ui/icon";
+import { authClient } from "../../lib/auth-client";
+import { otpSchema, phoneSchema, validate } from "../../lib/validation";
 import { checkWorkerEligibility, persistWorkerSession } from "../../lib/worker-auth";
-import { workerTheme } from "../../lib/theme";
-import { phoneSchema } from "../../lib/validation";
 
 export default function InviteRedemptionScreen() {
     const { code } = useLocalSearchParams();
@@ -14,8 +25,11 @@ export default function InviteRedemptionScreen() {
 
     const [phoneNumber, setPhoneNumber] = useState("");
     const [otp, setOtp] = useState("");
-    const [step, setStep] = useState<'phone' | 'otp'>('phone');
+    const [step, setStep] = useState<"phone" | "otp">("phone");
     const [loading, setLoading] = useState(false);
+    const [phoneError, setPhoneError] = useState<string | null>(null);
+    const [otpError, setOtpError] = useState<string | null>(null);
+    const [generalError, setGeneralError] = useState<string | null>(null);
 
     useEffect(() => {
         if (typeof code === "string" && code) {
@@ -23,20 +37,26 @@ export default function InviteRedemptionScreen() {
         }
     }, [code]);
 
+    const clearErrors = () => {
+        setPhoneError(null);
+        setOtpError(null);
+        setGeneralError(null);
+    };
+
     const handleSendOtp = async () => {
+        clearErrors();
         const parsedPhone = phoneSchema.safeParse(phoneNumber);
         if (!parsedPhone.success) {
-            Alert.alert("Invalid Phone Number", parsedPhone.error.issues[0]?.message ?? "Enter a valid mobile number.");
+            setPhoneError(parsedPhone.error.issues[0]?.message ?? "Enter a valid mobile number.");
             return;
         }
 
         setLoading(true);
-
         try {
             const formattedPhone = parsedPhone.data;
             const access = await checkWorkerEligibility(formattedPhone);
             if (!access.eligible) {
-                Alert.alert("Not Invited Yet", "Your number has not been added to any organization yet.");
+                setGeneralError("Your number has not been added to any organization yet.");
                 return;
             }
 
@@ -48,30 +68,34 @@ export default function InviteRedemptionScreen() {
                 throw new Error(sendOtpRes.error.message);
             }
 
-            setStep('otp');
-
-        } catch (err: any) {
-            Alert.alert("Sign Up Failed", err.message);
+            setStep("otp");
+        } catch (error: any) {
+            setGeneralError(error.message || "Failed to send code.");
         } finally {
             setLoading(false);
         }
     };
 
     const handleVerifyOtp = async () => {
-        if (!otp) return;
-
+        clearErrors();
         const parsedPhone = phoneSchema.safeParse(phoneNumber);
-        if (!parsedPhone.success) {
-            Alert.alert("Invalid Phone Number", parsedPhone.error.issues[0]?.message ?? "Enter a valid mobile number.");
+        const otpValidationError = validate(otpSchema, otp);
+
+        if (!parsedPhone.success || otpValidationError) {
+            if (!parsedPhone.success) {
+                setPhoneError(parsedPhone.error.issues[0]?.message ?? "Enter a valid mobile number.");
+            }
+            if (otpValidationError) {
+                setOtpError(otpValidationError);
+            }
             return;
         }
 
         setLoading(true);
-
         try {
             const verifyRes = await (authClient as any).phoneNumber.verify({
                 phoneNumber: parsedPhone.data,
-                code: otp
+                code: otp,
             });
 
             if (verifyRes.error) {
@@ -79,193 +103,147 @@ export default function InviteRedemptionScreen() {
             }
 
             await persistWorkerSession(verifyRes);
-
             Alert.alert("Welcome!", "You are now verified and part of the team.", [
-                { text: "Let's Work", onPress: () => router.replace("/(tabs)") }
+                { text: "Let’s work", onPress: () => router.replace("/(tabs)") },
             ]);
-
-        } catch (err: any) {
-            Alert.alert("Verification Failed", err.message);
+        } catch (error: any) {
+            setGeneralError(error.message || "Verification failed.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.container}
-        >
+        <>
             <Stack.Screen options={{ title: "Join Team", headerBackTitle: "Back" }} />
 
-            <ScrollView contentContainerStyle={styles.content}>
-                <View style={styles.header}>
-                    <View style={styles.iconCircle}>
-                        <Ionicons name="phone-portrait-outline" size={32} color={workerTheme.colors.secondary} />
-                    </View>
-                    <Text style={styles.title}>
-                        {step === 'phone' ? "Join your schedule" : "Check your texts"}
-                    </Text>
-                    <Text style={styles.subtitle}>
-                        {step === 'phone'
-                            ? "Enter the mobile number your organization added for you."
-                            : `We sent a code to ${phoneNumber}. Enter it below.`}
-                    </Text>
-                    {code && (
-                        <View style={styles.codeBadge}>
-                            <Text style={styles.codeText}>Invite: {code}</Text>
+            <AuthShell
+                eyebrow="Invitation"
+                title={step === "phone" ? "Join your schedule" : "Check your texts"}
+                description={
+                    step === "phone"
+                        ? "Enter the mobile number your organization added for you."
+                        : `We sent a code to ${phoneNumber}. Enter it below.`
+                }
+                icon={
+                    <Icon
+                        name={step === "phone" ? "phone-portrait-outline" : "mail-unread-outline"}
+                        size={30}
+                        className="text-secondary"
+                    />
+                }
+                footer={
+                    code ? (
+                        <View className="items-center">
+                            <Text className="text-xs font-medium uppercase tracking-[1.2px] text-success">
+                                Invite code
+                            </Text>
+                            <Text className="mt-1 text-sm text-muted">{code}</Text>
                         </View>
-                    )}
-                </View>
-
-                {step === 'phone' ? (
-                    <View style={styles.form}>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Mobile Number</Text>
-                            <TextInput
-                                style={styles.input}
+                    ) : null
+                }
+            >
+                {step === "phone" ? (
+                    <>
+                        <TextField isRequired isInvalid={Boolean(phoneError)}>
+                            <Label>Mobile number</Label>
+                            <Input
                                 placeholder="+1 555 000 0000"
                                 value={phoneNumber}
-                                onChangeText={setPhoneNumber}
+                                onChangeText={(value) => {
+                                    setPhoneNumber(value);
+                                    setPhoneError(null);
+                                    setGeneralError(null);
+                                }}
                                 keyboardType="phone-pad"
+                                textContentType="telephoneNumber"
+                                autoComplete="tel"
                             />
-                        </View>
+                            <Description>Use the same number attached to your invitation.</Description>
+                            {phoneError ? <FieldError>{phoneError}</FieldError> : null}
+                        </TextField>
 
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={handleSendOtp}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color={workerTheme.colors.white} />
-                            ) : (
-                                <Text style={styles.buttonText}>Send Code</Text>
-                            )}
-                        </TouchableOpacity>
-                    </View>
+                        {generalError ? (
+                            <HeroAlert status="danger">
+                                <HeroAlert.Indicator />
+                                <HeroAlert.Content>
+                                    <HeroAlert.Title>Unable to continue</HeroAlert.Title>
+                                    <HeroAlert.Description>{generalError}</HeroAlert.Description>
+                                </HeroAlert.Content>
+                            </HeroAlert>
+                        ) : null}
+
+                        <Button onPress={handleSendOtp} isDisabled={loading}>
+                            {loading ? <Spinner size="sm" /> : null}
+                            <Button.Label>{loading ? "Sending code" : "Send code"}</Button.Label>
+                        </Button>
+                    </>
                 ) : (
-                    <View style={styles.form}>
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Verification Code</Text>
-                            <TextInput
-                                style={[styles.input, { textAlign: 'center', letterSpacing: 8, fontSize: 24 }]}
-                                placeholder="000000"
-                                value={otp}
-                                onChangeText={setOtp}
-                                keyboardType="number-pad"
-                                maxLength={6}
-                            />
+                    <>
+                        <HeroAlert status="success">
+                            <HeroAlert.Indicator />
+                            <HeroAlert.Content>
+                                <HeroAlert.Title>Code sent</HeroAlert.Title>
+                                <HeroAlert.Description>Enter the 6-digit code from your text message.</HeroAlert.Description>
+                            </HeroAlert.Content>
+                        </HeroAlert>
+
+                        <TextField isInvalid={Boolean(otpError)}>
+                            <Label>Verification code</Label>
+                            <View className="pt-1">
+                                <InputOTP
+                                    value={otp}
+                                    onChange={(value) => {
+                                        setOtp(value);
+                                        setOtpError(null);
+                                        setGeneralError(null);
+                                    }}
+                                    maxLength={6}
+                                    inputMode="numeric"
+                                    pattern={REGEXP_ONLY_DIGITS}
+                                    textInputProps={{
+                                        keyboardType: "number-pad",
+                                        textContentType: "oneTimeCode",
+                                        autoComplete: "sms-otp",
+                                    }}
+                                >
+                                    <InputOTP.Group className="flex-row items-center justify-between gap-2">
+                                        {[0, 1, 2].map((index) => (
+                                            <InputOTP.Slot key={index} index={index} className="flex-1" />
+                                        ))}
+                                        <InputOTP.Separator className="w-2" />
+                                        {[3, 4, 5].map((index) => (
+                                            <InputOTP.Slot key={index} index={index} className="flex-1" />
+                                        ))}
+                                    </InputOTP.Group>
+                                </InputOTP>
+                            </View>
+                            {otpError ? <FieldError>{otpError}</FieldError> : null}
+                        </TextField>
+
+                        {generalError ? (
+                            <HeroAlert status="danger">
+                                <HeroAlert.Indicator />
+                                <HeroAlert.Content>
+                                    <HeroAlert.Title>Verification failed</HeroAlert.Title>
+                                    <HeroAlert.Description>{generalError}</HeroAlert.Description>
+                                </HeroAlert.Content>
+                            </HeroAlert>
+                        ) : null}
+
+                        <View className="gap-3">
+                            <Button onPress={handleVerifyOtp} isDisabled={loading}>
+                                {loading ? <Spinner size="sm" /> : null}
+                                <Button.Label>{loading ? "Verifying" : "Verify and join"}</Button.Label>
+                            </Button>
+
+                            <Button variant="secondary" onPress={() => setStep("phone")} isDisabled={loading}>
+                                <Button.Label>Use a different number</Button.Label>
+                            </Button>
                         </View>
-
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={handleVerifyOtp}
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color={workerTheme.colors.white} />
-                            ) : (
-                                <Text style={styles.buttonText}>Verify & Join</Text>
-                            )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity onPress={() => setStep('phone')} style={{ alignItems: 'center', marginTop: 16 }}>
-                            <Text style={{ color: workerTheme.colors.secondary }}>Change Number</Text>
-                        </TouchableOpacity>
-                    </View>
+                    </>
                 )}
-            </ScrollView>
-        </KeyboardAvoidingView>
+            </AuthShell>
+        </>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: workerTheme.colors.background,
-    },
-    content: {
-        padding: 24,
-        paddingTop: 40,
-    },
-    header: {
-        alignItems: "center",
-        marginBottom: 40,
-    },
-    iconCircle: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: workerTheme.colors.secondarySoft,
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 16,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: workerTheme.colors.foreground,
-        marginBottom: 8,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: workerTheme.colors.mutedForeground,
-        textAlign: "center",
-        marginHorizontal: 32,
-    },
-    codeBadge: {
-        marginTop: 16,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        backgroundColor: workerTheme.colors.successSoft,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "#C8E6C9",
-    },
-    codeText: {
-        color: workerTheme.colors.success,
-        fontSize: 12,
-        fontWeight: "600",
-    },
-    form: {
-        gap: 24,
-    },
-    inputGroup: {
-        gap: 8,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: workerTheme.colors.foreground,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: workerTheme.colors.border,
-        borderRadius: 12,
-        padding: 16,
-        fontSize: 16,
-        backgroundColor: workerTheme.colors.surfaceInset,
-        color: workerTheme.colors.foreground,
-    },
-    button: {
-        backgroundColor: workerTheme.colors.primary,
-        height: 56,
-        borderRadius: 12,
-        alignItems: "center",
-        justifyContent: "center",
-        marginTop: 8,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 5,
-    },
-    buttonText: {
-        color: workerTheme.colors.white,
-        fontSize: 16,
-        fontWeight: "600",
-    },
-});

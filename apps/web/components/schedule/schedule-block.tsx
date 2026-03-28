@@ -5,12 +5,12 @@
 import { useEffect } from "react";
 import { useFormContext, useFieldArray } from "@repo/ui/components/ui/form";
 import { format } from "date-fns";
-import { CalendarIcon, Plus, MoreHorizontal, Copy, Trash, HelpCircle, X } from "lucide-react";
+import { CalendarIcon, Plus, HelpCircle, X } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
+import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Input } from "@repo/ui/components/ui/input";
-import { Switch } from "@repo/ui/components/ui/switch";
 import { Label } from "@repo/ui/components/ui/label";
 import { Calendar } from "@repo/ui/components/ui/calendar";
 import {
@@ -31,12 +31,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@repo/ui/components/ui/select";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@repo/ui/components/ui/dropdown-menu";
 import { IntervalTimePicker, calculateDefaultEndTime } from "@repo/ui/components/ui/time-picker";
 import { PositionSelectorDialog, PositionItem } from "./position-selector-dialog";
 import { PositionChips } from "./position-chips";
@@ -88,7 +82,6 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
     }, [watchStartTime, index, setValue, watch]);
 
     const breakDuration = watch(`schedules.${index}.breakDuration`);
-    const watchedDates = watch(`schedules.${index}.dates`); // For Standard Mode
 
     const handlePositionsSelect = (selectedItems: PositionItem[]) => {
         // Append selected positions to the Field Array
@@ -106,12 +99,12 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <div className="space-y-1">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <div className="flex flex-col gap-1">
                     <CardTitle className="text-xl font-semibold">Date & Times</CardTitle>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="flex flex-col gap-6">
 
                 <FormField
                     control={control as any}
@@ -128,7 +121,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
 
                 {/* MODE SWITCHING UI */}
                 {isRecurring ? (
-                    <div className="space-y-4">
+                    <div className="flex flex-col gap-4">
                         <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={control as any}
@@ -286,7 +279,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                 onSelect={field.onChange}
                                                 className="rounded-md border-0"
                                                 classNames={{
-                                                    months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full justify-center",
+                                                    months: "flex w-full flex-col justify-center gap-4 sm:flex-row",
                                                 }}
                                                 min={1}
                                                 disabled={{ before: new Date() }}
@@ -364,13 +357,13 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     />
                 </div>
 
-                <div className="flex items-center text-sm text-muted-foreground gap-1">
+                <Badge variant="secondary" className="w-fit gap-1">
                     Expected breaks: {breakDuration === "0" ? "None" : `${breakDuration}m`}
                     <HelpCircle className="h-3 w-3" />
-                </div>
+                </Badge>
 
                 {/* Section 3: Positions Shell */}
-                <div className="space-y-4">
+                <div className="flex flex-col gap-4">
                     <h3 className="text-sm font-bold">Positions</h3>
 
                     {fields.length > 0 && (
@@ -382,11 +375,11 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     <Button
                         type="button"
                         variant="outline"
-                        className="w-full sm:w-auto h-12 border-2 border-primary text-primary hover:bg-primary/5 hover:text-primary transition-colors font-medium px-8"
+                        className="h-12 w-full border-dashed sm:w-auto"
                         onClick={() => setIsPositionDialogOpen(true)}
                         data-testid="add-position"
                     >
-                        <Plus className="mr-2 h-4 w-4" />
+                        <Plus data-icon="inline-start" className="h-4 w-4" />
                         Add position
                     </Button>
                 </div>

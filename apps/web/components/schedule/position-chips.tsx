@@ -1,4 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Button } from "@repo/ui/components/ui/button";
 import { X, User, ChevronDown } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import {
@@ -24,7 +26,7 @@ export function PositionChips({ fields, onRemove }: PositionChipsProps) {
     }, {} as Record<string, any[]>);
 
     return (
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
             {(Object.entries(grouped) as [string, any[]][]).map(([role, items]) => (
                 <CollapsibleRoleGroup key={role} role={role} items={items} onRemove={onRemove} />
             ))}
@@ -36,59 +38,60 @@ function CollapsibleRoleGroup({ role, items, onRemove }: { role: string, items: 
     const [isOpen, setIsOpen] = useState(true);
 
     return (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-2">
+        <Collapsible open={isOpen} onOpenChange={setIsOpen} className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
                 <CollapsibleTrigger className="flex items-center gap-2 group w-full hover:opacity-80 transition-opacity">
                     <h4 className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-2">
                         {role}
-                        <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded-full text-slate-600 border font-bold">
+                        <Badge variant="secondary" className="h-auto px-1.5 py-0.5 text-[10px] font-bold">
                             {items.length}
-                        </span>
+                        </Badge>
                     </h4>
                     <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform duration-200", isOpen ? "" : "-rotate-90")} />
                 </CollapsibleTrigger>
             </div>
 
-            <CollapsibleContent className="space-y-2 animate-collapsible-down">
+            <CollapsibleContent className="animate-collapsible-down">
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
                     {items.map((item: any) => (
                         <div
                             key={item.id}
                             className={cn(
-                                "relative flex items-center gap-3 p-3 rounded-xl transition-all group select-none",
+                                "group relative flex select-none items-center gap-3 rounded-xl border p-3 transition-all",
                                 item.workerId
-                                    ? "bg-zinc-50 hover:bg-zinc-100 text-zinc-900 border border-zinc-200"
-                                    : "bg-white border border-dashed border-zinc-300"
+                                    ? "bg-muted/40 text-foreground hover:bg-muted/70"
+                                    : "border-dashed border-muted-foreground/30 bg-background"
                             )}
                         >
-                            {/* Avatar or Icon */}
                             {item.workerId ? (
-                                <Avatar className="h-9 w-9 border border-white shadow-sm">
+                                <Avatar className="size-9 border border-background shadow-sm">
                                     <AvatarImage src={item.workerAvatar} />
-                                    <AvatarFallback className="text-xs bg-zinc-100 text-zinc-700 font-semibold border border-zinc-200">
+                                    <AvatarFallback className="border border-border bg-muted text-xs font-semibold text-foreground">
                                         {item.workerInitials || item.workerName?.[0] || "?"}
                                     </AvatarFallback>
                                 </Avatar>
                             ) : (
-                                <div className="h-9 w-9 rounded-full border border-dashed border-slate-300 flex items-center justify-center bg-white text-slate-400">
+                                <div className="flex size-9 items-center justify-center rounded-full border border-dashed border-muted-foreground/30 bg-background text-muted-foreground">
                                     <User className="h-4 w-4" />
                                 </div>
                             )}
 
                             <div className="flex flex-col min-w-0">
-                                <span className={cn("font-semibold text-sm truncate", item.workerId ? "text-slate-900" : "text-slate-500")}>
+                                <span className={cn("truncate text-sm font-semibold", item.workerId ? "text-foreground" : "text-muted-foreground")}>
                                     {item.workerName || "Open Shift"}
                                 </span>
-                                {item.workerId && <span className="text-[10px] text-slate-500 font-medium truncate">{role}</span>}
+                                {item.workerId && <span className="truncate text-[10px] font-medium text-muted-foreground">{role}</span>}
                             </div>
 
-                            <button
+                            <Button
                                 type="button"
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => onRemove(item.originalIndex)}
-                                className="absolute top-2 right-2 h-5 w-5 rounded-full flex items-center justify-center text-slate-400 hover:bg-white hover:text-red-500 hover:shadow-sm transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                className="absolute right-2 top-2 size-5 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 focus:opacity-100 hover:text-destructive"
                             >
                                 <X size={12} />
-                            </button>
+                            </Button>
                         </div>
                     ))}
                 </div>

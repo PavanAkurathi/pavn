@@ -1,12 +1,12 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     InputOTP,
     InputOTPGroup,
     InputOTPSlot,
 } from "@repo/ui/components/ui/input-otp";
+import { Spinner } from "@repo/ui/components/ui/spinner";
 
 interface OtpFormProps {
     value: string;
@@ -26,7 +26,7 @@ export function OtpForm({
     length = 6
 }: OtpFormProps) {
     return (
-        <div className="flex flex-col items-center w-full">
+        <div className="flex w-full flex-col items-center">
             <InputOTP
                 maxLength={length}
                 value={value}
@@ -40,11 +40,11 @@ export function OtpForm({
             </InputOTP>
 
             <Button
-                className="w-full mt-6 bg-red-600 hover:bg-red-700 font-bold"
+                className="mt-6 w-full"
                 onClick={onSubmit}
                 disabled={isLoading || value.length < length}
             >
-                {isLoading ? <Loader2 className="animate-spin mr-2" /> : null}
+                {isLoading ? <Spinner data-icon="inline-start" /> : null}
                 {submitLabel}
             </Button>
         </div>
