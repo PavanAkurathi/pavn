@@ -1,16 +1,13 @@
-# Pavn Package (`@repo/*`)
+# Utils
 
-This is a shared internal package for the Pavn monorepo.
+`@repo/utils` holds small generic helpers with no clear domain ownership.
 
-## Usage
+## Current Responsibilities
 
-Import this package in your application:
+- phone-number helper utilities in `src/phone.ts`
 
-```typescript
-import { ... } from "@repo/package-name";
-```
+## Boundary Rule
 
-## Development
+Keep this package small.
 
-- Run `bun run build` to compile.
-- Run `bun run lint` to check for code issues.
+If a helper belongs to a real domain, move it into that domain package instead of growing `utils` into a dumping ground.

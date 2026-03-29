@@ -50,14 +50,3 @@ export const TimesheetReportSchema = z.object({
     }),
     entries: z.array(TimesheetSchema),
 });
-
-// Billing & Location Schemas (Mock for now to match controller outputs)
-export const BillingInfoSchema = z.object({
-    plan: z.string(),
-    status: z.string(),
-    currentPeriodEnd: z.string(),
-    usage: z.object({
-        workers: z.number(),
-        shifts: z.number(),
-    }),
-});

@@ -1,6 +1,5 @@
-
 import { describe, expect, test, mock, beforeEach } from "bun:test";
-import { AssignmentService } from "../src/modules/time-tracking/service";
+import { applyManagerTimesheetUpdate } from "../src/modules/time-tracking/assignment-admin";
 import { addHours } from "date-fns";
 
 // --- Mocks ---
@@ -13,6 +12,7 @@ const mockBuilder: any = {
     delete: mock(() => ({ where: mock(() => Promise.resolve()) })),
     query: {
         shiftAssignment: { findFirst: mock(() => Promise.resolve(null)) },
+        shift: { findFirst: mock(() => Promise.resolve(null)) },
     },
     transaction: mock((cb) => cb(mockBuilder)),
     select: mock(() => mockBuilder),
@@ -28,10 +28,10 @@ mock.module("@repo/database", () => ({
         transaction: mock((cb) => cb(mockBuilder)),
         query: mockBuilder.query
     },
-    shiftAssignment: { id: 'sa_id', shiftId: 's_id', workerId: 'w_id' },
+    TxOrDb: {},
     assignmentAuditEvent: {},
-    location: {},
-    shift: {}
+    shiftAssignment: { id: 'sa_id', shiftId: 's_id', workerId: 'w_id' },
+    shift: { id: "shift_id", organizationId: "organization_id" }
 }));
 
 mock.module("@repo/observability", () => ({
@@ -48,9 +48,10 @@ describe("TICKET-002: Refactor Assignment Service", () => {
         mockUpdateSet.mockClear();
         mockInsert.mockClear();
         mockBuilder.query.shiftAssignment.findFirst.mockReset();
+        mockBuilder.query.shift.findFirst.mockReset();
     });
 
-    test("clockOut should calculate duration but NOT cost/rate", async () => {
+    test("manager timesheet updates calculate duration but NOT cost/rate", async () => {
         // Arrange
         const now = new Date();
         const clockedInTime = addHours(now, -4); // Worked 4 hours
@@ -64,21 +65,30 @@ describe("TICKET-002: Refactor Assignment Service", () => {
             effectiveClockIn: clockedInTime,
             breakMinutes: 30
         };
+        const mockShift = {
+            startTime: addHours(now, -5),
+        };
 
         mockBuilder.query.shiftAssignment.findFirst.mockResolvedValue(mockAssignment);
+        mockBuilder.query.shift.findFirst.mockResolvedValue(mockShift);
 
         // Act
-        const result = await AssignmentService.clockOut(
+        const result = await applyManagerTimesheetUpdate(
             "actor-1",
+            "org-1",
             "shift-123",
             "worker-123",
-            { lat: 0, lng: 0, accuracy: 10 },
-            {},
+            {
+                clockIn: clockedInTime,
+                clockOut: now,
+                breakMinutes: 30,
+            },
+            "manager",
             mockBuilder // Pass mock tx
         );
 
         // Assert
-        expect(result.success).toBe(true);
+        expect(result.totalWorkedMinutes).toBe(210);
         expect(mockUpdate).toHaveBeenCalled();
 
         const updateCall = mockUpdateSet.mock.calls[0] as any[];

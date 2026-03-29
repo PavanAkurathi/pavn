@@ -11,18 +11,6 @@
             "bun": "./src/index.ts",
             "import": "./src/index.ts",
             "default": "./src/index.ts"
-        },
-        "./services/*": {
-            "types": "./src/services/*.ts",
-            "bun": "./src/services/*.ts",
-            "import": "./src/services/*.ts",
-            "default": "./src/services/*.ts"
-        },
-        "./schemas": {
-            "types": "./src/schemas.ts",
-            "bun": "./src/schemas.ts",
-            "import": "./src/schemas.ts",
-            "default": "./src/schemas.ts"
         }
     },
     "scripts": {

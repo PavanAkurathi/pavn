@@ -18,7 +18,6 @@ The backend API stays in Hono. This package stays focused on identity, session, 
   - `emailOTP`
   - `phoneNumber`
   - `expo`
-  - `stripe`
   - `dash` from `@better-auth/infra`
 - PostgreSQL tables from `@repo/database`
 - Twilio for SMS OTP
@@ -30,6 +29,7 @@ The backend API stays in Hono. This package stays focused on identity, session, 
 - [src/auth.ts](/Users/av/Documents/pavn/packages/auth/src/auth.ts): Better Auth server configuration
 - [src/client.ts](/Users/av/Documents/pavn/packages/auth/src/client.ts): shared web auth client
 - [src/worker-access.ts](/Users/av/Documents/pavn/packages/auth/src/worker-access.ts): worker phone eligibility and membership hydration
+- [src/user-lifecycle.ts](/Users/av/Documents/pavn/packages/auth/src/user-lifecycle.ts): signup/invite lifecycle helpers used by Better Auth hooks
 - [src/providers/sms.ts](/Users/av/Documents/pavn/packages/auth/src/providers/sms.ts): Twilio/mock SMS transport
 - [src/session.ts](/Users/av/Documents/pavn/packages/auth/src/session.ts): session org helpers
 - [src/env.ts](/Users/av/Documents/pavn/packages/auth/src/env.ts): auth env resolution and trusted origins
@@ -237,8 +237,9 @@ flowchart TD
 
 ## Hono API Integration
 
-The API server mounts Better Auth at:
-- [apps/api/src/index.ts](/Users/av/Documents/pavn/apps/api/src/index.ts)
+The auth core is mounted by host apps:
+- [apps/web/app/api/auth/[...all]/route.ts](/Users/av/Documents/pavn/apps/web/app/api/auth/[...all]/route.ts)
+- [apps/api/src/index.ts](/Users/av/Documents/pavn/apps/api/src/index.ts) for API compatibility
 
 Relevant public endpoints:
 - `GET /health`
@@ -253,7 +254,7 @@ Protected routes use:
 
 ## Web Integration
 
-The Next.js handler lives at:
+The preferred public web handler lives at:
 - [apps/web/app/api/auth/[...all]/route.ts](/Users/av/Documents/pavn/apps/web/app/api/auth/[...all]/route.ts)
 
 The shared web client lives at:
@@ -318,6 +319,5 @@ Optional:
 
 ## Open Follow-ups
 
-- Billing ownership is still user/plugin-centric and may need a dedicated org-billing reconciliation pass.
 - If the business flow should allow worker access without email, manager-side invite UX should eventually make phone mandatory for worker mobile onboarding.
 - If we later need a stricter invite audit trail, invitation acceptance can be formalized beyond roster-driven membership hydration.

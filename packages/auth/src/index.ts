@@ -1,5 +1,10 @@
-export * from "./auth";
-
-export * from "./session";
-export * from "./providers/sms";
-export * from "./worker-access";
+export { auth } from "./auth";
+export {
+    getWorkerPhoneAccess,
+    type WorkerPhoneAccess,
+} from "./worker-access";
+export {
+    isValidPhoneNumber,
+    normalizePhoneNumber,
+    sendSMS,
+} from "./providers/sms";

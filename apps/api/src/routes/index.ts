@@ -9,7 +9,7 @@
  * - shiftsRouter: Shift scheduling and management
  * - workerRouter: Worker-facing endpoints
  * - timesheetsRouter: Timesheet reports and exports
- * - billingRouter: Billing and payment management
+ * - billingRouter: Billing overview and Stripe-backed read access
  * - organizationsRouter: Crew and location management
  * - geofenceRouter: Clock in/out and corrections
  * 

@@ -1,23 +1,17 @@
 
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { db } from "@repo/database";
-import { organization } from "@repo/database/schema";
-import { eq } from "@repo/database";
+import {
+    clearOrganizationSubscriptionByCustomerId,
+    requireStripe,
+    syncOrganizationSubscriptionByCustomerId,
+    syncOrganizationSubscriptionFromCheckoutCompletion,
+} from "@repo/billing";
 import Stripe from "stripe";
-import { requireStripe } from "@/lib/billing/stripe";
 
 export const runtime = "nodejs";
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-function toPeriodEndDate(unixSeconds?: number | null) {
-    if (!unixSeconds) {
-        return null;
-    }
-
-    return new Date(unixSeconds * 1000);
-}
 
 export async function POST(req: Request) {
     const body = await req.text();
@@ -54,16 +48,11 @@ export async function POST(req: Request) {
                         : session.customer?.id ?? null;
 
                     if (orgId && subscriptionId) {
-                        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-
-                        await db.update(organization)
-                            .set({
-                                stripeCustomerId: customerId,
-                                stripeSubscriptionId: subscriptionId,
-                                subscriptionStatus: subscription.status,
-                                currentPeriodEnd: toPeriodEndDate((subscription as any).current_period_end),
-                            })
-                            .where(eq(organization.id, orgId));
+                        await syncOrganizationSubscriptionFromCheckoutCompletion({
+                            orgId,
+                            customerId,
+                            subscriptionId,
+                        });
 
                         console.log(`[Webhook] Linked subscription ${subscriptionId} to org ${orgId}`);
                     }
@@ -74,44 +63,20 @@ export async function POST(req: Request) {
             case "customer.subscription.created":
             case "customer.subscription.updated": {
                 const sub = event.data.object as Stripe.Subscription;
-                const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+                const orgId = await syncOrganizationSubscriptionByCustomerId(sub);
 
-                const org = await db.query.organization.findFirst({
-                    where: eq(organization.stripeCustomerId, customerId),
-                });
-
-                if (org) {
-                    await db.update(organization)
-                        .set({
-                            stripeCustomerId: customerId,
-                            stripeSubscriptionId: sub.id,
-                            subscriptionStatus: sub.status,
-                            currentPeriodEnd: toPeriodEndDate((sub as any).current_period_end),
-                        })
-                        .where(eq(organization.id, org.id));
-                    console.log(`[Webhook] Synced subscription ${sub.id} for org ${org.id}. Status: ${sub.status}`);
+                if (orgId) {
+                    console.log(`[Webhook] Synced subscription ${sub.id} for org ${orgId}. Status: ${sub.status}`);
                 }
                 break;
             }
 
             case "customer.subscription.deleted": {
                 const sub = event.data.object as Stripe.Subscription;
-                const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+                const orgId = await clearOrganizationSubscriptionByCustomerId(sub);
 
-                const org = await db.query.organization.findFirst({
-                    where: eq(organization.stripeCustomerId, customerId),
-                });
-
-                if (org) {
-                    await db.update(organization)
-                        .set({
-                            stripeCustomerId: customerId,
-                            subscriptionStatus: sub.status,
-                            currentPeriodEnd: null,
-                            stripeSubscriptionId: null,
-                        })
-                        .where(eq(organization.id, org.id));
-                    console.log(`[Webhook] Subscription ${sub.id} deleted. Synced org ${org.id} to ${sub.status}.`);
+                if (orgId) {
+                    console.log(`[Webhook] Subscription ${sub.id} deleted. Synced org ${orgId} to ${sub.status}.`);
                 }
                 break;
             }

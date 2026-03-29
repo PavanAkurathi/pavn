@@ -1,5 +1,3 @@
-import { auth } from "@repo/auth";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@repo/database";
 import { member, user, rosterEntry, workerRole } from "@repo/database/schema";
@@ -13,6 +11,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/components/ui/table";
 import { AvailabilityList } from "@/components/roster/availability-list";
+import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 
 interface PageProps {
     params: Promise<{
@@ -23,28 +22,7 @@ interface PageProps {
 export default async function WorkerProfilePage({ params }: PageProps) {
     const { id } = await params;
 
-    // 1. Authenticate and get active organization
-    const sessionResponse = await auth.api.getSession({
-        headers: await headers()
-    });
-
-    if (!sessionResponse) {
-        redirect("/auth/sign-in");
-    }
-
-    const { user: currentUser, session } = sessionResponse;
-    let activeOrgId = (session as any).activeOrganizationId as string | undefined;
-
-    if (!activeOrgId) {
-        const defaultOrg = await db.query.member.findFirst({
-            where: eq(member.userId, currentUser.id)
-        });
-        if (defaultOrg) {
-            activeOrgId = defaultOrg.organizationId;
-        } else {
-            redirect("/auth/sign-in");
-        }
-    }
+    const { activeOrgId } = await getRequiredOrganizationContext();
 
     // 2. Resolve the ID. First try member, then roster_entry
     const memberRecord = await db.query.member.findFirst({

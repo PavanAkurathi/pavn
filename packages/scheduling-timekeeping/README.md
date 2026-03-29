@@ -1,19 +1,45 @@
 # Scheduling Timekeeping
 
-`@repo/scheduling-timekeeping` owns scheduling and timekeeping.
+`@repo/scheduling-timekeeping` owns shift lifecycle, time tracking, and reporting over scheduled work.
 
-## What lives here
+## Responsibilities
+
+- shift creation and publication
+- drafts, upcoming, history, and grouped views
+- assignments and unassignment
+- approvals and timesheets
+- overlap logic
+- worker-facing shift feeds
+- reporting and export flows
+
+## Source Layout
 
 - `src/modules/shifts`
-  - publish, edit, cancel, duplicate, list, and group shifts
+  - publish, edit, cancel, duplicate, list, and grouping flows
 - `src/modules/time-tracking`
-  - assignments, approvals, timesheets, no-shows, overlap checks
+  - assign/unassign, approvals, timesheets, overlap, worker shift feeds
 - `src/modules/reporting`
-  - timesheet exports and report filters
+  - report filters and export logic
+- `src/middleware`
+  - package-local RBAC/rate-limit helpers used by API surfaces
+- `src/schemas.ts`
+  - shared scheduling/timekeeping schemas
+- `src/types.ts`
+  - public DTOs used by apps
+- `tests/`
+  - package tests
 
-## What does not belong here
+## Boundaries
 
-- worker directory, availability, invites, and roster import
-  - use `@repo/gig-workers`
-- organization settings and locations
-  - use `@repo/organizations`
+This package should contain:
+
+- scheduling flows
+- shift DTO shaping
+- timesheet state transitions
+- reports over scheduled work
+
+This package should not contain:
+
+- workforce directory, worker availability, or roster import
+- organization settings or location CRUD
+- raw attendance/geofence enforcement

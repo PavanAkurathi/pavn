@@ -2,27 +2,44 @@
 
 `@repo/organizations` owns organization-level business logic.
 
-## Structure
+This is the package for business setup and org-scoped configuration.
+
+## Responsibilities
+
+- organization settings
+- attendance verification policy configuration
+- location CRUD
+- location geocoding entry points
+- location retrieval for settings and scheduling surfaces
+
+## Source Layout
 
 - `src/modules/settings`
-  - organization settings and attendance policy updates
+  - get/update organization settings
 - `src/modules/locations`
-  - CRUD, geocoding, and location retrieval
+  - create, update, delete, list, and geocode locations
 - `src/schemas.ts`
-  - settings and location schemas shared with API and web
-- `src/utils`
-  - small package-local helpers only
+  - shared location/settings validation schemas
+- `src/index.ts`
+  - public exports
 
 ## Boundaries
 
 This package should contain:
 
-- organization settings
-- attendance policy configuration
-- locations and geocoding
+- business profile setup
+- timezone and attendance policy updates
+- first-location onboarding support
+- location retrieval
 
 This package should not contain:
 
-- shift publishing
-- assignments or approvals
-- worker invites or availability
+- shift publishing or approvals
+- workforce invites or availability
+- clock in/out enforcement
+
+Use:
+
+- `@repo/gig-workers` for workforce/roster behavior
+- `@repo/scheduling-timekeeping` for shifts and timesheets
+- `@repo/geofence` for attendance verification behavior

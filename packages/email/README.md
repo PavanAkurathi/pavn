@@ -1,16 +1,25 @@
-# Pavn Package (`@repo/*`)
+# Email
 
-This is a shared internal package for the Pavn monorepo.
+`@repo/email` owns shared email delivery helpers and templates.
 
-## Usage
+## Responsibilities
 
-Import this package in your application:
+- OTP email delivery
+- shared transactional email templates
 
-```typescript
-import { ... } from "@repo/package-name";
-```
+## Source Layout
 
-## Development
+- `src/index.ts`
+  - email send helpers
+- `src/templates/otp.tsx`
+  - OTP email template
 
-- Run `bun run build` to compile.
-- Run `bun run lint` to check for code issues.
+## Boundary Rule
+
+This package should contain shared email delivery concerns.
+
+It should not own:
+
+- auth/session policy
+- notification scheduling
+- business workflow decisions about who should receive an email

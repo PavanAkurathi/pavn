@@ -19,6 +19,7 @@ import {
 import { ArrowRight, Plus, ShieldCheck, Upload, Users } from "lucide-react";
 import Link from "next/link";
 import { AddWorkerDialog } from "../../../components/roster/add-worker-dialog";
+import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 
 type RosterSearchParams = {
     onboarding?: "roster" | "roles";
@@ -26,30 +27,7 @@ type RosterSearchParams = {
 
 export default async function RostersPage(props: { searchParams: Promise<RosterSearchParams> }) {
     const searchParams = await props.searchParams;
-    const sessionResponse = await auth.api.getSession({
-        headers: await headers()
-    });
-
-    if (!sessionResponse) {
-        redirect("/auth/sign-in");
-    }
-
-    const { user: currentUser, session } = sessionResponse;
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    let activeOrgId = (session as any).activeOrganizationId as string | undefined;
-
-    if (!activeOrgId) {
-        // Fallback: Check if user has any memberships
-        const membership = await db.query.member.findFirst({
-            where: eq(member.userId, currentUser.id)
-        });
-
-        if (membership) {
-            activeOrgId = membership.organizationId;
-        } else {
-            return <div>No active organization</div>;
-        }
-    }
+    const { activeOrgId } = await getRequiredOrganizationContext();
 
     // Fetch Workers (Role != owner/admin, or explicitly role = 'member')
     // We want to exclude the actual Platform Admins from this views

@@ -25,7 +25,7 @@
  * - /shifts/* - Shift management
  * - /worker/* - Worker-facing endpoints
  * - /timesheets/* - Timesheet reports
- * - /billing/* - Billing & payments
+ * - /billing/* - Billing overview and read access
  * - /organizations/* - Crew & locations
  * - /geofence/* - Clock in/out
  * 

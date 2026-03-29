@@ -1,16 +1,21 @@
-# Pavn Package (`@repo/*`)
+# Observability
 
-This is a shared internal package for the Pavn monorepo.
+`@repo/observability` owns shared logging, tracing, timeout, and error primitives.
 
-## Usage
+## Responsibilities
 
-Import this package in your application:
+- app-level error types
+- request timeout helpers
+- audit/event logging helpers
+- shared Sentry/logging setup used by apps and packages
 
-```typescript
-import { ... } from "@repo/package-name";
-```
+## Source Layout
 
-## Development
+- `src/errors.ts`
+- `src/timeout.ts`
+- `src/audit.ts`
+- `src/index.ts`
 
-- Run `bun run build` to compile.
-- Run `bun run lint` to check for code issues.
+## Boundary Rule
+
+This package should provide observability primitives, not business decisions.

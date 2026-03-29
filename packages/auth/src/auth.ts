@@ -7,12 +7,15 @@ import { dash } from "@better-auth/infra";
 import { expo } from "@better-auth/expo";
 import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
-import { nanoid } from "nanoid";
-import { eq } from "drizzle-orm";
 import { sendOtp } from "@repo/email";
 import { OTP } from "@repo/config";
 import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 import { getWorkerPhoneAccess, getWorkerTempEmail, syncWorkerMembershipsForPhone } from "./worker-access";
+import {
+    handleCreatedAuthUser,
+    normalizeAuthPhoneNumber,
+    resolveRequestedUserRole,
+} from "./user-lifecycle";
 import {
     buildTrustedOrigins,
     getBetterAuthInfraConnection,
@@ -89,114 +92,12 @@ export const auth = betterAuth({
             create: {
                 before: async (user: any, ctx: any) => {
                     const params = user as Record<string, unknown>;
-
-                    // Read role context from headers or body passed during auth
-                    let role = "admin"; // default
-
-                    if (ctx?.headers) {
-                        const parsedHeaders = new Headers(ctx.headers as HeadersInit);
-                        const roleHeader = parsedHeaders.get("x-user-role");
-                        if (roleHeader === "worker") role = "worker";
-                    }
-
-                    if (ctx?.body && typeof ctx.body === "object" && "role" in ctx.body) {
-                        const bodyRole = (ctx.body as Record<string, string>).role;
-                        if (bodyRole === "worker") role = "worker";
-                    }
-
-                    params.role = role;
-
-                    if (typeof params.phoneNumber === "string" && params.phoneNumber) {
-                        if (!isValidPhoneNumber(params.phoneNumber)) {
-                            throw new Error("Invalid phone number. Use E.164 format e.g. +14155552671");
-                        }
-                        params.phoneNumber = normalizePhoneNumber(params.phoneNumber);
-                    }
+                    params.role = resolveRequestedUserRole(ctx);
+                    normalizeAuthPhoneNumber(params);
                     return { data: user };
                 },
                 after: async (user: any, ctx: any) => {
-                    // Scenario A: Business Admin Registration
-                    const companyName = (ctx?.body as Record<string, unknown>)?.companyName as string | undefined;
-                    if (companyName) {
-                        try {
-                            const orgId = nanoid();
-                            const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + nanoid(4);
-
-                            await db.insert(schema.organization).values({
-                                id: orgId,
-                                name: companyName,
-                                slug,
-                                createdAt: new Date(),
-                                metadata: JSON.stringify({ description: "" }),
-                            });
-
-                            await db.insert(schema.member).values({
-                                id: nanoid(),
-                                organizationId: orgId,
-                                userId: user.id,
-                                role: "admin",
-                                createdAt: new Date(),
-                            });
-
-                            console.log(`[AUTH] Org "${companyName}" (${orgId}) created for admin user ${user.id}`);
-                        } catch (e) {
-                            console.error(`[AUTH CRITICAL] Org creation failed for user ${user.id}:`, e);
-                            await db
-                                .update(schema.user as any)
-                                .set({ metadata: JSON.stringify({ orgSetupFailed: true }) })
-                                .where(eq(schema.user.id, user.id));
-                            throw new Error("Account created but organization setup failed. Please contact support.");
-                        }
-                        return; // Done with business admin flow
-                    }
-
-                    // Scenario B: Worker Registration via Invite
-                    const inviteTokenId = (ctx?.body as Record<string, unknown>)?.inviteToken as string | undefined;
-                    const orgId = (ctx?.body as Record<string, unknown>)?.orgId as string | undefined;
-
-                    if (inviteTokenId && orgId && user.role === "worker") {
-                        try {
-                            // 1. Validate the invite token exists and is valid (not expired/used)
-                            const [invite] = await db.select()
-                                .from(schema.invitation)
-                                .where(eq(schema.invitation.id, inviteTokenId))
-                                .limit(1);
-
-                            if (!invite) {
-                                console.error(`[AUTH] Worker signup attempted with invalid token ${inviteTokenId}`);
-                                // We don't throw here to avoid failing user creation, we just skip org creation
-                                // The worker will have an account but no org memberships yet.
-                                return;
-                            }
-
-                            if (invite.organizationId !== orgId) {
-                                console.error(`[AUTH] Token org mismatch. Expected ${invite.organizationId}, got ${orgId}`);
-                                return;
-                            }
-
-                            // 2. Create the org membership
-                            await db.insert(schema.member).values({
-                                id: nanoid(),
-                                organizationId: orgId,
-                                userId: user.id,
-                                role: invite.role || "member",
-                                createdAt: new Date(),
-                            });
-
-                            // 3. Mark the invite as consumed (or delete it depending on your flow)
-                            // For now, we update the status to "accepted"
-                            await db.update(schema.invitation)
-                                .set({ status: "accepted" })
-                                .where(eq(schema.invitation.id, invite.id));
-
-                            console.log(`[AUTH] Worker ${user.id} joined Org ${orgId} via invite ${inviteTokenId}`);
-
-                        } catch (e) {
-                            console.error(`[AUTH ERROR] Failed to process worker invite:`, e);
-                            // Do not crash the auth flow if invite processing fails, 
-                            // they can always be added manually later
-                        }
-                    }
+                    await handleCreatedAuthUser(user, ctx);
                 },
             },
             update: {

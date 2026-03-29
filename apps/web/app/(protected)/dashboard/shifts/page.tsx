@@ -1,13 +1,12 @@
 // apps/web/app/(protected)/dashboard/shifts/page.tsx
 
-import { auth } from "@repo/auth";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { DraftBanner } from "@/components/dashboard/draft-banner";
 import { getLocations } from "@repo/organizations";
 import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
+import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -18,38 +17,7 @@ export default async function ShiftsPage(props: {
     const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined;
     const view = (viewParam === 'upcoming' || viewParam === 'past' || viewParam === 'needs_approval') ? viewParam : 'upcoming';
 
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
-
-    if (!session) {
-        redirect("/auth/login");
-    }
-
-    // Fetch Data from "Backend" Service
-    // TODO: reliable way to get active org id from session or header
-    // Fix: Access activeOrganizationId from correct path (session.session.activeOrganizationId)
-    const sessionData = session as any;
-    let activeOrgId = sessionData.session?.activeOrganizationId || sessionData.activeOrganizationId;
-
-    // FALLBACK: If authentication has no active Org, fetch the first one from DB
-    if (!activeOrgId) {
-        const { db } = await import("@repo/database");
-        const { member } = await import("@repo/database/schema");
-        const { eq } = await import("drizzle-orm");
-
-        const firstMembership = await db.query.member.findFirst({
-            where: eq(member.userId, session.user.id)
-        });
-
-        if (firstMembership) {
-            activeOrgId = firstMembership.organizationId;
-        } else {
-            activeOrgId = "org_default";
-        }
-    }
-
-    const orgId = activeOrgId;
+    const { activeOrgId: orgId } = await getRequiredOrganizationContext();
 
     const [shifts, pendingCount, draftCount, locations] = await Promise.all([
         getShifts({ view, orgId }),

@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    transpilePackages: ["@repo/database", "@repo/auth", "@repo/email", "@repo/scheduling-timekeeping", "@repo/organizations", "@repo/gig-workers", "@repo/ui", "@repo/utils", "@repo/notifications", "@repo/observability"],
+    transpilePackages: ["@repo/database", "@repo/auth", "@repo/billing", "@repo/email", "@repo/scheduling-timekeeping", "@repo/organizations", "@repo/gig-workers", "@repo/ui", "@repo/utils", "@repo/notifications", "@repo/observability"],
     // Next 16 uses Turbopack by default. Keep the config explicit so builds
     // don't fail on the presence of Sentry's webpack hooks.
     turbopack: {},

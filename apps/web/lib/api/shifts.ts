@@ -4,35 +4,30 @@ import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 
 import { API_BASE_URL } from "@/lib/constants";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 const SHIFT_SERVICE_URL = API_BASE_URL;
 
 // Helper to secure Org ID
 const getSecureOrgId = async (providedOrgId?: string) => {
-    // If running on server with full trust (e.g. from page.tsx props), we might trust providedOrgId
-    // But for Client->Server calls, we MUST verify.
-    // Simpler approach: Always derive from session if possible, or fallback.
     const session = await auth.api.getSession({ headers: await headers() });
     const sessionData = session as any;
-    let activeOrgId = sessionData?.session?.activeOrganizationId || sessionData?.activeOrganizationId;
+    const activeOrgId = await resolveActiveOrganizationId(
+        sessionData?.user?.id,
+        sessionData?.session?.activeOrganizationId || sessionData?.activeOrganizationId
+    );
 
-    // FALLBACK: If session has no Active Org, query DB for first membership
-    if (!activeOrgId && sessionData?.user?.id) {
-        try {
-            const { db } = await import("@repo/database");
-            const { member } = await import("@repo/database/schema");
-            const { eq } = await import("drizzle-orm");
+    return activeOrgId || providedOrgId || null;
+};
 
-            const firstMember = await db.query.member.findFirst({
-                where: eq(member.userId, sessionData.user.id)
-            });
-            if (firstMember) activeOrgId = firstMember.organizationId;
-        } catch (e) {
-            console.error("Failed to auto-resolve orgId in API utils", e);
-        }
+const requireSecureOrgId = async (providedOrgId?: string) => {
+    const activeOrgId = await getSecureOrgId(providedOrgId);
+
+    if (!activeOrgId) {
+        throw new Error("No active organization available");
     }
 
-    return activeOrgId || providedOrgId || "org_default";
+    return activeOrgId;
 };
 
 // apps/web/lib/api/shifts.ts
@@ -42,6 +37,10 @@ const getSecureOrgId = async (providedOrgId?: string) => {
 export const getShifts = async ({ view, orgId }: { view: string; orgId?: string }) => {
     try {
         const activeOrgId = await getSecureOrgId(orgId);
+
+        if (!activeOrgId) {
+            return [];
+        }
 
         let endpoint = "";
         switch (view) {
@@ -86,6 +85,11 @@ export const getShifts = async ({ view, orgId }: { view: string; orgId?: string 
 export const getPendingShiftsCount = async (orgId?: string) => {
     try {
         const activeOrgId = await getSecureOrgId(orgId);
+
+        if (!activeOrgId) {
+            return 0;
+        }
+
         const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/pending-approval`, {
             headers: {
                 "x-org-id": activeOrgId,
@@ -107,6 +111,11 @@ export const getPendingShiftsCount = async (orgId?: string) => {
 export const getDraftShiftsCount = async (orgId?: string) => {
     try {
         const activeOrgId = await getSecureOrgId(orgId);
+
+        if (!activeOrgId) {
+            return 0;
+        }
+
         const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
             headers: {
                 "x-org-id": activeOrgId,
@@ -126,7 +135,7 @@ export const getDraftShiftsCount = async (orgId?: string) => {
 };
 
 export const deleteDrafts = async (orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
+    const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
         method: "DELETE",
         headers: {
@@ -141,7 +150,7 @@ export const deleteDrafts = async (orgId?: string) => {
 };
 
 export const publishSchedule = async (payload: any, orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
+    const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/publish`, {
         method: "POST",
         headers: {
@@ -157,7 +166,7 @@ export const publishSchedule = async (payload: any, orgId?: string) => {
 };
 
 export const approveShift = async (shiftId: string, orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
+    const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/approve`, {
         method: "POST",
         headers: {
@@ -173,6 +182,11 @@ export const approveShift = async (shiftId: string, orgId?: string) => {
 
 export const getShiftById = async (shiftId: string, orgId?: string) => {
     const activeOrgId = await getSecureOrgId(orgId);
+
+    if (!activeOrgId) {
+        return null;
+    }
+
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}`, {
         headers: {
             "x-org-id": activeOrgId,
@@ -188,6 +202,11 @@ export const getShiftById = async (shiftId: string, orgId?: string) => {
 
 export const getShiftTimesheets = async (shiftId: string, orgId?: string) => {
     const activeOrgId = await getSecureOrgId(orgId);
+
+    if (!activeOrgId) {
+        return [];
+    }
+
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/timesheets`, {
         headers: {
             "x-org-id": activeOrgId,
@@ -202,7 +221,7 @@ export const getShiftTimesheets = async (shiftId: string, orgId?: string) => {
 };
 
 export const updateTimesheet = async (shiftId: string, workerId: string, action: string, data: any, orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
+    const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/timesheet`, {
         method: "PATCH",
         headers: {
@@ -218,7 +237,7 @@ export const updateTimesheet = async (shiftId: string, workerId: string, action:
 };
 
 export const cancelShift = async (shiftId: string, orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
+    const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/cancel`, {
         method: "POST",
         headers: {
@@ -233,7 +252,7 @@ export const cancelShift = async (shiftId: string, orgId?: string) => {
 };
 
 export const assignWorkers = async (shiftId: string, workerIds: string[], orgId?: string) => {
-    const activeOrgId = await getSecureOrgId(orgId);
+    const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/assign`, {
         method: "POST",
         headers: {

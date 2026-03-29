@@ -1,16 +1,31 @@
-# Pavn Package (`@repo/*`)
+# Notifications
 
-This is a shared internal package for the Pavn monorepo.
+`@repo/notifications` owns notification delivery and scheduling primitives.
 
-## Usage
+## Responsibilities
 
-Import this package in your application:
+- Expo push dispatch
+- notification scheduling
+- canonical queue dispatch helpers
+- shared notification types
 
-```typescript
-import { ... } from "@repo/package-name";
-```
+## Source Layout
 
-## Development
+- `src/services/expo-push.ts`
+- `src/services/scheduler.ts`
+- `src/services/dispatch.ts`
+- `src/types.ts`
 
-- Run `bun run build` to compile.
-- Run `bun run lint` to check for code issues.
+## Boundaries
+
+This package should contain:
+
+- how notifications are queued, scheduled, and delivered
+- the single source of truth for queued notification dispatch
+
+This package should not contain:
+
+- business decisions about when a shift should be published
+- attendance verification logic
+- UI messaging surfaces
+- worker-specific process wrappers

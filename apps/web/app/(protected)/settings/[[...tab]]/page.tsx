@@ -1,8 +1,5 @@
 // apps/web/app/(protected)/settings/[[...tab]]/page.tsx
 
-import { auth } from "@repo/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { db } from "@repo/database";
 import {
     organization as orgSchema,
@@ -15,21 +12,15 @@ import {
 import { eq, and, desc, or } from "@repo/database";
 import { SettingsView } from "@/components/settings/settings-view";
 import { getSubscriptionDetails, getInvoiceHistory } from "@/actions/billing";
+import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 
 export default async function SettingsPage(props: { params: Promise<{ tab?: string[] }> }) {
     const params = await props.params;
     const activeTab = params.tab?.[0] || "profile";
 
-    const session = await auth.api.getSession({
-        headers: await headers()
-    });
+    const session = await getRequiredSession();
 
-    if (!session) {
-        redirect("/auth/login");
-    }
-
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    let activeOrgId = (session.session as any).activeOrganizationId as string | undefined;
+    let activeOrgId = getSessionActiveOrganizationId(session);
     let organization = null;
     let locations: any[] = [];
     let role = "member";

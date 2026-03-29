@@ -1,16 +1,18 @@
-# Pavn Package (`@repo/*`)
+# UI
 
-This is a shared internal package for the Pavn monorepo.
+`@repo/ui` is the shared web design-system package.
 
-## Usage
+It contains the shadcn-based component layer, supporting hooks, and shared styles used by the Next.js web app.
 
-Import this package in your application:
+## Responsibilities
 
-```typescript
-import { ... } from "@repo/package-name";
-```
+- web UI primitives under `src/components/ui`
+- shared hooks
+- shared utility functions for class merging and design-system support
+- global styles for the web design system
 
-## Development
+## Boundary Rule
 
-- Run `bun run build` to compile.
-- Run `bun run lint` to check for code issues.
+This package should stay presentation-focused.
+
+Do not move business logic here just because a component needs data.

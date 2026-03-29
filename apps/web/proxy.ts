@@ -55,6 +55,32 @@ export default async function proxy(request: NextRequest) {
             return NextResponse.redirect(new URL("/auth/verify-email", request.url));
         }
 
+        const shouldEnforceOnboarding =
+            pathname !== "/dashboard/onboarding" &&
+            !pathname.startsWith("/dashboard/onboarding/");
+
+        if (shouldEnforceOnboarding) {
+            const onboardingUrl = new URL("/api/internal/onboarding-status", request.url);
+
+            const onboardingResponse = await fetch(onboardingUrl.toString(), {
+                headers: {
+                    cookie: request.headers.get("cookie") || "",
+                },
+            });
+
+            if (onboardingResponse.ok) {
+                const onboardingStatus = await onboardingResponse.json() as {
+                    hasOnboarding: boolean;
+                    isComplete: boolean;
+                };
+
+                if (onboardingStatus.hasOnboarding && !onboardingStatus.isComplete) {
+                    const redirectUrl = new URL("/dashboard/onboarding", request.url);
+                    return NextResponse.redirect(redirectUrl);
+                }
+            }
+        }
+
         return NextResponse.next();
     } catch (error) {
         console.error("[Proxy] Session check failed:", error);
@@ -64,5 +90,11 @@ export default async function proxy(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/settings/:path*"],
+    matcher: [
+        "/dashboard/:path*",
+        "/settings/:path*",
+        "/rosters/:path*",
+        "/reports/:path*",
+        "/workers/:path*",
+    ],
 };

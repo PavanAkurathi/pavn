@@ -3,7 +3,7 @@
 /**
  * WorkersHive Background Jobs
  * 
- * Uses Trigger.dev for serverless background job processing.
+ * Shared background job entrypoints for async operational workflows.
  * 
  * Jobs:
  * - sendScheduledNotifications: Process notification queue

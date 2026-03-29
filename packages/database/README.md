@@ -1,30 +1,57 @@
-# Pavn Database (`@repo/database`)
+# Database
 
-Shared database package handling schema definitions, migrations, and connection management.
+`@repo/database` owns the shared database layer for the monorepo.
 
-## Tech Stack
-- **PostgreSQL**: Production database hosted on Neon.
-- **[Drizzle ORM](https://orm.drizzle.team/)**: TypeScript ORM and Query Builder.
+## Responsibilities
 
-## Directory Structure
-- **`src/schema.ts`**: All table definitions.
-- **`src/index.ts`**: Exports for `db` instance and schema.
-- **`drizzle/`**: Migration SQL files.
+- Drizzle connection setup
+- schema definitions
+- migrations
+- audit writes
+- spatial helpers
+- worker-role normalization helpers
+
+## Source Layout
+
+- `src/db.ts`
+  - database connection
+- `src/schema.ts`
+  - shared table schema
+- `src/audit.ts`
+  - audit-log helpers
+- `src/spatial.ts`
+  - PostGIS / coordinate helpers
+- `src/worker-roles.ts`
+  - worker role normalization and upsert helpers
+- `drizzle/`
+  - SQL migrations
+- `scripts/`
+  - operational scripts for local/dev maintenance
 
 ## Commands
 
-Run these from the root directory or inside `packages/database`:
+Run from the repo root or inside `packages/database`:
 
 ```bash
-# Generate migration files after changing schema.ts
 bun run db:generate
-
-# Push changes directly to the database (Local Dev)
+bun run db:migrate
+bun run db:migrate:manual
 bun run db:push
-
-# View database with Drizzle Studio
 bun run db:studio
 ```
 
-## Connection
-The package exports a singleton `db` instance that automatically connects using the `DATABASE_URL` environment variable.
+## Boundary Rule
+
+Keep domain decisions out of this package.
+
+This package should provide:
+
+- schema
+- query primitives
+- shared DB helpers
+
+It should not own:
+
+- shift publication rules
+- auth decisions
+- attendance policy logic

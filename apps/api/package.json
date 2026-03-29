@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "bun --env-file=../../.env --bun src/index.ts",
     "build": "node build.mjs",
@@ -12,6 +15,7 @@
   "main": "./dist/index.js",
   "dependencies": {
     "@repo/auth": "workspace:*",
+    "@repo/billing": "workspace:*",
     "@repo/config": "workspace:*",
     "@repo/database": "workspace:*",
     "@repo/geofence": "workspace:*",

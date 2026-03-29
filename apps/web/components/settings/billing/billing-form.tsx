@@ -37,16 +37,16 @@ export function BillingForm({ subscriptionStatus, currentPeriodEnd }: BillingFor
             }
             const res = isManagedSubscription ? await createCustomerPortal() : await createCheckoutSession();
 
-            if (res?.error) {
+            if (res && "error" in res && res.error) {
                 toast.error(res.error);
                 setLoading(false);
                 return;
             }
 
-            if (res?.url) {
+            if (res && "url" in res && res.url) {
                 window.location.href = res.url;
             } else {
-                // Fallback if no URL returned but no error? 
+                // Fallback if no URL returned but no error?
                 setLoading(false);
             }
         } catch (error) {

@@ -1,5 +1,5 @@
 {
-    "name": "@repo/auth",
+    "name": "@repo/billing",
     "version": "0.0.0",
     "private": true,
     "type": "module",
@@ -11,12 +11,6 @@
             "bun": "./src/index.ts",
             "import": "./src/index.ts",
             "default": "./src/index.ts"
-        },
-        "./client": {
-            "types": "./src/client.ts",
-            "bun": "./src/client.ts",
-            "import": "./src/client.ts",
-            "default": "./src/client.ts"
         }
     },
     "scripts": {
@@ -24,19 +18,9 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
-        "@better-auth/drizzle-adapter": "1.5.1-beta.3",
-        "@better-auth/expo": "1.5.1-beta.3",
-        "@better-auth/infra": "0.1.8",
-        "@dub/better-auth": "^0.0.6",
-        "@repo/config": "workspace:*",
         "@repo/database": "workspace:*",
-        "@repo/email": "workspace:*",
-        "@repo/utils": "workspace:*",
-        "better-auth": "1.5.1-beta.3",
-        "drizzle-orm": "^0.45.1",
-        "dub": "^0.71.4",
-        "nanoid": "^5.1.6",
-        "twilio": "^5.12.2"
+        "stripe": "^20.1.0",
+        "zod": "^4.3.6"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",

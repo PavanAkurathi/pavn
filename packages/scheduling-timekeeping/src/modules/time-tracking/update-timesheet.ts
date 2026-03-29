@@ -1,6 +1,4 @@
-// packages/scheduling-timekeeping/src/modules/time-tracking/update-timesheet.ts
-
-import { AssignmentService } from "./service";
+import { applyManagerTimesheetUpdate, getAssignment, updateAssignmentStatus } from "./assignment-admin";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
 
@@ -26,10 +24,10 @@ export const updateTimesheet = async (body: any, orgId: string, actorId: string 
     const { shiftId, workerId, action, data } = parseResult.data;
 
     if (action === 'mark_no_show') {
-        const assignment = await AssignmentService.getAssignment(shiftId, workerId, orgId);
+        const assignment = await getAssignment(shiftId, workerId, orgId);
         if (!assignment) throw new AppError("Assignment not found", "NOT_FOUND", 404);
 
-        await AssignmentService.updateStatus(
+        await updateAssignmentStatus(
             actorId,
             assignment.id,
             'no_show',
@@ -41,7 +39,7 @@ export const updateTimesheet = async (body: any, orgId: string, actorId: string 
         const clockIn = data?.clockIn ? new Date(data.clockIn) : null;
         const clockOut = data?.clockOut ? new Date(data.clockOut) : null;
 
-        await AssignmentService.updateTimesheet(
+        await applyManagerTimesheetUpdate(
             actorId,
             orgId,
             shiftId,

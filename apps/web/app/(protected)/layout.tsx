@@ -1,34 +1,24 @@
 // apps/web/app/(protected)/layout.tsx
 
 import { NavHeader } from "../../components/nav-header";
-import { auth } from "@repo/auth";
-import { headers } from "next/headers";
 import { db } from "@repo/database";
 import { organization, member } from "@repo/database/schema";
 import { eq } from "@repo/database";
+import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 export default async function ProtectedLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const sessionResponse = await auth.api.getSession({
-        headers: await headers()
-    });
+    const sessionResponse = await getRequiredSession();
 
     let activeOrg = null;
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    let activeOrgId = (sessionResponse?.session as any)?.activeOrganizationId as string | undefined;
-
-    // Fallback: If no active org in session, find the first membership
-    if (!activeOrgId && sessionResponse?.user?.id) {
-        const membership = await db.query.member.findFirst({
-            where: eq(member.userId, sessionResponse.user.id)
-        });
-        if (membership) {
-            activeOrgId = membership.organizationId;
-        }
-    }
+    const activeOrgId = await resolveActiveOrganizationId(
+        sessionResponse.user.id,
+        getSessionActiveOrganizationId(sessionResponse)
+    );
 
     if (activeOrgId) {
         const orgData = await db.query.organization.findFirst({

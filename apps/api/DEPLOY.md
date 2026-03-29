@@ -1,114 +1,103 @@
 # API Deployment Guide
 
-This Hono + Bun API server is deployment-agnostic. Use any platform that supports Bun or Node.js.
+This API is a Hono service bundled for deployment from a Bun monorepo. The current production shape is:
 
-## Quick Start
+- Better Auth is hosted by the web app at `/api/auth/[...all]`
+- the API is deployed separately and consumes shared workspace packages
+- Vercel uses [build.mjs](/Users/av/Documents/pavn/apps/api/build.mjs) to bundle the API into `dist/index.js`
+
+## Local Commands
 
 ```bash
 cd apps/api
 bun install
-bun run dev      # Development with hot reload
-bun run start    # Production
+bun run dev
+bun run build
+bun run start
 ```
 
-## Environment Variables
+## Required Environment Variables
 
 ```bash
-# Required
 DATABASE_URL=postgresql://...
 BETTER_AUTH_SECRET=your-secret-key
-BETTER_AUTH_URL=https://your-api.com
+BETTER_AUTH_URL=https://your-web-app.com
+```
 
-# Optional
-PORT=4005
-NODE_ENV=production
+Notes:
+
+- `BETTER_AUTH_URL` should point to the host that serves Better Auth. In this repo that is the web app, not the API host.
+- `NEXT_PUBLIC_APP_URL` is strongly recommended for readiness checks, invite links, and cross-service URL generation.
+
+## Common Optional Environment Variables
+
+```bash
 NEXT_PUBLIC_APP_URL=https://your-web-app.com
 TWILIO_ACCOUNT_SID=...
 TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=...
+RESEND_API_KEY=...
+EMAIL_FROM=...
 SENTRY_DSN=...
+STRIPE_SECRET_KEY=...
+STRIPE_PRICE_ID_MONTHLY=...
+STRIPE_WEBHOOK_SECRET=...
+CRON_SECRET=...
 BETTER_AUTH_API_KEY=...
 BETTER_AUTH_API_URL=https://infra.better-auth.com
 BETTER_AUTH_KV_URL=https://kv.better-auth.com
 ```
 
-## Platform Configs
+## Vercel
 
-### Railway
+This repo already includes the Vercel config in [vercel.json](/Users/av/Documents/pavn/apps/api/vercel.json).
 
-1. Create new service, link repo
-2. Set root directory: `apps/api`
-3. Build command: `bun install`
-4. Start command: `bun run start`
-5. Add env vars
+Recommended project settings:
 
-### Vercel
+1. Root directory: `apps/api`
+2. Framework preset: `Other`
+3. Install command: leave blank and use the checked-in config
+4. Build command: leave blank and use the checked-in config
+5. Node version: `24.x`
 
-```json
-// vercel.json (create in apps/api/)
-{
-  "buildCommand": "bun install",
-  "outputDirectory": ".",
-  "framework": null,
-  "functions": {
-    "src/index.ts": {
-      "runtime": "@vercel/node@3"
-    }
-  }
-}
-```
+How the deploy works:
 
-Note: Vercel serverless may need adapter. Consider Railway/Render for long-running Hono server.
+- Vercel runs `node build.mjs`
+- the build aliases workspace packages and bundles them into `dist/index.js`
+- `api/index.js` serves the bundled output
+- `dist/**` is included in the function bundle
+- all incoming routes are rewritten to `/api`
 
-### Render
+## Railway / Render
 
-1. New Web Service → link repo
-2. Root directory: `apps/api`
-3. Build: `bun install`
-4. Start: `bun run start`
-5. Environment: Bun
+These work well when you want a more traditional long-running service.
 
-### Fly.io
+Suggested settings:
 
-```dockerfile
-# Dockerfile (create in apps/api/)
-FROM oven/bun:1
-WORKDIR /app
-COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile
-COPY . .
-EXPOSE 4005
-CMD ["bun", "run", "start"]
-```
+1. Root directory: `apps/api`
+2. Install command: `cd ../.. && bun install`
+3. Build command: `node build.mjs`
+4. Start command: `bun ./dist/index.js`
 
-```bash
-fly launch --dockerfile Dockerfile
-fly secrets set DATABASE_URL=...
-```
+## Health and Readiness
 
-### Docker (Generic)
-
-```dockerfile
-FROM oven/bun:1-alpine
-WORKDIR /app
-COPY package.json bun.lockb ./
-RUN bun install --production --frozen-lockfile
-COPY src ./src
-ENV NODE_ENV=production
-EXPOSE 4005
-CMD ["bun", "run", "src/index.ts"]
-```
-
-## Health Check
+Local:
 
 ```bash
 curl http://localhost:4005/health
-# Returns: { "status": "ok", "timestamp": "..." }
+curl http://localhost:4005/ready
 ```
 
-## Monorepo Note
+Vercel:
 
-This API depends on workspace packages. When deploying:
-- Railway/Render: Auto-detect monorepo
-- Docker: Copy full monorepo or pre-bundle dependencies
-- Vercel: May need turborepo setup
+```bash
+curl https://your-api-host/health
+curl https://your-api-host/ready
+curl https://your-api-host/openapi.json
+```
+
+## Monorepo Notes
+
+- The API depends on workspace packages from `packages/*`
+- deployment must install from the monorepo root, not just `apps/api`
+- Vercel bundling is intentionally handled by `build.mjs`; do not replace it with a plain `tsup` or default framework build without re-checking runtime package inclusion

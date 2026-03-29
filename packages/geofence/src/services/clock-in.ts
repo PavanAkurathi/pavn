@@ -33,6 +33,18 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
 
     const { shiftId, latitude, longitude, accuracyMeters, deviceTimestamp } = parseResult.data;
 
+    // 2. Resolve org policy and time buffer
+    const orgConfig = await db.query.organization.findFirst({
+        where: eq(organization.id, orgId),
+        columns: {
+            earlyClockInBufferMinutes: true,
+            attendanceVerificationPolicy: true,
+        }
+    });
+
+    const attendanceVerificationPolicy =
+        orgConfig?.attendanceVerificationPolicy || DEFAULT_ATTENDANCE_VERIFICATION_POLICY;
+
     // [SEC-005] Anti-Spoofing Checks
     const deviceTime = new Date(deviceTimestamp);
     const serverTime = new Date();
@@ -45,7 +57,11 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
         });
     }
 
-    if (accuracyMeters && accuracyMeters > 200) {
+    if (
+        attendanceVerificationPolicy === "strict_geofence" &&
+        accuracyMeters &&
+        accuracyMeters > 200
+    ) {
         throw new AppError("GPS signal too weak", "LOW_ACCURACY", 400, {
             accuracy: accuracyMeters,
             required: 200
@@ -81,18 +97,6 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
             clockInTime: assignment.actualClockIn
         });
     }
-
-    // 3. Resolve org policy and time buffer
-    const orgConfig = await db.query.organization.findFirst({
-        where: eq(organization.id, orgId),
-        columns: {
-            earlyClockInBufferMinutes: true,
-            attendanceVerificationPolicy: true,
-        }
-    });
-
-    const attendanceVerificationPolicy =
-        orgConfig?.attendanceVerificationPolicy || DEFAULT_ATTENDANCE_VERIFICATION_POLICY;
 
     let distanceMeters = 0;
     let radius = shiftRecord.location?.geofenceRadius || 100;

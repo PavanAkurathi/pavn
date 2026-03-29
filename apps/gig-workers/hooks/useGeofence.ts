@@ -8,7 +8,7 @@ const ClockRequestSchema = z.object({
     shiftId: z.string().min(1, "Shift ID required"),
     latitude: z.number().min(-90, "Invalid latitude").max(90, "Invalid latitude"),
     longitude: z.number().min(-180, "Invalid longitude").max(180, "Invalid longitude"),
-    accuracyMeters: z.number().max(200, "GPS signal too weak. Move to an open area.").optional(),
+    accuracyMeters: z.number().optional(),
     deviceTimestamp: z.string().datetime("Invalid timestamp"),
 });
 
@@ -46,14 +46,15 @@ export function useGeofence() {
                 throw new Error("Location permission denied. Please enable in Settings.");
             }
 
+            const policy = targetLocation?.attendanceVerificationPolicy || "strict_geofence";
+
             // 1. Validate GPS Accuracy (Anti-spoofing / Bad Signal)
             const accuracy = location.coords.accuracy || 0;
-            if (accuracy > 200) {
+            if (policy === "strict_geofence" && accuracy > 200) {
                 throw new Error(`GPS signal too weak (${Math.round(accuracy)}m accuracy). Move to an open area and try again.`);
             }
 
             // 2. Validate Proximity (if target provided)
-            const policy = targetLocation?.attendanceVerificationPolicy || "strict_geofence";
             if (
                 policy === "strict_geofence" &&
                 targetLocation?.latitude != null &&
@@ -79,7 +80,9 @@ export function useGeofence() {
                 shiftId,
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
-                accuracyMeters: accuracy || undefined,
+                accuracyMeters: accuracy > 0 && (policy === "strict_geofence" || accuracy <= 200)
+                    ? accuracy
+                    : undefined,
                 deviceTimestamp: new Date().toISOString()
             };
 
@@ -116,16 +119,14 @@ export function useGeofence() {
                 throw new Error("Location permission denied. Please enable in Settings.");
             }
 
+            const policy = targetLocation?.attendanceVerificationPolicy || "strict_geofence";
             const accuracy = location.coords.accuracy || 0;
 
-            // Note: We might want slightly looser accuracy for clock-out, but keeping consistent for now
-            if (accuracy > 200) {
-                // Warn but maybe don't block? For now, block to ensure data quality.
+            if (policy === "strict_geofence" && accuracy > 200) {
                 throw new Error(`GPS signal too weak (${Math.round(accuracy)}m accuracy). Move to an open area and try again.`);
             }
 
             // 2. Validate Proximity (if target provided)
-            const policy = targetLocation?.attendanceVerificationPolicy || "strict_geofence";
             if (
                 policy === "strict_geofence" &&
                 targetLocation?.latitude != null &&
@@ -149,7 +150,9 @@ export function useGeofence() {
                 shiftId,
                 latitude: location.coords.latitude,
                 longitude: location.coords.longitude,
-                accuracyMeters: accuracy || undefined,
+                accuracyMeters: accuracy > 0 && (policy === "strict_geofence" || accuracy <= 200)
+                    ? accuracy
+                    : undefined,
                 deviceTimestamp: new Date().toISOString()
             };
 

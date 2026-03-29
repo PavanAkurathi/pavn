@@ -1,38 +1,15 @@
 import { getShifts } from "@/lib/api/shifts";
 import { transformDraftsToForm } from "@/lib/transformers/draft-to-form";
 import { CreateScheduleForm } from "../../../../../components/schedule/create-schedule-form";
-import { auth } from "@repo/auth";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { db } from "@repo/database";
 import { member, user, workerRole } from "@repo/database/schema";
 import { eq, and, ne } from "@repo/database";
 import { deriveCrewRoles } from "@/lib/schedule/roles";
+import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 
 export default async function CreateSchedulePage() {
-    // 0. Auth Check & Org ID
-    const sessionResponse = await auth.api.getSession({
-        headers: await headers()
-    });
-
-    if (!sessionResponse) {
-        redirect("/auth/sign-in");
-    }
-
-    const { user: currentUser, session } = sessionResponse;
-    // Better-auth v1.2.0 compatibility: explicit cast for activeOrganizationId
-    let activeOrgId = (session as any).activeOrganizationId as string || undefined;
-
-    if (!activeOrgId) {
-        const membership = await db.query.member.findFirst({
-            where: eq(member.userId, currentUser.id)
-        });
-        if (membership) {
-            activeOrgId = membership.organizationId;
-        } else {
-            return <div>No active organization</div>;
-        }
-    }
+    const { session: sessionResponse, activeOrgId } = await getRequiredOrganizationContext();
+    const currentUser = sessionResponse.user;
 
     // 1. Fetch Drafts
     const draftShifts = await getShifts({ view: 'draft' });

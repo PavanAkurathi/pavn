@@ -4,12 +4,10 @@ const mockGetAssignment = mock(() => Promise.resolve({ id: "asg_1" }));
 const mockUpdateStatus = mock(() => Promise.resolve(undefined));
 const mockUpdateTimesheetService = mock(() => Promise.resolve(undefined));
 
-mock.module("../src/modules/time-tracking/service", () => ({
-    AssignmentService: {
-        getAssignment: mockGetAssignment,
-        updateStatus: mockUpdateStatus,
-        updateTimesheet: mockUpdateTimesheetService,
-    },
+mock.module("../src/modules/time-tracking/assignment-admin", () => ({
+    getAssignment: mockGetAssignment,
+    updateAssignmentStatus: mockUpdateStatus,
+    applyManagerTimesheetUpdate: mockUpdateTimesheetService,
 }));
 
 mock.module("@repo/observability", () => ({

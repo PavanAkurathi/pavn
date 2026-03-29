@@ -1,4 +1,7 @@
-export * from './types';
-export * from './services/expo-push';
-export * from './services/scheduler';
-export * from './services/dispatch';
+export type { PushNotificationPayload, SendResult } from "./types";
+export { sendPushNotification, sendBatchNotifications } from "./services/expo-push";
+export {
+    buildNotificationSchedule,
+    cancelNotificationByType,
+} from "./services/scheduler";
+export { dispatchPendingNotifications } from "./services/dispatch";
