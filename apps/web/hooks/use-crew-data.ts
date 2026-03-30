@@ -22,10 +22,6 @@ import { buildRoleOptions } from "@/lib/schedule/roles";
 // Duplicate interface removed
 
 
-import { API_BASE_URL } from "@/lib/constants";
-
-const API_BASE = API_BASE_URL; // Shift Service
-
 export function useCrewData() {
     // 1. Get the Context (Org ID)
     const orgId = useOrganizationId();

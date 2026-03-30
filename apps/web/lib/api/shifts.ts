@@ -3,10 +3,8 @@
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 
-import { API_BASE_URL } from "@/lib/constants";
+import { getApiBaseUrl } from "@/lib/constants";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
-
-const SHIFT_SERVICE_URL = API_BASE_URL;
 
 // Helper to secure Org ID
 const getSecureOrgId = async (providedOrgId?: string) => {
@@ -36,6 +34,7 @@ const requireSecureOrgId = async (providedOrgId?: string) => {
 
 export const getShifts = async ({ view, orgId }: { view: string; orgId?: string }) => {
     try {
+        const shiftServiceUrl = getApiBaseUrl();
         const activeOrgId = await getSecureOrgId(orgId);
 
         if (!activeOrgId) {
@@ -60,7 +59,7 @@ export const getShifts = async ({ view, orgId }: { view: string; orgId?: string 
                 endpoint = "/shifts/upcoming";
         }
 
-        const res = await fetch(`${SHIFT_SERVICE_URL}${endpoint}`, {
+        const res = await fetch(`${shiftServiceUrl}${endpoint}`, {
             headers: {
                 "x-org-id": activeOrgId,
                 "Content-Type": "application/json",
@@ -84,13 +83,14 @@ export const getShifts = async ({ view, orgId }: { view: string; orgId?: string 
 
 export const getPendingShiftsCount = async (orgId?: string) => {
     try {
+        const shiftServiceUrl = getApiBaseUrl();
         const activeOrgId = await getSecureOrgId(orgId);
 
         if (!activeOrgId) {
             return 0;
         }
 
-        const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/pending-approval`, {
+        const res = await fetch(`${shiftServiceUrl}/shifts/pending-approval`, {
             headers: {
                 "x-org-id": activeOrgId,
                 "Content-Type": "application/json",
@@ -110,13 +110,14 @@ export const getPendingShiftsCount = async (orgId?: string) => {
 
 export const getDraftShiftsCount = async (orgId?: string) => {
     try {
+        const shiftServiceUrl = getApiBaseUrl();
         const activeOrgId = await getSecureOrgId(orgId);
 
         if (!activeOrgId) {
             return 0;
         }
 
-        const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
+        const res = await fetch(`${shiftServiceUrl}/shifts/drafts`, {
             headers: {
                 "x-org-id": activeOrgId,
                 "Content-Type": "application/json",
@@ -135,8 +136,9 @@ export const getDraftShiftsCount = async (orgId?: string) => {
 };
 
 export const deleteDrafts = async (orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/drafts`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/drafts`, {
         method: "DELETE",
         headers: {
             "x-org-id": activeOrgId,
@@ -150,8 +152,9 @@ export const deleteDrafts = async (orgId?: string) => {
 };
 
 export const publishSchedule = async (payload: any, orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/publish`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/publish`, {
         method: "POST",
         headers: {
             "x-org-id": activeOrgId,
@@ -166,8 +169,9 @@ export const publishSchedule = async (payload: any, orgId?: string) => {
 };
 
 export const approveShift = async (shiftId: string, orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/approve`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/approve`, {
         method: "POST",
         headers: {
             "x-org-id": activeOrgId,
@@ -181,13 +185,14 @@ export const approveShift = async (shiftId: string, orgId?: string) => {
 };
 
 export const getShiftById = async (shiftId: string, orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await getSecureOrgId(orgId);
 
     if (!activeOrgId) {
         return null;
     }
 
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}`, {
         headers: {
             "x-org-id": activeOrgId,
             "Content-Type": "application/json",
@@ -201,13 +206,14 @@ export const getShiftById = async (shiftId: string, orgId?: string) => {
 };
 
 export const getShiftTimesheets = async (shiftId: string, orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await getSecureOrgId(orgId);
 
     if (!activeOrgId) {
         return [];
     }
 
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/timesheets`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/timesheets`, {
         headers: {
             "x-org-id": activeOrgId,
             "Content-Type": "application/json",
@@ -221,8 +227,9 @@ export const getShiftTimesheets = async (shiftId: string, orgId?: string) => {
 };
 
 export const updateTimesheet = async (shiftId: string, workerId: string, action: string, data: any, orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/timesheet`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/timesheet`, {
         method: "PATCH",
         headers: {
             "x-org-id": activeOrgId,
@@ -237,8 +244,9 @@ export const updateTimesheet = async (shiftId: string, workerId: string, action:
 };
 
 export const cancelShift = async (shiftId: string, orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/cancel`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/cancel`, {
         method: "POST",
         headers: {
             "x-org-id": activeOrgId,
@@ -252,8 +260,9 @@ export const cancelShift = async (shiftId: string, orgId?: string) => {
 };
 
 export const assignWorkers = async (shiftId: string, workerIds: string[], orgId?: string) => {
+    const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${SHIFT_SERVICE_URL}/shifts/${shiftId}/assign`, {
+    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/assign`, {
         method: "POST",
         headers: {
             "x-org-id": activeOrgId,

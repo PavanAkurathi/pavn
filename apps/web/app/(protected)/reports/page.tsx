@@ -16,9 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import { useOrganizationId } from "@/hooks/use-schedule-data";
-import { API_BASE_URL } from "@/lib/constants";
-
-const API_BASE = API_BASE_URL;
+import { getApiBaseUrl } from "@/lib/constants";
 
 // Fetcher with auth
 const fetcher = async (url: string, orgId: string) => {
@@ -56,6 +54,7 @@ interface FilterOptions {
 }
 
 export default function ReportsPage() {
+    const apiBase = getApiBaseUrl();
     const orgId = useOrganizationId();
 
     // Date range state - default to current month
@@ -84,20 +83,20 @@ export default function ReportsPage() {
 
     // Fetch filter options
     const { data: filterOptions } = useSWR<FilterOptions>(
-        orgId && queryParams ? `${API_BASE}/timesheets/filters?${queryParams}` : null,
+        orgId && queryParams ? `${apiBase}/timesheets/filters?${queryParams}` : null,
         (url: string) => fetcher(url, orgId!)
     );
 
     // Fetch timesheet data
     const { data: reportData, isLoading } = useSWR<ReportData>(
-        orgId && queryParams ? `${API_BASE}/timesheets?${queryParams}` : null,
+        orgId && queryParams ? `${apiBase}/timesheets?${queryParams}` : null,
         (url: string) => fetcher(url, orgId!)
     );
 
     // Export handler
     const handleExport = () => {
         if (!queryParams) return;
-        const exportUrl = `${API_BASE}/timesheets/export?${queryParams}&format=csv`;
+        const exportUrl = `${apiBase}/timesheets/export?${queryParams}&format=csv`;
         window.open(exportUrl, '_blank');
     };
 

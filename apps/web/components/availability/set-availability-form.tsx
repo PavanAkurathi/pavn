@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { authClient } from "@repo/auth/client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { API_BASE_URL } from "@/lib/constants";
+import { getApiBaseUrl } from "@/lib/constants";
 import {
     Form,
     FormControl,
@@ -44,6 +44,7 @@ type FormValues = {
 };
 
 export function SetAvailabilityForm() {
+    const apiBaseUrl = getApiBaseUrl();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -80,7 +81,7 @@ export function SetAvailabilityForm() {
         try {
             // Direct call to Hono Service (Port 4005)
             // TODO: Use env var for URL
-            const res = await fetch(`${API_BASE_URL}/worker/availability`, {
+            const res = await fetch(`${apiBaseUrl}/worker/availability`, {
                 method: "POST",
                 credentials: "include", // Ensure session cookies are sent
                 headers: {

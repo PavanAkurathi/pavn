@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { Calendar, Loader2 } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { authClient } from "@repo/auth/client";
-import { API_BASE_URL } from "@/lib/constants";
+import { getApiBaseUrl } from "@/lib/constants";
 
 interface AvailabilityRecord {
     id: string;
@@ -21,6 +21,7 @@ interface AvailabilityListProps {
 }
 
 export function AvailabilityList({ workerId }: AvailabilityListProps) {
+    const apiBaseUrl = getApiBaseUrl();
     const [availability, setAvailability] = useState<AvailabilityRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const { data: org } = authClient.useActiveOrganization();
@@ -36,7 +37,7 @@ export function AvailabilityList({ workerId }: AvailabilityListProps) {
                 const end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
                 // Use Hono Service URL (Proxied or Direct - assuming localhost:4005 for dev)
-                const res = await fetch(`${API_BASE_URL}/organizations/${org.id}/availability?from=${start}&to=${end}&workerId=${workerId}`);
+                const res = await fetch(`${apiBaseUrl}/organizations/${org.id}/availability?from=${start}&to=${end}&workerId=${workerId}`);
                 if (res.ok) {
                     const data = await res.json();
                     setAvailability(data);

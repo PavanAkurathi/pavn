@@ -21,7 +21,7 @@ import {
     FieldSet,
 } from '@repo/ui/components/ui/field';
 import { ToggleGroup, ToggleGroupItem } from '@repo/ui/components/ui/toggle-group';
-import { API_BASE_URL } from '@/lib/constants';
+import { getApiBaseUrl } from '@/lib/constants';
 
 const PreferencesSchema = z.object({
     clockInAlertsEnabled: z.boolean(),
@@ -33,6 +33,7 @@ const PreferencesSchema = z.object({
 type PreferencesForm = z.infer<typeof PreferencesSchema>;
 
 export function NotificationsView() {
+    const apiBaseUrl = getApiBaseUrl();
     const [loading, setLoading] = useState(true);
 
     const form = useForm<PreferencesForm>({
@@ -48,7 +49,7 @@ export function NotificationsView() {
     useEffect(() => {
         async function load() {
             try {
-                const res = await fetch(`${API_BASE_URL}/manager-preferences`, {
+                const res = await fetch(`${apiBaseUrl}/manager-preferences`, {
                     headers: {
                         'Content-Type': 'application/json'
                     }
@@ -69,7 +70,7 @@ export function NotificationsView() {
 
     const onSubmit = async (data: PreferencesForm) => {
         try {
-            const res = await fetch(`${API_BASE_URL}/manager-preferences`, {
+            const res = await fetch(`${apiBaseUrl}/manager-preferences`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
