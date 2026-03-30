@@ -292,6 +292,11 @@ Minimum auth env:
 - `BETTER_AUTH_URL`
 - `NEXT_PUBLIC_APP_URL`
 
+Production rules:
+- `BETTER_AUTH_URL` must be set explicitly because the web app hosts Better Auth
+- the auth client uses `NEXT_PUBLIC_AUTH_URL` first, then `NEXT_PUBLIC_APP_URL`
+- localhost fallback is development-only
+
 Worker-auth relevant env:
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
@@ -306,6 +311,11 @@ Optional:
 - `BETTER_AUTH_KV_URL`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
+
+Better Auth infra:
+- `dash(...)` is mounted only when `BETTER_AUTH_API_KEY` is present
+- `dashClient()` is enabled in the shared web client
+- if you want the Better Auth dashboard connection in deployed environments, set the infra env vars on the web project and redeploy
 
 ## Current Product Rules Captured In Code
 

@@ -63,6 +63,7 @@ function parseEnvFile(contents) {
 
 export function loadRootEnv() {
   const envFiles = [".env", ".env.local"];
+  const inheritedKeys = new Set(Object.keys(process.env));
 
   for (const filename of envFiles) {
     const fullPath = path.join(repoRoot, filename);
@@ -72,9 +73,11 @@ export function loadRootEnv() {
 
     const parsed = parseEnvFile(readFileSync(fullPath, "utf8"));
     for (const [key, value] of Object.entries(parsed)) {
-      if (!(key in process.env)) {
-        process.env[key] = value;
+      if (inheritedKeys.has(key)) {
+        continue;
       }
+
+      process.env[key] = value;
     }
   }
 }

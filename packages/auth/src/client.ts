@@ -3,17 +3,12 @@
 import { createAuthClient } from "better-auth/react";
 import { organizationClient, emailOTPClient, phoneNumberClient } from "better-auth/client/plugins";
 import { dashClient } from "@better-auth/infra/client";
+import { getWebAuthClientBaseUrl } from "./env";
 
 import type { auth } from "./auth"; // Import type for inference
 
-const authBaseUrl =
-    process.env.NEXT_PUBLIC_AUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    (typeof window !== "undefined" ? window.location.origin : undefined) ||
-    "http://localhost:3000";
-
 export const authClient = createAuthClient({
-    baseURL: authBaseUrl,
+    baseURL: getWebAuthClientBaseUrl(),
     plugins: [
         dashClient(),
         organizationClient(),

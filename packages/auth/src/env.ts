@@ -39,9 +39,7 @@ function asOrigin(value?: string): string | undefined {
 }
 
 function warnCompatFallback(message: string): void {
-    if (isAuthProd) {
-        console.warn(message);
-    }
+    console.warn(message);
 }
 
 export function requireAuthEnv(key: string): string {
@@ -58,25 +56,39 @@ export function getBetterAuthServerBaseUrl(): string {
         return explicit;
     }
 
-    const compat = normalizeUrl(process.env.NEXT_PUBLIC_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL);
-    if (compat) {
-        warnCompatFallback("[AUTH] BETTER_AUTH_URL is missing; falling back to NEXT_PUBLIC_AUTH_URL/NEXT_PUBLIC_APP_URL.");
-        return compat;
+    if (isAuthProd) {
+        throw new Error("[AUTH FATAL] Missing BETTER_AUTH_URL for Better Auth server base URL.");
     }
 
-    if (isAuthProd) {
-        throw new Error("[AUTH FATAL] Missing BETTER_AUTH_URL or NEXT_PUBLIC_APP_URL for Better Auth base URL.");
+    const compat = normalizeUrl(process.env.NEXT_PUBLIC_AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL);
+    if (compat) {
+        warnCompatFallback("[AUTH] BETTER_AUTH_URL is missing; using NEXT_PUBLIC_AUTH_URL/NEXT_PUBLIC_APP_URL in development.");
+        return compat;
     }
 
     return LOCAL_WEB_URL;
 }
 
 export function getWebAuthClientBaseUrl(): string {
-    return (
-        normalizeUrl(process.env.NEXT_PUBLIC_AUTH_URL) ??
-        normalizeUrl(process.env.NEXT_PUBLIC_APP_URL) ??
-        LOCAL_WEB_URL
-    );
+    const explicitAuthUrl = normalizeUrl(process.env.NEXT_PUBLIC_AUTH_URL);
+    if (explicitAuthUrl) {
+        return explicitAuthUrl;
+    }
+
+    const appUrl = normalizeUrl(process.env.NEXT_PUBLIC_APP_URL);
+    if (appUrl) {
+        return appUrl;
+    }
+
+    if (typeof window !== "undefined" && window.location.origin) {
+        return normalizeUrl(window.location.origin) ?? window.location.origin;
+    }
+
+    if (isAuthProd) {
+        throw new Error("[AUTH FATAL] Missing NEXT_PUBLIC_AUTH_URL or NEXT_PUBLIC_APP_URL for Better Auth client base URL.");
+    }
+
+    return LOCAL_WEB_URL;
 }
 
 function buildAllowedOriginsFromEnv(): string[] {
@@ -125,6 +137,10 @@ export type InfraConnectionOptions = {
     kvUrl?: string;
     apiKey?: string;
 };
+
+export function isBetterAuthInfraEnabled(): boolean {
+    return Boolean(normalizeValue(process.env.BETTER_AUTH_API_KEY));
+}
 
 export function getBetterAuthInfraConnection(): InfraConnectionOptions | null {
     const apiKey = normalizeValue(process.env.BETTER_AUTH_API_KEY);

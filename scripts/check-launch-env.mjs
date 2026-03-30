@@ -10,6 +10,8 @@ const required = {
   ],
   web: [
     "NEXT_PUBLIC_APP_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
   ],
   auth_sms: [
     "TWILIO_ACCOUNT_SID",
