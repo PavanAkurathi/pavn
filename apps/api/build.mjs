@@ -49,8 +49,8 @@ async function build() {
             bundle: true,
             platform: 'node',
             target: 'node24',
-            format: 'esm',
-            outfile: join(__dirname, 'dist/index.js'),
+            format: 'cjs',
+            outfile: join(__dirname, 'dist/index.cjs'),
             sourcemap: false,
             minify: false,
             

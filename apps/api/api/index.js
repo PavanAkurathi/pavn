@@ -1,5 +1,8 @@
 import { handle } from 'hono/vercel';
-import { app } from '../dist/index.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { app } = require('../dist/index.cjs');
 
 export const config = {
     runtime: 'nodejs',

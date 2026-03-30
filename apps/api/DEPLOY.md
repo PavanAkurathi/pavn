@@ -4,7 +4,7 @@ This API is a Hono service bundled for deployment from a Bun monorepo. The curre
 
 - Better Auth is hosted by the web app at `/api/auth/[...all]`
 - the API is deployed separately and consumes shared workspace packages
-- Vercel uses [build.mjs](/Users/av/Documents/pavn/apps/api/build.mjs) to bundle the API into `dist/index.js`
+- Vercel uses [build.mjs](/Users/av/Documents/pavn/apps/api/build.mjs) to bundle the API into `dist/index.cjs`
 
 ## Local Commands
 
@@ -63,7 +63,7 @@ Recommended project settings:
 How the deploy works:
 
 - Vercel runs `node build.mjs`
-- the build aliases workspace packages and bundles them into `dist/index.js`
+- the build aliases workspace packages and bundles them into `dist/index.cjs`
 - `api/index.js` serves the bundled output
 - `dist/**` is included in the function bundle
 - all incoming routes are rewritten to `/api`
@@ -77,7 +77,7 @@ Suggested settings:
 1. Root directory: `apps/api`
 2. Install command: `cd ../.. && bun install`
 3. Build command: `node build.mjs`
-4. Start command: `bun ./dist/index.js`
+4. Start command: `bun ./dist/index.cjs`
 
 ## Health and Readiness
 

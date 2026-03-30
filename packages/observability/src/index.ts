@@ -27,7 +27,9 @@ import { nanoid } from "nanoid";
 
 // Lazy Sentry import to prevent crashes when SENTRY_DSN is missing
 let Sentry: any = null;
-const nodeRequire = createRequire(import.meta.url);
+const fallbackRequireBase = `${process.cwd()}/.observability-require.cjs`;
+const nodeRequire =
+    typeof require === "function" ? require : createRequire(fallbackRequireBase);
 
 export const initSentry = () => {
     if (!process.env.SENTRY_DSN) {

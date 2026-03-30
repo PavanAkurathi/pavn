@@ -77,8 +77,8 @@ async function build() {
             bundle: true,
             platform: 'node',
             target: 'node20',
-            format: 'esm',
-            outfile: join(__dirname, 'dist/index.js'),
+            format: 'cjs',
+            outfile: join(__dirname, 'dist/index.cjs'),
             sourcemap: false,
             minify: false,
             treeShaking: true,
@@ -142,7 +142,7 @@ async function build() {
         }
 
         console.log('\n✅ Build successful!');
-        console.log(`   Output: dist/index.js`);
+        console.log(`   Output: dist/index.cjs`);
 
     } catch (error) {
         console.error('\n❌ Build failed:');

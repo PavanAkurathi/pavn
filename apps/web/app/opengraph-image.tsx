@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 // Image metadata
 export const alt = 'Workers Hive - Smart Staff Scheduling'
