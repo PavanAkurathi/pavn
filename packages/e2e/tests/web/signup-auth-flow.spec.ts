@@ -48,7 +48,7 @@ test.describe("manager browser signup flow", () => {
 
         await page.goto("/");
 
-        await expect(page.getByRole("heading", { name: /scheduling made/i })).toBeVisible();
+        await expect(page.getByRole("heading", { name: /stop paying the/i })).toBeVisible();
         await page.getByRole("link", { name: /get started free/i }).click();
 
         await expect(page).toHaveURL(/\/auth\/signup$/);
@@ -100,19 +100,18 @@ test.describe("manager browser signup flow", () => {
         await page.getByRole("button", { name: /verify email/i }).click();
 
         await page.waitForURL(/\/dashboard\/onboarding/, { timeout: 30000 });
-        await expect(page.getByRole("heading", { name: new RegExp(`welcome to ${businessName}`, "i") })).toBeVisible();
-        await expect(page.getByRole("heading", { name: /one focused step at a time/i })).toBeVisible();
+        await expect(page.getByRole("heading", { name: /let’s set up your business profile/i })).toBeVisible();
+        await expect(page.getByText(new RegExp(businessName, "i")).first()).toBeVisible();
         await expect(page.getByText(/account ready/i).first()).toBeVisible();
-        await expect(page.getByText(/business information/i).first()).toBeVisible();
+        await expect(page.getByText(/business basics/i).first()).toBeVisible();
         await expect(page.getByText(/first location/i).first()).toBeVisible();
-        await expect(page.getByText(/trial & billing/i).first()).toBeVisible();
+        await expect(page.getByText(/workforce access/i).first()).toBeVisible();
+        await expect(page.getByText(/first published shift/i).first()).toBeVisible();
         await expect(page.locator("#onboarding_business_name")).toHaveValue(businessName);
         await expect(page.locator("#onboarding_timezone")).toBeVisible();
         await expect(page.getByText(/clock-in verification/i).first()).toBeVisible();
         await expect(page.getByRole("button", { name: /save and continue/i })).toBeVisible();
         await expect(page.getByText(/business basics/i).first()).toBeVisible();
-        await expect(page.getByText(/business information/i).first()).toBeVisible();
-        await expect(page.getByRole("link", { name: /open business settings/i }).first()).toBeVisible();
         await expect(page.locator("#onboarding_location_name")).toHaveCount(0);
         await expect(page.getByText(/workspace created and admin access active/i)).toBeVisible();
 
@@ -125,11 +124,10 @@ test.describe("manager browser signup flow", () => {
         await page.locator("#onboarding_location_address").fill("4 Yawkey Way, Boston, MA 02215");
         await page.getByRole("button", { name: /save location and continue/i }).click();
 
-        await expect(page.getByRole("heading", { name: /ready for your first schedule/i })).toBeVisible();
-        await expect(page.getByText(/let's create your first schedule/i).first()).toBeVisible();
-        await expect(page.getByText(/business setup complete/i).first()).toBeVisible();
-        await expect(page.getByRole("link", { name: /create your first schedule/i })).toBeVisible();
-        await expect(page.getByText(/no credit card is required to finish setup/i)).toBeVisible();
+        await expect(page.getByRole("heading", { name: /add your first workers/i })).toBeVisible();
+        await expect(page.getByText(/worker access is the gate for the mobile experience/i).first()).toBeVisible();
+        await expect(page.getByRole("link", { name: /open roster workspace/i })).toBeVisible();
+        await expect(page.getByRole("link", { name: /import roster csv/i })).toBeVisible();
 
         await page.context().clearCookies();
         await page.goto("/auth/login");
@@ -137,7 +135,8 @@ test.describe("manager browser signup flow", () => {
         await page.locator('input[name="password"]').fill(password);
         await page.getByRole("button", { name: /sign in/i }).click();
 
-        await page.waitForURL(/\/dashboard\/shifts/, { timeout: 30000 });
+        await page.waitForURL(/\/dashboard\/onboarding/, { timeout: 30000 });
+        await expect(page.getByRole("heading", { name: /add your first workers/i })).toBeVisible();
 
         const createdUser = await db.query.user.findFirst({
             where: eq(user.email, email),

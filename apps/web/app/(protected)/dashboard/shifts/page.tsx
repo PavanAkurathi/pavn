@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { DraftBanner } from "@/components/dashboard/draft-banner";
+import { PostLaunchChecklist } from "@/components/dashboard/post-launch-checklist";
 import { getLocations } from "@repo/organizations";
 import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
+import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -19,11 +21,12 @@ export default async function ShiftsPage(props: {
 
     const { activeOrgId: orgId } = await getRequiredOrganizationContext();
 
-    const [shifts, pendingCount, draftCount, locations] = await Promise.all([
+    const [shifts, pendingCount, draftCount, locations, onboardingState] = await Promise.all([
         getShifts({ view, orgId }),
         getPendingShiftsCount(orgId),
         getDraftShiftsCount(orgId),
         getLocations(orgId),
+        getCurrentBusinessOnboardingState(),
     ]);
 
     // Fix: Map DB locations to Frontend Location type (handle null address)
@@ -38,6 +41,9 @@ export default async function ShiftsPage(props: {
         <div className="space-y-6">
             <ApprovalBanner count={pendingCount} />
             <DraftBanner count={draftCount} />
+            {onboardingState.onboarding?.isComplete ? (
+                <PostLaunchChecklist steps={onboardingState.onboarding.deferredSteps} />
+            ) : null}
 
             <div className="flex items-center justify-between">
                 <div>

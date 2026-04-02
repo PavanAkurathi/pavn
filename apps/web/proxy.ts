@@ -59,9 +59,15 @@ export default async function proxy(request: NextRequest) {
             return NextResponse.redirect(redirectUrl);
         }
 
-        const shouldEnforceOnboarding =
-            pathname !== "/dashboard/onboarding" &&
-            !pathname.startsWith("/dashboard/onboarding/");
+        const onboardingAllowedPath =
+            pathname === "/dashboard/onboarding" ||
+            pathname.startsWith("/dashboard/onboarding/") ||
+            pathname === "/dashboard/schedule/create" ||
+            pathname.startsWith("/dashboard/schedule/create/") ||
+            pathname === "/rosters" ||
+            pathname.startsWith("/rosters/");
+
+        const shouldEnforceOnboarding = !onboardingAllowedPath;
 
         if (shouldEnforceOnboarding) {
             const onboardingUrl = new URL("/api/internal/onboarding-status", request.url);

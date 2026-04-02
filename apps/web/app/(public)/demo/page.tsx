@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { APP_NAME, SUPPORT_EMAIL } from '@repo/config';
 import { MonitorPlay, Clock, Users } from 'lucide-react';
 import Link from 'next/link';
+import { MarketingHeading } from '@/components/marketing/marketing-heading';
 
 export const metadata: Metadata = {
     title: `Request a Demo | ${APP_NAME}`,
@@ -11,10 +12,15 @@ export default function DemoPage() {
     return (
         <div className="container mx-auto px-6 py-24">
             <div className="max-w-3xl mx-auto text-center mb-16">
-                <h1 className="text-4xl font-bold text-slate-900 mb-4">See Workers Hive in Action</h1>
-                <p className="text-lg text-slate-500">
-                    15 minutes. We’ll walk you through scheduling, workforce access, geofenced clock-in, and timesheet review — tailored to your operation.
-                </p>
+                <MarketingHeading
+                    as="h1"
+                    align="center"
+                    title="See Workers Hive"
+                    accent="in action"
+                    description="15 minutes. We’ll walk you through scheduling, workforce access, geofenced clock-in, and timesheet review tailored to your operation."
+                    className="max-w-3xl"
+                    descriptionClassName="max-w-2xl text-slate-500"
+                />
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 max-w-3xl mx-auto mb-16">
@@ -42,7 +48,14 @@ export default function DemoPage() {
             </div>
 
             <div className="max-w-xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center">
-                <h2 className="text-2xl font-bold text-slate-900 mb-4">Book Your Demo</h2>
+                <MarketingHeading
+                    title="Book your"
+                    accent="demo"
+                    align="center"
+                    size="subsection"
+                    className="mb-4"
+                    descriptionClassName="max-w-xl"
+                />
                 <p className="text-slate-500 mb-6">
                     Send us your business details and preferred time. We’ll confirm within a few hours.
                 </p>

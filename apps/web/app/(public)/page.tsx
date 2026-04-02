@@ -15,10 +15,11 @@ import { ROICalculator } from '@/components/landing/roi-calculator';
 import { FeatureTabs } from '@/components/landing/feature-tabs';
 import { ComparisonTable } from '@/components/landing/comparison-table';
 import { FAQ } from '@/components/landing/faq';
+import { MarketingHeading } from '@/components/marketing/marketing-heading';
 
 export const metadata: Metadata = {
   title: 'Workers Hive | Workforce Scheduling & Attendance',
-  description: 'Workers Hive helps businesses manage workforce access, publish shifts, and approve attendance across locations.',
+  description: 'Workers Hive gives businesses flat-rate workforce scheduling and attendance software without the headcount tax.',
 };
 
 export default function LandingPage() {
@@ -32,14 +33,15 @@ export default function LandingPage() {
 
             {/* Left Content */}
             <div className="lg:w-1/2 space-y-8">
-              <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-foreground">
-                Run shift teams <br />
-                <span className="text-destructive">without spreadsheet chaos.</span>
-              </h1>
-
-              <p className="text-xl text-muted-foreground max-w-lg leading-relaxed font-medium">
-                Set up locations, add workers through workforce access, publish live shifts, and close the loop with mobile attendance and approvals.
-              </p>
+              <MarketingHeading
+                as="h1"
+                size="hero"
+                title="Stop paying the"
+                accent="headcount tax."
+                description="Most scheduling tools charge more every time your workforce grows. Workers Hive gives businesses one flat monthly price per location for scheduling, attendance, and approvals."
+                className="max-w-xl"
+                descriptionClassName="max-w-lg text-muted-foreground leading-relaxed font-medium"
+              />
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Link href="/auth/signup" className="w-full sm:w-auto">
@@ -133,9 +135,15 @@ export default function LandingPage() {
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white opacity-5 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
 
         <div className="max-w-4xl mx-auto text-center relative z-10">
-          <h2 className="text-4xl lg:text-5xl font-extrabold mb-8 tracking-tight">
-            Ready to upgrade your operations?
-          </h2>
+          <MarketingHeading
+            title="Ready to upgrade"
+            accent="your operations?"
+            align="center"
+            size="subsection"
+            className="mb-8"
+            titleClassName="text-white"
+            accentClassName="text-red-300"
+          />
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/auth/signup">
               <button className="h-16 px-12 rounded-full bg-destructive text-white font-bold text-xl hover:bg-red-600 transition-all shadow-2xl shadow-red-900/50">

@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, MapPin, Settings2 } from "lucide-react";
+import {
+    ArrowLeft,
+    CheckCircle2,
+    ClipboardList,
+    MapPin,
+    Settings2,
+    Users,
+} from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
@@ -9,23 +16,18 @@ import { cn } from "@repo/ui/lib/utils";
 import type { BusinessOnboardingState, OnboardingStep } from "@/lib/onboarding";
 import { BusinessBasicsStep } from "@/components/onboarding/business-basics-step";
 import { LocationBasicsStep } from "@/components/onboarding/location-basics-step";
-import { BusinessSetupCompleteStep } from "@/components/onboarding/business-setup-complete-step";
+import { WorkforceSetupStep } from "@/components/onboarding/workforce-setup-step";
+import { FirstShiftStep } from "@/components/onboarding/first-shift-step";
 
-type ActiveStepId = "business" | "location" | "complete";
+type ActiveStepId = "business" | "location" | "workforce" | "first_shift";
 
 const stepIcons = {
     account: CheckCircle2,
     business: Settings2,
     location: MapPin,
-    complete: CheckCircle2,
+    workforce: Users,
+    first_shift: ClipboardList,
 } as const;
-
-const completionStep = {
-    id: "complete",
-    title: "Setup complete",
-    description: "Business essentials are in place. Billing stays optional and scheduling comes next.",
-    supportingText: "Create your first schedule next",
-};
 
 function resolveActiveStep({
     steps,
@@ -34,30 +36,29 @@ function resolveActiveStep({
     steps: OnboardingStep[];
     requestedStepId?: string;
 }): ActiveStepId {
-    const businessStep = steps.find((step) => step.id === "business");
-    const locationStep = steps.find((step) => step.id === "location");
+    const orderedStepIds: ActiveStepId[] = ["business", "location", "workforce", "first_shift"];
+    const firstIncomplete = orderedStepIds.find((stepId) => {
+        const matchingStep = steps.find((step) => step.id === stepId);
+        return matchingStep ? !matchingStep.complete : false;
+    });
 
-    if (businessStep && !businessStep.complete) {
-        return "business";
+    if (!requestedStepId || !orderedStepIds.includes(requestedStepId as ActiveStepId)) {
+        return firstIncomplete ?? "first_shift";
     }
 
-    if (locationStep && !locationStep.complete) {
-        if (requestedStepId === "business" && businessStep?.complete) {
-            return "business";
-        }
+    const requested = requestedStepId as ActiveStepId;
+    const requestedIndex = orderedStepIds.indexOf(requested);
+    const blockedByEarlierStep = orderedStepIds.some((stepId, index) => {
+        if (index >= requestedIndex) return false;
+        const matchingStep = steps.find((step) => step.id === stepId);
+        return matchingStep ? !matchingStep.complete : false;
+    });
 
-        return requestedStepId === "location" ? "location" : "location";
+    if (blockedByEarlierStep) {
+        return firstIncomplete ?? "first_shift";
     }
 
-    if (requestedStepId === "business" && businessStep) {
-        return "business";
-    }
-
-    if (requestedStepId === "location" && locationStep) {
-        return "location";
-    }
-
-    return "complete";
+    return requested;
 }
 
 function getStepStatus(stepId: string, activeStepId: ActiveStepId, complete: boolean) {
@@ -78,14 +79,7 @@ export function BusinessOnboardingView({
         requestedStepId,
     });
     const activeStep = onboarding.steps.find((step) => step.id === activeStepId) ?? null;
-    const displaySteps = [
-        ...onboarding.steps,
-        {
-            ...completionStep,
-            complete: onboarding.isComplete,
-            href: "/dashboard/onboarding",
-        },
-    ];
+    const displaySteps = onboarding.steps;
 
     return (
         <div className="-mx-4 -my-8 bg-muted/40 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
@@ -114,10 +108,10 @@ export function BusinessOnboardingView({
                                 {SUBSCRIPTION.TRIAL_DAYS}-day free trial active
                             </Badge>
                             <p className="text-sm font-medium leading-6 text-white/85">
-                                Let&apos;s set up your business profile before you schedule your first shift.
+                                Let&apos;s get your business to the first published shift as quickly as possible.
                             </p>
                             <p className="text-sm text-white/55">
-                                A couple quick steps now, then you can move straight into scheduling.
+                                The hard requirement is simple: set up the basics, add workforce access, and publish one live shift.
                             </p>
                         </div>
 
@@ -132,7 +126,11 @@ export function BusinessOnboardingView({
                                             ? "/dashboard/onboarding?step=business"
                                             : step.id === "location"
                                                 ? "/dashboard/onboarding?step=location"
-                                                : undefined;
+                                                : step.id === "workforce"
+                                                    ? "/dashboard/onboarding?step=workforce"
+                                                    : step.id === "first_shift"
+                                                        ? "/dashboard/onboarding?step=first_shift"
+                                                        : undefined;
                                 const content = (
                                     <div
                                         className={cn(
@@ -166,11 +164,6 @@ export function BusinessOnboardingView({
                                                 <p className={cn("text-sm font-medium", status === "active" ? "text-white" : "text-white/75")}>
                                                     {step.title}
                                                 </p>
-                                                {step.id === "complete" ? (
-                                                    <Badge variant="outline" className="border-white/10 bg-transparent text-white/65">
-                                                        Final
-                                                    </Badge>
-                                                ) : null}
                                             </div>
                                             <p className="max-w-[210px] text-xs leading-5 text-white/55">
                                                 {step.supportingText}
@@ -195,9 +188,9 @@ export function BusinessOnboardingView({
                             <Separator className="bg-white/10" />
                             <Card className="border-white/10 bg-white/5 text-white shadow-none">
                                 <CardContent className="flex flex-col gap-2 p-5">
-                                    <p className="text-sm font-medium text-white">You&apos;re almost there</p>
+                                    <p className="text-sm font-medium text-white">Aim for the first live shift</p>
                                     <p className="text-sm leading-6 text-white/65">
-                                        Finish your business setup first. Workforce and billing can wait until you actually need them.
+                                        Billing and manager invites can wait. Getting to one real published shift is what proves the workflow.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -210,7 +203,7 @@ export function BusinessOnboardingView({
                                 <Badge variant="outline" className="w-fit">
                                     {activeStep
                                         ? `Step ${onboarding.steps.findIndex((step) => step.id === activeStep.id) + 1} of ${onboarding.totalCount}`
-                                        : "Setup complete"}
+                                        : "Onboarding"}
                                 </Badge>
                                 <div className="flex flex-col gap-2">
                                     <h2 className="text-4xl font-semibold tracking-tight text-foreground">
@@ -218,14 +211,18 @@ export function BusinessOnboardingView({
                                             ? "Let’s set up your business profile"
                                             : activeStepId === "location"
                                                 ? "Add your first location"
-                                                : "Business setup complete"}
+                                                : activeStepId === "workforce"
+                                                    ? "Add your first workers"
+                                                    : "Publish your first live shift"}
                                     </h2>
                                     <p className="max-w-[560px] text-[15px] leading-7 text-muted-foreground">
                                         {activeStepId === "business"
                                             ? "We’ll start with the essentials that shape how scheduling and clock-ins work."
                                             : activeStepId === "location"
                                                 ? "Pick the main place where schedules are created and workers usually clock in."
-                                                : "Your workspace is operational. Next, create your first schedule. Billing stays optional, and workforce setup can wait until scheduling needs it."}
+                                                : activeStepId === "workforce"
+                                                    ? "Worker access is the gate for the mobile experience. Start your roster here before you publish the first live shift."
+                                                    : "Drafts are useful, but publishing the first live shift is the actual onboarding finish line."}
                                     </p>
                                 </div>
                             </div>
@@ -243,12 +240,16 @@ export function BusinessOnboardingView({
                                 <LocationBasicsStep
                                     timezone={onboarding.organizationTimezone}
                                     backHref="/dashboard/onboarding?step=business"
-                                    nextHref="/dashboard/onboarding"
+                                    nextHref="/dashboard/onboarding?step=workforce"
                                 />
                             )}
 
-                            {activeStepId === "complete" && (
-                                <BusinessSetupCompleteStep billingHandled={onboarding.billingHandled} />
+                            {activeStepId === "workforce" && (
+                                <WorkforceSetupStep />
+                            )}
+
+                            {activeStepId === "first_shift" && (
+                                <FirstShiftStep hasDraftShift={onboarding.hasDraftShift} />
                             )}
                         </div>
                     </section>

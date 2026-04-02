@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ShieldCheck, Zap, Users, Smartphone, Clock, PieChart } from 'lucide-react';
 import { Button } from '@repo/ui/components/ui/button';
 import { SUBSCRIPTION } from '@repo/config';
+import { MarketingHeading } from '@/components/marketing/marketing-heading';
 
 export const metadata: Metadata = {
     title: 'Features | Workers Hive',
@@ -14,10 +15,17 @@ export default function FeaturesPage() {
         <div className="bg-white min-h-screen pb-24">
             {/* Hero */}
             <section className="bg-slate-900 text-white py-24 text-center px-6">
-                <h1 className="text-4xl md:text-6xl font-extrabold mb-6">Built for real shift operations.</h1>
-                <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                    Every feature is designed to reduce admin friction and keep scheduling, attendance, and approvals in one operating loop.
-                </p>
+                <MarketingHeading
+                    as="h1"
+                    align="center"
+                    title="Built for real"
+                    accent="shift operations."
+                    description="Every feature is designed to reduce admin friction and keep scheduling, attendance, and approvals in one operating loop."
+                    className="max-w-3xl"
+                    titleClassName="text-white"
+                    accentClassName="text-red-300"
+                    descriptionClassName="max-w-2xl text-slate-400"
+                />
             </section>
 
             {/* Feature Grid */}
@@ -58,7 +66,14 @@ export default function FeaturesPage() {
 
             {/* CTA */}
             <section className="bg-slate-50 py-20 text-center">
-                <h2 className="text-3xl font-bold mb-6">Ready to run scheduling and attendance from one place?</h2>
+                <MarketingHeading
+                    title="Ready to run scheduling"
+                    accent="and attendance from one place?"
+                    align="center"
+                    size="subsection"
+                    className="mb-6"
+                    descriptionClassName="max-w-2xl"
+                />
                 <Link href="/auth/signup">
                     <Button className="bg-red-600 hover:bg-red-700 text-white font-bold h-12 px-8">
                         Start {SUBSCRIPTION.TRIAL_DAYS}-Day Free Trial

@@ -4,6 +4,7 @@ import { Check, HelpCircle } from 'lucide-react';
 import { Button } from '@repo/ui/components/ui/button';
 import { FAQ } from '@/components/landing/faq';
 import { SUBSCRIPTION } from '@repo/config';
+import { MarketingHeading } from '@/components/marketing/marketing-heading';
 
 export const metadata: Metadata = {
     title: 'Pricing | Workers Hive',
@@ -30,10 +31,17 @@ export default function PricingPage() {
 
             {/* Header */}
             <section className="bg-slate-900 text-white pt-24 pb-32 text-center px-6">
-                <h1 className="text-4xl md:text-6xl font-extrabold mb-6">One Plan. Unlimited Growth.</h1>
-                <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                    We don’t believe in per-user fees. Run your location without paying extra every time you add another worker.
-                </p>
+                <MarketingHeading
+                    as="h1"
+                    align="center"
+                    title="One plan."
+                    accent="Unlimited growth."
+                    description="We don’t believe in per-user fees. Run your location without paying extra every time you add another worker."
+                    className="max-w-3xl"
+                    titleClassName="text-white"
+                    accentClassName="text-red-300"
+                    descriptionClassName="max-w-2xl text-slate-400"
+                />
             </section>
 
             {/* Pricing Card */}

@@ -10,18 +10,14 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 1
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "projects": [
       {
         "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "api",
         "name": "api",
         "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/api",
@@ -35,9 +31,7 @@
         "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "web",
         "name": "web",
         "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
@@ -51,9 +45,7 @@
         "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "web-firefox",
         "name": "web-firefox",
         "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
@@ -67,9 +59,7 @@
         "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "web-safari",
         "name": "web-safari",
         "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
@@ -83,9 +73,7 @@
         "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "mobile-chrome",
         "name": "mobile-chrome",
         "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
@@ -99,9 +87,7 @@
         "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 1
-        },
+        "metadata": {},
         "id": "mobile-safari",
         "name": "mobile-safari",
         "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
@@ -141,25 +127,25 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.58.1",
-    "workers": 1,
+    "workers": 4,
     "webServer": null
   },
   "suites": [
     {
-      "title": "api/lifecycle.spec.ts",
-      "file": "api/lifecycle.spec.ts",
+      "title": "web/signup-auth-flow.spec.ts",
+      "file": "web/signup-auth-flow.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "manager/worker lifecycle",
-          "file": "api/lifecycle.spec.ts",
-          "line": 175,
+          "title": "manager browser signup flow",
+          "file": "web/signup-auth-flow.spec.ts",
+          "line": 27,
           "column": 6,
           "specs": [
             {
-              "title": "registration to approved shift works across manager and worker roles",
+              "title": "landing page signup reaches onboarding for a fresh business",
               "ok": true,
               "tags": [],
               "tests": [
@@ -167,33 +153,19 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "api",
-                  "projectName": "api",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 6948,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-01T01:46:26.004Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "web",
+                  "projectName": "web",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "1f1785dee40219527314-a9f2ad9b66cc11aa6a7a",
-              "file": "api/lifecycle.spec.ts",
-              "line": 176,
+              "id": "69878c259ee94cb29881-195b0199e679cc18afb6",
+              "file": "web/signup-auth-flow.spec.ts",
+              "line": 28,
               "column": 9
             },
             {
-              "title": "shift lifecycle covers business publish, worker execution, and correction review",
+              "title": "landing page signup reaches onboarding for a fresh business",
               "ok": true,
               "tags": [],
               "tests": [
@@ -201,33 +173,19 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "api",
-                  "projectName": "api",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 5773,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-01T01:46:32.974Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "web-firefox",
+                  "projectName": "web-firefox",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "1f1785dee40219527314-2a5a6e8451928dcbd568",
-              "file": "api/lifecycle.spec.ts",
-              "line": 338,
+              "id": "69878c259ee94cb29881-5ae5ef2c9fa214aa665b",
+              "file": "web/signup-auth-flow.spec.ts",
+              "line": 28,
               "column": 9
             },
             {
-              "title": "worker phone access stays locked until workforce access exists",
+              "title": "landing page signup reaches onboarding for a fresh business",
               "ok": true,
               "tags": [],
               "tests": [
@@ -235,33 +193,19 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "api",
-                  "projectName": "api",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 88,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-01T01:46:38.764Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "web-safari",
+                  "projectName": "web-safari",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "1f1785dee40219527314-76e9ba2817dcadb84310",
-              "file": "api/lifecycle.spec.ts",
-              "line": 544,
+              "id": "69878c259ee94cb29881-777fd761ccc5c5ff1d19",
+              "file": "web/signup-auth-flow.spec.ts",
+              "line": 28,
               "column": 9
             },
             {
-              "title": "phone activation syncs invited roles and custom-role scheduling supports open slots",
+              "title": "landing page signup reaches onboarding for a fresh business",
               "ok": true,
               "tags": [],
               "tests": [
@@ -269,29 +213,35 @@
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "api",
-                  "projectName": "api",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4628,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-01T01:46:38.866Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
+                  "projectId": "mobile-chrome",
+                  "projectName": "mobile-chrome",
+                  "results": [],
+                  "status": "skipped"
                 }
               ],
-              "id": "1f1785dee40219527314-6f05c9b2382642d0d402",
-              "file": "api/lifecycle.spec.ts",
-              "line": 554,
+              "id": "69878c259ee94cb29881-b0374d21b1316199c636",
+              "file": "web/signup-auth-flow.spec.ts",
+              "line": 28,
+              "column": 9
+            },
+            {
+              "title": "landing page signup reaches onboarding for a fresh business",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "mobile-safari",
+                  "projectName": "mobile-safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "69878c259ee94cb29881-4181bc62ca7722ac3e5d",
+              "file": "web/signup-auth-flow.spec.ts",
+              "line": 28,
               "column": 9
             }
           ]
@@ -301,10 +251,10 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-04-01T01:46:25.199Z",
-    "duration": 18323.568,
-    "expected": 4,
-    "skipped": 0,
+    "startTime": "2026-04-02T21:13:21.105Z",
+    "duration": 338.9549999999999,
+    "expected": 0,
+    "skipped": 5,
     "unexpected": 0,
     "flaky": 0
   }

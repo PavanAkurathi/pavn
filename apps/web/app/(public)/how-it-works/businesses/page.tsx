@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   HowItWorksPageFrame,
   HowItWorksSection,
@@ -73,7 +74,7 @@ export default function BusinessesHowItWorksPage() {
 
       <HowItWorksSection
         title="Industry examples"
-        description="These are the operating patterns behind the tiles on the main How It Works page. Each one points back to the same product model: set up the business, add workforce access, publish shifts, then review attendance and approvals."
+        description="These are the operating patterns behind the tiles on the main How It Works page. Each one now has its own contextual page so prospects can explore the workflow in the environment that actually matches their business."
       >
         <div className="grid gap-4">
           {industryHighlights.map((industry) => (
@@ -98,6 +99,15 @@ export default function BusinessesHowItWorksPage() {
               <p className="mt-5 rounded-[1.25rem] bg-slate-50 px-5 py-4 text-sm leading-6 text-slate-700">
                 {industry.detail}
               </p>
+              <div className="mt-5">
+                <Link
+                  href={industry.href}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-red-600 transition hover:text-red-700"
+                >
+                  Explore {industry.title.toLowerCase()} workflow
+                  <span aria-hidden="true">→</span>
+                </Link>
+              </div>
             </article>
           ))}
         </div>
