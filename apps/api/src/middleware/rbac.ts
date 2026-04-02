@@ -36,10 +36,7 @@
 
 import { Context, Next } from "hono";
 import type { AppContext } from "../index";
-
-// DB schema only defines 'admin' and 'member' roles
-// 'owner' and 'manager' are kept as future-proofing aliases that map to admin
-export type Role = "admin" | "member";
+import { isAdminRole, isManagerRole, type Role } from "../lib/organization-roles.js";
 
 /**
  * Permission definitions for each role.
@@ -47,8 +44,22 @@ export type Role = "admin" | "member";
  * Other roles have explicit permission lists.
  */
 const ROLE_PERMISSIONS: Record<Role, string[]> = {
+    owner: [
+        "*",
+    ],
     admin: [
-        "*", // Full access — admin is the only management role
+        "*",
+    ],
+    manager: [
+        "shifts:read",
+        "shifts:write",
+        "timesheets:read",
+        "timesheets:write",
+        "adjustments:read",
+        "adjustments:write",
+        "crew:read",
+        "crew:write",
+        "profile:read", "profile:write",
     ],
     member: [
         "shifts:read:own",
@@ -117,14 +128,12 @@ export function requirePermission(...permissions: string[]) {
 export function requireManager() {
     return async (c: Context<AppContext>, next: Next) => {
         const role = c.get("userRole");
-        
-        // DB schema only has 'admin' and 'member' roles
-        // requireManager = admin role (the only role with management permissions)
-        if (role !== "admin") {
+
+        if (!isManagerRole(role)) {
             return c.json({
                 error: "Forbidden",
                 code: "MANAGER_REQUIRED",
-                message: "This action requires admin privileges",
+                message: "This action requires manager privileges",
             }, 403);
         }
         
@@ -141,9 +150,8 @@ export function requireManager() {
 export function requireAdmin() {
     return async (c: Context<AppContext>, next: Next) => {
         const role = c.get("userRole");
-        
-        // DB schema only has 'admin' and 'member' roles
-        if (role !== "admin") {
+
+        if (!isAdminRole(role)) {
             return c.json({
                 error: "Forbidden",
                 code: "ADMIN_REQUIRED",
@@ -164,10 +172,8 @@ export function requireAdmin() {
 export function requireOwner() {
     return async (c: Context<AppContext>, next: Next) => {
         const role = c.get("userRole");
-        
-        // DB schema only has 'admin' and 'member' roles
-        // 'owner' doesn't exist — use admin for destructive ops
-        if (role !== "admin") {
+
+        if (!isAdminRole(role)) {
             return c.json({
                 error: "Forbidden",
                 code: "OWNER_REQUIRED",

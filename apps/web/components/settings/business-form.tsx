@@ -29,9 +29,10 @@ export interface BusinessFormProps {
         timezone?: string | null;
         attendanceVerificationPolicy?: "strict_geofence" | "soft_geofence" | "none" | null;
     } | null;
+    canManageWorkspace: boolean;
 }
 
-export function BusinessForm({ organization }: BusinessFormProps) {
+export function BusinessForm({ organization, canManageWorkspace }: BusinessFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [businessName, setBusinessName] = useState(organization?.name || "");
     const [timezone, setTimezone] = useState(organization?.timezone || "America/New_York");
@@ -73,6 +74,11 @@ export function BusinessForm({ organization }: BusinessFormProps) {
             </CardHeader>
             <form onSubmit={handleSave}>
                 <CardContent className="flex flex-col gap-6">
+                    {!canManageWorkspace ? (
+                        <FieldDescription>
+                            Only admins can change business setup and operating rules for this workspace.
+                        </FieldDescription>
+                    ) : null}
                     <FieldGroup>
                         <Field>
                             <FieldLabel htmlFor="business_name">Business name</FieldLabel>
@@ -81,6 +87,7 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                 value={businessName}
                                 onChange={(e) => setBusinessName(e.target.value)}
                                 placeholder="Acme Inc."
+                                disabled={!canManageWorkspace}
                             />
                         </Field>
                         <Field>
@@ -90,6 +97,7 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                 value={timezone}
                                 onChange={(e) => setTimezone(e.target.value)}
                                 placeholder="America/New_York"
+                                disabled={!canManageWorkspace}
                             />
                             <FieldDescription>
                                 Use an IANA timezone like <span className="font-medium text-foreground">America/New_York</span> or{" "}
@@ -104,6 +112,7 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                 onChange={(e) => setDescription(e.target.value)}
                                 placeholder="Describe your business..."
                                 className="min-h-[100px]"
+                                disabled={!canManageWorkspace}
                             />
                         </Field>
                         <FieldSet>
@@ -120,6 +129,7 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                                     }
                                 }}
                                 className="justify-start"
+                                disabled={!canManageWorkspace}
                             >
                                 <ToggleGroupItem value="strict_geofence">On-site required</ToggleGroupItem>
                                 <ToggleGroupItem value="soft_geofence">Flexible on-site</ToggleGroupItem>
@@ -129,7 +139,7 @@ export function BusinessForm({ organization }: BusinessFormProps) {
                     </FieldGroup>
                 </CardContent>
                 <CardFooter className="justify-end">
-                    <Button type="submit" disabled={isLoading}>
+                    <Button type="submit" disabled={isLoading || !canManageWorkspace}>
                         {isLoading ? <Spinner data-icon="inline-start" /> : null}
                         Save changes
                     </Button>

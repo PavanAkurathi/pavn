@@ -3,11 +3,15 @@
 import { auth, sendSMS } from "@repo/auth";
 import { headers } from "next/headers";
 import { db } from "@repo/database";
-import { member, user, certification } from "@repo/database/schema";
+import { member, user, invitation } from "@repo/database/schema";
 import { eq, and } from "@repo/database";
-import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
 import { sendInvite } from "@repo/email";
+import {
+    buildBusinessInviteUrl,
+    getBusinessInvitationState,
+} from "@/lib/server/business-invitations";
+import { isAdminOrganizationRole } from "@/lib/server/organization-roles";
 
 import { z } from "zod";
 
@@ -78,8 +82,9 @@ export async function addMember(rawInput: AddMemberInput) {
         }
         const input = parsed.data;
 
+        const requestHeaders = await headers();
         const session = await auth.api.getSession({
-            headers: await headers()
+            headers: requestHeaders
         });
 
         if (!session) {
@@ -110,23 +115,19 @@ export async function addMember(rawInput: AddMemberInput) {
             ))
             .limit(1);
 
-        if (!currentMember[0] || (currentMember[0].role !== "admin" && currentMember[0].role !== "owner")) {
+        if (!currentMember[0] || !isAdminOrganizationRole(currentMember[0].role)) {
             throw new Error("Permission denied");
         }
 
-        const { name, email, phoneNumber, role, jobTitle, invites, image, emergencyContact, address, certifications } = input;
-
-        // 1. Check if user exists
-        let targetUserId: string;
-        const existingUser = await db.select().from(user).where(eq(user.email, email)).limit(1);
+        const { email, phoneNumber, role, invites } = input;
+        const normalizedEmail = email.trim().toLowerCase();
+        const existingUser = await db.select().from(user).where(eq(user.email, normalizedEmail)).limit(1);
 
         if (existingUser[0]) {
-            targetUserId = existingUser[0].id;
-            // Check if already a member
             const existingMember = await db.select()
                 .from(member)
                 .where(and(
-                    eq(member.userId, targetUserId),
+                    eq(member.userId, existingUser[0].id),
                     eq(member.organizationId, activeOrgId)
                 ))
                 .limit(1);
@@ -135,62 +136,67 @@ export async function addMember(rawInput: AddMemberInput) {
                 return { error: "User is already a member of this organization" };
             }
 
-            // TODO: Update existing user profile if needed?
-            // For now, we only update if they are just being created to avoid overwriting existing user data
-        } else {
-            // 2. Create Shadow User
-            targetUserId = nanoid();
-            await db.insert(user).values({
-                id: targetUserId,
-                name: name,
-                email: email,
-                emailVerified: false,
-                phoneNumber: phoneNumber || null,
-                image: image || null,
-                emergencyContact: emergencyContact || null,
-                address: address || null,
-                createdAt: new Date(),
-                updatedAt: new Date(),
+        }
+
+        const existingPendingInvitation = await db.query.invitation.findFirst({
+            where: and(
+                eq(invitation.email, normalizedEmail),
+                eq(invitation.organizationId, activeOrgId),
+                eq(invitation.status, "pending")
+            ),
+            columns: {
+                id: true,
+                role: true,
+            },
+        });
+
+        if (existingPendingInvitation && existingPendingInvitation.role !== role) {
+            await auth.api.cancelInvitation({
+                headers: requestHeaders,
+                body: {
+                    invitationId: existingPendingInvitation.id,
+                },
             });
         }
 
-        // 3. Add to Organization
-        await db.insert(member).values({
-            id: nanoid(),
-            organizationId: activeOrgId,
-            userId: targetUserId,
-            role: role,
-            jobTitle: jobTitle || null,
-            createdAt: new Date(),
-        });
+        const invitationRecord = await auth.api.createInvitation({
+            headers: requestHeaders,
+            body: {
+                organizationId: activeOrgId,
+                email: normalizedEmail,
+                role,
+                resend: Boolean(existingPendingInvitation && existingPendingInvitation.role === role),
+            },
+        }) as { id?: string; invitation?: { id?: string } };
 
-        // 4. Add Certifications
-        if (certifications && certifications.length > 0) {
-            for (const cert of certifications) {
-                await db.insert(certification).values({
-                    id: nanoid(),
-                    workerId: targetUserId,
-                    name: cert.name,
-                    issuer: cert.issuer,
-                    expiresAt: cert.expiresAt,
-                    status: "valid",
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                });
-            }
+        const invitationId = invitationRecord.id || invitationRecord.invitation?.id;
+        if (!invitationId) {
+            throw new Error("Failed to create the team invitation");
         }
 
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const invitationState = await getBusinessInvitationState(invitationId);
+        if (!invitationState) {
+            throw new Error("Failed to load the pending invitation");
+        }
 
-        // 5. Handle Invitations
+        const inviteUrl = buildBusinessInviteUrl(invitationId, Boolean(existingUser[0]));
+
         if (invites.email) {
-            await sendInvite(email, role, appUrl);
-            console.log(`[Email] Dispatched invite to ${email} for role ${role}`);
+            await sendInvite({
+                email: normalizedEmail,
+                role,
+                inviteUrl,
+                organizationName: invitationState.organizationName,
+                actionLabel: existingUser[0] ? "Review your invitation" : "Activate your account",
+            });
+            console.log(`[Email] Dispatched team invite to ${normalizedEmail} for role ${role}`);
         }
+
         if (invites.sms && phoneNumber) {
             try {
-                const loginUrl = `${appUrl}/auth/login`;
-                const message = `You've been invited to join your team on Workers Hive. Sign in here: ${loginUrl}`;
+                const message = existingUser[0]
+                    ? `You've been invited to join ${invitationState.organizationName} on Workers Hive. Review your invitation here: ${inviteUrl}`
+                    : `You've been invited to join ${invitationState.organizationName} on Workers Hive. Activate your account here: ${inviteUrl}`;
                 await sendSMS(phoneNumber, message);
                 console.log(`[Team] Sent SMS invite to ${phoneNumber}`);
             } catch (error) {
@@ -199,8 +205,9 @@ export async function addMember(rawInput: AddMemberInput) {
             }
         }
 
+        revalidatePath("/settings");
         revalidatePath("/settings/team");
-        return { success: true };
+        return { success: true, invitationId };
     } catch (e: any) {
         console.error("SERVER ACTION ERROR:", e);
         return { error: e.message || "Failed to add member" };

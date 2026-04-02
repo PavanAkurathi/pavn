@@ -67,10 +67,9 @@ import { billingRouter } from "./routes/billing.js";
 import { organizationsRouter } from "./routes/organizations.js";
 import { geofenceRouter } from "./routes/geofence.js";
 import { getApiReadinessSummary, validateApiRuntimeEnv } from "./lib/runtime-env.js";
+import { normalizeOrganizationRole, type Role } from "./lib/organization-roles.js";
 
 // Types
-export type Role = "admin" | "member";
-
 export type AppContext = {
     Variables: {
         requestId: string;
@@ -171,6 +170,52 @@ app.on(["POST", "GET"], "/api/auth/*", async (c) => {
 // AUTHENTICATION MIDDLEWARE
 // =============================================================================
 
+const authContextPromise = (auth as any).$context as Promise<{
+    internalAdapter: {
+        findSession: (token: string) => Promise<{
+            session: typeof auth.$Infer.Session.session;
+            user: typeof auth.$Infer.Session.user;
+        } | null>;
+        deleteSession: (token: string) => Promise<void>;
+    };
+}>;
+
+async function getBearerSession(sourceHeaders: Headers) {
+    const authorization = sourceHeaders.get("authorization");
+    if (!authorization?.startsWith("Bearer ")) {
+        return null;
+    }
+
+    const token = authorization.slice("Bearer ".length).trim();
+    if (!token) {
+        return null;
+    }
+
+    const authContext = await authContextPromise;
+    const session = await authContext.internalAdapter.findSession(token);
+    if (!session) {
+        return null;
+    }
+
+    if (session.session.expiresAt < new Date()) {
+        await authContext.internalAdapter.deleteSession(session.session.token);
+        return null;
+    }
+
+    return session;
+}
+
+async function resolveRequestSession(sourceHeaders: Headers) {
+    const cookieSession = await auth.api.getSession({
+        headers: sourceHeaders,
+    });
+    if (cookieSession) {
+        return cookieSession;
+    }
+
+    return getBearerSession(sourceHeaders);
+}
+
 app.use("*", async (c, next) => {
     // Skip public routes
     if (
@@ -187,7 +232,7 @@ app.use("*", async (c, next) => {
     }
 
     // Validate session
-    const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const session = await resolveRequestSession(c.req.raw.headers);
     if (!session) {
         return c.json({ error: "Unauthorized", code: "AUTH_REQUIRED" }, 401);
     }
@@ -227,7 +272,7 @@ app.use("*", async (c, next) => {
     }
 
     c.set("orgId", orgId);
-    c.set("userRole", memberRecord.role as Role);
+    c.set("userRole", normalizeOrganizationRole(memberRecord.role));
 
     await next();
 });

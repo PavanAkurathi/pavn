@@ -8,13 +8,17 @@ type SearchParams = Promise<{
 
 export default async function BusinessOnboardingPage(props: { searchParams: SearchParams }) {
     const searchParams = await props.searchParams;
-    const { session, onboarding } = await getCurrentBusinessOnboardingState();
+    const { session, onboarding, shouldEnforceOnboarding } = await getCurrentBusinessOnboardingState();
 
     if (!session) {
         redirect("/auth/login");
     }
 
     if (!onboarding) {
+        redirect("/dashboard/shifts");
+    }
+
+    if (!shouldEnforceOnboarding) {
         redirect("/dashboard/shifts");
     }
 

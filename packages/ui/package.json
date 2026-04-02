@@ -11,6 +11,7 @@
   },
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./components/site/*": "./src/components/site/*.tsx",
     "./components/ui/*": "./src/components/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.tsx"

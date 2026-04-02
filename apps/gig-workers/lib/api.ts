@@ -132,7 +132,10 @@ export interface WorkerPreferences {
 
 interface AuthHeaders { [key: string]: string; }
 
-async function getAuthHeaders(includeOrg: boolean = true): Promise<AuthHeaders> {
+async function getAuthHeaders(
+    includeOrg: boolean = true,
+    orgIdOverride?: string,
+): Promise<AuthHeaders> {
     const token = await SecureStore.getItemAsync("better-auth.session_token");
     const headers: AuthHeaders = {
         'Content-Type': 'application/json',
@@ -143,7 +146,7 @@ async function getAuthHeaders(includeOrg: boolean = true): Promise<AuthHeaders> 
     }
 
     if (includeOrg) {
-        const activeOrgId = await resolveActiveOrganizationId();
+        const activeOrgId = orgIdOverride || await resolveActiveOrganizationId();
         if (activeOrgId) {
             headers['x-org-id'] = activeOrgId;
         }
@@ -294,9 +297,9 @@ export const api = {
     // SHIFTS (org-scoped, backwards compat)
     // -------------------------------------------------------------------------
     shifts: {
-        getById: async (id: string): Promise<WorkerShift> => {
-            const headers = await getAuthHeaders();
-            return fetchJson(`${CONFIG.API_URL}/shifts/${id}`, { headers });
+        getById: async (id: string, orgId?: string): Promise<WorkerShift> => {
+            const headers = await getAuthHeaders(true, orgId);
+            return fetchJson(`${CONFIG.API_URL}/worker/shifts/${id}`, { headers });
         },
 
         /** Legacy: single-org upcoming shifts */
@@ -317,15 +320,15 @@ export const api = {
     // GEOFENCE / CLOCK
     // -------------------------------------------------------------------------
     geofence: {
-        clockIn: async (data: ClockInRequest) => {
-            const headers = await getAuthHeaders();
+        clockIn: async (data: ClockInRequest, orgId?: string) => {
+            const headers = await getAuthHeaders(true, orgId);
             return fetchJson(`${CONFIG.API_URL}/geofence/clock-in`, {
                 method: 'POST', headers, body: JSON.stringify(data),
             });
         },
 
-        clockOut: async (data: ClockInRequest) => {
-            const headers = await getAuthHeaders();
+        clockOut: async (data: ClockInRequest, orgId?: string) => {
+            const headers = await getAuthHeaders(true, orgId);
             return fetchJson(`${CONFIG.API_URL}/geofence/clock-out`, {
                 method: 'POST', headers, body: JSON.stringify(data),
             });
@@ -336,8 +339,8 @@ export const api = {
     // ADJUSTMENTS
     // -------------------------------------------------------------------------
     adjustments: {
-        create: async (data: CreateAdjustmentRequest) => {
-            const headers = await getAuthHeaders();
+        create: async (data: CreateAdjustmentRequest, orgId?: string) => {
+            const headers = await getAuthHeaders(true, orgId);
             return fetchJson(`${CONFIG.API_URL}/worker/adjustments`, {
                 method: 'POST', headers, body: JSON.stringify(data),
             });

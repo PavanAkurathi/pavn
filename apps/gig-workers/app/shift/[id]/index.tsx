@@ -106,7 +106,10 @@ function InfoRow({
 }
 
 export default function ShiftDetailScreen() {
-    const { id } = useLocalSearchParams();
+    const { id, orgId } = useLocalSearchParams<{
+        id: string;
+        orgId?: string;
+    }>();
     const router = useRouter();
     const [shift, setShift] = useState<WorkerShift | null>(null);
     const [loading, setLoading] = useState(true);
@@ -141,7 +144,7 @@ export default function ShiftDetailScreen() {
     const loadShift = async () => {
         try {
             setLoading(true);
-            const data = await api.shifts.getById(id as string);
+            const data = await api.shifts.getById(id, orgId);
             setShift(data);
         } catch {
             Alert.alert("Error", "Failed to load shift");
@@ -193,6 +196,7 @@ export default function ShiftDetailScreen() {
                 longitude: shift.location.longitude,
                 geofenceRadius: shift.location.geofenceRadius,
                 attendanceVerificationPolicy: shift.attendanceVerificationPolicy,
+                orgId: shift.organization.id,
             });
             await loadShift();
         } catch (error: any) {
@@ -208,6 +212,7 @@ export default function ShiftDetailScreen() {
                 longitude: shift.location.longitude,
                 geofenceRadius: shift.location.geofenceRadius,
                 attendanceVerificationPolicy: shift.attendanceVerificationPolicy,
+                orgId: shift.organization.id,
             });
             await loadShift();
         } catch (error: any) {
@@ -268,6 +273,7 @@ export default function ShiftDetailScreen() {
                                             params: {
                                                 shiftTitle: shift.title,
                                                 assignmentId: shift.assignmentId,
+                                                orgId: shift.organization.id,
                                             },
                                         }),
                                 },

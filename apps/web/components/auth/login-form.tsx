@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
@@ -20,10 +20,13 @@ type AuthClientErrorContext = { error: { message: string } };
 
 export function LoginForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
+    const callbackURL = searchParams.get("callbackURL");
+    const safeCallbackURL = callbackURL && callbackURL.startsWith("/") ? callbackURL : "/dashboard";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +36,7 @@ export function LoginForm() {
             email,
             password,
             rememberMe,
-            callbackURL: "/dashboard",
+            callbackURL: safeCallbackURL,
         }, {
             onRequest: () => {
                 setIsLoading(true);
@@ -44,7 +47,7 @@ export function LoginForm() {
                 // posthog.capture('login_completed', { method: 'email' });
 
                 toast.success("Welcome back!");
-                router.push("/dashboard");
+                router.push(safeCallbackURL);
             },
             onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);
@@ -104,7 +107,9 @@ export function LoginForm() {
                             </Field>
 
                             <Link
-                                href="/auth/forgot-password"
+                                href={safeCallbackURL === "/dashboard"
+                                    ? "/auth/forgot-password"
+                                    : `/auth/forgot-password?callbackURL=${encodeURIComponent(safeCallbackURL)}`}
                                 className="text-sm font-medium text-primary underline-offset-4 hover:underline"
                             >
                                 Forgot password?

@@ -3,6 +3,5 @@
         "deploymentEnabled": {
             "master": true
         }
-    },
-    "ignoreCommand": "npx turbo-ignore docs"
+    }
 }

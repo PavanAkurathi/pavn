@@ -16,6 +16,7 @@ import { getWorkerPhoneAccess } from "@repo/auth";
 // Import services
 import {
     getWorkerShifts,
+    getWorkerShiftById,
     getWorkerAllShifts,
     UpcomingShiftsResponseSchema,
 } from "@repo/scheduling-timekeeping";
@@ -122,6 +123,38 @@ workerRouter.openapi(getShiftsRoute, async (c) => {
     const offset = parseInt(c.req.query("offset") || "0");
 
     const result = await getWorkerShifts(user.id, orgId, { status, limit, offset });
+    return c.json(result as any, 200);
+});
+
+const getShiftDetailRoute = createRoute({
+    method: 'get',
+    path: '/shifts/{id}',
+    summary: 'Get Worker Shift Detail',
+    description: 'Get detailed shift information for the current worker within the active organization.',
+    request: {
+        params: z.object({
+            id: z.string(),
+        }),
+    },
+    responses: {
+        200: {
+            content: {
+                'application/json': { schema: z.any() }
+            },
+            description: 'Worker shift detail'
+        },
+        401: { description: 'Unauthorized' },
+        404: { description: 'Shift not found' }
+    }
+});
+
+workerRouter.openapi(getShiftDetailRoute, async (c) => {
+    const user = c.get("user");
+    const orgId = c.get("orgId");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const shiftId = c.req.param("id");
+    const result = await getWorkerShiftById(user.id, shiftId, orgId);
     return c.json(result as any, 200);
 });
 

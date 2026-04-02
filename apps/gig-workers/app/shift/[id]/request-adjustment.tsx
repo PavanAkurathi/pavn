@@ -18,10 +18,11 @@ import { SectionTitle } from "../../../components/ui/section-title";
 import { api } from "../../../lib/api";
 
 export default function RequestAdjustmentScreen() {
-    const { id, shiftTitle, assignmentId } = useLocalSearchParams<{
+    const { id, shiftTitle, assignmentId, orgId } = useLocalSearchParams<{
         id: string;
         shiftTitle?: string;
         assignmentId?: string;
+        orgId?: string;
     }>();
     const router = useRouter();
 
@@ -41,12 +42,15 @@ export default function RequestAdjustmentScreen() {
         try {
             setLoading(true);
 
-            await api.adjustments.create({
-                shiftAssignmentId: assignmentId || id,
-                reason,
-                requestedClockIn: clockIn?.toISOString(),
-                requestedClockOut: clockOut?.toISOString(),
-            });
+            await api.adjustments.create(
+                {
+                    shiftAssignmentId: assignmentId || id,
+                    reason,
+                    requestedClockIn: clockIn?.toISOString(),
+                    requestedClockOut: clockOut?.toISOString(),
+                },
+                typeof orgId === "string" ? orgId : undefined,
+            );
 
             Alert.alert("Success", "Adjustment request submitted.", [
                 { text: "OK", onPress: () => router.back() },

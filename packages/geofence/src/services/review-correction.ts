@@ -81,12 +81,14 @@ export const reviewCorrection = async (data: any, managerId: string, orgId: stri
 
         if (request.requestedClockIn) {
             updateData.actualClockIn = request.requestedClockIn;
+            updateData.effectiveClockIn = request.requestedClockIn;
             updateData.clockInMethod = 'manual_override';
             updateData.clockInVerified = false;
         }
 
         if (request.requestedClockOut) {
             updateData.actualClockOut = request.requestedClockOut;
+            updateData.effectiveClockOut = request.requestedClockOut;
             updateData.clockOutMethod = 'manual_override';
             updateData.clockOutVerified = false;
         }

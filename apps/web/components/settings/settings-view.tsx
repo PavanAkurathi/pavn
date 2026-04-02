@@ -26,6 +26,7 @@ interface SettingsViewProps {
     accounts: any[];
     members: any[];
     activeTab: string;
+    canManageWorkspace: boolean;
     subscription: { status: string; currentPeriodEnd?: Date };
     invoices: any[];
 }
@@ -39,6 +40,7 @@ export function SettingsView({
     accounts,
     members,
     activeTab,
+    canManageWorkspace,
     subscription,
     invoices
 }: SettingsViewProps) {
@@ -72,7 +74,7 @@ export function SettingsView({
                             <TabItem value="notifications" icon={<Bell className="size-4" />} label="Notifications" />
                             <TabItem value="locations" icon={<MapPin className="size-4" />} label="Locations" />
                             <TabItem value="team" icon={<Users className="size-4" />} label="Team" />
-                            {role === "admin" && (
+                            {canManageWorkspace && (
                                 <TabItem value="billing" icon={<CreditCard className="size-4" />} label="Billing" />
                             )}
                         </TabsList>
@@ -88,12 +90,13 @@ export function SettingsView({
                         </TabsContent>
 
                         <TabsContent value="business" className="mt-0">
-                            <BusinessForm organization={organization} />
+                            <BusinessForm organization={organization} canManageWorkspace={canManageWorkspace} />
                         </TabsContent>
 
                         <TabsContent value="locations" className="mt-0">
                             <LocationsForm
                                 locations={locations}
+                                canManageWorkspace={canManageWorkspace}
                                 onDelete={deleteLocation}
                                 onAdd={createLocation}
                                 onUpdate={updateLocation}
@@ -108,7 +111,7 @@ export function SettingsView({
                             <NotificationsView />
                         </TabsContent>
 
-                        {role === "admin" && (
+                        {canManageWorkspace && (
                             <TabsContent value="billing" className="mt-0">
                                 <BillingView
                                     subscriptionStatus={subscription?.status || "inactive"}

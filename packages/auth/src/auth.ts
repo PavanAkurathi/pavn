@@ -2,7 +2,7 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
-import { organization, emailOTP, phoneNumber } from "better-auth/plugins";
+import { createAccessControl, organization, emailOTP, phoneNumber } from "better-auth/plugins";
 import { dash } from "@better-auth/infra";
 import { expo } from "@better-auth/expo";
 import { db } from "@repo/database";
@@ -42,6 +42,40 @@ function buildInfraPlugins() {
 }
 
 const infraPlugins = buildInfraPlugins();
+
+const organizationAccessStatements = {
+    organization: ["update", "delete"],
+    member: ["create", "update", "delete"],
+    invitation: ["create", "cancel"],
+    team: ["create", "update", "delete"],
+    ac: ["create", "read", "update", "delete"],
+} as const;
+
+const organizationAccess = createAccessControl(organizationAccessStatements);
+
+const adminOrganizationRole = organizationAccess.newRole({
+    organization: ["update"],
+    invitation: ["create", "cancel"],
+    member: ["create", "update", "delete"],
+    team: ["create", "update", "delete"],
+    ac: ["create", "read", "update", "delete"],
+});
+
+const ownerOrganizationRole = organizationAccess.newRole({
+    organization: ["update", "delete"],
+    invitation: ["create", "cancel"],
+    member: ["create", "update", "delete"],
+    team: ["create", "update", "delete"],
+    ac: ["create", "read", "update", "delete"],
+});
+
+const memberOrganizationRole = organizationAccess.newRole({
+    organization: [],
+    invitation: [],
+    member: [],
+    team: [],
+    ac: ["read"],
+});
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -125,6 +159,14 @@ export const auth = betterAuth({
         }),
         organization({
             allowUserToCreateOrganization: false,
+            creatorRole: "admin",
+            requireEmailVerificationOnInvitation: true,
+            roles: {
+                admin: adminOrganizationRole,
+                owner: ownerOrganizationRole,
+                manager: adminOrganizationRole,
+                member: memberOrganizationRole,
+            },
         }),
         emailOTP({
             async sendVerificationOTP({ email, otp, type }) {

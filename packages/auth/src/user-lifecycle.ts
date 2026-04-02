@@ -58,35 +58,6 @@ async function createOrganizationForAdminSignup(userId: string, companyName: str
     return orgId;
 }
 
-async function acceptWorkerInviteRegistration(userId: string, orgId: string, inviteTokenId: string) {
-    const [invite] = await db.select()
-        .from(schema.invitation)
-        .where(eq(schema.invitation.id, inviteTokenId))
-        .limit(1);
-
-    if (!invite) {
-        console.error(`[AUTH] Worker signup attempted with invalid token ${inviteTokenId}`);
-        return;
-    }
-
-    if (invite.organizationId !== orgId) {
-        console.error(`[AUTH] Token org mismatch. Expected ${invite.organizationId}, got ${orgId}`);
-        return;
-    }
-
-    await db.insert(schema.member).values({
-        id: nanoid(),
-        organizationId: orgId,
-        userId,
-        role: invite.role || "member",
-        createdAt: new Date(),
-    });
-
-    await db.update(schema.invitation)
-        .set({ status: "accepted" })
-        .where(eq(schema.invitation.id, invite.id));
-}
-
 export async function handleCreatedAuthUser(user: any, ctx: any) {
     const companyName = (ctx?.body as Record<string, unknown>)?.companyName as string | undefined;
     if (companyName) {
@@ -102,19 +73,5 @@ export async function handleCreatedAuthUser(user: any, ctx: any) {
             throw new Error("Account created but organization setup failed. Please contact support.");
         }
         return;
-    }
-
-    const inviteTokenId = (ctx?.body as Record<string, unknown>)?.inviteToken as string | undefined;
-    const orgId = (ctx?.body as Record<string, unknown>)?.orgId as string | undefined;
-
-    if (!inviteTokenId || !orgId || user.role !== "worker") {
-        return;
-    }
-
-    try {
-        await acceptWorkerInviteRegistration(user.id, orgId, inviteTokenId);
-        console.log(`[AUTH] Worker ${user.id} joined Org ${orgId} via invite ${inviteTokenId}`);
-    } catch (e) {
-        console.error(`[AUTH ERROR] Failed to process worker invite:`, e);
     }
 }

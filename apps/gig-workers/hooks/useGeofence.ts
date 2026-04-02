@@ -37,6 +37,7 @@ export function useGeofence() {
         longitude?: number;
         geofenceRadius?: number;
         attendanceVerificationPolicy?: AttendanceVerificationPolicy;
+        orgId?: string;
     }) {
         setLoading(true);
         setError(null);
@@ -93,7 +94,7 @@ export function useGeofence() {
                 throw new Error(msg);
             }
 
-            const data = await api.geofence.clockIn(request);
+            const data = await api.geofence.clockIn(request, targetLocation?.orgId);
 
             return data;
         } catch (err: any) {
@@ -110,6 +111,7 @@ export function useGeofence() {
         longitude?: number;
         geofenceRadius?: number;
         attendanceVerificationPolicy?: AttendanceVerificationPolicy;
+        orgId?: string;
     }) {
         setLoading(true);
         setError(null);
@@ -163,7 +165,7 @@ export function useGeofence() {
                 throw new Error(msg);
             }
 
-            const data = await api.geofence.clockOut(request);
+            const data = await api.geofence.clockOut(request, targetLocation?.orgId);
 
             return data;
         } catch (err: any) {

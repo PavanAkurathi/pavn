@@ -68,7 +68,23 @@ export const sendOtp = async (email: string, otp: string) => {
     }
 };
 
-export const sendInvite = async (email: string, role: string, appUrl: string) => {
+type SendInviteOptions = {
+    email: string;
+    role: string;
+    inviteUrl: string;
+    organizationName?: string | null;
+    actionLabel?: string;
+    subject?: string;
+};
+
+export const sendInvite = async ({
+    email,
+    role,
+    inviteUrl,
+    organizationName,
+    actionLabel = "Review your invitation",
+    subject = "You have been invited to join a team on Workers Hive",
+}: SendInviteOptions) => {
     const apiKey = process.env.RESEND_API_KEY;
 
     if (!apiKey) {
@@ -82,12 +98,12 @@ export const sendInvite = async (email: string, role: string, appUrl: string) =>
         const { data, error } = await resend.emails.send({
             from: FROM_EMAIL,
             to: email,
-            subject: 'You have been invited to join a team on Workers Hive',
+            subject,
             html: `
                 <h2>Welcome to Workers Hive!</h2>
-                <p>You have been invited to join a team as a <strong>${role}</strong>.</p>
-                <p>Please click the link below to securely log into your account using an Email OTP code:</p>
-                <a href="${appUrl}/auth/login" style="display:inline-block;padding:12px 24px;background-color:#0f172a;color:white;text-decoration:none;border-radius:6px;margin-top:16px;">Log in to your account</a>
+                <p>You have been invited to join ${organizationName ? `<strong>${organizationName}</strong>` : "a team"} as a <strong>${role}</strong>.</p>
+                <p>Use the secure link below to activate or review your business invitation.</p>
+                <a href="${inviteUrl}" style="display:inline-block;padding:12px 24px;background-color:#0f172a;color:white;text-decoration:none;border-radius:6px;margin-top:16px;">${actionLabel}</a>
                 <p style="margin-top:24px;font-size:12px;color:#64748b;">If you received this in error, please ignore this email.</p>
             `,
         });

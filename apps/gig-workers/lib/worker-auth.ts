@@ -1,4 +1,3 @@
-import * as SecureStore from "expo-secure-store";
 import { CONFIG } from "./config";
 
 export type WorkerEligibilityResponse = {
@@ -37,6 +36,6 @@ export async function persistWorkerSession(response: VerifyPhoneResponse): Promi
         return;
     }
 
+    const SecureStore = await import("expo-secure-store");
     await SecureStore.setItemAsync("better-auth.session_token", response.data.token);
-    await SecureStore.deleteItemAsync("pending_invitation_token");
 }

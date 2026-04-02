@@ -34,12 +34,13 @@ type Location = {
 
 interface LocationsFormProps {
     locations: Location[];
+    canManageWorkspace: boolean;
     onDelete: (id: string) => Promise<{ error?: string }>;
     onAdd: (data: any) => Promise<{ error?: string }>;
     onUpdate: (id: string, data: any) => Promise<{ error?: string }>;
 }
 
-export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: LocationsFormProps) {
+export function LocationsForm({ locations, canManageWorkspace, onDelete, onAdd, onUpdate }: LocationsFormProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingLocation, setEditingLocation] = useState<Location | null>(null);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -47,6 +48,11 @@ export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: Location
     const atCap = locations.length >= PLAN_LIMITS.MAX_LOCATIONS;
 
     const handleAddClick = () => {
+        if (!canManageWorkspace) {
+            toast.error("Only admins can add or edit business locations.");
+            return;
+        }
+
         if (atCap) {
             toast.error(`Your plan supports up to ${PLAN_LIMITS.MAX_LOCATIONS} locations. Contact support to upgrade.`);
             return;
@@ -56,6 +62,10 @@ export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: Location
     };
 
     const handleEditClick = (loc: Location) => {
+        if (!canManageWorkspace) {
+            toast.error("Only admins can update business locations.");
+            return;
+        }
         setEditingLocation(loc);
         setIsModalOpen(true);
     };
@@ -70,6 +80,11 @@ export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: Location
 
     const confirmDelete = async () => {
         if (!deletingId) return;
+        if (!canManageWorkspace) {
+            toast.error("Only admins can delete business locations.");
+            setDeletingId(null);
+            return;
+        }
         try {
             const result = await onDelete(deletingId);
             if (result?.error) {
@@ -126,7 +141,7 @@ export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: Location
                             {atCap && " Contact support to add more."}
                         </CardDescription>
                     </div>
-                    <Button onClick={handleAddClick} size="sm" disabled={atCap}>
+                    <Button onClick={handleAddClick} size="sm" disabled={atCap || !canManageWorkspace}>
                         <Plus className="w-4 h-4 mr-2" />
                         Add Location
                     </Button>
@@ -155,7 +170,7 @@ export function LocationsForm({ locations, onDelete, onAdd, onUpdate }: Location
 
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!canManageWorkspace}>
                                                 <MoreVertical className="h-4 w-4" />
                                                 <span className="sr-only">Open menu</span>
                                             </Button>

@@ -16,6 +16,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { requireManager } from "../middleware";
+import { isManagerRole } from "../lib/organization-roles.js";
 
 // Import services from packages (pure business logic)
 import {
@@ -60,7 +61,7 @@ const getDraftsRoute = createRoute({
 
 shiftsRouter.openapi(getDraftsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const result = await getDraftShifts(orgId);
@@ -80,7 +81,7 @@ const deleteDraftsRoute = createRoute({
 
 shiftsRouter.openapi(deleteDraftsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const result = await deleteDrafts(orgId);
@@ -107,7 +108,7 @@ const upcomingRoute = createRoute({
 
 shiftsRouter.openapi(upcomingRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") {
+    if (!isManagerRole(userRole)) {
         return c.json({ error: "Access denied" }, 403);
     }
 
@@ -129,7 +130,7 @@ const getPendingRoute = createRoute({
 
 shiftsRouter.openapi(getPendingRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const result = await getPendingShifts(orgId);
@@ -155,7 +156,7 @@ const getHistoryRoute = createRoute({
 
 shiftsRouter.openapi(getHistoryRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "50"), 1), 100);
@@ -182,7 +183,7 @@ const getGroupRoute = createRoute({
 
 shiftsRouter.openapi(getGroupRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const groupId = c.req.param("groupId");
     const orgId = c.get("orgId");
@@ -227,7 +228,7 @@ const approveShiftRoute = createRoute({
 
 shiftsRouter.openapi(approveShiftRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -253,7 +254,7 @@ const cancelShiftRoute = createRoute({
 
 shiftsRouter.openapi(cancelShiftRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -278,7 +279,7 @@ const assignWorkerRoute = createRoute({
 
 shiftsRouter.openapi(assignWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -306,7 +307,7 @@ const getShiftTimesheetsRoute = createRoute({
 
 shiftsRouter.openapi(getShiftTimesheetsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -328,7 +329,7 @@ const updateTimesheetRoute = createRoute({
 
 shiftsRouter.openapi(updateTimesheetRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const user = c.get("user");
@@ -360,7 +361,7 @@ const publishRoute = createRoute({
 
 shiftsRouter.openapi(publishRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const body = await c.req.json();
@@ -392,7 +393,7 @@ const editShiftRoute = createRoute({
 
 shiftsRouter.openapi(editShiftRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -424,7 +425,7 @@ const unassignWorkerRoute = createRoute({
 
 shiftsRouter.openapi(unassignWorkerRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const shiftId = c.req.param("id");
     const workerId = c.req.param("workerId");
@@ -454,7 +455,7 @@ const duplicateShiftRoute = createRoute({
 
 shiftsRouter.openapi(duplicateShiftRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const id = c.req.param("id");
     const orgId = c.get("orgId");
@@ -480,7 +481,7 @@ const openShiftsRoute = createRoute({
 
 shiftsRouter.openapi(openShiftsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const result = await getOpenShifts(orgId);

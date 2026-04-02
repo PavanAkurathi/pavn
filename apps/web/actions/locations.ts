@@ -13,6 +13,9 @@ import {
 } from "@repo/organizations";
 import { PLAN_LIMITS, SUPPORT_EMAIL } from "@repo/config";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import { db, and, eq } from "@repo/database";
+import { member } from "@repo/database/schema";
+import { isAdminOrganizationRole } from "@/lib/server/organization-roles";
 
 async function getSession() {
     return await auth.api.getSession({
@@ -20,17 +23,44 @@ async function getSession() {
     });
 }
 
+async function ensureLocationAdminAccess(userId: string, organizationId: string) {
+    const membership = await db.query.member.findFirst({
+        where: and(
+            eq(member.organizationId, organizationId),
+            eq(member.userId, userId)
+        ),
+        columns: {
+            role: true,
+        },
+    });
+
+    if (!membership || !isAdminOrganizationRole(membership.role)) {
+        return { error: "Only admins can manage business locations." };
+    }
+
+    return null;
+}
+
 export async function createLocation(data: z.input<typeof createLocationSchema>) {
     const session = await getSession();
+    if (!session) {
+        return { error: "Unauthorized" };
+    }
+
     const activeOrganizationId = session
         ? await resolveActiveOrganizationId(
-            session.user.id,
-            (session.session as any)?.activeOrganizationId as string | undefined,
-        )
+              session.user.id,
+              (session.session as any)?.activeOrganizationId as string | undefined,
+          )
         : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
+    }
+
+    const accessError = await ensureLocationAdminAccess(session.user.id, activeOrganizationId);
+    if (accessError) {
+        return accessError;
     }
 
     // --- Location cap enforcement ---
@@ -62,15 +92,24 @@ export async function createLocation(data: z.input<typeof createLocationSchema>)
 
 export async function updateLocation(id: string, data: z.input<typeof createLocationSchema>) {
     const session = await getSession();
+    if (!session) {
+        return { error: "Unauthorized" };
+    }
+
     const activeOrganizationId = session
         ? await resolveActiveOrganizationId(
-            session.user.id,
-            (session.session as any)?.activeOrganizationId as string | undefined,
-        )
+              session.user.id,
+              (session.session as any)?.activeOrganizationId as string | undefined,
+          )
         : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
+    }
+
+    const accessError = await ensureLocationAdminAccess(session.user.id, activeOrganizationId);
+    if (accessError) {
+        return accessError;
     }
 
     try {
@@ -86,15 +125,24 @@ export async function updateLocation(id: string, data: z.input<typeof createLoca
 
 export async function deleteLocation(locationId: string) {
     const session = await getSession();
+    if (!session) {
+        return { error: "Unauthorized" };
+    }
+
     const activeOrganizationId = session
         ? await resolveActiveOrganizationId(
-            session.user.id,
-            (session.session as any)?.activeOrganizationId as string | undefined,
-        )
+              session.user.id,
+              (session.session as any)?.activeOrganizationId as string | undefined,
+          )
         : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
+    }
+
+    const accessError = await ensureLocationAdminAccess(session.user.id, activeOrganizationId);
+    if (accessError) {
+        return accessError;
     }
 
     try {

@@ -52,6 +52,16 @@ function buildSections(shifts: WorkerShift[]) {
     return Array.from(sections.entries()).map(([title, data]) => ({ title, data }));
 }
 
+function getShiftHref(shift: WorkerShift) {
+    return {
+        pathname: "/shift/[id]" as const,
+        params: {
+            id: shift.id,
+            orgId: shift.organization.id,
+        },
+    };
+}
+
 function FilterChip({
     label,
     active = false,
@@ -215,7 +225,7 @@ export default function ScheduleScreen() {
                                 shift={item}
                                 conflict={conflictMap.get(item.id)}
                                 orgColor={orgColorMap.get(item.organization.id) || workerTheme.roleColors[5]}
-                                onPress={() => router.push(`/shift/${item.id}`)}
+                                onPress={() => router.push(getShiftHref(item))}
                             />
                         </View>
                     )}
@@ -230,7 +240,7 @@ export default function ScheduleScreen() {
 
             {inProgressShift ? (
                 <Pressable
-                    onPress={() => router.push(`/shift/${inProgressShift.id}`)}
+                    onPress={() => router.push(getShiftHref(inProgressShift))}
                     className="absolute bottom-5 left-5 right-5"
                 >
                     <Card variant="secondary" className="rounded-[30px]">

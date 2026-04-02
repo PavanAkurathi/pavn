@@ -1,10 +1,6 @@
-import { Button } from "@repo/ui/components/ui/button";
+import { HowItWorksLanding } from "../components/how-it-works-landing";
+import { getMarketingBaseHref } from "../lib/site-urls";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <h1 className="text-2xl font-bold">Hive Docs</h1>
-      <Button>Click me</Button>
-    </div>
-  );
+  return <HowItWorksLanding marketingBaseHref={getMarketingBaseHref()} />;
 }

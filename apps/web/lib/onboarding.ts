@@ -10,6 +10,7 @@ import { headers } from "next/headers";
 import type { AttendanceVerificationPolicy } from "@repo/config";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { parseOrganizationMetadata } from "@/lib/organization-metadata";
+import { requiresBusinessOnboarding } from "@/lib/server/organization-roles";
 
 export type OnboardingStep = {
     id: string;
@@ -41,7 +42,12 @@ export async function getCurrentBusinessOnboardingState() {
     });
 
     if (!session) {
-        return { session: null, onboarding: null as BusinessOnboardingState | null };
+        return {
+            session: null,
+            onboarding: null as BusinessOnboardingState | null,
+            memberRole: null as string | null,
+            shouldEnforceOnboarding: false,
+        };
     }
 
     const activeOrgId = await resolveActiveOrganizationId(
@@ -50,11 +56,17 @@ export async function getCurrentBusinessOnboardingState() {
     );
 
     if (!activeOrgId) {
-        return { session, onboarding: null as BusinessOnboardingState | null };
+        return {
+            session,
+            onboarding: null as BusinessOnboardingState | null,
+            memberRole: null as string | null,
+            shouldEnforceOnboarding: false,
+        };
     }
 
     const [
         org,
+        currentMember,
         firstLocation,
         firstPublishedShift,
     ] = await Promise.all([
@@ -67,6 +79,15 @@ export async function getCurrentBusinessOnboardingState() {
                 attendanceVerificationPolicy: true,
                 metadata: true,
                 subscriptionStatus: true,
+            },
+        }),
+        db.query.member.findFirst({
+            where: and(
+                eq(member.organizationId, activeOrgId),
+                eq(member.userId, session.user.id)
+            ),
+            columns: {
+                role: true,
             },
         }),
         db.query.location.findFirst({
@@ -89,7 +110,12 @@ export async function getCurrentBusinessOnboardingState() {
     ]);
 
     if (!org) {
-        return { session, onboarding: null as BusinessOnboardingState | null };
+        return {
+            session,
+            onboarding: null as BusinessOnboardingState | null,
+            memberRole: currentMember?.role ?? null,
+            shouldEnforceOnboarding: false,
+        };
     }
 
     const metadata = parseOrganizationMetadata(org.metadata);
@@ -134,9 +160,13 @@ export async function getCurrentBusinessOnboardingState() {
 
     const completedCount = steps.filter((step) => step.complete).length;
     const totalCount = steps.length;
+    const memberRole = currentMember?.role ?? "member";
+    const shouldEnforceOnboarding = requiresBusinessOnboarding(memberRole) && completedCount !== totalCount;
 
     return {
         session,
+        memberRole,
+        shouldEnforceOnboarding,
         onboarding: {
             orgId: activeOrgId,
             organizationName: org.name,

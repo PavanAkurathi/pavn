@@ -9,12 +9,12 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Plus, MoreVertical, Mail } from "lucide-react";
 import Link from "next/link";
 import { AddMemberDialog } from "@/components/settings/team/add-member-dialog";
-import { Upload } from "lucide-react";
 import { format } from "date-fns";
 
 interface TeamListProps {
     members: Array<{
         id: string;
+        entryType: "member" | "invitation";
         role: string;
         joinedAt: Date;
         name: string;
@@ -78,7 +78,13 @@ export function TeamList({ members, currentUserId }: TeamListProps) {
                                     </p>
                                 </div>
 
-                                <TeamActions memberId={member.id} memberRole={member.role} isSelf={member.user?.id === currentUserId} status={member.status} />
+                                <TeamActions
+                                    entryId={member.id}
+                                    entryType={member.entryType}
+                                    memberRole={member.role}
+                                    isSelf={member.user?.id === currentUserId}
+                                    status={member.status}
+                                />
                             </div>
                         </div>
                     ))}
@@ -101,28 +107,41 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu";
-import { resendInvite, deleteMemberAction } from "@/actions/invites";
+import {
+    cancelTeamInvite,
+    deleteMemberAction,
+    resendTeamInvite,
+} from "@/actions/invites";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-function TeamActions({ memberId, memberRole, isSelf, status }: { memberId: string, memberRole: string, isSelf: boolean, status?: string }) {
+function TeamActions({
+    entryId,
+    entryType,
+    memberRole,
+    isSelf,
+    status,
+}: {
+    entryId: string;
+    entryType: "member" | "invitation";
+    memberRole: string;
+    isSelf: boolean;
+    status?: string;
+}) {
     const router = useRouter();
 
-    // Safety check: Cannot delete yourself or owners
-    if (memberRole === 'owner' || isSelf) return null;
-
     const handleResend = async () => {
-        toast.promise(resendInvite(memberId), {
+        toast.promise(resendTeamInvite(entryId), {
             loading: "Resending invite...",
             success: "Invite sent successfully!",
             error: "Failed to resend invite"
         });
     };
 
-    const handleDelete = async () => {
+    const handleRemoveMember = async () => {
         if (!confirm("Are you sure you want to remove this member? They will lose access immediately.")) return;
 
-        toast.promise(deleteMemberAction(memberId), {
+        toast.promise(deleteMemberAction(entryId), {
             loading: "Removing member...",
             success: () => {
                 router.refresh();
@@ -131,6 +150,23 @@ function TeamActions({ memberId, memberRole, isSelf, status }: { memberId: strin
             error: "Failed to remove member"
         });
     };
+
+    const handleCancelInvitation = async () => {
+        if (!confirm("Cancel this invitation? The recipient will need a new invite link to join later.")) return;
+
+        toast.promise(cancelTeamInvite(entryId), {
+            loading: "Canceling invitation...",
+            success: () => {
+                router.refresh();
+                return "Invitation canceled";
+            },
+            error: "Failed to cancel invitation",
+        });
+    };
+
+    if (entryType === "member" && (memberRole === "owner" || isSelf)) {
+        return null;
+    }
 
     return (
         <DropdownMenu>
@@ -142,17 +178,25 @@ function TeamActions({ memberId, memberRole, isSelf, status }: { memberId: strin
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                {status === 'invited' && (
+                {entryType === "invitation" && status === 'invited' && (
                     <>
                         <DropdownMenuItem onClick={handleResend}>
                             Resend Invite
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={handleCancelInvitation}
+                            className="text-red-600 focus:text-red-600"
+                        >
+                            Cancel Invite
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                     </>
                 )}
-                <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600">
+                {entryType === "member" ? (
+                    <DropdownMenuItem onClick={handleRemoveMember} className="text-red-600 focus:text-red-600">
                     Remove Member
-                </DropdownMenuItem>
+                    </DropdownMenuItem>
+                ) : null}
             </DropdownMenuContent>
         </DropdownMenu>
     );

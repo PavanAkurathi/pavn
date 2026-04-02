@@ -2,6 +2,7 @@ import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database"
 import { shift, shiftAssignment, location, organization } from "@repo/database/schema";
 import { eq, and, inArray, gte, lte, asc, desc, sql } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
+import { AppError } from "@repo/observability";
 
 interface WorkerShiftFilters {
     status: 'upcoming' | 'history' | 'all';
@@ -82,6 +83,50 @@ export const getWorkerShifts = async (
             hasMore: results.length === limit // Simple heuristic
         }
     };
+};
+
+export const getWorkerShiftById = async (
+    workerId: string,
+    shiftId: string,
+    orgId: string,
+) => {
+    const row = await db
+        .select({
+            assignment: shiftAssignment,
+            shift: shift,
+            location: {
+                ...location,
+                latitude: jsonPositionLatitude(location.position),
+                longitude: jsonPositionLongitude(location.position),
+            },
+            organization: organization,
+        })
+        .from(shiftAssignment)
+        .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+        .leftJoin(location, eq(shift.locationId, location.id))
+        .innerJoin(organization, eq(shift.organizationId, organization.id))
+        .where(and(
+            eq(shiftAssignment.workerId, workerId),
+            eq(shift.id, shiftId),
+            eq(shift.organizationId, orgId),
+        ))
+        .limit(1);
+
+    const record = row[0];
+    if (!record) {
+        throw new AppError("Shift not found", "SHIFT_NOT_FOUND", 404);
+    }
+
+    const composite = {
+        ...record.assignment,
+        shift: {
+            ...record.shift,
+            location: record.location,
+            organization: record.organization,
+        },
+    };
+
+    return mapWorkerShiftDto(composite);
 };
 
 // DTO Mapper

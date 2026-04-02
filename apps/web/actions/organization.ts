@@ -2,11 +2,10 @@
 
 "use server";
 
-import { db } from "@repo/database";
-import { organization } from "@repo/database/schema";
+import { db, and, eq } from "@repo/database";
+import { member, organization } from "@repo/database/schema";
 import { auth } from "@repo/auth";
 import { headers } from "next/headers";
-import { eq } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ATTENDANCE_VERIFICATION_POLICY_VALUES } from "@repo/config";
@@ -15,6 +14,7 @@ import {
     serializeOrganizationMetadata,
 } from "@/lib/organization-metadata";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import { isAdminOrganizationRole } from "@/lib/server/organization-roles";
 
 async function getSession() {
     return await auth.api.getSession({
@@ -32,15 +32,33 @@ const updateOrgSchema = z.object({
 
 export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) {
     const session = await getSession();
+    if (!session) {
+        return { error: "Unauthorized" };
+    }
+
     const activeOrganizationId = session
         ? await resolveActiveOrganizationId(
-            session.user.id,
-            (session.session as any)?.activeOrganizationId as string | undefined,
-        )
+              session.user.id,
+              (session.session as any)?.activeOrganizationId as string | undefined,
+          )
         : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
+    }
+
+    const membership = await db.query.member.findFirst({
+        where: and(
+            eq(member.organizationId, activeOrganizationId),
+            eq(member.userId, session.user.id)
+        ),
+        columns: {
+            role: true,
+        },
+    });
+
+    if (!membership || !isAdminOrganizationRole(membership.role)) {
+        return { error: "Only admins can update business settings." };
     }
 
     const valResult = updateOrgSchema.safeParse(data);
@@ -89,15 +107,33 @@ export async function updateOrganization(data: z.infer<typeof updateOrgSchema>) 
 
 export async function markBillingPromptHandled() {
     const session = await getSession();
+    if (!session) {
+        return { error: "Unauthorized" };
+    }
+
     const activeOrganizationId = session
         ? await resolveActiveOrganizationId(
-            session.user.id,
-            (session.session as any)?.activeOrganizationId as string | undefined,
-        )
+              session.user.id,
+              (session.session as any)?.activeOrganizationId as string | undefined,
+          )
         : null;
 
     if (!activeOrganizationId) {
         return { error: "No active organization" };
+    }
+
+    const membership = await db.query.member.findFirst({
+        where: and(
+            eq(member.organizationId, activeOrganizationId),
+            eq(member.userId, session.user.id)
+        ),
+        columns: {
+            role: true,
+        },
+    });
+
+    if (!membership || !isAdminOrganizationRole(membership.role)) {
+        return { error: "Only admins can change billing setup progress." };
     }
 
     try {

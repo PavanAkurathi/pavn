@@ -9,6 +9,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { dispatchPendingNotifications } from "@repo/notifications";
 import { bulkImportWorkers, parseWorkerFile } from "@repo/gig-workers";
+import { isAdminRole, isManagerRole } from "../lib/organization-roles.js";
 
 export const notificationsRouter = new OpenAPIHono<AppContext>();
 
@@ -34,7 +35,7 @@ notificationsRouter.openapi(dispatchRoute, async (c) => {
     const expectedSecret = process.env.CRON_SECRET;
 
     // Allow if admin OR if cron secret matches
-    if (userRole !== "admin" && (!expectedSecret || cronSecret !== expectedSecret)) {
+    if (!isAdminRole(userRole) && (!expectedSecret || cronSecret !== expectedSecret)) {
         return c.json({ error: "Access denied" }, 403);
     }
 
@@ -59,7 +60,7 @@ const bulkImportRoute = createRoute({
 
 notificationsRouter.openapi(bulkImportRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const body = await c.req.json();

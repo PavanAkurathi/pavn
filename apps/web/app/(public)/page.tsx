@@ -47,7 +47,7 @@ export default function LandingPage() {
                     Get Started Free <ArrowRight className="w-5 h-5" />
                   </button>
                 </Link>
-                <Link href="/demo" className="w-full sm:w-auto">
+                <Link href="/how-it-works" className="w-full sm:w-auto">
                   <button className="h-14 px-8 w-full rounded-xl border border-input bg-background text-foreground font-bold text-lg hover:bg-secondary/50 transition-all">
                     How it Works
                   </button>

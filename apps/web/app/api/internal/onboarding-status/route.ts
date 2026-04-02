@@ -4,7 +4,7 @@ import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
 export const runtime = "nodejs";
 
 export async function GET() {
-    const { session, onboarding } = await getCurrentBusinessOnboardingState();
+    const { session, onboarding, shouldEnforceOnboarding, memberRole } = await getCurrentBusinessOnboardingState();
 
     if (!session) {
         return NextResponse.json(
@@ -16,5 +16,7 @@ export async function GET() {
     return NextResponse.json({
         hasOnboarding: Boolean(onboarding),
         isComplete: onboarding?.isComplete ?? false,
+        memberRole,
+        requiresOnboarding: shouldEnforceOnboarding,
     });
 }

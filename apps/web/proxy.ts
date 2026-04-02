@@ -44,15 +44,19 @@ export default async function proxy(request: NextRequest) {
         // console.log("[Proxy] Session check result:", session ? "Authenticated" : "No Session", session?.user?.email);
 
         if (!session) {
-            // console.log("[Proxy] No session found, redirecting to login");
-            return NextResponse.redirect(new URL("/auth/login", request.url));
+            const redirectUrl = new URL("/auth/login", request.url);
+            const callbackPath = `${pathname}${request.nextUrl.search}`;
+            redirectUrl.searchParams.set("callbackURL", callbackPath);
+            return NextResponse.redirect(redirectUrl);
         }
 
         // 2. Enforce Email Verification
         // If user is logged in but not verified, force them to verification page
         if (!session.user.emailVerified) {
-            // console.log("[Proxy] Email not verified, redirecting to verify");
-            return NextResponse.redirect(new URL("/auth/verify-email", request.url));
+            const redirectUrl = new URL("/auth/verify-email", request.url);
+            redirectUrl.searchParams.set("email", session.user.email);
+            redirectUrl.searchParams.set("callbackURL", `${pathname}${request.nextUrl.search}`);
+            return NextResponse.redirect(redirectUrl);
         }
 
         const shouldEnforceOnboarding =
@@ -72,9 +76,10 @@ export default async function proxy(request: NextRequest) {
                 const onboardingStatus = await onboardingResponse.json() as {
                     hasOnboarding: boolean;
                     isComplete: boolean;
+                    requiresOnboarding: boolean;
                 };
 
-                if (onboardingStatus.hasOnboarding && !onboardingStatus.isComplete) {
+                if (onboardingStatus.hasOnboarding && onboardingStatus.requiresOnboarding && !onboardingStatus.isComplete) {
                     const redirectUrl = new URL("/dashboard/onboarding", request.url);
                     return NextResponse.redirect(redirectUrl);
                 }
@@ -85,7 +90,9 @@ export default async function proxy(request: NextRequest) {
     } catch (error) {
         console.error("[Proxy] Session check failed:", error);
         // Fallback protection: if fetch fails, assume unauthenticated
-        return NextResponse.redirect(new URL("/auth/login", request.url));
+        const redirectUrl = new URL("/auth/login", request.url);
+        redirectUrl.searchParams.set("callbackURL", `${pathname}${request.nextUrl.search}`);
+        return NextResponse.redirect(redirectUrl);
     }
 }
 

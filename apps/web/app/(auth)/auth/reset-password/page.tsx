@@ -19,6 +19,8 @@ function ResetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email");
+    const callbackURL = searchParams.get("callbackURL");
+    const safeCallbackURL = callbackURL && callbackURL.startsWith("/") ? callbackURL : null;
 
     const [otp, setOtp] = useState("");
     const [step, setStep] = useState<"otp" | "password">("otp");
@@ -52,7 +54,9 @@ function ResetPasswordForm() {
         }, {
             onSuccess: () => {
                 toast.success("Password reset successfully!");
-                router.push("/auth/login");
+                router.push(safeCallbackURL
+                    ? `/auth/login?callbackURL=${encodeURIComponent(safeCallbackURL)}`
+                    : "/auth/login");
             },
             onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);

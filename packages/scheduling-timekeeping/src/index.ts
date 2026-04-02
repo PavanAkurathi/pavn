@@ -16,6 +16,7 @@ export { getOpenShifts } from "./modules/shifts/open-shifts";
 export { approveShift } from "./modules/time-tracking/approve";
 export { assignWorker } from "./modules/time-tracking/assign";
 export { getWorkerShifts } from "./modules/time-tracking/worker-shifts";
+export { getWorkerShiftById } from "./modules/time-tracking/worker-shifts";
 export { getShiftTimesheets } from "./modules/time-tracking/get-timesheets";
 export { updateTimesheet } from "./modules/time-tracking/update-timesheet";
 export { unassignWorker } from "./modules/time-tracking/unassign-worker";

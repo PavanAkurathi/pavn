@@ -42,6 +42,16 @@ const fmtWeekRange = (dates: Date[]) => {
     return `${start.toLocaleDateString("en-US", opts)} - ${end.toLocaleDateString("en-US", opts)}`;
 };
 
+function getShiftHref(shift: WorkerShift) {
+    return {
+        pathname: "/shift/[id]" as const,
+        params: {
+            id: shift.id,
+            orgId: shift.organization.id,
+        },
+    };
+}
+
 export default function AvailabilityScreen() {
     const router = useRouter();
     const [weekOffset, setWeekOffset] = useState(0);
@@ -218,7 +228,7 @@ export default function AvailabilityScreen() {
                                     ) : (
                                         <View className="gap-3">
                                             {dayShifts.map((shift) => (
-                                                <Pressable key={shift.assignmentId} onPress={() => router.push(`/shift/${shift.id}`)}>
+                                                <Pressable key={shift.assignmentId} onPress={() => router.push(getShiftHref(shift))}>
                                                     <View
                                                         className="gap-1 rounded-[20px] border border-border bg-default px-4 py-3"
                                                         style={{

@@ -8,7 +8,6 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui/components/ui/select";
-import { Checkbox } from "@repo/ui/components/ui/checkbox";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { addMember } from "@/actions/team";
@@ -45,7 +44,7 @@ export function AddMemberDialog() {
             if (result && 'error' in result) {
                 toast.error(result.error);
             } else {
-                toast.success("Member added successfully! They will receive an email shortly.");
+                toast.success("Invitation sent. Access will start after they accept.");
                 setOpen(false);
                 setFormData({
                     firstName: "",
@@ -74,7 +73,7 @@ export function AddMemberDialog() {
                 <DialogHeader>
                     <DialogTitle>Add Team Member</DialogTitle>
                     <DialogDescription>
-                        Add a new member to your organization. They will act as a "Shadow User" until they accept the invite.
+                        Invite an admin or manager to your business workspace. They become a team member only after accepting the invitation.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 py-4">
@@ -119,10 +118,9 @@ export function AddMemberDialog() {
                             <Input
                                 id="phone"
                                 type="tel"
-                                required
                                 value={formData.phoneNumber}
                                 onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                                placeholder="+1 (555) 000-0000"
+                                placeholder="+1 (555) 000-0000 (optional)"
                             />
                         </div>
                         <div className="space-y-2">
@@ -143,13 +141,13 @@ export function AddMemberDialog() {
                     </div>
 
                     <p className="text-xs text-muted-foreground pt-2">
-                        They will receive an email invitation to log in securely via an Email OTP code.
+                        We&apos;ll send a secure email invitation that routes them to activation or sign-in automatically.
                     </p>
 
                     <DialogFooter>
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create Member
+                            Send Invitation
                         </Button>
                     </DialogFooter>
                 </form >

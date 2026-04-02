@@ -11,6 +11,7 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
+import { isManagerRole } from "../lib/organization-roles.js";
 
 // Import services from geofence package
 import {
@@ -120,9 +121,8 @@ geofenceRouter.openapi(managerOverrideRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    // Service does its own admin check, but fail fast at route level
-    if (userRole !== "admin") {
-        return c.json({ error: "Admin role required" }, 403);
+    if (!isManagerRole(userRole)) {
+        return c.json({ error: "Manager role required" }, 403);
     }
 
     const orgId = c.get("orgId");
@@ -148,8 +148,8 @@ const getFlaggedTimesheetsRoute = createRoute({
 
 geofenceRouter.openapi(getFlaggedTimesheetsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") {
-        return c.json({ error: "Admin role required" }, 403);
+    if (!isManagerRole(userRole)) {
+        return c.json({ error: "Manager role required" }, 403);
     }
 
     const orgId = c.get("orgId");
@@ -195,8 +195,8 @@ const getPendingCorrectionsRoute = createRoute({
 
 geofenceRouter.openapi(getPendingCorrectionsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") {
-        return c.json({ error: "Admin role required" }, 403);
+    if (!isManagerRole(userRole)) {
+        return c.json({ error: "Manager role required" }, 403);
     }
 
     const orgId = c.get("orgId");
@@ -218,8 +218,8 @@ const reviewCorrectionRoute = createRoute({
 geofenceRouter.openapi(reviewCorrectionRoute, async (c) => {
     const user = c.get("user");
     const userRole = c.get("userRole");
-    if (userRole !== "admin") {
-        return c.json({ error: "Admin role required" }, 403);
+    if (!isManagerRole(userRole)) {
+        return c.json({ error: "Manager role required" }, 403);
     }
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 

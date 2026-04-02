@@ -20,6 +20,8 @@ function VerifyEmailForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email");
+    const callbackURL = searchParams.get("callbackURL");
+    const safeCallbackURL = callbackURL && callbackURL.startsWith("/") ? callbackURL : "/dashboard";
 
     // Fallback if no email is provided in URL, though in production we might redirect back to login
     // we don't block render, just show error if submitting without email
@@ -40,7 +42,7 @@ function VerifyEmailForm() {
         }, {
             onSuccess: () => {
                 toast.success("Email verified successfully!");
-                router.push("/dashboard");
+                router.push(safeCallbackURL);
             },
             onError: (ctx: AuthClientErrorContext) => {
                 toast.error(ctx.error.message);

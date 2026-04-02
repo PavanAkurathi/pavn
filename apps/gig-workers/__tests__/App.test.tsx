@@ -1,10 +1,15 @@
-import React from 'react';
-import renderer from 'react-test-renderer';
-import { Text } from 'react-native';
+import React from "react";
+import { Text } from "react-native";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
 
-describe('App', () => {
-    it('renders correctly', () => {
-        const tree = renderer.create(<Text>Workers App Test</Text>).toJSON();
-        expect(tree).toBeTruthy();
+describe("App", () => {
+    it("renders correctly", () => {
+        let tree!: ReactTestRenderer;
+
+        act(() => {
+            tree = create(<Text>Workers App Test</Text>);
+        });
+
+        expect(tree.toJSON()).toBeTruthy();
     });
 });

@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
+import { isAdminRole } from "../lib/organization-roles.js";
 import {
     BillingInfoSchema,
     InvoiceHistorySchema,
@@ -37,7 +38,7 @@ const getBillingRoute = createRoute({
 
 billingRouter.openapi(getBillingRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") {
+    if (!isAdminRole(userRole)) {
         return c.json({ error: "Access denied" }, 403);
     }
 
@@ -65,7 +66,7 @@ const getInvoicesRoute = createRoute({
 
 billingRouter.openapi(getInvoicesRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const invoices = await listOrganizationInvoices(orgId);
@@ -85,7 +86,7 @@ const getUsageRoute = createRoute({
 
 billingRouter.openapi(getUsageRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     return billingMutationUnavailable(c);
 });
@@ -107,7 +108,7 @@ const getPaymentMethodsRoute = createRoute({
 
 billingRouter.openapi(getPaymentMethodsRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     return billingMutationUnavailable(c);
 });
@@ -125,7 +126,7 @@ const addPaymentMethodRoute = createRoute({
 
 billingRouter.openapi(addPaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
     return billingMutationUnavailable(c);
 });
 
@@ -143,7 +144,7 @@ const deletePaymentMethodRoute = createRoute({
 
 billingRouter.openapi(deletePaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
     return billingMutationUnavailable(c);
 });
 
@@ -161,7 +162,7 @@ const setDefaultPaymentMethodRoute = createRoute({
 
 billingRouter.openapi(setDefaultPaymentMethodRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
     return billingMutationUnavailable(c);
 });
 
@@ -182,7 +183,7 @@ const subscribeRoute = createRoute({
 
 billingRouter.openapi(subscribeRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
     return billingMutationUnavailable(c);
 });
 
@@ -199,7 +200,7 @@ const cancelRoute = createRoute({
 
 billingRouter.openapi(cancelRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
     return billingMutationUnavailable(c);
 });
 
@@ -216,7 +217,7 @@ const upgradeRoute = createRoute({
 
 billingRouter.openapi(upgradeRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (userRole !== "admin") return c.json({ error: "Access denied" }, 403);
+    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
     return billingMutationUnavailable(c);
 });
 
