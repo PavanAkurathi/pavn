@@ -1,47 +1,13 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@repo/ui/components/ui/button";
+import type { IndustryPageContent } from "@/lib/how-it-works-content";
 
-const roleTiles = [
-  "Bartenders",
-  "Servers",
-  "Line cooks",
-  "Prep cooks",
-  "Counter staff",
-  "Dishwashers",
-  "Hosts",
-  "Shift leads",
-] as const;
-
-const workflowPoints = [
-  {
-    title: "Separate business access from worker access",
-    body:
-      "Managers and supervisors get workspace access through team invites, while service staff access the mobile experience through workforce setup and phone verification.",
-  },
-  {
-    title: "Publish shifts when service is ready",
-    body:
-      "Build the schedule, assign the team, and publish only when the lineup is final so workers see one clear source of truth.",
-  },
-  {
-    title: "Run attendance without back-and-forth",
-    body:
-      "Workers clock in and out on mobile, and correction requests can be reviewed before the final shift is approved.",
-  },
-] as const;
-
-export const metadata: Metadata = {
-  title: "Food & Beverage Scheduling Software | Workers Hive",
-  description:
-    "Workers Hive helps restaurants, bars, and dining facilities manage worker access, publish shifts, and review attendance from one operating system.",
-  alternates: {
-    canonical: "/industries/food-beverage",
-  },
-};
-
-export default function FoodBeverageIndustryPage() {
+export function IndustryPage({
+  industry,
+}: {
+  industry: IndustryPageContent;
+}) {
   return (
     <div className="bg-white">
       <section className="overflow-hidden border-b border-slate-200">
@@ -58,23 +24,51 @@ export default function FoodBeverageIndustryPage() {
                   </Link>
                 </li>
                 <li aria-hidden="true">/</li>
-                <li className="text-slate-900">Food &amp; beverage</li>
+                <li>
+                  <Link
+                    href="/how-it-works/businesses"
+                    className="hover:text-slate-900"
+                  >
+                    Industries
+                  </Link>
+                </li>
+                <li aria-hidden="true">/</li>
+                <li className="text-slate-900">{industry.title}</li>
               </ol>
             </nav>
 
+            <div className="inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-red-600">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+              {industry.heroBadge}
+            </div>
+
             <div className="space-y-5">
               <h1 className="max-w-3xl text-5xl font-extrabold leading-[0.98] tracking-tight text-slate-900 md:text-6xl">
-                Run food service teams
+                {industry.heroTitle}
                 <span className="mt-2 block font-serif text-[0.88em] font-medium italic text-red-500">
-                  without shift chaos
+                  {industry.heroAccent}
                 </span>
               </h1>
 
               <p className="max-w-2xl text-lg leading-8 text-slate-600 md:text-xl">
-                Workers Hive helps restaurants, bars, caterers, and dining
-                facilities set up workforce access, publish live shifts, and
-                review attendance from one operating loop.
+                {industry.heroDescription}
               </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {industry.heroChips.map((chip) => (
+                <article
+                  key={chip.label}
+                  className="rounded-[1.35rem] border border-slate-200 bg-white px-4 py-4 shadow-sm"
+                >
+                  <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                    {chip.label}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {chip.detail}
+                  </p>
+                </article>
+              ))}
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -85,7 +79,12 @@ export default function FoodBeverageIndustryPage() {
               >
                 <Link href="/register">Start free trial</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-14 rounded-xl px-7 text-base font-bold">
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="h-14 rounded-xl px-7 text-base font-bold"
+              >
                 <Link href="/demo">Get demo</Link>
               </Button>
             </div>
@@ -95,8 +94,8 @@ export default function FoodBeverageIndustryPage() {
             <div className="absolute inset-0 rounded-[2rem] bg-[radial-gradient(circle_at_20%_20%,rgba(217,43,58,0.16),transparent_32%),radial-gradient(circle_at_80%_30%,rgba(24,37,64,0.12),transparent_30%)] blur-2xl" />
             <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_120px_rgba(24,37,64,0.18)]">
               <Image
-                src="https://images.pexels.com/photos/19674061/pexels-photo-19674061.jpeg?cs=srgb&dl=pexels-alexandru-cojanu-828538450-19674061.jpg&fm=jpg"
-                alt="Bartender preparing drinks during service"
+                src={industry.posterSrc}
+                alt={industry.heroMediaAlt}
                 width={1100}
                 height={900}
                 className="h-auto w-full object-cover"
@@ -111,21 +110,19 @@ export default function FoodBeverageIndustryPage() {
       <section className="bg-[linear-gradient(120deg,#222733_0%,#2c3654_100%)] py-24 text-white">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-10 max-w-3xl">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-[0.22em] text-white/65">
+              Teams in context
+            </p>
             <h2 className="text-4xl font-semibold tracking-tight md:text-5xl">
-              From bartenders to bussers,
-              <span className="mt-2 block font-serif text-[0.92em] font-medium italic text-white/85">
-                we have the workflow covered
-              </span>
+              {industry.rolesTitle}
             </h2>
             <p className="mt-5 text-lg leading-8 text-slate-200">
-              Build one clear system for managers, supervisors, and frontline
-              workers without turning your operation into a marketplace signup
-              flow.
+              {industry.rolesIntro}
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {roleTiles.map((role) => (
+            {industry.roles.map((role) => (
               <article
                 key={role}
                 className="rounded-[1.5rem] border border-white/15 bg-white/6 px-5 py-6 shadow-sm backdrop-blur-sm"
@@ -144,12 +141,15 @@ export default function FoodBeverageIndustryPage() {
               Why it works
             </p>
             <h2 className="text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-              Built for service teams that need real shift accountability
+              {industry.workflowTitle}
             </h2>
+            <p className="mt-5 text-lg leading-8 text-slate-600">
+              {industry.workflowDescription}
+            </p>
           </div>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {workflowPoints.map((point, index) => (
+            {industry.workflowPoints.map((point, index) => (
               <article
                 key={point.title}
                 className="rounded-[1.75rem] border border-slate-200 bg-white p-7 shadow-sm"
@@ -173,11 +173,10 @@ export default function FoodBeverageIndustryPage() {
         <div className="mx-auto grid max-w-6xl gap-10 px-6 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <h2 className="text-4xl font-semibold tracking-tight text-slate-900 md:text-5xl">
-              Ready to run restaurant shifts with less friction?
+              {industry.ctaTitle}
             </h2>
             <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-              Start with a business workspace, add your team, and publish the
-              schedule when service is ready.
+              {industry.ctaDescription}
             </p>
           </div>
 
@@ -189,7 +188,12 @@ export default function FoodBeverageIndustryPage() {
             >
               <Link href="/register">Start free trial</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="h-14 rounded-xl px-7 text-base font-bold">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="h-14 rounded-xl px-7 text-base font-bold"
+            >
               <Link href="/how-it-works">Back to how it works</Link>
             </Button>
           </div>

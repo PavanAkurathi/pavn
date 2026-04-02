@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 export const metadata: Metadata = {
     title: `Fair Workweek Compliance | ${APP_NAME}`,
-    description: 'How Workers Hive helps hospitality venues stay compliant with Fair Workweek, predictive scheduling, and labor laws.',
+    description: 'How Workers Hive helps shift-based employers stay compliant with Fair Workweek, predictive scheduling, and labor rules.',
 };
 
 export default function CompliancePage() {
@@ -13,7 +13,7 @@ export default function CompliancePage() {
         <div className="max-w-4xl mx-auto px-6 py-24">
             <h1 className="text-4xl font-bold text-slate-900 mb-4">Fair Workweek &amp; Labor Compliance</h1>
             <p className="text-lg text-slate-500 mb-12">
-                Predictive scheduling laws are expanding across the country. Here's what hospitality operators need to know — and how {APP_NAME} helps you stay ahead.
+                Predictive scheduling laws are expanding across the country. Here is what shift-based operators need to know, and how {APP_NAME} helps you keep cleaner records.
             </p>
 
             <div className="grid md:grid-cols-2 gap-6 mb-16">

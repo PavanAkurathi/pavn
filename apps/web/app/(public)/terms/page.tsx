@@ -20,12 +20,12 @@ export default function TermsPage() {
 
                 <h2>1. The Service</h2>
                 <p>
-                    {APP_NAME} provides a cloud-based workforce scheduling and time-tracking platform for the hospitality industry. The Service includes shift scheduling, GPS-verified clock-in/out, timesheet management, availability tracking, and related tools for venue managers ("Managers") and hospitality workers ("Workers").
+                    {APP_NAME} provides a cloud-based workforce scheduling and time-tracking platform for shift-based businesses. The Service includes shift scheduling, GPS-verified clock-in/out, timesheet management, availability tracking, and related tools for business managers ("Managers") and workers ("Workers").
                 </p>
 
                 <h2>2. Accounts</h2>
                 <p>
-                    You must provide accurate information when creating an account. You are responsible for maintaining the security of your account credentials. You must be at least 16 years old to use the Service. Manager accounts require a valid business email and venue information.
+                    You must provide accurate information when creating an account. You are responsible for maintaining the security of your account credentials. You must be at least 16 years old to use the Service. Manager accounts require valid business information.
                 </p>
 
                 <h2>3. Subscription and Payment</h2>
@@ -38,7 +38,7 @@ export default function TermsPage() {
 
                 <h2>4. Employment Relationship</h2>
                 <p>
-                    <strong>{APP_NAME} is not an employer, staffing agency, or employment intermediary.</strong> We provide scheduling software only. The employment relationship exists solely between the Manager (venue) and the Worker. We do not set wages, control work conditions, provide benefits, or make hiring/firing decisions. Managers are responsible for compliance with all applicable labor laws in their jurisdiction.
+                    <strong>{APP_NAME} is not an employer, staffing agency, or employment intermediary.</strong> We provide scheduling software only. The employment relationship exists solely between the Manager (business) and the Worker. We do not set wages, control work conditions, provide benefits, or make hiring or firing decisions. Managers are responsible for compliance with all applicable labor laws in their jurisdiction.
                 </p>
 
                 <h2>5. Location Data and Geofencing</h2>
@@ -48,7 +48,7 @@ export default function TermsPage() {
 
                 <h2>6. Data and Timesheets</h2>
                 <p>
-                    Managers own their venue data, shift schedules, and timesheet records. Workers own their personal profile data. We store and process this data solely to provide the Service. Timesheet records are retained for 3 years after account deletion to support labor record-keeping compliance. Managers can export their data at any time.
+                    Managers own their business data, shift schedules, and timesheet records. Workers own their personal profile data. We store and process this data solely to provide the Service. Timesheet records are retained for 3 years after account deletion to support labor record-keeping compliance. Managers can export their data at any time.
                 </p>
 
                 <h2>7. Acceptable Use</h2>

@@ -4,8 +4,8 @@ import { Card } from '@repo/ui/components/ui/card';
 import { Badge } from '@repo/ui/components/ui/badge';
 
 export const metadata: Metadata = {
-    title: 'Restaurant Management Resources | Workers Hive',
-    description: 'Guides on labor laws, scheduling tips, and hospitality management best practices.',
+    title: 'Operations Resources | Workers Hive',
+    description: 'Guides on scheduling, attendance, workforce access, and labor-compliance workflows for shift-based teams.',
 };
 
 const ARTICLES = [
@@ -36,7 +36,7 @@ const ARTICLES = [
     {
         id: 4,
         title: "Geofencing vs. Biometrics",
-        excerpt: "Which time-tracking method is right for your high-volume venue?",
+        excerpt: "Which attendance-verification method is a better fit for location-based shift teams?",
         category: "Tech",
         date: "Sep 15, 2024",
         readTime: "4 min read"
@@ -52,7 +52,7 @@ export default function ResourcesPage() {
                 <div className="container mx-auto text-center max-w-2xl">
                     <h1 className="text-4xl font-extrabold text-slate-900 mb-4">The Shift Log</h1>
                     <p className="text-lg text-slate-600">
-                        Insights, strategies, and news for modern hospitality operators.
+                        Guides, release notes, and operating playbooks for businesses managing their own workforce.
                     </p>
                 </div>
             </section>
@@ -61,10 +61,9 @@ export default function ResourcesPage() {
             <section className="container mx-auto px-6 py-12">
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {ARTICLES.map((article) => (
-                        <Link key={article.id} href={`/resources/${article.id}`} className="group">
+                        <article key={article.id} className="group">
                             <Card className="h-full overflow-hidden hover:shadow-xl transition-shadow border-slate-200 flex flex-col bg-white">
                                 <div className="aspect-video bg-slate-200 relative">
-                                    {/* Placeholder for Article Image */}
                                     <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-bold bg-slate-100">
                                         {article.category}
                                     </div>
@@ -83,11 +82,11 @@ export default function ResourcesPage() {
                                         {article.excerpt}
                                     </p>
                                     <div className="text-xs font-bold text-slate-400 pt-4 border-t border-slate-100">
-                                        {article.date}
+                                        {article.date} · Coming soon
                                     </div>
                                 </div>
                             </Card>
-                        </Link>
+                        </article>
                     ))}
                 </div>
             </section>
@@ -96,9 +95,9 @@ export default function ResourcesPage() {
             <section className="container mx-auto px-6">
                 <div className="bg-slate-900 rounded-3xl p-10 md:p-16 text-center text-white relative overflow-hidden">
                     <div className="relative z-10 max-w-xl mx-auto">
-                        <h2 className="text-3xl font-bold mb-4">Don't miss a shift.</h2>
+                        <h2 className="text-3xl font-bold mb-4">Want the next guide when it drops?</h2>
                         <p className="text-slate-400 mb-8">
-                            Get the latest labor laws and scheduling tips sent to your inbox bi-weekly.
+                            Get release notes, scheduling playbooks, and compliance updates in your inbox.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-3">
                             <input

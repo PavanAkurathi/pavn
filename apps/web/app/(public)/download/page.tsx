@@ -16,7 +16,7 @@ export default function DownloadPage() {
 
                 <h1 className="text-4xl font-bold text-slate-900 mb-4">Get the Workers Hive App</h1>
                 <p className="text-lg text-slate-500 mb-12">
-                    Clock in with GPS verification, view your shifts across all your jobs, and manage your availability — all from your phone.
+                    Clock in with location verification, view your assigned shifts, and manage your availability from one mobile app.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -40,7 +40,7 @@ export default function DownloadPage() {
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-8">
                     <h3 className="font-bold text-slate-900 mb-2">Want early access?</h3>
                     <p className="text-slate-500 mb-4">
-                        We're onboarding venues now. Email us your venue name and we'll get you set up with direct app access.
+                        We are onboarding businesses now. Email us your business name and we will help you get mobile access set up the right way.
                     </p>
                     <a
                         href={`mailto:${SUPPORT_EMAIL}?subject=Early Access - Workers Hive App&body=Venue name:%0ACity:%0ANumber of staff:`}
@@ -51,7 +51,7 @@ export default function DownloadPage() {
                 </div>
 
                 <div className="mt-12 text-sm text-slate-400">
-                    <p>Requires iOS 15+ or Android 10+. Location services required for GPS clock-in.</p>
+                    <p>Requires iOS 15+ or Android 10+. Location services are required for verified clock-in and clock-out.</p>
                 </div>
             </div>
         </div>

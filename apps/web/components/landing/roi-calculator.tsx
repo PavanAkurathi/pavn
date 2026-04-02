@@ -30,7 +30,7 @@ export function ROICalculator() {
                             <span className="text-destructive">Stop paying the "Headcount Tax".</span>
                         </h2>
                         <p className="text-zinc-400 text-lg leading-relaxed">
-                            Other platforms punish you for growing. They charge $4–$6 for every new busser or barback you hire. We charge a flat ${SUBSCRIPTION.MONTHLY_PRICE_USD}. Period.
+                            Other platforms punish you for growing. They charge $4–$6 for every additional worker you add. We charge a flat ${SUBSCRIPTION.MONTHLY_PRICE_USD} per location.
                         </p>
 
                         <div className="pt-8 p-6 bg-zinc-900/50 rounded-2xl border border-white/10">

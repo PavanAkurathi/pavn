@@ -22,17 +22,17 @@ export default function PrivacyPage() {
 
                 <h3>Account Information</h3>
                 <p>
-                    When you create an account, we collect your name, email address, phone number, and role (manager or worker). For managers, we also collect your venue name and business address.
+                    When you create an account, we collect your name, email address, phone number, and role (manager or worker). For managers, we also collect business information such as the organization or location name.
                 </p>
 
                 <h3>Location Data</h3>
                 <p>
-                    Our mobile app collects GPS location data <strong>only when you clock in or clock out</strong> of a shift. This data is used to verify that workers are physically present at the venue (geofenced timeclock). We do not track location continuously or in the background. Location data is associated with the specific clock-in/clock-out event and stored alongside the timesheet record.
+                    Our mobile app collects GPS location data <strong>only when you clock in or clock out</strong> of a shift. This data is used to verify that workers are physically present at the assigned work location. We do not track location continuously or in the background. Location data is associated with the specific clock-in or clock-out event and stored alongside the timesheet record.
                 </p>
 
                 <h3>Shift and Schedule Data</h3>
                 <p>
-                    We store shift schedules, timesheet records, availability preferences, and assignment history. For workers who work at multiple venues through our platform, we aggregate shift data across employers to provide a unified schedule view and detect scheduling conflicts.
+                    We store shift schedules, timesheet records, availability preferences, and assignment history. For workers who work with multiple businesses through our platform, we may use that data to provide a unified schedule view and detect scheduling conflicts.
                 </p>
 
                 <h3>Device Information</h3>
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
                 <p>We use the information we collect to:</p>
                 <ul>
                     <li>Provide, maintain, and improve our scheduling and timekeeping services</li>
-                    <li>Verify worker presence at venues via GPS geofencing during clock-in and clock-out</li>
+                    <li>Verify worker presence at work locations via GPS geofencing during clock-in and clock-out</li>
                     <li>Send shift reminders, schedule changes, and service notifications via SMS and push notifications</li>
                     <li>Generate timesheets and reports for managers</li>
                     <li>Detect and alert on scheduling conflicts across multiple employers</li>
@@ -54,8 +54,8 @@ export default function PrivacyPage() {
                 <h2>Information Sharing</h2>
                 <p>We share personal information only in the following circumstances:</p>
                 <ul>
-                    <li><strong>Between managers and their workers:</strong> Managers can see shift assignments, clock-in/out times, and location verification status for workers assigned to their venue.</li>
-                    <li><strong>Service providers:</strong> We use Twilio for SMS delivery, Railway for hosting, and Sentry for error monitoring. These providers process data on our behalf under contractual obligations.</li>
+                    <li><strong>Between managers and their workers:</strong> Managers can see shift assignments, clock-in/out times, and location verification status for workers assigned to their business or location.</li>
+                    <li><strong>Service providers:</strong> We use providers such as Twilio for SMS delivery and Sentry for error monitoring. These providers process data on our behalf under contractual obligations.</li>
                     <li><strong>Legal requirements:</strong> We may disclose information if required by law or in response to valid legal process.</li>
                 </ul>
                 <p>We do not sell personal information to third parties. We do not serve advertising.</p>
@@ -67,7 +67,7 @@ export default function PrivacyPage() {
 
                 <h2>Data Security</h2>
                 <p>
-                    We use industry-standard security measures including encrypted data transmission (TLS), encrypted data at rest, and role-based access controls. Our infrastructure is hosted on Railway with daily database backups.
+                    We use industry-standard security measures including encrypted data transmission (TLS), encrypted data at rest, and role-based access controls.
                 </p>
 
                 <h2>Your Rights</h2>

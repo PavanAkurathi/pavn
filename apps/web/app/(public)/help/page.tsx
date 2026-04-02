@@ -23,15 +23,15 @@ export default function HelpPage() {
                     />
                     <FAQ
                         q="How do I add my team?"
-                        a="You can invite workers by phone number from the web dashboard. They'll receive an SMS with a link to download the app and join your venue. You can also bulk-import your roster from a CSV or spreadsheet — just email it to us and we'll handle the setup."
+                        a="Admins and managers are invited into the business workspace separately from workers. Workers get mobile access through workforce setup, phone number entry, and imports from CSV or spreadsheet."
                     />
                     <FAQ
                         q="How does the geofenced timeclock work?"
-                        a="You set a location for your venue with an address. When a worker tries to clock in from the mobile app, we check their GPS coordinates against your venue's geofence. If they're within range, the clock-in is verified. If not, it's flagged for your review."
+                        a="You set a work location with an address. When a worker tries to clock in from the mobile app, we check their GPS coordinates against that location's geofence. If they are outside range, the activity is flagged for review."
                     />
                     <FAQ
                         q="Can I manage multiple locations?"
-                        a="Yes. Each location is a separate subscription ($30/mo each). You manage all locations from one dashboard. Workers can be assigned to shifts across any of your locations."
+                        a="Yes. Each location is billed separately, and you can manage them from one dashboard. Workers can be scheduled across the locations you run."
                     />
                     <FAQ
                         q="How do I export timesheets for payroll?"
@@ -50,11 +50,11 @@ export default function HelpPage() {
                     />
                     <FAQ
                         q="Can I see shifts from multiple jobs?"
-                        a="Yes. If you work at multiple venues that use Workers Hive, you'll see all your shifts in one unified schedule. The app will also warn you if you have a scheduling conflict between venues."
+                        a="If more than one business has granted you workforce access in Workers Hive, you can view assigned shifts from those businesses in one mobile experience."
                     />
                     <FAQ
                         q="How do I clock in?"
-                        a="Open the app, go to your current shift, and tap 'Clock In.' The app will verify your GPS location against the venue's geofence. Make sure location services are enabled on your phone."
+                        a="Open the app, go to your current shift, and tap 'Clock In.' The app verifies your GPS location against the assigned work location geofence. Make sure location services are enabled on your phone."
                     />
                     <FAQ
                         q="What if I need to request a time adjustment?"
@@ -62,7 +62,7 @@ export default function HelpPage() {
                     />
                     <FAQ
                         q="How do I set my availability?"
-                        a="Go to Profile → Availability. You can mark days as available or unavailable for each venue you work at. Your manager will see this when building the schedule."
+                        a="Go to Profile → Availability. You can mark days as available or unavailable for each business you work with on Workers Hive. Managers can use that information when building schedules."
                     />
                 </Section>
 

@@ -19,14 +19,14 @@ export function FAQ() {
                     <AccordionItem value="item-1" className="border border-border bg-card rounded-lg px-4">
                         <AccordionTrigger className="text-lg font-medium text-card-foreground">Is it really unlimited staff for ${SUBSCRIPTION.MONTHLY_PRICE_USD}?</AccordionTrigger>
                         <AccordionContent className="text-muted-foreground pb-4">
-                            Yes. Whether you have 5 employees or 500, the price is ${SUBSCRIPTION.MONTHLY_PRICE_USD}/month per location. We believe software shouldn't tax your growth.
+                            Yes. Whether you have 5 workers or 500, the price is ${SUBSCRIPTION.MONTHLY_PRICE_USD}/month per location. We believe scheduling software should not tax your growth.
                         </AccordionContent>
                     </AccordionItem>
 
                     <AccordionItem value="item-2" className="border border-border bg-card rounded-lg px-4">
                         <AccordionTrigger className="text-lg font-medium text-card-foreground">Can I manage multiple locations?</AccordionTrigger>
                         <AccordionContent className="text-muted-foreground pb-4">
-                            Yes. You can create as many organizations as you need and switch between them instantly. Each location is billed separately at the same flat rate.
+                            Yes. You can manage multiple locations from one business setup. Each location is billed separately at the same flat rate.
                         </AccordionContent>
                     </AccordionItem>
 
@@ -38,9 +38,9 @@ export function FAQ() {
                     </AccordionItem>
 
                     <AccordionItem value="item-4" className="border border-border bg-card rounded-lg px-4">
-                        <AccordionTrigger className="text-lg font-medium text-card-foreground">How does the Geofencing work?</AccordionTrigger>
+                        <AccordionTrigger className="text-lg font-medium text-card-foreground">How does geofenced attendance work?</AccordionTrigger>
                         <AccordionContent className="text-muted-foreground pb-4">
-                            You set a radius (e.g., 200 meters) around your venue. Workers must enable GPS permissions on the app to clock in. If they aren't on site, the button is disabled.
+                            You set a radius around the work location. Workers must enable GPS permissions on the app to clock in, and out-of-range activity can be reviewed before the shift is finalized.
                         </AccordionContent>
                     </AccordionItem>
 

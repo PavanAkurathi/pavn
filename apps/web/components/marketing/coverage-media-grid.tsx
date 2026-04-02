@@ -12,7 +12,7 @@ export function CoverageMediaGrid() {
           key={item.slug}
           title={item.title}
           body={item.summary}
-          href={item.href ?? `/how-it-works/businesses#${item.slug}`}
+          href={item.href}
           posterSrc={item.posterSrc}
           videoSrc={item.videoSrc}
         />

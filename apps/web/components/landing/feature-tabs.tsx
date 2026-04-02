@@ -9,8 +9,8 @@ export function FeatureTabs() {
         <section className="py-24 bg-white">
             <div className="container mx-auto px-6 max-w-6xl">
                 <div className="text-center mb-16">
-                    <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Everything you need to run the floor.</h2>
-                    <p className="text-lg text-slate-500">Built for high-volume hospitality environments.</p>
+                    <h2 className="text-4xl font-extrabold text-slate-900 mb-4">Everything you need to run shift operations.</h2>
+                    <p className="text-lg text-slate-500">Built for businesses managing their own workforce across one or more locations.</p>
                 </div>
 
                 <Tabs defaultValue="scheduling" className="w-full">
@@ -44,18 +44,18 @@ export function FeatureTabs() {
                                 <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center text-slate-700">
                                     <Calendar className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900">Simple Shift Management.</h3>
+                                <h3 className="text-2xl font-bold text-slate-900">Simple shift publishing.</h3>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Assign shifts to your team in seconds. View your entire roster at a glance and notify workers instantly via SMS/Email when schedules change.
+                                    Build the schedule, assign workers, and publish when the plan is ready. Keep the business side in control without relying on scattered messages.
                                 </p>
                                 <ul className="space-y-3 pt-4">
                                     <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
                                         <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">✓</span>
-                                        Instant notifications
+                                        Publish-ready shift visibility
                                     </li>
                                     <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
                                         <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">✓</span>
-                                        Real-time availability checks
+                                        Availability-aware planning
                                     </li>
                                 </ul>
                             </div>
@@ -78,9 +78,9 @@ export function FeatureTabs() {
                                 <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center text-red-600">
                                     <MapPin className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900">Geofenced Accuracy.</h3>
+                                <h3 className="text-2xl font-bold text-slate-900">Geofenced attendance.</h3>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Eliminate "buddy punching" and early clock-ins. Our mobile app requires workers to be physically on-site to start their shift.
+                                    Make clock-in and clock-out reviewable. Workers record attendance on mobile, and location checks help confirm they are where the shift is happening.
                                 </p>
                                 <ul className="space-y-3 pt-4">
                                     <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
@@ -89,12 +89,12 @@ export function FeatureTabs() {
                                     </li>
                                     <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
                                         <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">✓</span>
-                                        Automatic Break Tracking
+                                        Correction request review
                                     </li>
                                 </ul>
                             </div>
                             <div className="aspect-video bg-slate-50 rounded-2xl border border-slate-200 shadow-xl flex items-center justify-center text-slate-300">
-                                Mobile App Mockup
+                                Worker Attendance View
                             </div>
                         </div>
                     </TabsContent>
@@ -106,13 +106,23 @@ export function FeatureTabs() {
                                 <div className="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600">
                                     <Smartphone className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-slate-900">Your Database of Pros.</h3>
+                                <h3 className="text-2xl font-bold text-slate-900">Workforce access that stays clean.</h3>
                                 <p className="text-slate-600 leading-relaxed">
-                                    Keep detailed records of every worker. Track certifications, ratings, availability, and uniform sizes all in one secure place.
+                                    Add workers through imports or manual entry, keep phone-based access aligned to the right business, and use availability when building the schedule.
                                 </p>
+                                <ul className="space-y-3 pt-4">
+                                    <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
+                                        <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">✓</span>
+                                        Worker phone access by invitation
+                                    </li>
+                                    <li className="flex items-center gap-3 text-sm font-medium text-slate-700">
+                                        <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-xs">✓</span>
+                                        Availability and assignment visibility
+                                    </li>
+                                </ul>
                             </div>
                             <div className="aspect-video bg-slate-50 rounded-2xl border border-slate-200 shadow-xl flex items-center justify-center text-slate-300">
-                                Roster List Mockup
+                                Workforce Access View
                             </div>
                         </div>
                     </TabsContent>

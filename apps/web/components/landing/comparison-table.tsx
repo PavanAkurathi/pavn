@@ -41,7 +41,7 @@ const ROWS: RowData[] = [
     {
         title: "Cost for 40 Staff",
         description:
-            "What you actually pay per month for a full team. Per-user pricing punishes growth — every busser or runner you add increases your bill.",
+            "What you actually pay per month for a full team. Per-user pricing punishes growth every time you add another worker.",
         hive: { value: `$${SUBSCRIPTION.MONTHLY_PRICE_USD}`, subtext: "Flat. Always." },
         competitor: { value: "$160–$280", subtext: "$4–$7 per user/mo" },
         type: "text",
@@ -57,7 +57,7 @@ const ROWS: RowData[] = [
     {
         title: "GPS Geofenced Timeclock",
         description:
-            "Workers must be physically at your venue to clock in. Prevents buddy punching and early clock-ins.",
+            "Workers must be physically at the work location to clock in. Helps prevent inaccurate attendance records and early clock-ins.",
         hive: { value: true, subtext: "Always included" },
         competitor: { value: true, subtext: "Add-on ($1.50+/user)" },
         type: "check",
@@ -73,7 +73,7 @@ const ROWS: RowData[] = [
     {
         title: "Shift Conflict Detection",
         description:
-            "Automatically warns when a worker is booked at two venues at the same time — before it becomes a no-show.",
+            "Automatically warns when a worker is booked at two businesses at the same time before it becomes an operational problem.",
         hive: { value: true, subtext: "Real-time alerts" },
         competitor: { value: false, subtext: "No cross-employer view" },
         type: "check",
@@ -81,7 +81,7 @@ const ROWS: RowData[] = [
     {
         title: "Hospitality-First Design",
         description:
-            "Built specifically for restaurants, hotels, and event venues — not retrofitted from retail or healthcare scheduling.",
+            "Built around shift-based operations and mobile attendance instead of desk-first seat-based software.",
         hive: { value: true, subtext: "Purpose-built" },
         competitor: { value: "partial", subtext: "Multi-industry" },
         type: "check",
@@ -119,16 +119,14 @@ export function ComparisonTable() {
                         Stop Paying the Headcount Tax
                     </h2>
                     <p className="text-lg text-slate-500">
-                        Per-user pricing was designed for desk workers with salaries. In hospitality,
-                        your team size changes weekly. That's why we charge per location — not per
-                        person.
+                        Per-user pricing breaks down fast when team size changes weekly. That is why we charge per location, not per person.
                     </p>
                 </div>
 
                 {/* Savings Callout */}
                 <div className="max-w-2xl mx-auto mb-16 bg-slate-900 rounded-2xl p-8 text-center text-white">
                     <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">
-                        Typical venue with 40 staff saves
+                        Typical location with 40 workers saves
                     </p>
                     <p className="text-5xl md:text-6xl font-extrabold tracking-tight">
                         ${yearlySavings.toLocaleString()}

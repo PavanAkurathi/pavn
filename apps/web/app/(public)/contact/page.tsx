@@ -51,7 +51,7 @@ export default function ContactPage() {
             </div>
 
             <div className="mt-16 text-center">
-                <p className="text-sm text-slate-400">Based in Boston, MA · Serving hospitality venues across the Northeast</p>
+                <p className="text-sm text-slate-400">Based in Boston, MA · Working with shift-based teams and location-driven businesses</p>
             </div>
         </div>
     );

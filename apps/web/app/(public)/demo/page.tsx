@@ -13,7 +13,7 @@ export default function DemoPage() {
             <div className="max-w-3xl mx-auto text-center mb-16">
                 <h1 className="text-4xl font-bold text-slate-900 mb-4">See Workers Hive in Action</h1>
                 <p className="text-lg text-slate-500">
-                    15 minutes. We'll walk you through scheduling, geofenced clock-in, and timesheet management — tailored to your venue.
+                    15 minutes. We’ll walk you through scheduling, workforce access, geofenced clock-in, and timesheet review — tailored to your operation.
                 </p>
             </div>
 
@@ -37,14 +37,14 @@ export default function DemoPage() {
                         <Users className="w-6 h-6 text-red-600" />
                     </div>
                     <h3 className="font-bold mb-1">Free Setup</h3>
-                    <p className="text-sm text-slate-500">If you sign up, we import your roster for you. No DIY onboarding.</p>
+                    <p className="text-sm text-slate-500">If you sign up, we help import your workforce and first location. No messy setup required.</p>
                 </div>
             </div>
 
             <div className="max-w-xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-8 text-center">
                 <h2 className="text-2xl font-bold text-slate-900 mb-4">Book Your Demo</h2>
                 <p className="text-slate-500 mb-6">
-                    Send us your venue details and preferred time. We'll confirm within a few hours.
+                    Send us your business details and preferred time. We’ll confirm within a few hours.
                 </p>
                 <a
                     href={`mailto:${SUPPORT_EMAIL}?subject=Demo Request - Workers Hive&body=Hi,%0A%0AI'd like to schedule a demo.%0A%0AVenue name:%0ACity:%0ANumber of staff:%0APreferred day/time:%0A%0AThanks!`}

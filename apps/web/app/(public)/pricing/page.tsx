@@ -7,7 +7,7 @@ import { SUBSCRIPTION } from '@repo/config';
 
 export const metadata: Metadata = {
     title: 'Pricing | Workers Hive',
-    description: `Simple flat-rate pricing for restaurant scheduling. $${SUBSCRIPTION.MONTHLY_PRICE_USD}/month per location. Unlimited staff included.`,
+    description: `Simple flat-rate pricing for workforce scheduling and attendance. $${SUBSCRIPTION.MONTHLY_PRICE_USD}/month per location. Unlimited workers included.`,
 };
 
 export default function PricingPage() {
@@ -23,7 +23,7 @@ export default function PricingPage() {
                         "priceCurrency": "USD",
                         "unitCode": "MON",
                         "name": SUBSCRIPTION.PLAN_NAME,
-                        "description": "Unlimited staff, geofenced timeclock, and scheduling for one location."
+                        "description": "Unlimited workers, geofenced attendance, and shift scheduling for one location."
                     })
                 }}
             />
@@ -32,7 +32,7 @@ export default function PricingPage() {
             <section className="bg-slate-900 text-white pt-24 pb-32 text-center px-6">
                 <h1 className="text-4xl md:text-6xl font-extrabold mb-6">One Plan. Unlimited Growth.</h1>
                 <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-                    We don't believe in per-user fees. Run your entire venue for less than the cost of one dinner shift.
+                    We don’t believe in per-user fees. Run your location without paying extra every time you add another worker.
                 </p>
             </section>
 
@@ -53,9 +53,9 @@ export default function PricingPage() {
 
                     <div className="p-10 bg-slate-50/50">
                         <ul className="space-y-4 mb-8">
-                            <PricingFeature text="Unlimited Staff Members" />
-                            <PricingFeature text="Geofenced Timeclock" />
-                            <PricingFeature text="Drag & Drop Scheduling" />
+                            <PricingFeature text="Unlimited workers at one location" />
+                            <PricingFeature text="Geofenced attendance" />
+                            <PricingFeature text="Shift scheduling and publishing" />
                             <PricingFeature text="Payroll Exports (CSV)" />
                             <PricingFeature text="Mobile App for Workers" />
                         </ul>

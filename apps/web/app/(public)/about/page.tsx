@@ -8,18 +8,18 @@ export const metadata: Metadata = {
 export default function AboutPage() {
     return (
         <div className="max-w-3xl mx-auto px-6 py-24">
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">Built by someone who's worked every shift.</h1>
+            <h1 className="text-4xl font-bold text-slate-900 mb-4">Built by someone who has worked the shifts and managed the roster.</h1>
             <p className="text-lg text-slate-500 mb-12">
-                18 years in hospitality. Server, bartender, event coordinator, staffing operator. Now building the tool I never had.
+                Hospitality was the starting point. The mission now is broader: build better operating software for shift-based teams.
             </p>
 
             <div className="prose prose-slate prose-lg max-w-none">
                 <p>
-                    I've worked the floor at premium venues across Boston — from Longwood Venues to Raffles Hotels to Boston University's Aramark dining operations. I know what it feels like to get a call at 6am asking you to cover a shift. I know what it's like to manage a roster of 60 workers across three states and still have no idea who's available Friday night.
+                    I have worked the floor at premium venues across Boston, from Longwood events to hotel operations to university dining. I know what it feels like to get a call at 6am asking you to cover a shift. I know what it's like to manage a roster of 60 workers across multiple locations and still have no clean answer for who is available Friday night.
                 </p>
 
                 <p>
-                    In 2023, I started Workers Hive as a staffing service. I built a network of trusted hospitality professionals across Massachusetts, Rhode Island, and Maine. We served enterprise clients, generated real revenue, and proved the model works. Then I watched a VC-backed platform come in and undercut us — not because they were better, but because they had software and we had spreadsheets.
+                    In 2023, I started Workers Hive as a staffing service. We built a trusted network, served real clients, and proved the operational pain was real. The part that kept breaking was not the people. It was the software gap around scheduling, attendance, and workforce coordination.
                 </p>
 
                 <p>
@@ -27,23 +27,23 @@ export default function AboutPage() {
                 </p>
 
                 <p>
-                    Workers Hive isn't another scheduling app built by engineers who've never plated a dish. It's built by someone who's been on both sides — working the shifts AND managing the schedule. I know what breaks in the real world because I've lived it for nearly two decades.
+                    Workers Hive is not another generic scheduling app. It is built by someone who has been on both sides of the shift: doing the work and managing the schedule. The product is grounded in what actually breaks in real operations.
                 </p>
 
-                <h2>Why Hospitality Deserves Better</h2>
+                <h2>Why shift-based teams deserve better</h2>
 
                 <p>
-                    The scheduling tools on the market today were built for desk workers and retrofitted for hospitality. They charge per-user fees that punish you for hiring seasonal staff. They don't understand that your workers work at three different venues. They don't know that a bartender at Longwood on Saturday might be a server at a Cambridge restaurant on Sunday.
+                    Too many scheduling tools were built for desk-heavy teams and then retrofitted for hourly work. They charge per-user fees that punish growth, hide attendance issues until after payroll, and make frontline operations feel like an afterthought.
                 </p>
 
                 <p>
-                    Workers Hive is the first scheduling platform designed for how hospitality actually works — where workers have multiple employers, where team sizes change weekly, and where a no-show at 4pm means someone just worked a double they didn't plan on.
+                    Workers Hive started in hospitality because that is where the pain was most visible, but the same problems show up anywhere a business manages shifts, site attendance, and changing workforce coverage.
                 </p>
 
                 <h2>The Mission</h2>
 
                 <p>
-                    Give every hospitality venue access to professional-grade workforce tools at a price that doesn't scale with headcount. Give every worker a single app that shows all their shifts, across all their jobs, with no double-bookings.
+                    Give businesses professional-grade workforce tools at a price that does not scale with headcount. Give workers a clean mobile path into assigned shifts, attendance, and correction review.
                 </p>
 
                 <p>

@@ -11,7 +11,7 @@ export default function SecurityPage() {
         <div className="max-w-3xl mx-auto px-6 py-24">
             <h1 className="text-4xl font-bold text-slate-900 mb-4">Security</h1>
             <p className="text-lg text-slate-500 mb-12">
-                We handle sensitive data — worker locations, schedules, and timesheets. Here's how we protect it.
+                We handle sensitive data like worker locations, schedules, and timesheets. Here is how we approach protection, access control, and operational safety.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-6 mb-16">
@@ -23,24 +23,24 @@ export default function SecurityPage() {
                 <SecurityCard
                     icon={<Database className="w-6 h-6" />}
                     title="Encryption at Rest"
-                    description="Your data is stored in PostgreSQL databases hosted on Railway with encrypted storage volumes. Daily automated backups with point-in-time recovery."
+                    description="Your data is stored in managed PostgreSQL infrastructure with encrypted storage and regular backup controls."
                 />
                 <SecurityCard
                     icon={<Shield className="w-6 h-6" />}
                     title="Authentication"
-                    description="Phone-based OTP authentication via Twilio. Session tokens are short-lived and scoped to your organization. No passwords stored."
+                    description="Business users sign in with email/password and verified sessions. Workers use phone-based OTP for mobile access."
                 />
                 <SecurityCard
                     icon={<Eye className="w-6 h-6" />}
                     title="Access Control"
-                    description="Role-based permissions ensure managers can only access their own venue's data. Workers can only see their own shifts and timesheets. Organization boundaries are enforced at the API level."
+                    description="Role-based permissions ensure managers can access only the business data they are allowed to manage. Workers can only see their own shifts and timesheets."
                 />
             </div>
 
             <div className="prose prose-slate prose-lg max-w-none">
                 <h2>Infrastructure</h2>
                 <p>
-                    Our application runs on Railway's managed infrastructure, which provides isolated container environments, automated scaling, and built-in DDoS protection. Our database uses PostgreSQL with the PostGIS extension for geospatial queries (geofencing).
+                    Our application runs on managed cloud infrastructure with isolated services, automated deployment, and PostgreSQL-backed data storage for scheduling and geofenced attendance records.
                 </p>
 
                 <h2>Location Data</h2>

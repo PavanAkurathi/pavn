@@ -17,8 +17,8 @@ import { ComparisonTable } from '@/components/landing/comparison-table';
 import { FAQ } from '@/components/landing/faq';
 
 export const metadata: Metadata = {
-  title: 'Workers Hive | Smart Staff Scheduling',
-  description: 'The easiest way to schedule your hospitality team. Build rosters, publish shifts, and track time in minutes.',
+  title: 'Workers Hive | Workforce Scheduling & Attendance',
+  description: 'Workers Hive helps businesses manage workforce access, publish shifts, and approve attendance across locations.',
 };
 
 export default function LandingPage() {
@@ -33,12 +33,12 @@ export default function LandingPage() {
             {/* Left Content */}
             <div className="lg:w-1/2 space-y-8">
               <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] text-foreground">
-                Scheduling made <br />
-                <span className="text-destructive">effortless.</span>
+                Run shift teams <br />
+                <span className="text-destructive">without spreadsheet chaos.</span>
               </h1>
 
               <p className="text-xl text-muted-foreground max-w-lg leading-relaxed font-medium">
-                Stop wrestling with spreadsheets. Build rosters, publish shifts, and track time in minutes. The modern tool for modern venues.
+                Set up locations, add workers through workforce access, publish live shifts, and close the loop with mobile attendance and approvals.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -144,7 +144,7 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-6 text-slate-400 font-medium">
-            Setup takes 5 minutes • Import your roster via CSV
+            Setup takes minutes • Import your workforce via CSV
           </p>
         </div>
       </section>
