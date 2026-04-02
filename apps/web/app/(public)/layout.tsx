@@ -9,7 +9,7 @@ export default function PublicLayout({
     return (
         <>
             <PublicHeader />
-            <main className="grow pt-20">
+            <main className="grow pt-[68px]">
                 {children}
             </main>
             <PublicFooter />
