@@ -238,6 +238,38 @@
   }
 }
 
+/* 
+  WIN2K THEME — Applied to public landing pages via body.win2k or .win2k-surface
+  Mimics Windows 2000 / Luna chrome aesthetics
+*/
+.win2k-surface {
+  --win2k-bg: #ece9d8;
+  --win2k-desktop: #008080;
+  --win2k-titlebar-start: #0a246a;
+  --win2k-titlebar-end: #3a6ea5;
+  --win2k-button-top: #f0f0ea;
+  --win2k-button-bot: #d4d0c8;
+  --win2k-border-lt: #ffffff;
+  --win2k-border-rb: #808080;
+  --win2k-text: #000000;
+  --win2k-link: #0000ee;
+  --win2k-accent: #316ac5;
+  --win2k-selected: #000080;
+  font-family: Tahoma, "MS Sans Serif", Arial, sans-serif;
+  font-size: 11px;
+}
+
+/* Cursor for interactive Win2K elements */
+.win2k-btn {
+  cursor: default !important;
+}
+
+/* Marquee animation for Win2K ticker */
+@keyframes win2k-marquee {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100%); }
+}
+
 /* Fix for Google Maps Autocomplete z-index issue */
 .pac-container {
   z-index: 99999 !important;

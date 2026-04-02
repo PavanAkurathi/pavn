@@ -3,8 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from '@repo/ui/components/ui/button';
-import { Command, Menu, X } from 'lucide-react';
 import { cn } from '@repo/ui/lib/utils';
 
 export function PublicHeader() {
@@ -12,89 +10,247 @@ export function PublicHeader() {
     const pathname = usePathname();
 
     const navLinks = [
-        { name: 'How It Works', href: '/how-it-works' },
-        { name: 'Pricing', href: '/pricing' },
+        { name: 'File', href: '/how-it-works' },
+        { name: 'View', href: '/features' },
+        { name: 'Tools', href: '/pricing' },
         { name: 'Locations', href: '/locations' },
-        { name: 'Resources', href: '/resources' },
+        { name: 'Help', href: '/resources' },
     ];
 
     return (
-        <header className="fixed top-0 w-full bg-white/90 backdrop-blur-md z-50 border-b border-slate-200">
-            <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-
-                {/* Logo */}
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight text-slate-900">
-                    <div className="bg-slate-900 text-white p-1 rounded-lg">
-                        <Command className="w-5 h-5" />
+        <header
+            className="fixed top-0 w-full z-50"
+            style={{ fontFamily: 'Tahoma, "MS Sans Serif", Arial, sans-serif' }}
+        >
+            {/* Title Bar */}
+            <div
+                className="h-8 flex items-center justify-between px-2 select-none"
+                style={{
+                    background: 'linear-gradient(to right, #0a246a, #3a6ea5)',
+                    borderBottom: '1px solid #0a246a',
+                }}
+            >
+                {/* Window title left side */}
+                <div className="flex items-center gap-1.5">
+                    {/* App icon */}
+                    <div
+                        className="w-4 h-4 flex items-center justify-center text-[9px] font-black text-white"
+                        style={{
+                            background: 'linear-gradient(135deg, #fffb00, #ff8c00)',
+                            border: '1px solid rgba(0,0,0,0.4)',
+                        }}
+                    >
+                        W
                     </div>
-                    Workers Hive
-                    <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-200 uppercase tracking-wide">
+                    <span className="text-white text-xs font-bold tracking-wide">
+                        Workers Hive - Microsoft Internet Explorer
+                    </span>
+                </div>
+
+                {/* Window control buttons */}
+                <div className="flex items-center gap-0.5">
+                    {/* Minimize */}
+                    <button
+                        className="w-6 h-5 text-[11px] font-black text-black flex items-end justify-center pb-0.5"
+                        style={{
+                            background: 'linear-gradient(180deg, #dce4f5 0%, #b0c4de 100%)',
+                            border: '1px solid #6b7faa',
+                            boxShadow: 'inset 1px 1px 0 rgba(255,255,255,0.8)',
+                        }}
+                    >
+                        _
+                    </button>
+                    {/* Maximize */}
+                    <button
+                        className="w-6 h-5 text-[9px] font-black text-black flex items-center justify-center"
+                        style={{
+                            background: 'linear-gradient(180deg, #dce4f5 0%, #b0c4de 100%)',
+                            border: '1px solid #6b7faa',
+                            boxShadow: 'inset 1px 1px 0 rgba(255,255,255,0.8)',
+                        }}
+                    >
+                        □
+                    </button>
+                    {/* Close */}
+                    <button
+                        className="w-6 h-5 text-[11px] font-black text-white flex items-center justify-center"
+                        style={{
+                            background: 'linear-gradient(180deg, #d9534f 0%, #9b1c1c 100%)',
+                            border: '1px solid #7a1010',
+                            boxShadow: 'inset 1px 1px 0 rgba(255,255,255,0.3)',
+                        }}
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            {/* Menu Bar */}
+            <div
+                className="h-7 flex items-center px-2 gap-0"
+                style={{
+                    background: '#ece9d8',
+                    borderBottom: '1px solid #aca899',
+                }}
+            >
+                {/* Logo mark */}
+                <Link href="/" className="flex items-center gap-1.5 mr-4">
+                    <div
+                        className="px-2 py-0.5 text-xs font-black text-white"
+                        style={{
+                            background: '#0a246a',
+                            border: '1px solid #00007f',
+                        }}
+                    >
+                        W
+                    </div>
+                    <span className="text-[11px] font-bold text-gray-800">Workers Hive</span>
+                    <span
+                        className="text-[8px] font-bold px-1 py-0.5"
+                        style={{
+                            background: '#316ac5',
+                            color: '#fff',
+                            border: '1px solid #1a45a0',
+                        }}
+                    >
                         BETA
                     </span>
                 </Link>
 
-                {/* Desktop Nav */}
-                <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600">
+                {/* Menu items */}
+                <nav className="hidden md:flex items-center">
                     {navLinks.map((link) => (
                         <Link
                             key={link.href}
                             href={link.href}
                             className={cn(
-                                "hover:text-slate-900 transition-colors",
-                                pathname === link.href && "text-red-600 font-bold"
+                                'px-3 py-1 text-[11px] text-gray-800 hover:bg-[#316ac5] hover:text-white transition-none',
+                                pathname === link.href && 'bg-[#316ac5] text-white'
                             )}
+                            style={{ textDecoration: 'underline' }}
                         >
                             {link.name}
                         </Link>
                     ))}
                 </nav>
 
-                {/* Auth Buttons (Desktop) */}
-                <div className="hidden md:flex items-center gap-4">
+                <div className="hidden md:flex items-center gap-2 ml-auto">
                     <Link
                         href="/auth/sign-in"
-                        className="text-sm font-medium text-slate-600 hover:text-slate-900"
+                        className="text-[11px] text-gray-800 hover:text-[#0000ee] underline"
                     >
                         Log in
                     </Link>
                     <Link href="/register">
-                        <Button className="font-semibold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/20">
+                        <button
+                            className="px-3 py-0.5 text-[11px] font-bold text-black"
+                            style={{
+                                background: 'linear-gradient(180deg, #f0f0ea 0%, #d4d0c8 100%)',
+                                border: '2px solid',
+                                borderColor: '#ffffff #808080 #808080 #ffffff',
+                                outline: '1px solid #0a246a',
+                            }}
+                        >
                             Start Free Trial
-                        </Button>
+                        </button>
                     </Link>
                 </div>
 
-                {/* Mobile Menu Toggle */}
+                {/* Mobile toggle */}
                 <button
-                    className="md:hidden text-slate-900"
+                    className="md:hidden ml-auto text-xs px-2 py-0.5"
+                    style={{
+                        background: 'linear-gradient(180deg, #f0f0ea 0%, #d4d0c8 100%)',
+                        border: '2px solid',
+                        borderColor: '#ffffff #808080 #808080 #ffffff',
+                    }}
                     onClick={() => setIsOpen(!isOpen)}
                 >
-                    {isOpen ? <X /> : <Menu />}
+                    {isOpen ? '▲ Menu' : '▼ Menu'}
                 </button>
             </div>
 
-            {/* Mobile Menu Dropdown */}
+            {/* Address bar */}
+            <div
+                className="h-8 hidden md:flex items-center px-2 gap-2"
+                style={{
+                    background: '#ece9d8',
+                    borderBottom: '2px solid #aca899',
+                }}
+            >
+                <span className="text-[11px] text-gray-700 font-bold">Address</span>
+                <div
+                    className="flex-1 h-5 px-2 flex items-center text-[11px] text-blue-800"
+                    style={{
+                        background: '#fff',
+                        border: '2px solid',
+                        borderColor: '#808080 #ffffff #ffffff #808080',
+                    }}
+                >
+                    https://workershive.com/
+                </div>
+                <button
+                    className="px-3 py-0.5 text-[11px] font-bold text-black"
+                    style={{
+                        background: 'linear-gradient(180deg, #f0f0ea 0%, #d4d0c8 100%)',
+                        border: '2px solid',
+                        borderColor: '#ffffff #808080 #808080 #ffffff',
+                    }}
+                >
+                    Go
+                </button>
+            </div>
+
+            {/* Mobile Menu */}
             {isOpen && (
-                <div className="md:hidden absolute top-20 left-0 w-full bg-white border-b border-slate-200 p-6 flex flex-col gap-6 shadow-xl animate-in slide-in-from-top-5">
-                    <nav className="flex flex-col gap-4 text-lg font-medium text-slate-600">
-                        {navLinks.map((link) => (
-                            <Link
-                                key={link.href}
-                                href={link.href}
-                                onClick={() => setIsOpen(false)}
-                                className="hover:text-red-600"
-                            >
-                                {link.name}
-                            </Link>
-                        ))}
-                    </nav>
-                    <div className="flex flex-col gap-3 pt-4 border-t border-slate-100">
+                <div
+                    className="md:hidden absolute w-full p-3 flex flex-col gap-2 z-50"
+                    style={{
+                        background: '#ece9d8',
+                        border: '2px solid',
+                        borderColor: '#ffffff #808080 #808080 #ffffff',
+                        boxShadow: '2px 2px 4px rgba(0,0,0,0.4)',
+                    }}
+                >
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setIsOpen(false)}
+                            className="text-[12px] text-blue-800 underline hover:text-blue-600 px-2 py-1"
+                            style={{ fontFamily: 'Tahoma, Arial, sans-serif' }}
+                        >
+                            {link.name}
+                        </Link>
+                    ))}
+                    <div
+                        className="border-t pt-2 mt-1 flex flex-col gap-2"
+                        style={{ borderColor: '#aca899' }}
+                    >
                         <Link href="/auth/sign-in" onClick={() => setIsOpen(false)}>
-                            <Button variant="outline" className="w-full justify-center">Log in</Button>
+                            <button
+                                className="w-full text-[11px] py-1 font-bold text-black"
+                                style={{
+                                    background: 'linear-gradient(180deg, #f0f0ea 0%, #d4d0c8 100%)',
+                                    border: '2px solid',
+                                    borderColor: '#ffffff #808080 #808080 #ffffff',
+                                }}
+                            >
+                                Log in
+                            </button>
                         </Link>
                         <Link href="/register" onClick={() => setIsOpen(false)}>
-                            <Button className="w-full justify-center bg-red-600 hover:bg-red-700">Start Free Trial</Button>
+                            <button
+                                className="w-full text-[11px] py-1 font-bold text-black"
+                                style={{
+                                    background: 'linear-gradient(180deg, #f0f0ea 0%, #d4d0c8 100%)',
+                                    border: '2px solid',
+                                    borderColor: '#ffffff #808080 #808080 #ffffff',
+                                    outline: '1px solid #0a246a',
+                                }}
+                            >
+                                Start Free Trial
+                            </button>
                         </Link>
                     </div>
                 </div>
