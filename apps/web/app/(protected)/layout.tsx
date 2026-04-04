@@ -1,11 +1,9 @@
 // apps/web/app/(protected)/layout.tsx
 
 import { NavHeader } from "../../components/nav-header";
-import { db } from "@repo/database";
-import { organization, member } from "@repo/database/schema";
-import { eq } from "@repo/database";
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import { getOrganizationSummary } from "@/lib/api/organizations";
 
 export default async function ProtectedLayout({
     children,
@@ -14,19 +12,14 @@ export default async function ProtectedLayout({
 }) {
     const sessionResponse = await getRequiredSession();
 
-    let activeOrg = null;
     const activeOrgId = await resolveActiveOrganizationId(
         sessionResponse.user.id,
         getSessionActiveOrganizationId(sessionResponse)
     );
 
-    if (activeOrgId) {
-        const orgData = await db.query.organization.findFirst({
-            where: eq(organization.id, activeOrgId),
-            columns: { id: true, name: true, logo: true }
-        });
-        if (orgData) activeOrg = orgData;
-    }
+    const activeOrg = activeOrgId
+        ? await getOrganizationSummary(activeOrgId)
+        : null;
 
     return (
         <div className="min-h-screen bg-slate-50">

@@ -10,6 +10,11 @@
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { UpcomingShiftsResponseSchema } from "@repo/contracts/shifts";
+import {
+    AvailabilityResponseSchema,
+    WorkerSchema,
+} from "@repo/contracts/workforce";
 import type { AppContext } from "../index";
 import { getWorkerPhoneAccess } from "@repo/auth";
 
@@ -18,13 +23,10 @@ import {
     getWorkerShifts,
     getWorkerShiftById,
     getWorkerAllShifts,
-    UpcomingShiftsResponseSchema,
 } from "@repo/scheduling-timekeeping";
 import {
-    AvailabilityResponseSchema,
     getAvailability,
     setAvailability,
-    WorkerSchema,
 } from "@repo/gig-workers";
 
 import {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, ClipboardList, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
@@ -17,8 +18,10 @@ import { SUBSCRIPTION } from "@repo/config";
 
 export function FirstShiftStep({
     hasDraftShift,
+    mockMode = false,
 }: {
     hasDraftShift: boolean;
+    mockMode?: boolean;
 }) {
     return (
         <Card className="rounded-[28px] border-border/70 shadow-lg shadow-black/5">
@@ -53,18 +56,49 @@ export function FirstShiftStep({
                 </Alert>
             </CardContent>
             <CardFooter className="flex flex-wrap gap-3">
-                <Button asChild size="lg">
-                    <Link href="/dashboard/schedule/create">
-                        {hasDraftShift ? "Continue draft schedule" : "Create your first schedule"}
-                        <ArrowRight data-icon="inline-end" />
-                    </Link>
-                </Button>
-                <Button asChild variant="ghost">
-                    <Link href="/rosters?onboarding=roster">
-                        <Sparkles data-icon="inline-start" />
-                        Review workforce again
-                    </Link>
-                </Button>
+                {mockMode ? (
+                    <>
+                        <Button
+                            type="button"
+                            size="lg"
+                            onClick={() =>
+                                toast.info(
+                                    "Mock mode stops at onboarding. Schedule creation is still live-only.",
+                                )
+                            }
+                        >
+                            {hasDraftShift ? "Continue draft schedule" : "Create your first schedule"}
+                            <ArrowRight data-icon="inline-end" />
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() =>
+                                toast.info(
+                                    "Mock mode keeps onboarding isolated from the roster workspace.",
+                                )
+                            }
+                        >
+                            <Sparkles data-icon="inline-start" />
+                            Review workforce again
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <Button asChild size="lg">
+                            <Link href="/dashboard/schedule/create">
+                                {hasDraftShift ? "Continue draft schedule" : "Create your first schedule"}
+                                <ArrowRight data-icon="inline-end" />
+                            </Link>
+                        </Button>
+                        <Button asChild variant="ghost">
+                            <Link href="/rosters?onboarding=roster">
+                                <Sparkles data-icon="inline-start" />
+                                Review workforce again
+                            </Link>
+                        </Button>
+                    </>
+                )}
             </CardFooter>
         </Card>
     );

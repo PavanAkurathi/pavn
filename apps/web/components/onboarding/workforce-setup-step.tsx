@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { ArrowRight, Upload, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     Card,
@@ -13,7 +15,13 @@ import {
 } from "@repo/ui/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 
-export function WorkforceSetupStep() {
+export function WorkforceSetupStep({
+    mockMode = false,
+}: {
+    mockMode?: boolean;
+}) {
+    const router = useRouter();
+
     return (
         <Card className="rounded-[28px] border-border/70 shadow-lg shadow-black/5">
             <CardHeader className="gap-4">
@@ -44,18 +52,45 @@ export function WorkforceSetupStep() {
                 </Alert>
             </CardContent>
             <CardFooter className="flex flex-wrap gap-3">
-                <Button asChild size="lg">
-                    <Link href="/rosters?onboarding=roster">
-                        Open roster workspace
-                        <ArrowRight data-icon="inline-end" />
-                    </Link>
-                </Button>
-                <Button asChild variant="outline">
-                    <Link href="/rosters/import">
-                        Import roster CSV
-                        <ArrowRight data-icon="inline-end" />
-                    </Link>
-                </Button>
+                {mockMode ? (
+                    <>
+                        <Button
+                            type="button"
+                            size="lg"
+                            onClick={() => router.push("/dashboard/onboarding?step=first_shift&mock=1")}
+                        >
+                            Continue to first shift
+                            <ArrowRight data-icon="inline-end" />
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() =>
+                                toast.info(
+                                    "Mock mode keeps onboarding self-contained. Roster pages stay live-only for now.",
+                                )
+                            }
+                        >
+                            Import roster CSV
+                            <ArrowRight data-icon="inline-end" />
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <Button asChild size="lg">
+                            <Link href="/rosters?onboarding=roster">
+                                Open roster workspace
+                                <ArrowRight data-icon="inline-end" />
+                            </Link>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href="/rosters/import">
+                                Import roster CSV
+                                <ArrowRight data-icon="inline-end" />
+                            </Link>
+                        </Button>
+                    </>
+                )}
             </CardFooter>
         </Card>
     );

@@ -4,6 +4,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
+import { addDays, addWeeks, format, startOfWeek } from "date-fns";
 import { approveShift, getShiftTimesheets } from "@/lib/api/shifts";
 import { TimesheetWorker } from "@/lib/types";
 import { toast } from "sonner";
@@ -12,16 +13,23 @@ import { ShiftList } from "./shift-list";
 import { CalendarView } from "./calendar-view";
 import { EventFilters } from "./event-filters";
 import { ShiftDetailView } from "./shift-detail-view";
-import { SHIFT_STATUS, LOCATIONS, VIEW_MODES } from "@/lib/constants";
-import { useCrewData, CrewMember } from "@/hooks/use-crew-data";
+import { WeeklyGridView } from "./weekly-grid-view";
+import { SHIFT_LAYOUTS, SHIFT_STATUS, LOCATIONS } from "@/lib/constants";
+import { useCrewData } from "@/hooks/use-crew-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { filterActiveShifts, filterNeedsApprovalShifts, filterHistoryShifts } from "@/lib/shifts/view-list";
 import type { Shift, Location } from "@/lib/types";
+import {
+    getAvailableShiftLayouts,
+    getInitialWeekStart,
+    resolveShiftLayout,
+    type ShiftDashboardTab,
+} from "@/lib/shifts/weekly-grid";
 
 interface ShiftsViewProps {
     initialShifts: Shift[];
     availableLocations: Location[];
-    defaultTab?: string;
+    defaultTab?: ShiftDashboardTab;
     pendingCount: number;
 }
 
@@ -31,24 +39,51 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
 
     // Derive selection from URL
     const selectedShiftId = searchParams.get("shiftId");
+    const layoutParam = searchParams.get("layout");
+    const currentLayout = resolveShiftLayout(defaultTab, layoutParam);
+    const availableLayouts = getAvailableShiftLayouts(defaultTab);
 
     const { crew } = useCrewData();
+    const availableWorkers = useMemo(() => {
+        const workerMap = new Map<string, { id: string; name: string; initials: string }>();
+
+        for (const worker of crew) {
+            workerMap.set(worker.id, {
+                id: worker.id,
+                name: worker.name,
+                initials: worker.initials,
+            });
+        }
+
+        for (const shift of initialShifts) {
+            for (const worker of shift.assignedWorkers ?? []) {
+                if (!workerMap.has(worker.id)) {
+                    workerMap.set(worker.id, {
+                        id: worker.id,
+                        name: worker.name || worker.initials,
+                        initials: worker.initials,
+                    });
+                }
+            }
+        }
+
+        return Array.from(workerMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    }, [crew, initialShifts]);
 
     const [filters, setFilters] = useState<{
-        location: string;
-        status: string;
-        view: string;
+        location: string | null;
+        status: string | null;
         startDate: string | null;
         endDate: string | null;
         workerId: string | null;
     }>({
         location: LOCATIONS.ALL,
         status: SHIFT_STATUS.ALL,
-        view: VIEW_MODES.LIST,
         startDate: null,
         endDate: null,
         workerId: null,
     });
+    const [selectedWeekStart, setSelectedWeekStart] = useState(() => getInitialWeekStart(initialShifts));
 
     // -- DETAIL VIEW DATA FETCHING --
     // Find the full shift object from our initial data
@@ -65,33 +100,38 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
     }, [selectedShiftId]);
 
     const handleTabChange = (value: string) => {
+        const nextTab: ShiftDashboardTab = value === "past" ? "past" : "upcoming";
         const params = new URLSearchParams(searchParams.toString());
-        params.set("view", value);
+        params.set("view", nextTab);
+        params.set("layout", resolveShiftLayout(nextTab, params.get("layout")));
+        params.delete("shiftId");
         router.push(`?${params.toString()}`);
     };
 
-    // Basic client-side filtering (ideally this happens on server or via API)
-    // Basic client-side filtering (ideally this happens on server or via API)
+    const handleLayoutChange = (layout: typeof currentLayout) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("layout", layout);
+        router.push(`?${params.toString()}`);
+    };
+
     const filteredShifts = useMemo(() => {
         return initialShifts.filter((shift) => {
-            // 1. Location
             if (filters.location !== LOCATIONS.ALL && shift.locationName !== filters.location) {
                 return false;
             }
 
-            // 3. Worker
+            if (filters.status !== SHIFT_STATUS.ALL && shift.status !== filters.status) {
+                return false;
+            }
+
             if (filters.workerId) {
                 const hasWorker = shift.assignedWorkers?.some(w => w.id === filters.workerId);
                 if (!hasWorker) return false;
             }
 
-            // 4. Date Range
-            // Only apply date range filtering in List View.
-            // Calendar View manages its own date scope and should receive all loaded shifts.
-            if (filters.view === VIEW_MODES.LIST && filters.startDate && filters.endDate) {
+            if (currentLayout !== SHIFT_LAYOUTS.WEEKLY && filters.startDate && filters.endDate) {
                 const shiftStart = new Date(shift.startTime).getTime();
                 const start = new Date(filters.startDate).getTime();
-                // Add one day to end date to make it inclusive for the UI selection
                 const end = new Date(filters.endDate).getTime() + 86400000;
 
                 if (shiftStart < start || shiftStart >= end) {
@@ -101,7 +141,15 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
 
             return true;
         });
-    }, [initialShifts, filters.location, filters.view, filters.startDate, filters.endDate, filters.workerId]);
+    }, [initialShifts, filters.location, filters.status, filters.startDate, filters.endDate, filters.workerId, currentLayout]);
+
+    const activeShifts = useMemo(
+        () =>
+            filterActiveShifts(filteredShifts).sort(
+                (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+            ),
+        [filteredShifts],
+    );
 
     const handleFilterUpdate = (updates: Partial<typeof filters>) => {
         setFilters((prev) => ({ ...prev, ...updates }));
@@ -145,6 +193,8 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
     const historyShifts = filterHistoryShifts(filteredShifts)
         .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
 
+    const weekRangeLabel = `${format(selectedWeekStart, "MMM d")} - ${format(addDays(selectedWeekStart, 6), "MMM d")}`;
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
@@ -169,18 +219,31 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
             <EventFilters
                 filters={filters}
                 setFilters={handleFilterUpdate}
+                layout={currentLayout}
+                availableLayouts={availableLayouts}
+                onLayoutChange={handleLayoutChange}
+                weekRangeLabel={weekRangeLabel}
+                onPreviousWeek={() => setSelectedWeekStart((current) => addWeeks(current, -1))}
+                onTodayWeek={() => setSelectedWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
+                onNextWeek={() => setSelectedWeekStart((current) => addWeeks(current, 1))}
                 availableLocations={availableLocations}
-                availableWorkers={crew}
+                availableWorkers={availableWorkers}
             />
 
             <div className="mt-6">
-                {filters.view === VIEW_MODES.LIST ? (
+                {currentLayout === SHIFT_LAYOUTS.WEEKLY ? (
+                    <WeeklyGridView
+                        shifts={activeShifts}
+                        weekStart={selectedWeekStart}
+                        onShiftClick={(shift) => updateShiftId(shift.id)}
+                    />
+                ) : currentLayout === SHIFT_LAYOUTS.LIST ? (
                     <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-6">
                         <TabsContent value="upcoming" className="space-y-6 mt-0">
                             <div className="space-y-4 max-w-4xl">
                                 <h2 className="text-xl font-bold text-foreground" data-testid="upcoming-shifts-widget">Upcoming Shifts</h2>
                                 <ShiftList
-                                    shifts={filterActiveShifts(filteredShifts)}
+                                    shifts={activeShifts}
                                     isLoading={false}
                                     onShiftClick={(s) => updateShiftId(s.id)}
                                 />
@@ -240,8 +303,9 @@ export function ShiftsView({ initialShifts, availableLocations, defaultTab = "up
                     </Tabs>
                 ) : (
                     <CalendarView
-                        shifts={filteredShifts}
+                        shifts={defaultTab === "upcoming" ? activeShifts : filteredShifts}
                         isLoading={false}
+                        onShiftClick={(shift) => updateShiftId(shift.id)}
                     />
                 )}
             </div>

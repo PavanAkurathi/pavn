@@ -1,4 +1,7 @@
-import { auth } from "@repo/auth";
+import type {
+    BusinessOnboardingState,
+    OnboardingStep,
+} from "@repo/contracts/onboarding";
 import { db, eq, and, ne } from "@repo/database";
 import {
     invitation,
@@ -8,44 +11,15 @@ import {
     rosterEntry,
     shift,
 } from "@repo/database/schema";
-import { headers } from "next/headers";
 import type { AttendanceVerificationPolicy } from "@repo/config";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { parseOrganizationMetadata } from "@/lib/organization-metadata";
 import { requiresBusinessOnboarding } from "@/lib/server/organization-roles";
+import { getApiSession } from "@/lib/server/auth-session";
+import type { CurrentBusinessOnboardingStateResult } from "./data";
 
-export type OnboardingStep = {
-    id: string;
-    title: string;
-    description: string;
-    href: string;
-    complete: boolean;
-    supportingText: string;
-    optional?: boolean;
-};
-
-export type BusinessOnboardingState = {
-    orgId: string;
-    organizationName: string;
-    organizationTimezone: string;
-    attendanceVerificationPolicy: AttendanceVerificationPolicy;
-    billingHandled: boolean;
-    hasWorkforceAccess: boolean;
-    hasPublishedShift: boolean;
-    hasDraftShift: boolean;
-    registrationSummary: string[];
-    steps: OnboardingStep[];
-    deferredSteps: OnboardingStep[];
-    completedCount: number;
-    totalCount: number;
-    isComplete: boolean;
-    settingsHref: string;
-};
-
-export async function getCurrentBusinessOnboardingState() {
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
+export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessOnboardingStateResult> {
+    const session = await getApiSession();
 
     if (!session) {
         return {
@@ -53,6 +27,7 @@ export async function getCurrentBusinessOnboardingState() {
             onboarding: null as BusinessOnboardingState | null,
             memberRole: null as string | null,
             shouldEnforceOnboarding: false,
+            isMockMode: false,
         };
     }
 
@@ -67,6 +42,7 @@ export async function getCurrentBusinessOnboardingState() {
             onboarding: null as BusinessOnboardingState | null,
             memberRole: null as string | null,
             shouldEnforceOnboarding: false,
+            isMockMode: false,
         };
     }
 
@@ -171,6 +147,7 @@ export async function getCurrentBusinessOnboardingState() {
             onboarding: null as BusinessOnboardingState | null,
             memberRole: currentMember?.role ?? null,
             shouldEnforceOnboarding: false,
+            isMockMode: false,
         };
     }
 
@@ -275,6 +252,7 @@ export async function getCurrentBusinessOnboardingState() {
         session,
         memberRole,
         shouldEnforceOnboarding,
+        isMockMode: false,
         onboarding: {
             orgId: activeOrgId,
             organizationName: org.name,

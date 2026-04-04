@@ -20,6 +20,9 @@
             "path": "./packages/gig-workers"
         },
         {
+            "path": "./packages/contracts"
+        },
+        {
             "path": "./packages/auth"
         },
         {

@@ -1,14 +1,19 @@
 import { redirect } from "next/navigation";
 import { BusinessOnboardingView } from "@/components/onboarding/business-onboarding-view";
-import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
+import { getCurrentBusinessOnboardingState, isOnboardingMockModeEnabled } from "@/lib/onboarding";
 
 type SearchParams = Promise<{
     step?: string;
+    mock?: string;
 }>;
 
 export default async function BusinessOnboardingPage(props: { searchParams: SearchParams }) {
     const searchParams = await props.searchParams;
-    const { session, onboarding, shouldEnforceOnboarding } = await getCurrentBusinessOnboardingState();
+    const mockMode = isOnboardingMockModeEnabled(searchParams.mock === "1");
+    const { session, onboarding, shouldEnforceOnboarding, isMockMode } = await getCurrentBusinessOnboardingState({
+        mock: mockMode,
+        requestedStepId: searchParams.step,
+    });
 
     if (!session) {
         redirect("/auth/login");
@@ -26,6 +31,7 @@ export default async function BusinessOnboardingPage(props: { searchParams: Sear
         <BusinessOnboardingView
             onboarding={onboarding}
             requestedStepId={searchParams.step}
+            mockMode={isMockMode}
         />
     );
 }

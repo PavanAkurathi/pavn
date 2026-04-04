@@ -1,32 +1,18 @@
 "use server";
 
-import { headers } from "next/headers";
-import { auth } from "@repo/auth";
-import { createOrganizationBillingPortalSession, isBillingConfigured } from "@repo/billing";
-import { requireServerEnv } from "@/lib/server-env";
-import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import type { BillingRedirectSession } from "@repo/contracts/billing";
+import { apiJsonRequest } from "@/lib/server/api-client";
 
-async function getSession() {
-    return await auth.api.getSession({ headers: await headers() });
-}
-
-export async function createCustomerPortal() {
-    if (!isBillingConfigured()) {
-        return { error: "Billing is not enabled" };
+export async function createCustomerPortal(): Promise<BillingRedirectSession> {
+    try {
+        return await apiJsonRequest<BillingRedirectSession>(
+            "/billing/portal-session",
+            {
+                method: "POST",
+                organizationScoped: true,
+            },
+        );
+    } catch (error: any) {
+        return { error: error.message || "Failed to create billing portal" };
     }
-
-    const session = await getSession();
-    const activeOrganizationId = session
-        ? await resolveActiveOrganizationId(
-            session.user.id,
-            (session.session as any)?.activeOrganizationId as string | undefined,
-        )
-        : null;
-
-    if (!activeOrganizationId) return { error: "Unauthorized - No Active Organization" };
-
-    return createOrganizationBillingPortalSession({
-        orgId: activeOrganizationId,
-        returnUrl: `${requireServerEnv("NEXT_PUBLIC_APP_URL")}/settings/billing`,
-    });
 }

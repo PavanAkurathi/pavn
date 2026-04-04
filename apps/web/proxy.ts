@@ -2,10 +2,26 @@
 // latestnextjs renamed middleware to proxy
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getApiBaseUrl } from "@/lib/constants";
+import { isOnboardingEnforcementDisabled } from "@/lib/onboarding/config";
 
 export default async function proxy(request: NextRequest) {
     // 1. Geo-Blocking for Registration (Store Bouncer)
     const { pathname } = request.nextUrl;
+    if (isOnboardingEnforcementDisabled()) {
+        return NextResponse.next();
+    }
+
+    const onboardingMockRequested =
+        (process.env.PAVN_ONBOARDING_MOCKS === "1" || process.env.PAVN_ONBOARDING_MOCKS === "true") &&
+        (pathname === "/dashboard/onboarding" || pathname.startsWith("/dashboard/onboarding/"));
+    const explicitOnboardingMockRequested =
+        request.nextUrl.searchParams.get("mock") === "1" &&
+        (pathname === "/dashboard/onboarding" || pathname.startsWith("/dashboard/onboarding/"));
+
+    if (onboardingMockRequested || explicitOnboardingMockRequested) {
+        return NextResponse.next();
+    }
 
     // Check if user is trying to register (POST /api/auth/sign-up/email)
     if (pathname === "/api/auth/sign-up/email" && request.method === "POST") {
@@ -22,20 +38,13 @@ export default async function proxy(request: NextRequest) {
     }
 
     try {
-        const urlObject = new URL("/api/auth/get-session", request.url);
-
-        // FIX: If running on localhost (internal loopback), force HTTP to avoid SSL errors
-        // The container listens on HTTP, but the request might come in as HTTPS from the load balancer
-        if (urlObject.hostname === 'localhost' || urlObject.hostname === '127.0.0.1') {
-            urlObject.protocol = 'http:';
-        }
-
-        const sessionUrl = urlObject.toString();
+        const sessionUrl = new URL("/api/auth/get-session", getApiBaseUrl()).toString();
 
         // console.log("[Proxy] Fetching session from:", sessionUrl);
 
         const response = await fetch(sessionUrl, {
             headers: {
+                accept: "application/json",
                 cookie: request.headers.get("cookie") || "",
             },
         });

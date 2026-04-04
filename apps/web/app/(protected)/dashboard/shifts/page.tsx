@@ -1,12 +1,12 @@
 // apps/web/app/(protected)/dashboard/shifts/page.tsx
 
-import { redirect } from "next/navigation";
 import { ShiftsView } from "@/components/shifts/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { DraftBanner } from "@/components/dashboard/draft-banner";
 import { PostLaunchChecklist } from "@/components/dashboard/post-launch-checklist";
-import { getLocations } from "@repo/organizations";
+import { getOrganizationLocations } from "@/lib/api/organizations";
 import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
+import { getDashboardMockBundle, getDashboardMockShifts, isDashboardMockModeEnabled } from "@/lib/shifts/data";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
 
@@ -17,7 +17,8 @@ export default async function ShiftsPage(props: {
 }) {
     const searchParams = await props.searchParams;
     const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined;
-    const view = (viewParam === 'upcoming' || viewParam === 'past' || viewParam === 'needs_approval') ? viewParam : 'upcoming';
+    const view = viewParam === 'past' ? 'past' : 'upcoming';
+    const explicitMock = typeof searchParams.mock === "string" && searchParams.mock === "1";
 
     const { activeOrgId: orgId } = await getRequiredOrganizationContext();
 
@@ -25,22 +26,31 @@ export default async function ShiftsPage(props: {
         getShifts({ view, orgId }),
         getPendingShiftsCount(orgId),
         getDraftShiftsCount(orgId),
-        getLocations(orgId),
+        getOrganizationLocations(orgId),
         getCurrentBusinessOnboardingState(),
     ]);
 
+    const useMockData = isDashboardMockModeEnabled({
+        explicit: explicitMock,
+        hasLiveShifts: shifts.length > 0,
+    });
+    const mockBundle = useMockData ? getDashboardMockBundle() : null;
+    const shiftsToRender = useMockData ? getDashboardMockShifts(view) : shifts;
+    const pendingCountToRender = mockBundle?.pendingCount ?? pendingCount;
+    const draftCountToRender = mockBundle?.draftCount ?? draftCount;
+
     // Fix: Map DB locations to Frontend Location type (handle null address)
-    const mappedLocations = locations.map(l => ({
+    const mappedLocations = (mockBundle?.locations ?? locations.map(l => ({
         id: l.id,
         name: l.name,
         address: l.address || "",
         timezone: l.timezone || undefined, // Ensure compatible type
-    }));
+    })));
 
     return (
         <div className="space-y-6">
-            <ApprovalBanner count={pendingCount} />
-            <DraftBanner count={draftCount} />
+            <ApprovalBanner count={pendingCountToRender} />
+            <DraftBanner count={draftCountToRender} />
             {onboardingState.onboarding?.isComplete ? (
                 <PostLaunchChecklist steps={onboardingState.onboarding.deferredSteps} />
             ) : null}
@@ -54,10 +64,10 @@ export default async function ShiftsPage(props: {
 
             <ShiftsView
                 key={view}
-                initialShifts={shifts}
+                initialShifts={shiftsToRender}
                 availableLocations={mappedLocations}
                 defaultTab={view}
-                pendingCount={pendingCount}
+                pendingCount={pendingCountToRender}
             />
         </div>
     );

@@ -5,43 +5,19 @@
  * Handles worker notification preferences and settings.
  */
 
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
+import {
+    SecurityOverviewSchema,
+    UpdateWorkerPreferencesSchema,
+    WorkerPreferencesResponseSchema,
+} from "@repo/contracts/preferences";
 import { db } from "@repo/database";
 import { workerNotificationPreferences } from "@repo/database/schema";
 import { eq } from "drizzle-orm";
 import type { AppContext } from "../index";
+import { getSecurityOverview } from "../lib/organization-workspace.js";
 
 export const preferencesRouter = new OpenAPIHono<AppContext>();
-
-// =============================================================================
-// SCHEMAS
-// =============================================================================
-
-const PreferencesSchema = z.object({
-    workerId: z.string(),
-    nightBeforeEnabled: z.boolean().default(true),
-    sixtyMinEnabled: z.boolean().default(true),
-    fifteenMinEnabled: z.boolean().default(true),
-    shiftStartEnabled: z.boolean().default(true),
-    lateWarningEnabled: z.boolean().default(true),
-    geofenceAlertsEnabled: z.boolean().default(true),
-    quietHoursEnabled: z.boolean().default(false),
-    quietHoursStart: z.string().nullable().optional(),
-    quietHoursEnd: z.string().nullable().optional(),
-    updatedAt: z.date().or(z.string()).optional()
-});
-
-const UpdatePreferencesSchema = z.object({
-    nightBeforeEnabled: z.boolean().optional(),
-    sixtyMinEnabled: z.boolean().optional(),
-    fifteenMinEnabled: z.boolean().optional(),
-    shiftStartEnabled: z.boolean().optional(),
-    lateWarningEnabled: z.boolean().optional(),
-    geofenceAlertsEnabled: z.boolean().optional(),
-    quietHoursEnabled: z.boolean().optional(),
-    quietHoursStart: z.string().nullable().optional(),
-    quietHoursEnd: z.string().nullable().optional(),
-});
 
 // =============================================================================
 // ROUTES
@@ -54,7 +30,7 @@ const getPreferencesRoute = createRoute({
     description: 'Get worker notification preferences.',
     responses: {
         200: {
-            content: { 'application/json': { schema: z.object({ preferences: PreferencesSchema }) } },
+            content: { 'application/json': { schema: WorkerPreferencesResponseSchema } },
             description: 'User preferences'
         },
         401: { description: 'Unauthorized' }
@@ -89,13 +65,13 @@ const updatePreferencesRoute = createRoute({
     request: {
         body: {
             content: {
-                'application/json': { schema: UpdatePreferencesSchema }
+                'application/json': { schema: UpdateWorkerPreferencesSchema }
             }
         }
     },
     responses: {
         200: {
-            content: { 'application/json': { schema: z.object({ preferences: PreferencesSchema }) } },
+            content: { 'application/json': { schema: WorkerPreferencesResponseSchema } },
             description: 'Updated preferences'
         },
         401: { description: 'Unauthorized' }
@@ -107,7 +83,7 @@ preferencesRouter.openapi(updatePreferencesRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const data = await c.req.json();
-    const parsed = UpdatePreferencesSchema.safeParse(data);
+    const parsed = UpdateWorkerPreferencesSchema.safeParse(data);
 
     if (!parsed.success) {
         return c.json({ error: "Invalid data" }, 400);
@@ -129,6 +105,30 @@ preferencesRouter.openapi(updatePreferencesRoute, async (c) => {
         .returning();
 
     return c.json({ preferences: updatedPrefs } as any, 200);
+});
+
+const getSecurityOverviewRoute = createRoute({
+    method: "get",
+    path: "/security",
+    summary: "Get Security Overview",
+    description: "Get linked accounts and active sessions for the current user.",
+    responses: {
+        200: {
+            content: {
+                "application/json": { schema: SecurityOverviewSchema },
+            },
+            description: "Security overview",
+        },
+        401: { description: "Unauthorized" },
+    },
+});
+
+preferencesRouter.openapi(getSecurityOverviewRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const result = await getSecurityOverview(user.id);
+    return c.json(result, 200);
 });
 
 export default preferencesRouter;

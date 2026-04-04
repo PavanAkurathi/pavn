@@ -16,9 +16,10 @@ import { ShiftCard } from './shift-card';
 interface CalendarViewProps {
     shifts: Shift[];
     isLoading: boolean;
+    onShiftClick?: (shift: Shift) => void;
 }
 
-export function CalendarView({ shifts, isLoading }: CalendarViewProps) {
+export function CalendarView({ shifts, isLoading, onShiftClick }: CalendarViewProps) {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -133,7 +134,7 @@ export function CalendarView({ shifts, isLoading }: CalendarViewProps) {
                     <div className="space-y-4 py-4">
                         {selectedShifts.length > 0 ? (
                             selectedShifts.map(shift => (
-                                <ShiftCard key={shift.id} shifts={[shift]} />
+                                <ShiftCard key={shift.id} shifts={[shift]} onClick={onShiftClick} />
                             ))
                         ) : (
                             <div className="flex flex-col items-center justify-center py-8 text-center text-zinc-500">

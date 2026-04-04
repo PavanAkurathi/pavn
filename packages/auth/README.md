@@ -42,10 +42,10 @@ flowchart LR
     C["apps/gig-workers"] --> D["Expo auth client"]
     B --> E["Better Auth endpoints"]
     D --> E
-    E --> F["apps/web /api/auth/*"]
+    E --> F["apps/web /api/auth/* proxy"]
     E --> G["apps/api /api/auth/*"]
-    F --> H["@repo/auth server"]
-    G --> H
+    F --> G
+    G --> H["@repo/auth server"]
     H --> I["Postgres via Drizzle"]
 ```
 
@@ -107,7 +107,7 @@ Managers sign in with email/password from:
 Session behavior:
 - Better Auth issues the session
 - web reads it via `authClient.useSession()`
-- protected business/API routes use `auth.api.getSession(...)`
+- protected web routes resolve session from the API auth surface
 - org-scoped Hono routes require `x-org-id`
 
 ### Manager lifecycle diagram
@@ -237,9 +237,11 @@ flowchart TD
 
 ## Hono API Integration
 
-The auth core is mounted by host apps:
+The canonical auth engine is mounted in:
+- [apps/api/src/index.ts](/Users/av/Documents/pavn/apps/api/src/index.ts)
+
+The web app keeps a thin compatibility proxy at:
 - [apps/web/app/api/auth/[...all]/route.ts](/Users/av/Documents/pavn/apps/web/app/api/auth/[...all]/route.ts)
-- [apps/api/src/index.ts](/Users/av/Documents/pavn/apps/api/src/index.ts) for API compatibility
 
 Relevant public endpoints:
 - `GET /health`
@@ -254,8 +256,10 @@ Protected routes use:
 
 ## Web Integration
 
-The preferred public web handler lives at:
+The preferred browser entrypoint stays at:
 - [apps/web/app/api/auth/[...all]/route.ts](/Users/av/Documents/pavn/apps/web/app/api/auth/[...all]/route.ts)
+
+That route now proxies to the canonical API auth surface instead of hosting Better Auth itself.
 
 The shared web client lives at:
 - [src/client.ts](/Users/av/Documents/pavn/packages/auth/src/client.ts)
@@ -293,7 +297,8 @@ Minimum auth env:
 - `NEXT_PUBLIC_APP_URL`
 
 Production rules:
-- `BETTER_AUTH_URL` must be set explicitly because the web app hosts Better Auth
+- `BETTER_AUTH_URL` must be set explicitly for the public auth URL
+- the Hono API executes Better Auth; the web app may proxy `/api/auth/*` for browser cookie compatibility
 - the auth client uses `NEXT_PUBLIC_AUTH_URL` first, then `NEXT_PUBLIC_APP_URL`
 - localhost fallback is development-only
 

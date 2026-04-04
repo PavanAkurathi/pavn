@@ -1,13 +1,9 @@
 import Link from "next/link";
-import { headers } from "next/headers";
-import { auth } from "@repo/auth";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
-import {
-    buildBusinessActivationPath,
-    getBusinessInvitationState,
-} from "@/lib/server/business-invitations";
 import { BusinessInviteActivationCard } from "@/components/auth/business-invite-activation-card";
+import { getBusinessInvitation } from "@/lib/api/organizations";
+import { getApiSession } from "@/lib/server/auth-session";
 
 type SearchParams = Promise<{
     invitationId?: string;
@@ -44,8 +40,8 @@ export default async function ActivateInvitationPage(props: { searchParams: Sear
     }
 
     const [session, invitationState] = await Promise.all([
-        auth.api.getSession({ headers: await headers() }),
-        getBusinessInvitationState(invitationId),
+        getApiSession(),
+        getBusinessInvitation(invitationId).catch(() => null),
     ]);
 
     if (!invitationState || invitationState.isExpired) {
@@ -95,7 +91,7 @@ export default async function ActivateInvitationPage(props: { searchParams: Sear
                 invitationEmail={invitationState.email}
                 invitationRole={invitationState.role}
                 organizationName={invitationState.organizationName}
-                activationPath={buildBusinessActivationPath(invitationState.id)}
+                activationPath={`/auth/activate?invitationId=${encodeURIComponent(invitationState.id)}`}
                 hasExistingAccount={Boolean(invitationState.existingUserId)}
                 existingUserName={invitationState.existingUserName}
                 currentUser={session ? {

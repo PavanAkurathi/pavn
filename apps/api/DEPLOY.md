@@ -2,7 +2,8 @@
 
 This API is a Hono service bundled for deployment from a Bun monorepo. The current production shape is:
 
-- Better Auth is hosted by the web app at `/api/auth/[...all]`
+- Better Auth executes inside the Hono API at `/api/auth/*`
+- the web app may expose `/api/auth/[...all]` as a thin proxy for browser compatibility
 - the API is deployed separately and consumes shared workspace packages
 - Vercel uses [build.mjs](/Users/av/Documents/pavn/apps/api/build.mjs) to bundle the API into `dist/index.cjs`
 
@@ -26,7 +27,7 @@ BETTER_AUTH_URL=https://your-web-app.com
 
 Notes:
 
-- `BETTER_AUTH_URL` should point to the host that serves Better Auth. In this repo that is the web app, not the API host.
+- `BETTER_AUTH_URL` should point to the public auth URL clients use. If the web app proxies `/api/auth/*`, that can stay on the web host even though Hono executes the auth logic.
 - `NEXT_PUBLIC_APP_URL` is strongly recommended for readiness checks, invite links, and cross-service URL generation.
 
 ## Common Optional Environment Variables

@@ -1,9 +1,9 @@
-import { auth } from "@repo/auth";
-import { headers } from "next/headers";
+import type { Session } from "@repo/auth/client";
 import { redirect } from "next/navigation";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import { getApiSession } from "@/lib/server/auth-session";
 
-type AppSession = NonNullable<Awaited<ReturnType<typeof auth.api.getSession>>>;
+type AppSession = Session;
 
 export function getSessionActiveOrganizationId(session: AppSession): string | undefined {
     const sessionData = session as any;
@@ -11,9 +11,7 @@ export function getSessionActiveOrganizationId(session: AppSession): string | un
 }
 
 export async function getRequiredSession(redirectTo: string = "/auth/login"): Promise<AppSession> {
-    const session = await auth.api.getSession({
-        headers: await headers(),
-    });
+    const session = await getApiSession();
 
     if (!session) {
         redirect(redirectTo);

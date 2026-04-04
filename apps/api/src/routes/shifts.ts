@@ -14,6 +14,11 @@
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import {
+    ShiftSchema,
+    TimesheetSchema,
+    UpcomingShiftsResponseSchema,
+} from "@repo/contracts/shifts";
 import type { AppContext } from "../index";
 import { requireManager } from "../middleware";
 import { isManagerRole } from "../lib/organization-roles.js";
@@ -37,9 +42,6 @@ import {
     duplicateShift,
     getOpenShifts,
     unassignWorker,
-    UpcomingShiftsResponseSchema,
-    ShiftSchema,
-    TimesheetSchema,
 } from "@repo/scheduling-timekeeping";
 
 export const shiftsRouter = new OpenAPIHono<AppContext>();

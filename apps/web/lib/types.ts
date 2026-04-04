@@ -1,6 +1,10 @@
-export * from "@repo/scheduling-timekeeping";
+export type {
+    Shift,
+    ShiftStatus,
+    TimesheetWorker,
+} from "@repo/contracts/shifts";
 
-export type ViewMode = 'list' | 'calendar';
+export type ShiftLayout = "weekly" | "list" | "month";
 
 export interface Location {
     id: string;

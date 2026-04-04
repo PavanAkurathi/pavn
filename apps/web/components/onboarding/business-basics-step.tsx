@@ -29,11 +29,13 @@ export function BusinessBasicsStep({
     timezone,
     attendanceVerificationPolicy,
     nextHref,
+    mockMode = false,
 }: {
     organizationName: string;
     timezone: string;
     attendanceVerificationPolicy: AttendancePolicy;
     nextHref: string;
+    mockMode?: boolean;
 }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
@@ -45,6 +47,12 @@ export function BusinessBasicsStep({
         setIsSaving(true);
 
         try {
+            if (mockMode) {
+                toast.success("Mock business basics saved.");
+                router.push(nextHref);
+                return;
+            }
+
             const result = await updateOrganization({
                 name: businessName,
                 timezone: businessTimezone,

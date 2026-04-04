@@ -1,7 +1,3 @@
-import { redirect } from "next/navigation";
-import { db } from "@repo/database";
-import { member, user, rosterEntry, workerRole } from "@repo/database/schema";
-import { eq, and } from "@repo/database";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -12,6 +8,7 @@ import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/components/ui/table";
 import { AvailabilityList } from "@/components/roster/availability-list";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
+import { getWorkerProfile } from "@/lib/api/organizations";
 
 interface PageProps {
     params: Promise<{
@@ -24,78 +21,23 @@ export default async function WorkerProfilePage({ params }: PageProps) {
 
     const { activeOrgId } = await getRequiredOrganizationContext();
 
-    // 2. Resolve the ID. First try member, then roster_entry
-    const memberRecord = await db.query.member.findFirst({
-        where: and(eq(member.id, id), eq(member.organizationId, activeOrgId)),
-        with: {
-            user: true
-        }
-    });
-
-    let displayData = {
-        name: "",
-        email: "",
-        phone: null as string | null,
-        image: null as string | null,
-        status: "Unknown",
-        emergencyContact: null as { name: string; phone: string; relation?: string } | null,
-        joinedAt: new Date(),
-        userId: null as string | null,
-    };
-
-    if (memberRecord) {
-        displayData = {
-            name: memberRecord.user.name,
-            email: memberRecord.user.email,
-            phone: memberRecord.user.phoneNumber,
-            image: memberRecord.user.image,
-            status: memberRecord.user.emailVerified ? "Active" : "Invited",
-            emergencyContact: memberRecord.user.emergencyContact,
-            joinedAt: memberRecord.createdAt,
-            userId: memberRecord.user.id
-        };
-    } else {
-        // Fallback to roster entry
-        const rosterRecord = await db.query.rosterEntry.findFirst({
-            where: and(eq(rosterEntry.id, id), eq(rosterEntry.organizationId, activeOrgId))
-        });
-
-        if (!rosterRecord) {
-            return (
-                <div className="flex flex-col items-center justify-center py-20">
-                    <HelpCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <h2 className="text-xl font-semibold">Worker not found</h2>
-                    <p className="text-muted-foreground mb-6">This worker does not exist or has been removed from your organization.</p>
-                    <Link href="/rosters">
-                        <Button variant="outline">Back to Roster</Button>
-                    </Link>
-                </div>
-            );
-        }
-
-        displayData = {
-            name: rosterRecord.name,
-            email: rosterRecord.email,
-            phone: rosterRecord.phoneNumber,
-            image: null,
-            status: rosterRecord.status === "invited" ? "Invited" : "Uninvited",
-            emergencyContact: null,
-            joinedAt: rosterRecord.createdAt || new Date(),
-            userId: null
-        };
+    let profile;
+    try {
+        profile = await getWorkerProfile(id, activeOrgId);
+    } catch {
+        return (
+            <div className="flex flex-col items-center justify-center py-20">
+                <HelpCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                <h2 className="text-xl font-semibold">Worker not found</h2>
+                <p className="text-muted-foreground mb-6">This worker does not exist or has been removed from your organization.</p>
+                <Link href="/rosters">
+                    <Button variant="outline">Back to Roster</Button>
+                </Link>
+            </div>
+        );
     }
 
-    // 3. Fetch Organization Roles if it's a full member
-    let roles: any[] = [];
-    if (displayData.userId) {
-        roles = await db.query.workerRole.findMany({
-            where: and(
-                eq(workerRole.workerId, displayData.userId),
-                eq(workerRole.organizationId, activeOrgId)
-            ),
-            orderBy: (roles, { desc }) => [desc(roles.createdAt)]
-        });
-    }
+    const { displayData, roles } = profile;
 
     return (
         <div className="max-w-4xl space-y-8">

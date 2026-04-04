@@ -13,7 +13,10 @@ import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Separator } from "@repo/ui/components/ui/separator";
 import { SUBSCRIPTION } from "@repo/config";
 import { cn } from "@repo/ui/lib/utils";
-import type { BusinessOnboardingState, OnboardingStep } from "@/lib/onboarding";
+import type {
+    BusinessOnboardingState,
+    OnboardingStep,
+} from "@repo/contracts/onboarding";
 import { BusinessBasicsStep } from "@/components/onboarding/business-basics-step";
 import { LocationBasicsStep } from "@/components/onboarding/location-basics-step";
 import { WorkforceSetupStep } from "@/components/onboarding/workforce-setup-step";
@@ -67,12 +70,23 @@ function getStepStatus(stepId: string, activeStepId: ActiveStepId, complete: boo
     return "upcoming";
 }
 
+function buildOnboardingHref(stepId: string, mockMode: boolean) {
+    const params = new URLSearchParams({ step: stepId });
+    if (mockMode) {
+        params.set("mock", "1");
+    }
+
+    return `/dashboard/onboarding?${params.toString()}`;
+}
+
 export function BusinessOnboardingView({
     onboarding,
     requestedStepId,
+    mockMode = false,
 }: {
     onboarding: BusinessOnboardingState;
     requestedStepId?: string;
+    mockMode?: boolean;
 }) {
     const activeStepId = resolveActiveStep({
         steps: onboarding.steps,
@@ -104,9 +118,16 @@ export function BusinessOnboardingView({
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            <Badge className="w-fit border-white/10 bg-white/10 text-white hover:bg-white/10">
-                                {SUBSCRIPTION.TRIAL_DAYS}-day free trial active
-                            </Badge>
+                            <div className="flex flex-wrap gap-2">
+                                <Badge className="w-fit border-white/10 bg-white/10 text-white hover:bg-white/10">
+                                    {SUBSCRIPTION.TRIAL_DAYS}-day free trial active
+                                </Badge>
+                                {mockMode ? (
+                                    <Badge className="w-fit border-amber-200/20 bg-amber-400/10 text-amber-100 hover:bg-amber-400/10">
+                                        Mock data
+                                    </Badge>
+                                ) : null}
+                            </div>
                             <p className="text-sm font-medium leading-6 text-white/85">
                                 Let&apos;s get your business to the first published shift as quickly as possible.
                             </p>
@@ -123,13 +144,13 @@ export function BusinessOnboardingView({
                                     step.id === "account"
                                         ? undefined
                                         : step.id === "business"
-                                            ? "/dashboard/onboarding?step=business"
+                                            ? buildOnboardingHref("business", mockMode)
                                             : step.id === "location"
-                                                ? "/dashboard/onboarding?step=location"
+                                                ? buildOnboardingHref("location", mockMode)
                                                 : step.id === "workforce"
-                                                    ? "/dashboard/onboarding?step=workforce"
+                                                    ? buildOnboardingHref("workforce", mockMode)
                                                     : step.id === "first_shift"
-                                                        ? "/dashboard/onboarding?step=first_shift"
+                                                        ? buildOnboardingHref("first_shift", mockMode)
                                                         : undefined;
                                 const content = (
                                     <div
@@ -232,24 +253,26 @@ export function BusinessOnboardingView({
                                     organizationName={onboarding.organizationName}
                                     timezone={onboarding.organizationTimezone}
                                     attendanceVerificationPolicy={onboarding.attendanceVerificationPolicy}
-                                    nextHref="/dashboard/onboarding?step=location"
+                                    nextHref={buildOnboardingHref("location", mockMode)}
+                                    mockMode={mockMode}
                                 />
                             )}
 
                             {activeStepId === "location" && (
                                 <LocationBasicsStep
                                     timezone={onboarding.organizationTimezone}
-                                    backHref="/dashboard/onboarding?step=business"
-                                    nextHref="/dashboard/onboarding?step=workforce"
+                                    backHref={buildOnboardingHref("business", mockMode)}
+                                    nextHref={buildOnboardingHref("workforce", mockMode)}
+                                    mockMode={mockMode}
                                 />
                             )}
 
                             {activeStepId === "workforce" && (
-                                <WorkforceSetupStep />
+                                <WorkforceSetupStep mockMode={mockMode} />
                             )}
 
                             {activeStepId === "first_shift" && (
-                                <FirstShiftStep hasDraftShift={onboarding.hasDraftShift} />
+                                <FirstShiftStep hasDraftShift={onboarding.hasDraftShift} mockMode={mockMode} />
                             )}
                         </div>
                     </section>

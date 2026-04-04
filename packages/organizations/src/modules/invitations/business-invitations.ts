@@ -1,10 +1,8 @@
 import { and, eq } from "@repo/database";
 import { db } from "@repo/database";
 import { invitation, organization, user } from "@repo/database/schema";
-import {
-    type BusinessTeamInvitationRole,
-    isBusinessTeamInvitationRole,
-} from "@/lib/server/organization-roles";
+
+export type BusinessTeamInvitationRole = "admin" | "manager";
 
 export type BusinessInvitationState = {
     id: string;
@@ -22,8 +20,17 @@ export type BusinessInvitationState = {
     isExpired: boolean;
 };
 
+function isBusinessTeamInvitationRole(
+    role: string | null | undefined,
+): role is BusinessTeamInvitationRole {
+    return role === "admin" || role === "manager";
+}
+
 export function getWebAppUrl(): string {
-    return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
+    return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
+        /\/+$/,
+        "",
+    );
 }
 
 export function buildBusinessActivationPath(invitationId: string): string {
@@ -31,7 +38,10 @@ export function buildBusinessActivationPath(invitationId: string): string {
     return `/auth/activate?${search.toString()}`;
 }
 
-export function buildBusinessInviteUrl(invitationId: string, hasExistingAccount: boolean): string {
+export function buildBusinessInviteUrl(
+    invitationId: string,
+    hasExistingAccount: boolean,
+): string {
     const appUrl = getWebAppUrl();
     const activationPath = buildBusinessActivationPath(invitationId);
 
@@ -44,12 +54,11 @@ export function buildBusinessInviteUrl(invitationId: string, hasExistingAccount:
     return loginUrl.toString();
 }
 
-export async function getBusinessInvitationState(invitationId: string): Promise<BusinessInvitationState | null> {
+export async function getBusinessInvitationState(
+    invitationId: string,
+): Promise<BusinessInvitationState | null> {
     const invitationRecord = await db.query.invitation.findFirst({
-        where: and(
-            eq(invitation.id, invitationId),
-            eq(invitation.status, "pending")
-        ),
+        where: and(eq(invitation.id, invitationId), eq(invitation.status, "pending")),
         columns: {
             id: true,
             email: true,

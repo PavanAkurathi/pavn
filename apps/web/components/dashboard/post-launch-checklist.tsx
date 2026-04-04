@@ -9,7 +9,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@repo/ui/components/ui/card";
-import type { OnboardingStep } from "@/lib/onboarding";
+import type { OnboardingStep } from "@repo/contracts/onboarding";
 
 export function PostLaunchChecklist({
     steps,

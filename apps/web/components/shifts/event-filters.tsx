@@ -5,19 +5,29 @@
 import * as React from 'react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { MapPin, Calendar as CalendarIcon, Filter, X, List, LayoutGrid } from "lucide-react";
+import {
+    CalendarDays,
+    ChevronLeft,
+    ChevronRight,
+    Filter,
+    LayoutGrid,
+    List,
+    MapPin,
+    Calendar as CalendarIcon,
+    X,
+} from "lucide-react";
 
 import { Button } from '@repo/ui/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@repo/ui/components/ui/popover';
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@repo/ui/components/ui/select';
-import { SHIFT_STATUS, LOCATIONS, VIEW_MODES, STATUS_LABELS } from '@/lib/constants';
+import { LOCATIONS, SHIFT_LAYOUTS, SHIFT_STATUS, STATUS_LABELS } from '@/lib/constants';
 import { WorkerCombobox } from './worker-combobox';
+import type { ShiftLayout } from '@/lib/types';
 
 interface FilterState {
     location: string | null;
     status: string | null;
-    view: string | null;
     startDate: string | null;
     endDate: string | null;
     workerId: string | null;
@@ -25,12 +35,31 @@ interface FilterState {
 
 interface EventFiltersProps {
     filters: FilterState;
-    setFilters: (updates: any) => void;
+    setFilters: (updates: Partial<FilterState>) => void;
+    layout: ShiftLayout;
+    availableLayouts: ShiftLayout[];
+    onLayoutChange: (layout: ShiftLayout) => void;
+    weekRangeLabel: string;
+    onPreviousWeek: () => void;
+    onTodayWeek: () => void;
+    onNextWeek: () => void;
     availableLocations: any[];
     availableWorkers: { id: string; name: string; initials: string }[];
 }
 
-export function EventFilters({ filters, setFilters, availableLocations, availableWorkers }: EventFiltersProps) {
+export function EventFilters({
+    filters,
+    setFilters,
+    layout,
+    availableLayouts,
+    onLayoutChange,
+    weekRangeLabel,
+    onPreviousWeek,
+    onTodayWeek,
+    onNextWeek,
+    availableLocations,
+    availableWorkers,
+}: EventFiltersProps) {
 
     const dateRange: DateRange | undefined = React.useMemo(() => {
         if (!filters.startDate && !filters.endDate) return undefined;
@@ -61,6 +90,12 @@ export function EventFilters({ filters, setFilters, availableLocations, availabl
         filters.status !== SHIFT_STATUS.ALL ||
         filters.workerId !== null ||
         (filters.startDate !== '' && filters.startDate !== null);
+
+    const layoutOptions = [
+        { value: SHIFT_LAYOUTS.WEEKLY, label: 'Weekly', icon: LayoutGrid },
+        { value: SHIFT_LAYOUTS.LIST, label: 'List', icon: List },
+        { value: SHIFT_LAYOUTS.MONTH, label: 'Month', icon: CalendarDays },
+    ].filter((option) => availableLayouts.includes(option.value));
 
     return (
         <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -100,32 +135,49 @@ export function EventFilters({ filters, setFilters, availableLocations, availabl
                     onChange={(val) => setFilters({ workerId: val })}
                 />
 
-                {/* Date Range */}
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="outline"
-                            className="w-[220px] justify-start bg-background border-border text-left font-normal"
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                            {formattedDateLabel}
+                {layout === SHIFT_LAYOUTS.WEEKLY ? (
+                    <div className="flex items-center gap-2 rounded-xl border bg-background px-2 py-1.5">
+                        <Button variant="ghost" size="icon" onClick={onPreviousWeek} aria-label="Previous week">
+                            <ChevronLeft className="h-4 w-4" />
                         </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <div className="p-3">
-                            <Calendar
-                                initialFocus
-                                mode="range"
-                                defaultMonth={dateRange?.from}
-                                selected={dateRange}
-                                onSelect={handleRangeChange}
-                                numberOfMonths={2}
-                                pagedNavigation
-                                className="w-full"
-                            />
+                        <div className="min-w-[170px] px-1 text-center">
+                            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Week</p>
+                            <p className="text-sm font-semibold text-foreground">{weekRangeLabel}</p>
                         </div>
-                    </PopoverContent>
-                </Popover>
+                        <Button variant="outline" size="sm" onClick={onTodayWeek}>
+                            Today
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={onNextWeek} aria-label="Next week">
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ) : (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                className="w-[220px] justify-start bg-background border-border text-left font-normal"
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                {formattedDateLabel}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <div className="p-3">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from}
+                                    selected={dateRange}
+                                    onSelect={handleRangeChange}
+                                    numberOfMonths={2}
+                                    pagedNavigation
+                                    className="w-full"
+                                />
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                )}
 
                 {/* Status Filter */}
                 <Select
@@ -166,26 +218,24 @@ export function EventFilters({ filters, setFilters, availableLocations, availabl
 
             {/* RIGHT SIDE: VIEW TOGGLES */}
             <div className="flex items-center rounded-full bg-muted/50 p-1">
-                <button
-                    onClick={() => setFilters({ view: VIEW_MODES.LIST })}
-                    className={`flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-all ${filters.view === VIEW_MODES.LIST
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                >
-                    <List className="mr-2 h-4 w-4" />
-                    List
-                </button>
-                <button
-                    onClick={() => setFilters({ view: VIEW_MODES.CALENDAR })}
-                    className={`flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-all ${filters.view === VIEW_MODES.CALENDAR
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                >
-                    <LayoutGrid className="mr-2 h-4 w-4" />
-                    Calendar
-                </button>
+                {layoutOptions.map((option) => {
+                    const Icon = option.icon;
+                    const isActive = layout === option.value;
+                    return (
+                        <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => onLayoutChange(option.value)}
+                            className={`flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-all ${isActive
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:text-foreground'
+                                }`}
+                        >
+                            <Icon className="mr-2 h-4 w-4" />
+                            {option.label}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

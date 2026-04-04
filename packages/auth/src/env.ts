@@ -80,8 +80,9 @@ export function getWebAuthClientBaseUrl(): string {
         return appUrl;
     }
 
-    if (typeof window !== "undefined" && window.location.origin) {
-        return normalizeUrl(window.location.origin) ?? window.location.origin;
+    const runtimeOrigin = (globalThis as { location?: { origin?: string } }).location?.origin;
+    if (runtimeOrigin) {
+        return normalizeUrl(runtimeOrigin) ?? runtimeOrigin;
     }
 
     if (isAuthProd) {

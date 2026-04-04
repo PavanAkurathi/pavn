@@ -1,4 +1,4 @@
-import { Shift } from "@repo/scheduling-timekeeping";
+import type { Shift } from "@repo/contracts/shifts";
 import { FormValues } from "../../components/schedule/create-schedule-form";
 import { format, parseISO } from "date-fns";
 

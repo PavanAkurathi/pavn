@@ -24,10 +24,12 @@ export function LocationBasicsStep({
     timezone,
     backHref,
     nextHref,
+    mockMode = false,
 }: {
     timezone: string;
     backHref: string;
     nextHref: string;
+    mockMode?: boolean;
 }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
@@ -49,6 +51,12 @@ export function LocationBasicsStep({
         setIsSaving(true);
 
         try {
+            if (mockMode) {
+                toast.success("Mock location saved.");
+                router.push(nextHref);
+                return;
+            }
+
             const result = await createLocation({
                 name,
                 address,

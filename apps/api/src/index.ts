@@ -156,8 +156,23 @@ void (async () => {
     );
 })();
 
+app.use("/api/auth/*", async (c, next) => {
+    if (c.req.path === "/api/auth/sign-up/email" && c.req.method === "POST") {
+        const country = c.req.header("x-vercel-ip-country") || c.req.header("cf-ipcountry");
+
+        if (country && !["US", "CA"].includes(country)) {
+            return c.json(
+                { message: "Registration is currently limited to the US and Canada." },
+                403
+            );
+        }
+    }
+
+    await next();
+});
+
 // Auth routes (Better Auth handles these)
-app.on(["POST", "GET"], "/api/auth/*", async (c) => {
+app.on(["POST", "GET", "PATCH", "PUT", "DELETE"], "/api/auth/*", async (c) => {
     try {
         return await auth.handler(c.req.raw);
     } catch (error) {
@@ -222,6 +237,7 @@ app.use("*", async (c, next) => {
         c.req.path === "/health" ||
         c.req.path === "/ready" ||
         c.req.path.startsWith("/api/auth") ||
+        c.req.path === "/billing/webhooks/stripe" ||
         c.req.path.startsWith("/worker/auth") ||
         c.req.path === "/docs" ||
         c.req.path === "/openapi.json" ||
@@ -242,7 +258,13 @@ app.use("*", async (c, next) => {
 
     // Validate tenant context
     // Some worker routes are cross-org (no x-org-id needed)
-    const ORG_FREE_PREFIXES = ['/worker/all-shifts', '/worker/organizations', '/devices'];
+    const ORG_FREE_PREFIXES = [
+        '/worker/all-shifts',
+        '/worker/organizations',
+        '/devices',
+        '/organizations/invitations',
+        '/organizations/default',
+    ];
     const isOrgFree = ORG_FREE_PREFIXES.some(prefix => c.req.path.startsWith(prefix));
 
     if (isOrgFree) {

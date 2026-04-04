@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
+import {
+    UpdateManagerPreferencesSchema,
+    type UpdateManagerPreferences,
+} from '@repo/contracts/preferences';
 import { useForm, Controller } from "@repo/ui/components/ui/form";
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { toast } from 'sonner';
 import {
     Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
@@ -23,21 +26,14 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '@repo/ui/components/ui/toggle-group';
 import { getApiBaseUrl } from '@/lib/constants';
 
-const PreferencesSchema = z.object({
-    clockInAlertsEnabled: z.boolean(),
-    clockOutAlertsEnabled: z.boolean(),
-    shiftScope: z.enum(['all', 'booked_by_me', 'onsite_contact']),
-    locationScope: z.enum(['all', 'selected']),
-});
-
-type PreferencesForm = z.infer<typeof PreferencesSchema>;
+type PreferencesForm = UpdateManagerPreferences;
 
 export function NotificationsView() {
     const apiBaseUrl = getApiBaseUrl();
     const [loading, setLoading] = useState(true);
 
     const form = useForm<PreferencesForm>({
-        resolver: zodResolver(PreferencesSchema),
+        resolver: zodResolver(UpdateManagerPreferencesSchema),
         defaultValues: {
             clockInAlertsEnabled: true,
             clockOutAlertsEnabled: true,

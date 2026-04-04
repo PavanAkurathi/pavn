@@ -1,0 +1,65 @@
+{
+    "name": "@repo/contracts",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "exports": {
+        ".": {
+            "types": "./src/index.ts",
+            "bun": "./src/index.ts",
+            "import": "./src/index.ts",
+            "default": "./src/index.ts"
+        },
+        "./billing": {
+            "types": "./src/billing.ts",
+            "bun": "./src/billing.ts",
+            "import": "./src/billing.ts",
+            "default": "./src/billing.ts"
+        },
+        "./onboarding": {
+            "types": "./src/onboarding.ts",
+            "bun": "./src/onboarding.ts",
+            "import": "./src/onboarding.ts",
+            "default": "./src/onboarding.ts"
+        },
+        "./organizations": {
+            "types": "./src/organizations.ts",
+            "bun": "./src/organizations.ts",
+            "import": "./src/organizations.ts",
+            "default": "./src/organizations.ts"
+        },
+        "./preferences": {
+            "types": "./src/preferences.ts",
+            "bun": "./src/preferences.ts",
+            "import": "./src/preferences.ts",
+            "default": "./src/preferences.ts"
+        },
+        "./shifts": {
+            "types": "./src/shifts.ts",
+            "bun": "./src/shifts.ts",
+            "import": "./src/shifts.ts",
+            "default": "./src/shifts.ts"
+        },
+        "./workforce": {
+            "types": "./src/workforce.ts",
+            "bun": "./src/workforce.ts",
+            "import": "./src/workforce.ts",
+            "default": "./src/workforce.ts"
+        }
+    },
+    "scripts": {
+        "lint": "eslint . --max-warnings 0",
+        "typecheck": "tsc --noEmit"
+    },
+    "dependencies": {
+        "zod": "^4.3.6"
+    },
+    "devDependencies": {
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
+        "@types/node": "^20.11.0",
+        "typescript": "^5.3.3"
+    }
+}

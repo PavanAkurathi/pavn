@@ -25,6 +25,7 @@
     },
     "dependencies": {
         "@repo/auth": "workspace:*",
+        "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/observability": "workspace:*",
         "drizzle-orm": "0.45.1",

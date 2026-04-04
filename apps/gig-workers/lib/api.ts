@@ -1,4 +1,8 @@
 import { CONFIG } from './config';
+import type {
+    UpdateWorkerPreferences,
+    WorkerPreferences,
+} from '@repo/contracts/preferences';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -112,18 +116,6 @@ export interface CreateAdjustmentRequest {
     requestedClockIn?: string;
     requestedClockOut?: string;
     requestedBreakMinutes?: number;
-}
-
-export interface WorkerPreferences {
-    nightBeforeEnabled: boolean;
-    sixtyMinEnabled: boolean;
-    fifteenMinEnabled: boolean;
-    shiftStartEnabled: boolean;
-    lateWarningEnabled: boolean;
-    geofenceAlertsEnabled: boolean;
-    quietHoursEnabled: boolean;
-    quietHoursStart?: string;
-    quietHoursEnd?: string;
 }
 
 // =============================================================================
@@ -356,7 +348,7 @@ export const api = {
             const data = await fetchJson<any>(`${CONFIG.API_URL}/preferences`, { headers });
             return data.preferences;
         },
-        update: async (data: Partial<WorkerPreferences>) => {
+        update: async (data: UpdateWorkerPreferences) => {
             const headers = await getAuthHeaders();
             const res = await fetchJson<any>(`${CONFIG.API_URL}/preferences`, {
                 method: 'PATCH', headers, body: JSON.stringify(data),

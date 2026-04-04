@@ -1,14 +1,15 @@
 "use server";
 
-import { auth } from "@repo/auth";
 import { headers } from "next/headers";
 
 import { getApiBaseUrl } from "@/lib/constants";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import { getApiSession } from "@/lib/server/auth-session";
+import { getDashboardMockTimesheets, isDashboardMockShiftId } from "@/lib/shifts/data";
 
 // Helper to secure Org ID
 const getSecureOrgId = async (providedOrgId?: string) => {
-    const session = await auth.api.getSession({ headers: await headers() });
+    const session = await getApiSession();
     const sessionData = session as any;
     const activeOrgId = await resolveActiveOrganizationId(
         sessionData?.user?.id,
@@ -169,6 +170,10 @@ export const publishSchedule = async (payload: any, orgId?: string) => {
 };
 
 export const approveShift = async (shiftId: string, orgId?: string) => {
+    if (isDashboardMockShiftId(shiftId)) {
+        return { ok: true, mock: true };
+    }
+
     const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/approve`, {
@@ -206,6 +211,10 @@ export const getShiftById = async (shiftId: string, orgId?: string) => {
 };
 
 export const getShiftTimesheets = async (shiftId: string, orgId?: string) => {
+    if (isDashboardMockShiftId(shiftId)) {
+        return getDashboardMockTimesheets(shiftId);
+    }
+
     const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await getSecureOrgId(orgId);
 
@@ -227,6 +236,10 @@ export const getShiftTimesheets = async (shiftId: string, orgId?: string) => {
 };
 
 export const updateTimesheet = async (shiftId: string, workerId: string, action: string, data: any, orgId?: string) => {
+    if (isDashboardMockShiftId(shiftId)) {
+        return { ok: true, mock: true, shiftId, workerId, action, data };
+    }
+
     const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/timesheet`, {
@@ -244,6 +257,10 @@ export const updateTimesheet = async (shiftId: string, workerId: string, action:
 };
 
 export const cancelShift = async (shiftId: string, orgId?: string) => {
+    if (isDashboardMockShiftId(shiftId)) {
+        return { ok: true, mock: true };
+    }
+
     const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/cancel`, {
@@ -260,6 +277,10 @@ export const cancelShift = async (shiftId: string, orgId?: string) => {
 };
 
 export const assignWorkers = async (shiftId: string, workerIds: string[], orgId?: string) => {
+    if (isDashboardMockShiftId(shiftId)) {
+        return { ok: true, mock: true, workerIds };
+    }
+
     const shiftServiceUrl = getApiBaseUrl();
     const activeOrgId = await requireSecureOrgId(orgId);
     const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/assign`, {
