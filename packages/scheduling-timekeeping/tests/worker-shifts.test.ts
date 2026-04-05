@@ -14,6 +14,10 @@ mock.module("@repo/observability", () => ({
     AppError: MockAppError
 }));
 
+mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
+    reconcileOverdueShiftState: mock(() => Promise.resolve()),
+}));
+
 const mockFindMany = mock(() => Promise.resolve([] as any[]));
 
 // Self-referencing builder to handle chaining and specific returns

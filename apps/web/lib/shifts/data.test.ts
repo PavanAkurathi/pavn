@@ -35,6 +35,7 @@ describe("dashboard mock data", () => {
 
         const timesheets = getDashboardMockTimesheets(shiftWithTimesheet!.id, anchorDate);
         expect(timesheets.length).toBeGreaterThan(0);
-        expect(timesheets[0]?.id).toContain("mock-worker-");
+        expect(timesheets[0]?.workerId).toContain("mock-worker-");
+        expect(timesheets[0]?.id).toContain(shiftWithTimesheet!.id);
     });
 });

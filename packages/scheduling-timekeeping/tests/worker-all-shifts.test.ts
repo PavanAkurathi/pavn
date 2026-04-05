@@ -51,6 +51,10 @@ const mockMembershipRows = mock(() => Promise.resolve([
 const mockShiftRows = mock(() => Promise.resolve<any[]>([]));
 const mockMissingOrgRows = mock(() => Promise.resolve<any[]>([]));
 
+mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
+    reconcileOverdueShiftState: mock(() => Promise.resolve()),
+}));
+
 const mockDb = {
     select: mock(() => ({
         from: mock((table: any) => {

@@ -4,6 +4,10 @@ import { getPendingShifts } from "../src/modules/shifts/pending";
 // --- Mocks ---
 const mockFindMany = mock(() => Promise.resolve([] as any[]));
 
+mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
+    reconcileOverdueShiftState: mock(() => Promise.resolve()),
+}));
+
 mock.module("@repo/database", () => ({
     db: {
         query: {
@@ -22,7 +26,14 @@ import { Shift } from "../src/types";
 describe("GET /shifts/pending-approval", () => {
     test("returns pending shifts response", async () => {
         mockFindMany.mockResolvedValueOnce([
-            { id: "s1", status: "completed", startTime: new Date(), endTime: new Date(), organizationId: "test_org" }
+            {
+                id: "s1",
+                status: "completed",
+                startTime: new Date(),
+                endTime: new Date(),
+                organizationId: "test_org",
+                assignments: [{ status: "completed" }],
+            }
         ]);
 
         const response = await getPendingShifts("test_org");

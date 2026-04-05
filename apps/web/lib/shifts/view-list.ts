@@ -1,38 +1,51 @@
-import { format, isToday, isTomorrow, isThisWeek, parseISO, addHours } from 'date-fns';
+import { format, isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns';
 import { Shift } from '../types';
+
+function isPastShift(shift: Shift, now = new Date()) {
+    return parseISO(shift.endTime).getTime() <= now.getTime();
+}
+
+function isActiveShiftStatus(status: Shift["status"]) {
+    return status === 'published' || status === 'open' || status === 'assigned' || status === 'in-progress';
+}
+
+function hasRosteredWorkers(shift: Shift) {
+    return (shift.assignedWorkers?.length ?? 0) > 0 || (shift.capacity?.filled ?? 0) > 0;
+}
 
 export function filterActiveShifts(shifts: Shift[]): Shift[] {
     const now = new Date();
-    // Active includes Published (Open) shifts
-    // OR Assigned/In-Progress shifts that have NOT yet passed the "2 hours post-shift" threshold
-    return shifts.filter(shift => {
-        if (shift.status === 'published' || shift.status === 'open') return true;
-        if (shift.status === 'assigned' || shift.status === 'in-progress') {
-            const twoHoursAfterEnd = addHours(parseISO(shift.endTime), 2);
-            return now < twoHoursAfterEnd;
-        }
-        return false;
-    });
+
+    return shifts.filter((shift) => isActiveShiftStatus(shift.status) && !isPastShift(shift, now));
 }
 
 export function filterNeedsApprovalShifts(shifts: Shift[]): Shift[] {
     const now = new Date();
-    return shifts.filter(shift => {
-        // 1. Explicitly Completed (Clocked out / Marked done)
-        if (shift.status === 'completed') return true;
 
-        // 2. Implied Completed (Assigned/In-Progress + >2 hours past end time)
-        if (shift.status === 'assigned' || shift.status === 'in-progress') {
-            const twoHoursAfterEnd = addHours(parseISO(shift.endTime), 2);
-            return now >= twoHoursAfterEnd;
+    return shifts.filter((shift) => {
+        if (!isPastShift(shift, now) || !hasRosteredWorkers(shift)) {
+            return false;
         }
 
-        return false;
+        if (shift.status === 'approved' || shift.status === 'cancelled') {
+            return false;
+        }
+
+        return shift.status === 'completed' || isActiveShiftStatus(shift.status);
     });
 }
 
 export function filterHistoryShifts(shifts: Shift[]): Shift[] {
-    return shifts.filter(shift => shift.status === 'approved' || shift.status === 'cancelled');
+    const now = new Date();
+    const pendingIds = new Set(filterNeedsApprovalShifts(shifts).map((shift) => shift.id));
+
+    return shifts.filter((shift) => {
+        if (!isPastShift(shift, now) || pendingIds.has(shift.id)) {
+            return false;
+        }
+
+        return shift.status === 'approved' || shift.status === 'cancelled' || shift.status === 'completed' || isActiveShiftStatus(shift.status);
+    });
 }
 export function groupShiftsByDate(shifts: Shift[]): Record<string, Shift[]> {
     const grouped: Record<string, Shift[]> = {};

@@ -1,5 +1,6 @@
 const LOCAL_WEB_URL = "http://localhost:3000";
 const LOCAL_EXPO_WEB_URL = "http://localhost:8081";
+const DEFAULT_PRODUCTION_WEB_URL = "https://workershive.com";
 
 export const isAuthProd = process.env.NODE_ENV === "production";
 
@@ -85,8 +86,14 @@ export function getWebAuthClientBaseUrl(): string {
         return normalizeUrl(runtimeOrigin) ?? runtimeOrigin;
     }
 
+    const vercelUrl = normalizeUrl(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+    if (vercelUrl) {
+        return vercelUrl;
+    }
+
     if (isAuthProd) {
-        throw new Error("[AUTH FATAL] Missing NEXT_PUBLIC_AUTH_URL or NEXT_PUBLIC_APP_URL for Better Auth client base URL.");
+        warnCompatFallback("[AUTH] Missing NEXT_PUBLIC_AUTH_URL/NEXT_PUBLIC_APP_URL; falling back to production site URL for Better Auth client base URL.");
+        return DEFAULT_PRODUCTION_WEB_URL;
     }
 
     return LOCAL_WEB_URL;

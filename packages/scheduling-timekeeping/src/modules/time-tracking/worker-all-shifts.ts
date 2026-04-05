@@ -2,8 +2,9 @@
 
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { shift, shiftAssignment, location, organization, member } from "@repo/database/schema";
-import { eq, and, inArray, gte, lte, asc, desc, ne, sql } from "drizzle-orm";
+import { eq, and, inArray, gt, lte, or, asc, desc, ne, sql } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
+import { reconcileOverdueShiftState } from "./reconcile-overdue-shifts";
 
 interface WorkerAllShiftsFilters {
     status: 'upcoming' | 'history' | 'in-progress' | 'all';
@@ -52,6 +53,8 @@ export const getWorkerAllShifts = async (
         orgIds = [orgId];
     }
 
+    await reconcileOverdueShiftState(orgIds, now);
+
     // 2. Build query conditions
     const conditions: any[] = [
         eq(shiftAssignment.workerId, workerId),
@@ -60,15 +63,21 @@ export const getWorkerAllShifts = async (
     ];
 
     if (status === 'in-progress') {
-        // Clocked in but not clocked out, shift hasn't ended + 2hr buffer
+        // Clocked in but not clocked out, and the scheduled shift is still active
         conditions.push(sql`${shiftAssignment.actualClockIn} IS NOT NULL`);
         conditions.push(sql`${shiftAssignment.actualClockOut} IS NULL`);
+        conditions.push(gt(shift.endTime, now));
     } else if (status === 'upcoming') {
         conditions.push(inArray(shift.status, ['published', 'assigned', 'in-progress']));
-        const bufferTime = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-        conditions.push(gte(shift.endTime, bufferTime));
+        conditions.push(gt(shift.endTime, now));
     } else if (status === 'history') {
-        conditions.push(inArray(shift.status, ['completed', 'approved', 'cancelled']));
+        conditions.push(or(
+            inArray(shift.status, ['completed', 'approved', 'cancelled']),
+            and(
+                inArray(shift.status, ['published', 'assigned', 'in-progress']),
+                lte(shift.endTime, now),
+            ),
+        ));
     }
 
     // 3. Query across all orgs

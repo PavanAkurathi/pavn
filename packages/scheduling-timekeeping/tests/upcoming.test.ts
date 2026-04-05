@@ -7,6 +7,10 @@ const mockFindMany = mock(() => Promise.resolve([
     { id: "s2", status: "assigned", startTime: new Date(), endTime: new Date(), organizationId: "test_org" }
 ]));
 
+mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
+    reconcileOverdueShiftState: mock(() => Promise.resolve()),
+}));
+
 mock.module("@repo/database", () => ({
     db: {
         query: {

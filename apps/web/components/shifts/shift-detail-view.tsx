@@ -1,9 +1,21 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@repo/ui/components/ui/button";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft, AlertCircle, UserPlus, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@repo/ui/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@repo/ui/components/ui/alert-dialog";
 
 import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalFooter } from "./timesheet/shift-approval-footer";
@@ -14,6 +26,7 @@ import { Shift, TimesheetWorker } from "@/lib/types";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { getWorkerStatus, parseTimeStringToIso, UpdateTimesheetPayload, TimesheetViewModel } from "@/lib/timesheet-utils";
+import { getDashboardMockCrew, isDashboardMockShiftId } from "@/lib/shifts/data";
 
 interface ShiftDetailViewProps {
     onBack: () => void;
@@ -23,16 +36,17 @@ interface ShiftDetailViewProps {
 }
 
 export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftDetailViewProps) {
+    const router = useRouter();
     // Helper to merge data (extracted for reuse)
     const getWorkersFromProps = React.useCallback((): TimesheetViewModel[] => {
         const allWorkers = shift.assignedWorkers || [];
         return allWorkers.map((assigned) => {
-            const ts = timesheets.find(t => t.id === assigned.id);
+            const ts = timesheets.find((entry) => entry.workerId === assigned.id);
             if (ts) {
                 return {
-                    id: ts.id,
+                    id: assigned.id,
                     name: ts.name,
-                    avatar: assigned.avatarUrl || `https://github.com/shadcn.png`,
+                    avatar: ts.avatarUrl || assigned.avatarUrl || `https://github.com/shadcn.png`,
                     initials: ts.avatarInitials || assigned.initials,
                     shiftDuration: "6 hrs",
                     clockIn: ts.clockIn ? format(new Date(ts.clockIn), "hh:mm a") : "",
@@ -56,6 +70,24 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             };
         });
     }, [shift.assignedWorkers, timesheets]);
+
+    const buildWorkerViewModel = React.useCallback((worker: {
+        id: string;
+        name: string;
+        avatar?: string;
+        initials: string;
+    }): TimesheetViewModel => ({
+        id: worker.id,
+        name: worker.name,
+        avatar: worker.avatar || `https://github.com/shadcn.png`,
+        initials: worker.initials,
+        shiftDuration: "-",
+        clockIn: "",
+        clockOut: "",
+        breakDuration: "0 min",
+        rating: 0,
+        jobTitle: shift.title,
+    }), [shift.title]);
 
     // Initialize state
     const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(getWorkersFromProps);
@@ -88,18 +120,27 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const handleAddWorkers = async (newWorkerIds: string[]) => {
         try {
             await import("@/lib/api/shifts").then(mod => mod.assignWorkers(shift.id, newWorkerIds));
-            toast.success(`Assigned ${newWorkerIds.length} workers successfully`);
 
-            // Re-fetch all data to ensure consistent state/avatars/names
-            // Since we don't have a direct refetch function here, we can trigger a router refresh or 
-            // manually optimistically update if we had full worker objects.
-            // But AddWorkerDialog only passes IDs.
-            // Ideally, onBack() or a dedicated refetch logic should be used.
-            // For now, let's keep the optimistic update but relying on page reload for full details is safer if complex.
-            // However, the previous optimistic code has placeholder names.
-            // Let's rely on router refresh if possible, but we are client side.
-            // Actually, we can just Optimistically update and assume success, but best is to reload page data.
-            window.location.reload();
+            if (isDashboardMockShiftId(shift.id)) {
+                const mockCrew = getDashboardMockCrew();
+                const addedWorkers = mockCrew
+                    .filter((worker) => newWorkerIds.includes(worker.id))
+                    .map((worker) => buildWorkerViewModel(worker));
+
+                setWorkers((prev) => {
+                    const existingIds = new Set(prev.map((worker) => worker.id));
+                    return [
+                        ...prev,
+                        ...addedWorkers.filter((worker) => !existingIds.has(worker.id)),
+                    ];
+                });
+
+                toast.success(`Added ${newWorkerIds.length} worker${newWorkerIds.length === 1 ? "" : "s"} to the shift`);
+                return;
+            }
+
+            toast.success(`Assigned ${newWorkerIds.length} workers successfully`);
+            router.refresh();
         } catch (error) {
             console.error(error);
             toast.error("Failed to assign workers");
@@ -237,9 +278,9 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={onBack}>
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
+                        <Button variant="ghost" size="icon" onClick={onBack}>
+                            <ArrowLeft />
+                        </Button>
                     <div className="flex items-center gap-2">
                         <h2 className="text-2xl font-semibold tracking-tight">Timesheets</h2>
                         {isApproved && (
@@ -259,12 +300,44 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         )}
                     </div>
                 </div>
+                {!isApproved && !isCancelled && (
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" className="rounded-full" onClick={() => setIsAddWorkerOpen(true)}>
+                            <UserPlus data-icon="inline-start" />
+                            Add worker
+                        </Button>
+                        <AlertDialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    className="rounded-full px-3 text-muted-foreground hover:text-destructive"
+                                >
+                                    <X data-icon="inline-start" />
+                                    Cancel shift
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Cancel this shift?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will remove the shift from the schedule and notify any assigned workers.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Keep shift</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleCancelShift}
+                                        disabled={isCancelling}
+                                        className="bg-destructive text-white hover:bg-destructive/90"
+                                    >
+                                        {isCancelling ? "Cancelling..." : "Cancel shift"}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                )}
             </div>
-            {!isApproved && !isCancelled && (
-                <Button variant="destructive" onClick={() => setIsCancelConfirmOpen(true)}>
-                    Cancel Shift
-                </Button>
-            )}
             {/* Shift Summary Header */}
             {/* Shift Summary Header */}
             <ShiftSummaryHeader
@@ -287,11 +360,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         {filledCount} of {workerCount} filled
                     </span>
                 </div>
-                {!isApproved && !isCancelled && (
-                    <Button variant="outline" onClick={() => setIsAddWorkerOpen(true)}>
-                        Add Pros
-                    </Button>
-                )}
             </div>
 
             {/* Content Card - Powered by TanStack Table */}
@@ -346,27 +414,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 </DialogContent>
             </Dialog>
 
-            {/* Cancel Confirmation Dialog */}
-            <Dialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5 text-red-500" />
-                            Cancel Shift
-                        </DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to cancel this shift? This action will notify all assigned workers and cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCancelConfirmOpen(false)}>Keep Shift</Button>
-                        <Button variant="destructive" onClick={handleCancelShift} disabled={isCancelling}>
-                            {isCancelling ? "Cancelling..." : "Yes, Cancel Shift"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
         </div >
     );
 }
-

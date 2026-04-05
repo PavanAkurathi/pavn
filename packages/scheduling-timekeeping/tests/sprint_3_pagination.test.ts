@@ -4,6 +4,10 @@ import { describe, expect, test, mock, beforeEach } from "bun:test";
 // 1. Create the mock function first
 const mockFindMany = mock(() => Promise.resolve([]));
 
+mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
+    reconcileOverdueShiftState: mock(() => Promise.resolve()),
+}));
+
 // 2. Mock the module BEFORE importing the controller
 mock.module("@repo/database", () => ({
     db: {

@@ -66,6 +66,7 @@ export const TimesheetReportSchema = z.object({
 
 export const TimesheetWorkerSchema = z.object({
     id: z.string(),
+    workerId: z.string(),
     name: z.string(),
     avatarUrl: z.string().optional(),
     avatarInitials: z.string(),

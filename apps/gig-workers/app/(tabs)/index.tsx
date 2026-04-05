@@ -34,7 +34,7 @@ const formatSectionDate = (iso: string) =>
 const isInProgress = (shift: WorkerShift): boolean =>
     !!shift.timesheet.clockIn &&
     !shift.timesheet.clockOut &&
-    new Date(shift.endTime) > new Date(Date.now() - 2 * 60 * 60 * 1000);
+    new Date(shift.endTime) > new Date();
 
 type ViewMode = "schedule" | "history";
 

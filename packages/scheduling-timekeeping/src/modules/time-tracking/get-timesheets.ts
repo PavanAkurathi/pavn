@@ -6,8 +6,11 @@ import { eq, and } from "drizzle-orm";
 import { TimesheetWorker } from "../../types";
 import { getInitials } from "../../utils/formatting";
 import { AppError } from "@repo/observability";
+import { reconcileOverdueShiftState } from "./reconcile-overdue-shifts";
 
 export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
+    await reconcileOverdueShiftState(orgId);
+
     // 1. Verify Shift Ownership
     const validShift = await db.query.shift.findFirst({
         where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
@@ -32,6 +35,7 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
 
         return {
             id: a.id,
+            workerId: a.workerId,
             name: workerName,
             avatarUrl: a.worker?.image || undefined,
             avatarInitials: getInitials(workerName),

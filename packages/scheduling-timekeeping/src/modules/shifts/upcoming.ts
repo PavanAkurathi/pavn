@@ -1,15 +1,21 @@
 
 import { db } from "@repo/database";
 import { shift } from "@repo/database/schema";
-import { inArray, asc, and, eq } from "drizzle-orm";
+import { inArray, asc, and, eq, gt } from "drizzle-orm";
 import { mapShiftToDto } from "../../utils/mapper";
+import { reconcileOverdueShiftState } from "../time-tracking/reconcile-overdue-shifts";
 
 export const getUpcomingShifts = async (orgId: string) => {
+    const now = new Date();
+
+    await reconcileOverdueShiftState(orgId, now);
+
     // 1. Query DB
     const results = await db.query.shift.findMany({
         where: and(
             eq(shift.organizationId, orgId),
-            inArray(shift.status, ['published', 'assigned', 'in-progress'])
+            inArray(shift.status, ['published', 'assigned', 'in-progress']),
+            gt(shift.endTime, now),
         ),
         orderBy: [asc(shift.startTime)],
         with: {

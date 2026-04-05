@@ -6,6 +6,10 @@ import { Shift } from "../src/types";
 // --- Mocks ---
 const mockFindMany = mock(() => Promise.resolve([] as any[]));
 
+mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
+    reconcileOverdueShiftState: mock(() => Promise.resolve()),
+}));
+
 mock.module("@repo/database", () => ({
     db: {
         query: {

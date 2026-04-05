@@ -5,8 +5,11 @@ import { shift } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { mapShiftToDto } from "../../utils/mapper";
 import { AppError } from "@repo/observability";
+import { reconcileOverdueShiftState } from "../time-tracking/reconcile-overdue-shifts";
 
 export const getShiftById = async (id: string, orgId: string) => {
+    await reconcileOverdueShiftState(orgId);
+
     // 1. Query DB for single shift
     const result = await db.query.shift.findFirst({
         where: and(eq(shift.id, id), eq(shift.organizationId, orgId)),

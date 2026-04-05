@@ -1,8 +1,9 @@
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { shift, shiftAssignment, location, organization } from "@repo/database/schema";
-import { eq, and, inArray, gte, lte, asc, desc, sql } from "drizzle-orm";
+import { eq, and, inArray, gt, lte, or, asc, desc, sql } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 import { AppError } from "@repo/observability";
+import { reconcileOverdueShiftState } from "./reconcile-overdue-shifts";
 
 interface WorkerShiftFilters {
     status: 'upcoming' | 'history' | 'all';
@@ -19,6 +20,8 @@ export const getWorkerShifts = async (
     // Default status 'upcoming', limit 20
     const { status = 'upcoming', limit = 20, offset = 0 } = filters;
 
+    await reconcileOverdueShiftState(orgId, now);
+
     // WH-105 Fix: Use db.select() with innerJoin to ensure filtering happens BEFORE pagination
     // This prevents "gaps" where mixed statuses in the DB cause pages to appear empty or incomplete.
 
@@ -29,11 +32,18 @@ export const getWorkerShifts = async (
 
     if (status === 'upcoming') {
         conditions.push(inArray(shift.status, ['published', 'assigned', 'in-progress']));
-        // Include if shift hasn't ended yet (with 2hr buffer for late clock-outs)
-        const bufferTime = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-        conditions.push(gte(shift.endTime, bufferTime));
+        conditions.push(gt(shift.endTime, now));
     } else if (status === 'history') {
-        conditions.push(inArray(shift.status, ['completed', 'approved', 'cancelled']));
+        const historyCondition = or(
+            inArray(shift.status, ['completed', 'approved', 'cancelled']),
+            and(
+                inArray(shift.status, ['published', 'assigned', 'in-progress']),
+                lte(shift.endTime, now),
+            ),
+        );
+        if (historyCondition) {
+            conditions.push(historyCondition);
+        }
     }
 
     const query = db
@@ -90,6 +100,8 @@ export const getWorkerShiftById = async (
     shiftId: string,
     orgId: string,
 ) => {
+    await reconcileOverdueShiftState(orgId);
+
     const row = await db
         .select({
             assignment: shiftAssignment,

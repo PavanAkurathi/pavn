@@ -1,6 +1,7 @@
 import { addDays, addMinutes, startOfWeek, subWeeks } from "date-fns";
 
 import type { Location, Shift, TimesheetWorker } from "@/lib/types";
+import type { CrewMember } from "@/hooks/use-crew-data";
 
 const MOCK_SHIFT_PREFIX = "mock-shift-";
 const MOCK_WORKER_PREFIX = "mock-worker-";
@@ -12,6 +13,8 @@ type MockWorker = {
     name: string;
     initials: string;
     avatarUrl?: string;
+    roles?: string[];
+    hours?: number;
 };
 
 type MockLocation = Location;
@@ -28,14 +31,14 @@ interface DashboardMockBundle {
 }
 
 const MOCK_WORKERS: MockWorker[] = [
-    { id: `${MOCK_WORKER_PREFIX}aisha`, name: "Aisha Patel", initials: "AP" },
-    { id: `${MOCK_WORKER_PREFIX}marco`, name: "Marco Diaz", initials: "MD" },
-    { id: `${MOCK_WORKER_PREFIX}priya`, name: "Priya Shah", initials: "PS" },
-    { id: `${MOCK_WORKER_PREFIX}owen`, name: "Owen Carter", initials: "OC" },
-    { id: `${MOCK_WORKER_PREFIX}nina`, name: "Nina Kim", initials: "NK" },
-    { id: `${MOCK_WORKER_PREFIX}sage`, name: "Sage Thompson", initials: "ST" },
-    { id: `${MOCK_WORKER_PREFIX}lena`, name: "Lena Brooks", initials: "LB" },
-    { id: `${MOCK_WORKER_PREFIX}jules`, name: "Jules Rivera", initials: "JR" },
+    { id: `${MOCK_WORKER_PREFIX}aisha`, name: "Aisha Patel", initials: "AP", roles: ["Dining Room Opener", "Host Stand"], hours: 34 },
+    { id: `${MOCK_WORKER_PREFIX}marco`, name: "Marco Diaz", initials: "MD", roles: ["Dining Room Opener", "Runner"], hours: 28 },
+    { id: `${MOCK_WORKER_PREFIX}priya`, name: "Priya Shah", initials: "PS", roles: ["Event Captain", "Bartender"], hours: 31 },
+    { id: `${MOCK_WORKER_PREFIX}owen`, name: "Owen Carter", initials: "OC", roles: ["Event Captain"], hours: 36 },
+    { id: `${MOCK_WORKER_PREFIX}nina`, name: "Nina Kim", initials: "NK", roles: ["Event Captain", "Floor Lead"], hours: 38 },
+    { id: `${MOCK_WORKER_PREFIX}sage`, name: "Sage Thompson", initials: "ST", roles: ["Bartender", "Closing Lead"], hours: 24 },
+    { id: `${MOCK_WORKER_PREFIX}lena`, name: "Lena Brooks", initials: "LB", roles: ["Host Stand", "Guest Services"], hours: 22 },
+    { id: `${MOCK_WORKER_PREFIX}jules`, name: "Jules Rivera", initials: "JR", roles: ["Prep + Expo", "Closing Lead"], hours: 30 },
 ];
 
 const MOCK_LOCATIONS: MockLocation[] = [
@@ -148,7 +151,8 @@ function createTimesheetEntry(
             : undefined;
 
     return {
-        id: worker.id,
+        id: `${shift.id}:${worker.id}`,
+        workerId: worker.id,
         name: worker.name,
         avatarUrl: worker.avatarUrl,
         avatarInitials: worker.initials,
@@ -162,6 +166,17 @@ function createTimesheetEntry(
 
 export function isDashboardMockShiftId(shiftId: string) {
     return shiftId.startsWith(MOCK_SHIFT_PREFIX);
+}
+
+export function getDashboardMockCrew(): CrewMember[] {
+    return MOCK_WORKERS.map((worker) => ({
+        id: worker.id,
+        name: worker.name,
+        avatar: worker.avatarUrl || "",
+        roles: worker.roles ?? [],
+        hours: worker.hours ?? 0,
+        initials: worker.initials,
+    }));
 }
 
 export function isDashboardMockModeEnabled(options?: {

@@ -7,7 +7,8 @@ import { PostLaunchChecklist } from "@/components/dashboard/post-launch-checklis
 import { getOrganizationLocations } from "@/lib/api/organizations";
 import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
 import { getDashboardMockBundle, getDashboardMockShifts, isDashboardMockModeEnabled } from "@/lib/shifts/data";
-import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
+import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
+import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
@@ -19,14 +20,17 @@ export default async function ShiftsPage(props: {
     const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined;
     const view = viewParam === 'past' ? 'past' : 'upcoming';
     const explicitMock = typeof searchParams.mock === "string" && searchParams.mock === "1";
-
-    const { activeOrgId: orgId } = await getRequiredOrganizationContext();
+    const session = await getRequiredSession();
+    const orgId = await resolveActiveOrganizationId(
+        session.user.id,
+        getSessionActiveOrganizationId(session),
+    );
 
     const [shifts, pendingCount, draftCount, locations, onboardingState] = await Promise.all([
-        getShifts({ view, orgId }),
-        getPendingShiftsCount(orgId),
-        getDraftShiftsCount(orgId),
-        getOrganizationLocations(orgId),
+        getShifts({ view, orgId: orgId ?? undefined }),
+        orgId ? getPendingShiftsCount(orgId) : Promise.resolve(0),
+        orgId ? getDraftShiftsCount(orgId) : Promise.resolve(0),
+        orgId ? getOrganizationLocations(orgId) : Promise.resolve([]),
         getCurrentBusinessOnboardingState(),
     ]);
 
