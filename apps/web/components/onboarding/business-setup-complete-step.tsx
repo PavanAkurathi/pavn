@@ -19,6 +19,7 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Spinner } from "@repo/ui/components/ui/spinner";
 import { SUBSCRIPTION } from "@repo/config";
 import { markBillingPromptHandled } from "@/actions/organization";
+import { getCreateScheduleHref, getDashboardShiftsHref } from "@/lib/routes";
 
 export function BusinessSetupCompleteStep({
     billingHandled,
@@ -82,7 +83,7 @@ export function BusinessSetupCompleteStep({
             </CardContent>
             <CardFooter className="flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                    <Link href="/dashboard/schedule/create">
+                    <Link href={getCreateScheduleHref()}>
                         Create your first schedule
                         <ArrowRight data-icon="inline-end" />
                     </Link>
@@ -107,7 +108,7 @@ export function BusinessSetupCompleteStep({
                     </>
                 )}
                 <Button asChild variant="ghost">
-                    <Link href="/dashboard/shifts">Go to dashboard</Link>
+                    <Link href={getDashboardShiftsHref()}>Go to dashboard</Link>
                 </Button>
             </CardFooter>
         </Card>

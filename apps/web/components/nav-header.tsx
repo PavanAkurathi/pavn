@@ -5,13 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@repo/ui/lib/utils";
 import { Button } from "@repo/ui/components/ui/button";
-import { authClient } from "@repo/auth/client";
 import { Plus, Building2 } from "lucide-react";
 import { NavUser } from "./nav-user";
 import { NotificationsPopover } from "./notifications/notifications-popover";
+import {
+    getCreateScheduleHref,
+    getDashboardShiftsHref,
+    isCreateSchedulePath,
+    isOnboardingPath,
+} from "@/lib/routes";
 
 const NAV_ITEMS = [
-    { label: "Shifts", href: "/dashboard/shifts" },
+    { label: "Shifts", href: getDashboardShiftsHref() },
     { label: "Roster", href: "/rosters" },
     { label: "Reports", href: "/reports" },
     { label: "Availability", href: "/dashboard/availability" }, // [AVL-006]
@@ -27,13 +32,12 @@ interface NavHeaderProps {
 
 export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
     const pathname = usePathname();
-    const { data: clientOrg } = authClient.useActiveOrganization();
-    const activeOrg = clientOrg || serverOrg;
+    const activeOrg = serverOrg;
 
     // Distraction-free mode for focused creation/setup flows
     if (
-        pathname.startsWith("/dashboard/schedule/create") ||
-        pathname.startsWith("/dashboard/onboarding")
+        isCreateSchedulePath(pathname) ||
+        isOnboardingPath(pathname)
     ) {
         return null;
     }
@@ -44,7 +48,7 @@ export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
                 {/* Left: Logo & Nav */}
                 <div className="flex items-center gap-8">
                     {/* Logo (Business Identity) */}
-                    <Link href="/dashboard/shifts" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                    <Link href={getDashboardShiftsHref()} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
                         <div className="h-9 w-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden shadow-sm">
                             {activeOrg?.logo ? (
                                 <img src={activeOrg.logo} alt={activeOrg.name} className="h-full w-full object-cover" />
@@ -88,7 +92,7 @@ export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
 
                 {/* Right: CTA & User */}
                 <div className="flex items-center gap-4">
-                    <Link href="/dashboard/schedule/create">
+                    <Link href={getCreateScheduleHref()}>
                         <Button className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white gap-2 font-medium" size="sm" data-testid="create-shift">
                             <Plus className="w-4 h-4" />
                             Create a schedule

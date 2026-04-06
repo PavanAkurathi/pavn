@@ -33,6 +33,7 @@ import { ExitDialog } from "@repo/ui/components/ui/exit-dialog";
 import { AddLocationModal } from "../settings/add-location-modal";
 import { createLocation } from "@/actions/locations";
 import { buildRoleOptions } from "@/lib/schedule/roles";
+import { getDashboardShiftsHref } from "@/lib/routes";
 
 // Schema Definitions
 const PositionSchema = z.object({
@@ -273,7 +274,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
             toast.success(status === 'published' ? "Schedule published successfully!" : "Draft saved successfully!");
             localStorage.removeItem("schedule-layout-draft");
 
-            router.push("/dashboard/shifts");
+            router.push(getDashboardShiftsHref());
         } catch (error) {
             console.error("Schedule publish failed", error);
             toast.error("Failed to publish schedule.");
@@ -296,7 +297,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
         });
 
         if (!hasActiveSchedule) {
-            router.push("/dashboard/shifts");
+            router.push(getDashboardShiftsHref());
             return;
         }
 
@@ -325,7 +326,7 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     const handleDiscard = async () => {
         await deleteDrafts(activeOrganizationId);
         localStorage.removeItem("schedule-layout-draft");
-        router.push("/dashboard/shifts");
+        router.push(getDashboardShiftsHref());
     };
 
     return (

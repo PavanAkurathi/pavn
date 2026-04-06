@@ -14,6 +14,7 @@ import {
 import type { AttendanceVerificationPolicy } from "@repo/config";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { parseOrganizationMetadata } from "@/lib/organization-metadata";
+import { getOnboardingHref } from "@/lib/routes";
 import { requiresBusinessOnboarding } from "@/lib/server/organization-roles";
 import { getApiSession } from "@/lib/server/auth-session";
 import type { CurrentBusinessOnboardingStateResult } from "./data";
@@ -169,7 +170,7 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             id: "account",
             title: "Account ready",
             description: "Your admin account, business workspace, and free trial are active.",
-            href: "/dashboard/onboarding?step=account",
+            href: getOnboardingHref({ step: "account" }),
             complete: true,
             supportingText: "Workspace created and admin access active",
         },
@@ -177,7 +178,7 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             id: "business",
             title: "Business basics",
             description: "Set the business name, timezone, and clock-in rules that shape how the app operates.",
-            href: "/dashboard/onboarding?step=business",
+            href: getOnboardingHref({ step: "business" }),
             complete: businessInformationComplete,
             supportingText: businessInformationComplete
                 ? "Business basics are ready"
@@ -187,7 +188,7 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             id: "location",
             title: "First location",
             description: "Add the first place where schedules will be created and workers usually clock in.",
-            href: "/dashboard/onboarding?step=location",
+            href: getOnboardingHref({ step: "location" }),
             complete: Boolean(firstLocation),
             supportingText: firstLocation
                 ? `Location ready: ${firstLocation.name}`
@@ -197,7 +198,7 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             id: "workforce",
             title: "Workforce access",
             description: "Add or import the first workers who need mobile access before the operation goes live.",
-            href: "/dashboard/onboarding?step=workforce",
+            href: getOnboardingHref({ step: "workforce" }),
             complete: hasWorkforceAccess,
             supportingText: hasWorkforceAccess
                 ? "Workforce setup has started"
@@ -207,7 +208,7 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             id: "first_shift",
             title: "First published shift",
             description: "Publishing the first live shift is the real onboarding finish line for the business.",
-            href: "/dashboard/onboarding?step=first_shift",
+            href: getOnboardingHref({ step: "first_shift" }),
             complete: hasPublishedShift,
             supportingText: hasPublishedShift
                 ? "A live shift has been published"

@@ -4,6 +4,7 @@ import type {
     OnboardingStep,
 } from "@repo/contracts/onboarding";
 import type { AttendanceVerificationPolicy } from "@repo/config";
+import { getOnboardingHref } from "@/lib/routes";
 
 export type CurrentBusinessOnboardingStateResult = {
     session: Session | null;
@@ -61,7 +62,10 @@ function createMockStep(
         id: step.id,
         title: step.title,
         description: step.description,
-        href: step.id === "account" ? "/dashboard/onboarding" : `/dashboard/onboarding?step=${step.id}&mock=1`,
+        href: getOnboardingHref({
+            step: step.id === "account" ? undefined : step.id,
+            mock: step.id !== "account",
+        }),
         complete: step.complete,
         supportingText: step.supportingText,
     };

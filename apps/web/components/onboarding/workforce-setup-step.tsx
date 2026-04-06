@@ -14,6 +14,7 @@ import {
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
+import { getOnboardingHref, getRosterHref } from "@/lib/routes";
 
 export function WorkforceSetupStep({
     mockMode = false,
@@ -57,7 +58,7 @@ export function WorkforceSetupStep({
                         <Button
                             type="button"
                             size="lg"
-                            onClick={() => router.push("/dashboard/onboarding?step=first_shift&mock=1")}
+                            onClick={() => router.push(getOnboardingHref({ step: "first_shift", mock: true }))}
                         >
                             Continue to first shift
                             <ArrowRight data-icon="inline-end" />
@@ -78,7 +79,7 @@ export function WorkforceSetupStep({
                 ) : (
                     <>
                         <Button asChild size="lg">
-                            <Link href="/rosters?onboarding=roster">
+                            <Link href={getRosterHref({ onboarding: "roster" })}>
                                 Open roster workspace
                                 <ArrowRight data-icon="inline-end" />
                             </Link>

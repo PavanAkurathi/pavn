@@ -19,6 +19,7 @@ export default async function ShiftsPage(props: {
     const searchParams = await props.searchParams;
     const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined;
     const view = viewParam === 'past' ? 'past' : 'upcoming';
+    const layoutParam = typeof searchParams.layout === "string" ? searchParams.layout : undefined;
     const explicitMock = typeof searchParams.mock === "string" && searchParams.mock === "1";
     const session = await getRequiredSession();
     const orgId = await resolveActiveOrganizationId(
@@ -72,6 +73,7 @@ export default async function ShiftsPage(props: {
                 availableLocations={mappedLocations}
                 defaultTab={view}
                 pendingCount={pendingCountToRender}
+                initialLayoutParam={layoutParam}
             />
         </div>
     );

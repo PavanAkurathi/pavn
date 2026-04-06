@@ -44,6 +44,8 @@ interface TimesheetTableProps {
     data: TimesheetViewModel[];
     onUpdateWorker: (id: string, field: string, value: any) => void;
     onSaveWorker: (id: string, field: string, value: any) => void;
+    onEditWorkerNotes: (id: string) => void;
+    onRemoveWorker: (id: string) => void;
     isApproved: boolean;
     isCancelled: boolean;
     // getWorkerStatus is now internal/shared, removed from props
@@ -53,6 +55,8 @@ export function TimesheetTable({
     data,
     onUpdateWorker,
     onSaveWorker,
+    onEditWorkerNotes,
+    onRemoveWorker,
     isApproved,
     isCancelled,
 }: TimesheetTableProps) {
@@ -147,9 +151,9 @@ export function TimesheetTable({
                     </div>
                     <div className="w-[150px] text-center">Clock-in</div>
                     <div className="w-[150px] text-center">Clock-out</div>
-                    <div className="w-[150px] text-center">Total unpaid break</div>
-                    <div className="w-[120px] text-center">Rating</div>
-                    <div className="w-[100px] text-center">Write Up</div>
+                    <div className="w-[150px] text-center">Break 1</div>
+                    <div className="w-[150px] text-center">Break 2</div>
+                    <div className="w-[150px] text-center">Notes</div>
                 </div>
 
                 {/* Rows powered by TanStack Table */}
@@ -167,26 +171,24 @@ export function TimesheetTable({
                                     key={worker.id}
                                     workerName={worker.name}
                                     workerAvatar={worker.avatar}
-                                    jobTitle={worker.jobTitle}
                                     shiftDuration={worker.shiftDuration}
                                     clockIn={worker.clockIn}
                                     clockOut={worker.clockOut}
                                     breakDuration={worker.breakDuration}
-                                    rating={worker.rating}
+                                    breakOneDuration={worker.breakOneDuration || "0 min"}
+                                    breakTwoDuration={worker.breakTwoDuration || "0 min"}
+                                    notes={worker.notes}
                                     clockInVariant={status.clockInVariant}
                                     clockOutVariant={status.clockOutVariant}
                                     breakVariant={status.breakVariant}
                                     disabled={isApproved || isCancelled}
                                     onClockInChange={(val) => onUpdateWorker(worker.id, "clockIn", val)}
                                     onClockOutChange={(val) => onUpdateWorker(worker.id, "clockOut", val)}
-                                    onBreakChange={(val) => onUpdateWorker(worker.id, "breakDuration", val)}
-                                    // Pass save handler for onBlur events
+                                    onBreakOneChange={(val) => onUpdateWorker(worker.id, "breakOneDuration", val)}
+                                    onBreakTwoChange={(val) => onUpdateWorker(worker.id, "breakTwoDuration", val)}
                                     onSave={(field, val) => onSaveWorker(worker.id, field, val)}
-                                    onRatingChange={(r) => onUpdateWorker(worker.id, "rating", r)}
-                                    onWriteUp={() => { }}
-                                    onAddToRoster={() => { }}
-                                    onReturn={() => { }}
-                                    onBlock={() => { }}
+                                    onEditNotes={() => onEditWorkerNotes(worker.id)}
+                                    onRemoveFromShift={() => onRemoveWorker(worker.id)}
                                 />
                             );
                         })

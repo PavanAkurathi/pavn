@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Bell, Check, Clock } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
@@ -109,7 +110,7 @@ export function NotificationsPopover() {
                 </ScrollArea>
                 <div className="p-2 border-t bg-muted/20 text-center">
                     <Button variant="link" size="sm" className="h-auto text-xs w-full" asChild>
-                        <a href="/settings?tab=notifications">View Settings</a>
+                        <Link href="/settings?tab=notifications">View Settings</Link>
                     </Button>
                 </div>
             </PopoverContent>

@@ -15,6 +15,7 @@ import Link from "next/link";
 import { AddWorkerDialog } from "../../../components/roster/add-worker-dialog";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { getRosterWorkers } from "@/lib/api/organizations";
+import { getOnboardingHref } from "@/lib/routes";
 import type { WorkerDetails } from "../../../components/roster/columns";
 
 type RosterSearchParams = {
@@ -124,7 +125,7 @@ export default async function RostersPage(props: {
                                 </Button>
                             </Link>
                             <AddWorkerDialog />
-                            <Link href="/dashboard/onboarding">
+                            <Link href={getOnboardingHref()}>
                                 <Button variant="ghost" className="gap-2">
                                     Return to onboarding
                                     <ArrowRight className="h-4 w-4" />

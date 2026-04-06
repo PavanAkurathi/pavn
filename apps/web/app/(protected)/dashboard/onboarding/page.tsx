@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { BusinessOnboardingView } from "@/components/onboarding/business-onboarding-view";
 import { getCurrentBusinessOnboardingState, isOnboardingMockModeEnabled } from "@/lib/onboarding";
+import { getDashboardShiftsHref } from "@/lib/routes";
 
 type SearchParams = Promise<{
     step?: string;
@@ -20,11 +21,11 @@ export default async function BusinessOnboardingPage(props: { searchParams: Sear
     }
 
     if (!onboarding) {
-        redirect("/dashboard/shifts");
+        redirect(getDashboardShiftsHref());
     }
 
     if (!shouldEnforceOnboarding) {
-        redirect("/dashboard/shifts");
+        redirect(getDashboardShiftsHref());
     }
 
     return (

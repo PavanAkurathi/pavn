@@ -1,6 +1,7 @@
 import type { Session } from "@repo/auth/client";
 import { redirect } from "next/navigation";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
+import { getAuthLoginHref, getOnboardingHref } from "@/lib/routes";
 import { getApiSession } from "@/lib/server/auth-session";
 
 type AppSession = Session;
@@ -10,7 +11,7 @@ export function getSessionActiveOrganizationId(session: AppSession): string | un
     return sessionData?.session?.activeOrganizationId || sessionData?.activeOrganizationId || undefined;
 }
 
-export async function getRequiredSession(redirectTo: string = "/auth/login"): Promise<AppSession> {
+export async function getRequiredSession(redirectTo: string = getAuthLoginHref()): Promise<AppSession> {
     const session = await getApiSession();
 
     if (!session) {
@@ -31,7 +32,7 @@ export async function getRequiredOrganizationContext(options?: {
     );
 
     if (!activeOrgId) {
-        redirect(options?.missingOrganizationRedirectTo || "/dashboard/onboarding");
+        redirect(options?.missingOrganizationRedirectTo || getOnboardingHref());
     }
 
     return {

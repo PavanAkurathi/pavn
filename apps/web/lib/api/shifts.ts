@@ -1,298 +1,207 @@
 "use server";
 
-import { headers } from "next/headers";
+import type { Shift, TimesheetWorker } from "@/lib/types";
+import { apiJsonRequest } from "@/lib/server/api-client";
+import {
+    getDashboardMockShiftById,
+    getDashboardMockTimesheets,
+    isDashboardMockShiftId,
+} from "@/lib/shifts/data";
 
-import { getApiBaseUrl } from "@/lib/constants";
-import { resolveActiveOrganizationId } from "@/lib/active-organization";
-import { getApiSession } from "@/lib/server/auth-session";
-import { getDashboardMockTimesheets, isDashboardMockShiftId } from "@/lib/shifts/data";
+type ShiftCollectionView = "upcoming" | "past" | "needs_approval" | "draft";
+type ShiftCollectionPayload = Shift[] | { dateGroups?: Shift[] };
 
-// Helper to secure Org ID
-const getSecureOrgId = async (providedOrgId?: string) => {
-    const session = await getApiSession();
-    const sessionData = session as any;
-    const activeOrgId = await resolveActiveOrganizationId(
-        sessionData?.user?.id,
-        sessionData?.session?.activeOrganizationId || sessionData?.activeOrganizationId
+const SHIFT_COLLECTION_PATHS: Record<ShiftCollectionView, string> = {
+    upcoming: "/shifts/upcoming",
+    past: "/shifts/history",
+    needs_approval: "/shifts/pending-approval",
+    draft: "/shifts/drafts",
+};
+
+function normalizeShiftCollection(payload: ShiftCollectionPayload): Shift[] {
+    return Array.isArray(payload) ? payload : payload.dateGroups ?? [];
+}
+
+async function getShiftCollection(
+    view: ShiftCollectionView,
+    organizationId?: string,
+): Promise<Shift[]> {
+    const payload = await apiJsonRequest<ShiftCollectionPayload>(
+        SHIFT_COLLECTION_PATHS[view],
+        {
+            organizationScoped: true,
+            organizationId,
+        },
     );
 
-    return activeOrgId || providedOrgId || null;
-};
+    return normalizeShiftCollection(payload);
+}
 
-const requireSecureOrgId = async (providedOrgId?: string) => {
-    const activeOrgId = await getSecureOrgId(providedOrgId);
+async function mutateShift<T>(
+    path: string,
+    options?: {
+        method?: string;
+        body?: unknown;
+        organizationId?: string;
+    },
+): Promise<T> {
+    return apiJsonRequest<T>(path, {
+        method: options?.method || "POST",
+        body: options?.body,
+        organizationScoped: true,
+        organizationId: options?.organizationId,
+    });
+}
 
-    if (!activeOrgId) {
-        throw new Error("No active organization available");
-    }
+export async function getShifts({
+    view,
+    orgId,
+}: {
+    view: string;
+    orgId?: string;
+}): Promise<Shift[]> {
+    const normalizedView: ShiftCollectionView =
+        view === "past"
+            ? "past"
+            : view === "needs_approval"
+              ? "needs_approval"
+              : view === "draft"
+                ? "draft"
+                : "upcoming";
 
-    return activeOrgId;
-};
-
-// apps/web/lib/api/shifts.ts
-
-// apps/web/lib/api/shifts.ts
-
-export const getShifts = async ({ view, orgId }: { view: string; orgId?: string }) => {
     try {
-        const shiftServiceUrl = getApiBaseUrl();
-        const activeOrgId = await getSecureOrgId(orgId);
-
-        if (!activeOrgId) {
-            return [];
-        }
-
-        let endpoint = "";
-        switch (view) {
-            case "upcoming":
-                endpoint = "/shifts/upcoming";
-                break;
-            case "past":
-                endpoint = "/shifts/history";
-                break;
-            case "needs_approval":
-                endpoint = "/shifts/pending-approval";
-                break;
-            case "draft":
-                endpoint = "/shifts/drafts";
-                break;
-            default:
-                endpoint = "/shifts/upcoming";
-        }
-
-        const res = await fetch(`${shiftServiceUrl}${endpoint}`, {
-            headers: {
-                "x-org-id": activeOrgId,
-                "Content-Type": "application/json",
-                "Cookie": (await headers()).get("cookie") || "",
-            },
-            cache: "no-store",
-        });
-
-        if (!res.ok) {
-            console.error(`Failed to fetch shifts: ${res.status} ${res.statusText}`);
-            return [];
-        }
-
-        const data = await res.json();
-        return data.dateGroups || data;
+        return await getShiftCollection(normalizedView, orgId);
     } catch (error) {
         console.error("Error fetching shifts:", error);
         return [];
     }
-};
+}
 
-export const getPendingShiftsCount = async (orgId?: string) => {
+export async function getPendingShiftsCount(orgId?: string) {
     try {
-        const shiftServiceUrl = getApiBaseUrl();
-        const activeOrgId = await getSecureOrgId(orgId);
-
-        if (!activeOrgId) {
-            return 0;
-        }
-
-        const res = await fetch(`${shiftServiceUrl}/shifts/pending-approval`, {
-            headers: {
-                "x-org-id": activeOrgId,
-                "Content-Type": "application/json",
-                "Cookie": (await headers()).get("cookie") || "",
-            },
-            cache: "no-store",
-        });
-
-        if (!res.ok) return 0;
-        const shifts = await res.json() as any[];
-        return shifts.length;
+        const pendingShifts = await getShiftCollection("needs_approval", orgId);
+        return pendingShifts.length;
     } catch (error) {
         console.error("Error fetching pending count:", error);
         return 0;
     }
-};
+}
 
-export const getDraftShiftsCount = async (orgId?: string) => {
+export async function getDraftShiftsCount(orgId?: string) {
     try {
-        const shiftServiceUrl = getApiBaseUrl();
-        const activeOrgId = await getSecureOrgId(orgId);
-
-        if (!activeOrgId) {
-            return 0;
-        }
-
-        const res = await fetch(`${shiftServiceUrl}/shifts/drafts`, {
-            headers: {
-                "x-org-id": activeOrgId,
-                "Content-Type": "application/json",
-                "Cookie": (await headers()).get("cookie") || "",
-            },
-            cache: "no-store",
-        });
-
-        if (!res.ok) return 0;
-        const shifts = await res.json() as any[];
-        return shifts.length;
+        const draftShifts = await getShiftCollection("draft", orgId);
+        return draftShifts.length;
     } catch (error) {
         console.error("Error fetching draft count:", error);
         return 0;
     }
-};
+}
 
-export const deleteDrafts = async (orgId?: string) => {
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${shiftServiceUrl}/shifts/drafts`, {
+export async function deleteDrafts(orgId?: string) {
+    return mutateShift("/shifts/drafts", {
         method: "DELETE",
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
+        organizationId: orgId,
     });
+}
 
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-};
-
-export const publishSchedule = async (payload: any, orgId?: string) => {
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${shiftServiceUrl}/shifts/publish`, {
-        method: "POST",
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        body: JSON.stringify(payload),
+export async function publishSchedule(payload: unknown, orgId?: string) {
+    return mutateShift("/shifts/publish", {
+        body: payload,
+        organizationId: orgId,
     });
+}
 
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-};
-
-export const approveShift = async (shiftId: string, orgId?: string) => {
+export async function approveShift(shiftId: string, orgId?: string) {
     if (isDashboardMockShiftId(shiftId)) {
         return { ok: true, mock: true };
     }
 
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/approve`, {
-        method: "POST",
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
+    return mutateShift(`/shifts/${shiftId}/approve`, {
+        organizationId: orgId,
     });
+}
 
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-};
-
-export const getShiftById = async (shiftId: string, orgId?: string) => {
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await getSecureOrgId(orgId);
-
-    if (!activeOrgId) {
-        return null;
+export async function getShiftById(shiftId: string, orgId?: string): Promise<Shift | null> {
+    if (isDashboardMockShiftId(shiftId)) {
+        return getDashboardMockShiftById(shiftId);
     }
 
-    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}`, {
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        cache: "no-store",
-    });
+    try {
+        return await apiJsonRequest<Shift>(`/shifts/${shiftId}`, {
+            organizationScoped: true,
+            organizationId: orgId,
+        });
+    } catch (error) {
+        console.error(`Error fetching shift ${shiftId}:`, error);
+        return null;
+    }
+}
 
-    if (!res.ok) return null;
-    return res.json();
-};
-
-export const getShiftTimesheets = async (shiftId: string, orgId?: string) => {
+export async function getShiftTimesheets(
+    shiftId: string,
+    orgId?: string,
+): Promise<TimesheetWorker[]> {
     if (isDashboardMockShiftId(shiftId)) {
         return getDashboardMockTimesheets(shiftId);
     }
 
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await getSecureOrgId(orgId);
-
-    if (!activeOrgId) {
+    try {
+        return await apiJsonRequest<TimesheetWorker[]>(`/shifts/${shiftId}/timesheets`, {
+            organizationScoped: true,
+            organizationId: orgId,
+        });
+    } catch (error) {
+        console.error(`Error fetching timesheets for shift ${shiftId}:`, error);
         return [];
     }
+}
 
-    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/timesheets`, {
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        cache: "no-store",
-    });
-
-    if (!res.ok) return [];
-    return res.json();
-};
-
-export const updateTimesheet = async (shiftId: string, workerId: string, action: string, data: any, orgId?: string) => {
+export async function updateTimesheet(
+    shiftId: string,
+    workerId: string,
+    action: string,
+    data: unknown,
+    orgId?: string,
+) {
     if (isDashboardMockShiftId(shiftId)) {
         return { ok: true, mock: true, shiftId, workerId, action, data };
     }
 
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/timesheet`, {
+    return mutateShift(`/shifts/${shiftId}/timesheet`, {
         method: "PATCH",
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        body: JSON.stringify({ shiftId, workerId, action, data }),
+        body: { shiftId, workerId, action, data },
+        organizationId: orgId,
     });
+}
 
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-};
-
-export const cancelShift = async (shiftId: string, orgId?: string) => {
+export async function cancelShift(shiftId: string, orgId?: string) {
     if (isDashboardMockShiftId(shiftId)) {
         return { ok: true, mock: true };
     }
 
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/cancel`, {
-        method: "POST",
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
+    return mutateShift(`/shifts/${shiftId}/cancel`, {
+        organizationId: orgId,
     });
+}
 
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-};
-
-export const assignWorkers = async (shiftId: string, workerIds: string[], orgId?: string) => {
+export async function assignWorkers(shiftId: string, workerIds: string[], orgId?: string) {
     if (isDashboardMockShiftId(shiftId)) {
         return { ok: true, mock: true, workerIds };
     }
 
-    const shiftServiceUrl = getApiBaseUrl();
-    const activeOrgId = await requireSecureOrgId(orgId);
-    const res = await fetch(`${shiftServiceUrl}/shifts/${shiftId}/assign`, {
-        method: "POST",
-        headers: {
-            "x-org-id": activeOrgId,
-            "Content-Type": "application/json",
-            "Cookie": (await headers()).get("cookie") || "",
-        },
-        body: JSON.stringify({ workerIds }),
+    return mutateShift(`/shifts/${shiftId}/assign`, {
+        body: { workerIds },
+        organizationId: orgId,
     });
+}
 
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-};
+export async function unassignWorker(shiftId: string, workerId: string, orgId?: string) {
+    if (isDashboardMockShiftId(shiftId)) {
+        return { ok: true, mock: true, workerId };
+    }
+
+    return mutateShift(`/shifts/${shiftId}/assign/${workerId}`, {
+        method: "DELETE",
+        organizationId: orgId,
+    });
+}

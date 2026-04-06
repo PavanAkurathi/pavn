@@ -1,7 +1,12 @@
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Button } from "@repo/ui/components/ui/button";
-import { TimePicker } from "@repo/ui/components/ui/time-picker";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@repo/ui/components/ui/dropdown-menu";
 import {
     Select,
     SelectContent,
@@ -10,7 +15,7 @@ import {
     SelectValue,
 } from "@repo/ui/components/ui/select";
 import { Input } from "@repo/ui/components/ui/input";
-import { Map, Star, ClipboardEdit } from "lucide-react";
+import { MessageSquareText, MoreHorizontal, Trash2 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
 type StatusVariant = "default" | "destructive" | "warning";
@@ -19,24 +24,23 @@ interface TimesheetRowProps {
     workerName: string;
     workerAvatar?: string;
     shiftDuration: string;
-    jobTitle: string;
     clockIn: string; // "05:00 PM"
     clockOut: string; // "11:35 PM"
     breakDuration: string; // "0 min"
-    rating?: number;
+    breakOneDuration: string;
+    breakTwoDuration: string;
+    notes?: string;
     clockInVariant?: StatusVariant;
     clockOutVariant?: StatusVariant;
     breakVariant?: StatusVariant;
     disabled?: boolean;
-    onAddToRoster?: () => void;
-    onReturn?: () => void;
-    onBlock?: () => void;
     onClockInChange?: (value: string) => void;
     onClockOutChange?: (value: string) => void;
-    onBreakChange?: (value: string) => void;
+    onBreakOneChange?: (value: string) => void;
+    onBreakTwoChange?: (value: string) => void;
     onSave?: (field: string, value: any) => void;
-    onRatingChange?: (rating: number) => void;
-    onWriteUp?: () => void;
+    onEditNotes?: () => void;
+    onRemoveFromShift?: () => void;
 }
 
 const getVariantClass = (variant: StatusVariant = "default") => {
@@ -54,23 +58,22 @@ export function TimesheetRow({
     workerName,
     workerAvatar,
     shiftDuration,
-    jobTitle,
     clockIn,
     clockOut,
     breakDuration,
-    rating,
+    breakOneDuration,
+    breakTwoDuration,
+    notes,
     clockInVariant = "default",
     clockOutVariant = "default",
     breakVariant = "default",
     disabled = false,
-    onAddToRoster,
-    onReturn,
-    onBlock,
     onClockInChange,
     onClockOutChange,
-    onBreakChange,
-    onRatingChange,
-    onWriteUp,
+    onBreakOneChange,
+    onBreakTwoChange,
+    onEditNotes,
+    onRemoveFromShift,
     onSave,
 }: TimesheetRowProps) {
     return (
@@ -86,48 +89,47 @@ export function TimesheetRow({
                 </Avatar>
                 <div className="flex flex-col">
                     <span className="font-medium">{workerName}</span>
-                    <span className="text-sm text-muted-foreground">{shiftDuration}</span>
+                    <span className="text-sm text-muted-foreground">
+                        {shiftDuration}
+                        {breakDuration && breakDuration !== "0 min" ? ` · ${breakDuration} total break` : ""}
+                    </span>
                 </div>
             </div>
 
             {/* 2. Clock In */}
             <div className="flex flex-col gap-1.5 md:w-[150px]">
                 <span className="text-xs text-muted-foreground md:hidden">Clock-in</span>
-                <TimePicker
+                <Input
                     value={clockIn}
-                    onChange={onClockInChange}
+                    onChange={(event) => onClockInChange?.(event.target.value)}
                     onBlur={() => onSave?.('clockIn', clockIn)}
-                    className={cn("font-mono text-sm", getVariantClass(clockInVariant))}
+                    className={cn("h-10 rounded-full font-mono text-sm", getVariantClass(clockInVariant))}
                     disabled={disabled}
-                    placeholder="00:00"
+                    placeholder="hh:mm am"
                 />
             </div>
 
             {/* 3. Clock Out */}
             <div className="flex flex-col gap-1.5 md:w-[150px]">
                 <span className="text-xs text-muted-foreground md:hidden">Clock-out</span>
-                <TimePicker
+                <Input
                     value={clockOut}
-                    onChange={onClockOutChange}
+                    onChange={(event) => onClockOutChange?.(event.target.value)}
                     onBlur={() => onSave?.('clockOut', clockOut)}
-                    className={cn("font-mono text-sm", getVariantClass(clockOutVariant))}
+                    className={cn("h-10 rounded-full font-mono text-sm", getVariantClass(clockOutVariant))}
                     disabled={disabled}
-                    placeholder="00:00"
+                    placeholder="hh:mm am"
                 />
             </div>
 
-            {/* 4. Total Unpaid Break */}
+            {/* 4. Break 1 */}
             <div className="flex flex-col gap-1.5 md:w-[150px]">
-                <span className="text-xs text-muted-foreground md:hidden">Break</span>
+                <span className="text-xs text-muted-foreground md:hidden">Break 1</span>
                 <Select
-                    value={breakDuration}
+                    value={breakOneDuration}
                     onValueChange={(val) => {
-                        onBreakChange?.(val);
-                        // For Select, we must save immediately as there is no blur equivalent for the composite component easily exposed
-                        // But we should defer slightly or just call save. 
-                        // Since onBreakChange updates state, we might save 'old' value if we call immediately? 
-                        // Actually onSave uses the passed val if we pass it.
-                        onSave?.('breakDuration', val);
+                        onBreakOneChange?.(val);
+                        onSave?.("breakOneDuration", val);
                     }}
                     disabled={disabled}
                 >
@@ -136,62 +138,71 @@ export function TimesheetRow({
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="0 min">0 min</SelectItem>
-                        <SelectItem value="10 min">10 min</SelectItem>
                         <SelectItem value="15 min">15 min</SelectItem>
                         <SelectItem value="30 min">30 min</SelectItem>
-                        <SelectItem value="45 min">45 min</SelectItem>
-                        <SelectItem value="1 hr">1 hr</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
 
-            {/* 5. Rating */}
-            <div className="flex flex-col gap-1.5 md:w-[120px]">
-                <span className="text-xs text-muted-foreground md:hidden">Rating</span>
-                <div className="flex items-center gap-1 justify-center">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                        <Button
-                            key={star}
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onRatingChange?.(star)}
-                            disabled={disabled}
-                            className="h-8 w-8 hover:bg-transparent"
-                            type="button"
-                        >
-                            <Star
-                                className={cn(
-                                    "h-5 w-5 transition-colors",
-                                    star <= (rating || 0)
-                                        ? "fill-yellow-400 text-yellow-400"
-                                        : "fill-muted/20 text-muted-foreground/40 hover:text-yellow-400/50"
-                                )}
-                            />
-                        </Button>
-                    ))}
-                </div>
-            </div>
-
-            {/* 6. Write Up */}
-            <div className="flex flex-col gap-1.5 md:w-[100px]">
-                <span className="text-xs text-muted-foreground md:hidden">Write Up</span>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="rounded-full text-muted-foreground hover:text-foreground"
-                    onClick={onWriteUp}
+            {/* 5. Break 2 */}
+            <div className="flex flex-col gap-1.5 md:w-[150px]">
+                <span className="text-xs text-muted-foreground md:hidden">Break 2</span>
+                <Select
+                    value={breakTwoDuration}
+                    onValueChange={(val) => {
+                        onBreakTwoChange?.(val);
+                        onSave?.("breakTwoDuration", val);
+                    }}
                     disabled={disabled}
                 >
-                    <ClipboardEdit className="mr-2 h-4 w-4" />
-                    Write Up
+                    <SelectTrigger className={cn("rounded-full font-mono text-sm", getVariantClass(breakVariant))}>
+                        <SelectValue placeholder="Select duration" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="0 min">0 min</SelectItem>
+                        <SelectItem value="15 min">15 min</SelectItem>
+                        <SelectItem value="30 min">30 min</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* 6. Notes */}
+            <div className="flex flex-col gap-1.5 md:w-[150px]">
+                <span className="text-xs text-muted-foreground md:hidden">Notes</span>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="justify-start rounded-full"
+                    onClick={onEditNotes}
+                    disabled={disabled}
+                >
+                    <MessageSquareText className="mr-2 h-4 w-4" />
+                    {notes ? "Edit note" : "Add note"}
                 </Button>
             </div>
 
-            {/* 7. Contact Actions (Right Side) */}
+            {/* 7. Row Actions */}
             <div className="flex items-center gap-2 md:ml-auto">
-                <Button variant="outline" size="icon" className="h-9 w-9">
-                    <Map className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-full" disabled={disabled}>
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={onEditNotes}>
+                            <MessageSquareText className="mr-2 h-4 w-4" />
+                            {notes ? "Edit note" : "Write note"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                            onClick={onRemoveFromShift}
+                            className="text-destructive focus:text-destructive"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remove from shift
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
     );

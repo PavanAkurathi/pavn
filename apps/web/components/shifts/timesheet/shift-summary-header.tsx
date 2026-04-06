@@ -1,7 +1,9 @@
 // apps/web/components/shifts/timesheet/shift-summary-header.tsx
 
 import * as React from "react";
+import Link from "next/link";
 import { Button } from "@repo/ui/components/ui/button";
+import { getCreateScheduleHref } from "@/lib/routes";
 
 interface ShiftSummaryHeaderProps {
     title: string;
@@ -32,8 +34,12 @@ export function ShiftSummaryHeader({
                     <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
                     <div className="text-muted-foreground">{role}</div>
                 </div>
-                <Button variant="outline" className="text-zinc-700 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900">
-                    Book again
+                <Button
+                    asChild
+                    variant="outline"
+                    className="text-zinc-700 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900"
+                >
+                    <Link href={getCreateScheduleHref()}>Book again</Link>
                 </Button>
             </div>
 

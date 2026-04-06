@@ -21,6 +21,7 @@ import { BusinessBasicsStep } from "@/components/onboarding/business-basics-step
 import { LocationBasicsStep } from "@/components/onboarding/location-basics-step";
 import { WorkforceSetupStep } from "@/components/onboarding/workforce-setup-step";
 import { FirstShiftStep } from "@/components/onboarding/first-shift-step";
+import { getDashboardShiftsHref, getOnboardingHref } from "@/lib/routes";
 
 type ActiveStepId = "business" | "location" | "workforce" | "first_shift";
 
@@ -71,12 +72,7 @@ function getStepStatus(stepId: string, activeStepId: ActiveStepId, complete: boo
 }
 
 function buildOnboardingHref(stepId: string, mockMode: boolean) {
-    const params = new URLSearchParams({ step: stepId });
-    if (mockMode) {
-        params.set("mock", "1");
-    }
-
-    return `/dashboard/onboarding?${params.toString()}`;
+    return getOnboardingHref({ step: stepId, mock: mockMode });
 }
 
 export function BusinessOnboardingView({
@@ -110,7 +106,7 @@ export function BusinessOnboardingView({
                                 </h1>
                             </div>
                             <Button asChild variant="ghost" size="sm" className="text-white/70 hover:bg-white/5 hover:text-white">
-                                <Link href="/dashboard/shifts">
+                                <Link href={getDashboardShiftsHref()}>
                                     <ArrowLeft data-icon="inline-start" />
                                     Exit setup
                                 </Link>

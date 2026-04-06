@@ -3,6 +3,7 @@
 import { FileText } from "lucide-react";
 import Link from "next/link";
 import { Banner } from "@repo/ui/components/ui/banner";
+import { getCreateScheduleHref } from "@/lib/routes";
 
 interface DraftBannerProps {
     count: number;
@@ -12,7 +13,7 @@ export function DraftBanner({ count }: DraftBannerProps) {
     if (count === 0) return null;
 
     return (
-        <Link href="/dashboard/schedule/create" className="group block">
+        <Link href={getCreateScheduleHref()} className="group block">
             <Banner
                 variant="warning"
                 className="max-w-4xl mt-6 mb-2 cursor-pointer"

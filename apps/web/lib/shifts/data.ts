@@ -472,12 +472,12 @@ export function getDashboardMockBundle(now = new Date()): DashboardMockBundle {
             createTimesheetEntry(downtownHostFri, `${MOCK_WORKER_PREFIX}lena`, {
                 clockInOffsetMinutes: 0,
                 clockOutOffsetMinutes: -2,
-                breakMinutes: 30,
+                breakMinutes: 45,
             }),
             createTimesheetEntry(downtownHostFri, `${MOCK_WORKER_PREFIX}aisha`, {
                 clockInOffsetMinutes: 6,
                 clockOutOffsetMinutes: 0,
-                breakMinutes: 15,
+                breakMinutes: 45,
             }),
         ],
         [`${MOCK_SHIFT_PREFIX}harbor-captain-wed`]: [
@@ -496,12 +496,12 @@ export function getDashboardMockBundle(now = new Date()): DashboardMockBundle {
             createTimesheetEntry(harborCaptainFri, `${MOCK_WORKER_PREFIX}nina`, {
                 clockInOffsetMinutes: 0,
                 clockOutOffsetMinutes: 1,
-                breakMinutes: 30,
+                breakMinutes: 45,
             }),
             createTimesheetEntry(harborCaptainFri, `${MOCK_WORKER_PREFIX}priya`, {
                 clockInOffsetMinutes: -3,
                 clockOutOffsetMinutes: 4,
-                breakMinutes: 30,
+                breakMinutes: 45,
             }),
         ],
         [`${MOCK_SHIFT_PREFIX}rooftop-expo-mon`]: [
@@ -574,6 +574,18 @@ export function getDashboardMockShifts(view: string, now = new Date()) {
         default:
             return bundle.upcomingShifts;
     }
+}
+
+export function getDashboardMockShiftById(shiftId: string, now = new Date()) {
+    const bundle = getDashboardMockBundle(now);
+    const allShifts = [
+        ...bundle.upcomingShifts,
+        ...bundle.pastShifts,
+        ...bundle.pendingApprovalShifts,
+        ...bundle.draftShifts,
+    ];
+
+    return allShifts.find((shift) => shift.id === shiftId) ?? null;
 }
 
 export function getDashboardMockTimesheets(shiftId: string, now = new Date()) {

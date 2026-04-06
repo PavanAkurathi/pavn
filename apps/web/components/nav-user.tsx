@@ -2,6 +2,7 @@
 
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut, ChevronDown, User, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
@@ -56,13 +57,17 @@ export function NavUser() {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/settings")}>
-                    <User className="mr-2 h-4 w-4" />
-                    Profile
+                <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                    </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => router.push("/settings")}>
-                    <SettingsIcon className="mr-2 h-4 w-4" />
-                    Settings
+                <DropdownMenuItem asChild>
+                    <Link href="/settings">
+                        <SettingsIcon className="mr-2 h-4 w-4" />
+                        Settings
+                    </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={handleSignOut} data-testid="sign-out">

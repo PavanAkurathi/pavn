@@ -6,6 +6,7 @@ import {
     getSecurityOverview,
     getWorkspaceSettings,
 } from "@/lib/api/organizations";
+import { getOnboardingHref } from "@/lib/routes";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { isAdminOrganizationRole } from "@/lib/server/organization-roles";
 
@@ -16,7 +17,7 @@ export default async function SettingsPage(props: {
     const activeTab = params.tab?.[0] || "profile";
 
     const { session, activeOrgId } = await getRequiredOrganizationContext({
-        missingOrganizationRedirectTo: "/dashboard/onboarding",
+        missingOrganizationRedirectTo: getOnboardingHref(),
     });
 
     const [workspace, security] = await Promise.all([
