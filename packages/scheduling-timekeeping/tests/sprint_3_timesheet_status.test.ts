@@ -5,7 +5,7 @@ import { TimesheetWorker } from "../src/types";
 
 // Mock DB
 // Explicitly cast to any[] to avoid 'never[]' inference
-const mockFindFirst = mock(() => Promise.resolve({ id: "shift_1" }));
+const mockFindFirst = mock(() => Promise.resolve({ id: "shift_1", title: "Host Stand" }));
 const mockFindMany = mock(() => Promise.resolve([] as any[]));
 
 mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
@@ -72,5 +72,20 @@ describe("WH-117: Timesheet Status Mapping", () => {
         const data = res as TimesheetWorker[];
         expect(data[0]!.status).toBe("cancelled");
         expect(data[1]!.status).toBe("no-show");
+    });
+
+    test("filters removed assignments and uses the shift title as role", async () => {
+        mockFindMany.mockResolvedValue([
+            { id: "7", workerId: "worker_7", status: "removed", worker: { name: "Removed Worker" } },
+            { id: "8", workerId: "worker_8", status: "active", worker: { name: "Live Worker", image: "img" } }
+        ]);
+
+        const res = await getShiftTimesheets("shift_1", "org_1");
+        const data = res as TimesheetWorker[];
+
+        expect(data).toHaveLength(1);
+        expect(data[0]!.workerId).toBe("worker_8");
+        expect(data[0]!.role).toBe("Host Stand");
+        expect(data[0]!.status).toBe("rostered");
     });
 });

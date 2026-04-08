@@ -4,8 +4,9 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { Button } from "@repo/ui/components/ui/button";
 import { ArrowLeft, UserPlus, X } from "lucide-react";
-import { Card, CardContent } from "@repo/ui/components/ui/card";
+import { Card, CardContent, CardHeader } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
+import { Separator } from "@repo/ui/components/ui/separator";
 
 import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalBanner } from "./timesheet/shift-approval-banner";
@@ -13,13 +14,14 @@ import { TimesheetTable } from "./timesheet/timesheet-table";
 import type { AddWorkerSelection } from "./add-worker-dialog";
 
 import { Shift, TimesheetWorker } from "@/lib/types";
-import { differenceInMinutes, format } from "date-fns";
+import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
 import {
     calculateTrackedMinutes,
     combineBreakDurations,
     formatTrackedMinutes,
     getRecommendedBreakMinutes,
+    isClockOutNextDay,
     parseTimeStringToIso,
     splitBreakMinutes,
     UpdateTimesheetPayload,
@@ -117,23 +119,14 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
 
-    const updateWorker = React.useCallback((id: string, field: string, value: any) => {
+    const updateWorkerNotes = React.useCallback((id: string, value: string) => {
         setWorkers((prev) =>
             prev.map((worker) => {
                 if (worker.id !== id) {
                     return worker;
                 }
 
-                const nextWorker = { ...worker, [field]: value };
-
-                if (field === "breakOneDuration" || field === "breakTwoDuration") {
-                    return {
-                        ...nextWorker,
-                        breakDuration: `${combineBreakDurations(nextWorker)} min`,
-                    };
-                }
-
-                return nextWorker;
+                return { ...worker, notes: value };
             }),
         );
     }, []);
@@ -170,6 +163,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         workers.reduce((total, worker) => total + calculateTrackedMinutes(worker), 0),
     );
     const roleLabel = timesheets[0]?.role || "Event Staff";
+    const summaryBreakLabel = `${getRecommendedBreakMinutes(scheduledMinutes)} min break`;
 
     const handleRemoveWorker = React.useCallback(async (workerId: string) => {
         const worker = workers.find((candidate) => candidate.id === workerId);
@@ -189,42 +183,59 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         }
     }, [shift.id, workers]);
 
-    const saveTimesheetEntry = React.useCallback(async (id: string, field: string, value: any) => {
-        if (field === "notes") {
-            return;
-        }
-
+    const commitWorkerChanges = React.useCallback(async (
+        id: string,
+        changes: Partial<Pick<TimesheetViewModel, "clockIn" | "clockOut" | "breakOneDuration" | "breakTwoDuration">>,
+    ) => {
         const latestWorker = workers.find((worker) => worker.id === id);
-        if (!latestWorker) return;
+        if (!latestWorker) return false;
 
         try {
             const shiftDate = new Date(shift.startTime);
-            const nextWorkerSnapshot = { ...latestWorker, [field]: value };
-            const payload: UpdateTimesheetPayload = {};
+            const nextWorkerSnapshot = {
+                ...latestWorker,
+                ...changes,
+            };
+            const breakMinutes = combineBreakDurations(nextWorkerSnapshot);
+            const clockOutBaseDate = isClockOutNextDay(
+                nextWorkerSnapshot.clockIn,
+                nextWorkerSnapshot.clockOut,
+            )
+                ? addDays(shiftDate, 1)
+                : shiftDate;
 
-            if (field === "clockIn") {
-                payload.clockIn = parseTimeStringToIso(value, shiftDate);
-                payload.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
-                payload.breakMinutes = combineBreakDurations(latestWorker);
-            } else if (field === "clockOut") {
-                payload.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
-                payload.clockOut = parseTimeStringToIso(value, shiftDate);
-                payload.breakMinutes = combineBreakDurations(latestWorker);
-            } else if (field === "breakOneDuration" || field === "breakTwoDuration") {
-                payload.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
-                payload.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
-                payload.breakMinutes = combineBreakDurations(nextWorkerSnapshot);
-            } else {
-                return;
+            const payload: UpdateTimesheetPayload = {
+                clockIn: parseTimeStringToIso(nextWorkerSnapshot.clockIn, shiftDate),
+                clockOut: parseTimeStringToIso(nextWorkerSnapshot.clockOut, clockOutBaseDate),
+                breakMinutes,
+            };
+
+            if (!payload.clockIn && !payload.clockOut && breakMinutes === combineBreakDurations(latestWorker)) {
+                return true;
             }
 
             const result = await updateTimesheetAction(shift.id, id, payload);
             if ("error" in result) {
                 throw new Error(result.error);
             }
+
+            setWorkers((prev) =>
+                prev.map((worker) =>
+                    worker.id === id
+                        ? {
+                              ...worker,
+                              ...changes,
+                              breakDuration: `${breakMinutes} min`,
+                          }
+                        : worker,
+                ),
+            );
+
+            return true;
         } catch (error) {
             console.error(error);
             toast.error("Failed to save timesheet");
+            return false;
         }
     }, [shift.id, shift.startTime, workers]);
 
@@ -252,39 +263,36 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
     return (
         <div className="flex flex-col space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex items-start gap-4">
                     <Button variant="ghost" size="icon" onClick={onBack} aria-label="Back to shifts dashboard">
                         <ArrowLeft />
                     </Button>
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-2xl font-semibold tracking-tight">Timesheets</h2>
-                        {isApproved && (
-                            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                                Approved
-                            </span>
-                        )}
-                        {isCancelled && (
-                            <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                                Cancelled
-                            </span>
-                        )}
-                        {!isApproved && !isCancelled && (
-                            <span className="rounded-full bg-yellow-400 px-2 py-0.5 text-xs font-medium text-black">
-                                {filledCount} of {workerCount} filled
-                            </span>
-                        )}
+                    <div className="flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-2xl font-semibold tracking-tight">Timesheets</h2>
+                            {isApproved ? <Badge variant="secondary">Approved</Badge> : null}
+                            {isCancelled ? <Badge variant="destructive">Cancelled</Badge> : null}
+                            {!isApproved && !isCancelled ? (
+                                <Badge variant="outline">
+                                    {filledCount} of {workerCount} filled
+                                </Badge>
+                            ) : null}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            Review worker time entries, break windows, and notes before approval.
+                        </p>
                     </div>
                 </div>
                 {!isApproved && !isCancelled && (
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" className="rounded-full" onClick={() => setIsAddWorkerOpen(true)}>
+                    <div className="flex items-center gap-2 self-start">
+                        <Button variant="outline" onClick={() => setIsAddWorkerOpen(true)}>
                             <UserPlus data-icon="inline-start" />
                             Add worker
                         </Button>
                         <Button
                             variant="ghost"
-                            className="rounded-full px-3 text-muted-foreground hover:text-destructive"
+                            className="px-3 text-muted-foreground hover:text-destructive"
                             onClick={handleCancelShift}
                             disabled={isCancelling}
                         >
@@ -294,55 +302,60 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </div>
                 )}
             </div>
-            <Card className="rounded-[28px] border-border/70 shadow-sm">
-                <CardContent className="flex flex-col gap-6 p-6">
+            <Card className="rounded-[24px] border-border/70 shadow-sm">
+                <CardHeader className="gap-5 p-5 md:p-6">
                     <ShiftSummaryHeader
                         title={shift.title}
                         role={roleLabel}
                         date={format(new Date(shift.startTime), "EEE, MMM d, yyyy")}
                         location={shift.locationName}
                         timeRange={`${format(new Date(shift.startTime), "h:mm a")} - ${format(new Date(shift.endTime), "h:mm a")}`}
-                        breakDuration="30 min break"
+                        breakDuration={summaryBreakLabel}
                         createdBy="Admin"
                         createdAt="Oct 14, 11:37 PM"
                     />
 
                     {!isCancelled ? (
-                        <ShiftApprovalBanner
-                            workerCount={workerCount}
-                            filledCount={filledCount}
-                            needsAttentionCount={needsAttentionCount}
-                            totalHours={totalHours}
-                            hasErrors={hasErrors}
-                            isApproved={isApproved}
-                            onApprove={() => onApprove?.()}
-                        />
+                        <>
+                            <Separator />
+                            <ShiftApprovalBanner
+                                workerCount={workerCount}
+                                filledCount={filledCount}
+                                needsAttentionCount={needsAttentionCount}
+                                totalHours={totalHours}
+                                hasErrors={hasErrors}
+                                isApproved={isApproved}
+                                onApprove={() => onApprove?.()}
+                            />
+                        </>
                     ) : null}
+                </CardHeader>
 
+                <CardContent className="flex flex-col gap-4 px-5 pb-5 pt-0 md:px-6 md:pb-6">
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex flex-wrap items-center gap-2">
                                 <h3 className="text-lg font-semibold tracking-tight">Team timesheets</h3>
                                 <Badge variant="outline">{workerCount} workers</Badge>
                                 {needsAttentionCount > 0 ? (
-                                    <Badge className="border-amber-200 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                                    <Badge variant="destructive">
                                         {needsAttentionCount} need review
                                     </Badge>
                                 ) : (
-                                    <Badge className="border-emerald-200 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                                    <Badge variant="secondary">
                                         All records complete
                                     </Badge>
                                 )}
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                                Managers update clock-in, clock-out, break windows, notes, and removals here before final approval.
+                            <p className="max-w-xl text-sm text-muted-foreground">
+                                Update time entries, break windows, notes, and removals here before final approval.
                             </p>
                         </div>
 
                         <TimesheetTable
                             data={workers}
-                            onUpdateWorker={updateWorker}
-                            onSaveWorker={saveTimesheetEntry}
+                            onCommitWorker={commitWorkerChanges}
+                            onUpdateWorkerNotes={updateWorkerNotes}
                             onRemoveWorker={handleRemoveWorker}
                             isApproved={isApproved}
                             isCancelled={isCancelled}

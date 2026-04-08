@@ -1,15 +1,40 @@
 import { db, TxOrDb } from "@repo/database";
 import { shiftAssignment, assignmentAuditEvent, shift } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { differenceInMinutes } from "date-fns";
 import { AppError } from "@repo/observability";
+
+function resolveManagerUpdateStatus(
+    currentStatus: string,
+    hasClockIn: boolean,
+    hasClockOut: boolean,
+) {
+    if (currentStatus === "approved" || currentStatus === "cancelled") {
+        return currentStatus;
+    }
+
+    if (hasClockIn && hasClockOut) {
+        return "completed";
+    }
+
+    if (hasClockIn) {
+        return currentStatus === "in-progress" ? "in-progress" : "active";
+    }
+
+    if (currentStatus === "no_show") {
+        return "no_show";
+    }
+
+    return "active";
+}
 
 export async function getAssignment(shiftId: string, workerId: string, orgId?: string) {
     const assignment = await db.query.shiftAssignment.findFirst({
         where: and(
             eq(shiftAssignment.shiftId, shiftId),
-            eq(shiftAssignment.workerId, workerId)
+            eq(shiftAssignment.workerId, workerId),
+            ne(shiftAssignment.status, "removed"),
         ),
         with: {
             shift: {
@@ -91,55 +116,70 @@ export async function applyManagerTimesheetUpdate(
         const assignment = await transaction.query.shiftAssignment.findFirst({
             where: and(
                 eq(shiftAssignment.shiftId, shiftId),
-                eq(shiftAssignment.workerId, workerId)
-            )
+                eq(shiftAssignment.workerId, workerId),
+                ne(shiftAssignment.status, "removed"),
+            ),
         });
 
         if (!assignment) throw new AppError("Assignment not found", "NOT_FOUND", 404);
 
         const targetShift = await transaction.query.shift.findFirst({
             where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
-            columns: { startTime: true }
+            columns: { startTime: true, status: true }
         });
 
         if (!targetShift) throw new AppError("Shift not found", "NOT_FOUND", 404);
+        if (targetShift.status === "cancelled") {
+            throw new AppError("Cannot update timesheets for a cancelled shift", "INVALID_STATE", 409);
+        }
 
-        let effectiveClockIn = data.clockIn;
-        if (data.clockIn) {
-            if (actorRole === "member" && data.clockIn < targetShift.startTime) {
+        const nextActualClockIn =
+            data.clockIn === undefined ? assignment.actualClockIn : data.clockIn;
+        const nextActualClockOut =
+            data.clockOut === undefined ? assignment.actualClockOut : data.clockOut;
+        const nextBreakMinutes = data.breakMinutes ?? assignment.breakMinutes ?? 0;
+
+        let effectiveClockIn = nextActualClockIn;
+        if (nextActualClockIn) {
+            if (actorRole === "member" && nextActualClockIn < targetShift.startTime) {
                 effectiveClockIn = targetShift.startTime;
             } else {
-                effectiveClockIn = data.clockIn;
+                effectiveClockIn = nextActualClockIn;
             }
         }
 
         let totalWorkedMinutes = 0;
-        if (effectiveClockIn && data.clockOut) {
-            const diff = differenceInMinutes(data.clockOut, effectiveClockIn);
-            totalWorkedMinutes = Math.max(0, diff - (data.breakMinutes || 0));
+        if (effectiveClockIn && nextActualClockOut) {
+            const diff = differenceInMinutes(nextActualClockOut, effectiveClockIn);
+            totalWorkedMinutes = Math.max(0, diff - nextBreakMinutes);
         }
+        const nextStatus = resolveManagerUpdateStatus(
+            assignment.status,
+            Boolean(nextActualClockIn),
+            Boolean(nextActualClockOut),
+        );
 
         await transaction.update(shiftAssignment)
             .set({
-                actualClockIn: data.clockIn,
+                actualClockIn: nextActualClockIn ?? null,
                 effectiveClockIn,
-                actualClockOut: data.clockOut,
-                effectiveClockOut: data.clockOut,
-                breakMinutes: data.breakMinutes || 0,
+                actualClockOut: nextActualClockOut ?? null,
+                effectiveClockOut: nextActualClockOut ?? null,
+                breakMinutes: nextBreakMinutes,
                 totalDurationMinutes: totalWorkedMinutes,
                 payoutAmountCents: null,
-                status: "completed",
+                status: nextStatus,
                 updatedAt: new Date()
             })
             .where(eq(shiftAssignment.id, assignment.id));
 
-        if (assignment.status !== "completed") {
+        if (assignment.status !== nextStatus) {
             await transaction.insert(assignmentAuditEvent).values({
                 id: nanoid(),
                 assignmentId: assignment.id,
                 actorId,
                 previousStatus: assignment.status,
-                newStatus: "completed",
+                newStatus: nextStatus,
                 metadata: { reason: "Manual Timesheet Update", totalMinutes: totalWorkedMinutes },
                 timestamp: new Date()
             });

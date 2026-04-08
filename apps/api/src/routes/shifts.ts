@@ -16,7 +16,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import {
     ShiftSchema,
-    TimesheetSchema,
+    TimesheetWorkerSchema,
     UpcomingShiftsResponseSchema,
 } from "@repo/contracts/shifts";
 import type { AppContext } from "../index";
@@ -302,7 +302,7 @@ const getShiftTimesheetsRoute = createRoute({
     description: 'Get timesheets for a shift.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.array(TimesheetSchema) } }, description: 'Timesheets' },
+        200: { content: { 'application/json': { schema: z.array(TimesheetWorkerSchema) } }, description: 'Timesheets' },
         403: { description: 'Forbidden' }
     }
 });

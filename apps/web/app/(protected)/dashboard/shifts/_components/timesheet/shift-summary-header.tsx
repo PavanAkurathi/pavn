@@ -3,6 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { Button } from "@repo/ui/components/ui/button";
+import { Badge } from "@repo/ui/components/ui/badge";
+import { Separator } from "@repo/ui/components/ui/separator";
 import { getCreateScheduleHref } from "@/lib/routes";
 
 interface ShiftSummaryHeaderProps {
@@ -28,28 +30,29 @@ export function ShiftSummaryHeader({
     createdAt,
 }: ShiftSummaryHeaderProps) {
     return (
-        <div className="flex flex-col gap-4 py-2">
-            <div className="flex items-start justify-between">
-                <div className="space-y-1">
-                    <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-                    <div className="text-muted-foreground">{role}</div>
+        <div className="flex flex-col gap-4 py-1">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{role}</Badge>
+                        <Badge variant="secondary">{breakDuration}</Badge>
+                    </div>
+                    <div className="space-y-1">
+                        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+                        <div className="text-sm text-muted-foreground">{date} · {location}</div>
+                    </div>
                 </div>
-                <Button
-                    asChild
-                    variant="outline"
-                    className="text-zinc-700 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-900"
-                >
+                <Button asChild variant="outline" className="self-start">
                     <Link href={getCreateScheduleHref()}>Book again</Link>
                 </Button>
             </div>
 
-            <div className="space-y-1 text-sm">
-                <div>{date} • {location} • {role}</div>
-                <div className="font-medium">{timeRange} <span className="font-normal text-muted-foreground ml-2">{breakDuration}</span></div>
-            </div>
-
-            <div className="text-xs text-muted-foreground pt-2">
-                Created by: {createdBy} on {createdAt}
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="font-medium text-foreground">{timeRange}</span>
+                <Separator orientation="vertical" className="hidden h-4 sm:block" />
+                <span className="text-muted-foreground">
+                    Created by {createdBy} on {createdAt}
+                </span>
             </div>
         </div>
     );

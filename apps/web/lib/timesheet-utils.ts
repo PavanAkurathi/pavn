@@ -10,6 +10,11 @@ export interface UpdateTimesheetPayload {
     breakMinutes?: number;
 }
 
+export interface TimeFieldParts {
+    hour: string;
+    minute: string;
+    period: "AM" | "PM" | "";
+}
 
 export interface TimesheetViewModel {
     id: string;
@@ -113,6 +118,48 @@ function parseDisplayTimeToMinutes(time: string | undefined) {
     }
 
     return normalizedHours * 60 + minutes;
+}
+
+export function parseDisplayTimeParts(time: string | undefined | null): TimeFieldParts {
+    if (!time) {
+        return {
+            hour: "",
+            minute: "",
+            period: "",
+        };
+    }
+
+    const [rawTime, period] = time.trim().split(" ");
+    const [hour = "", minute = ""] = (rawTime || "").split(":");
+
+    return {
+        hour,
+        minute,
+        period: period === "AM" || period === "PM" ? period : "",
+    };
+}
+
+export function formatDisplayTimeParts(parts: Partial<TimeFieldParts> | null | undefined) {
+    if (!parts?.hour || !parts?.minute || !parts?.period) {
+        return "";
+    }
+
+    return `${parts.hour}:${parts.minute} ${parts.period}`;
+}
+
+export function isCompleteTimeParts(parts: Partial<TimeFieldParts> | null | undefined) {
+    return Boolean(parts?.hour && parts?.minute && parts?.period);
+}
+
+export function isClockOutNextDay(clockIn: string | undefined, clockOut: string | undefined) {
+    const clockInMinutes = parseDisplayTimeToMinutes(clockIn);
+    const clockOutMinutes = parseDisplayTimeToMinutes(clockOut);
+
+    if (clockInMinutes === null || clockOutMinutes === null) {
+        return false;
+    }
+
+    return clockOutMinutes < clockInMinutes;
 }
 
 export function calculateTrackedMinutes(worker: Partial<TimesheetViewModel>) {

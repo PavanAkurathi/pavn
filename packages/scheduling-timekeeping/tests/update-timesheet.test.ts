@@ -78,4 +78,24 @@ describe("updateTimesheet", () => {
         expect(data.clockOut).toBeInstanceOf(Date);
         expect(actorRole).toBe("manager");
     });
+
+    test("preserves omitted clock fields during manager edits", async () => {
+        await updateTimesheet(
+            {
+                shiftId: "shift_1",
+                workerId: "worker_1",
+                action: "update_time",
+                data: {
+                    breakMinutes: 15,
+                },
+            },
+            "org_1",
+            "actor_1"
+        );
+
+        const [, , , , data] = mockUpdateTimesheetService.mock.calls[0] as any[];
+        expect(data.breakMinutes).toBe(15);
+        expect(data.clockIn).toBeUndefined();
+        expect(data.clockOut).toBeUndefined();
+    });
 });

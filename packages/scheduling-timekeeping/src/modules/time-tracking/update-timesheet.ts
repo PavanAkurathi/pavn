@@ -36,8 +36,14 @@ export const updateTimesheet = async (body: any, orgId: string, actorId: string 
         );
     }
     else if (action === 'update_time') {
-        const clockIn = data?.clockIn ? new Date(data.clockIn) : null;
-        const clockOut = data?.clockOut ? new Date(data.clockOut) : null;
+        const clockIn =
+            data && "clockIn" in data
+                ? (data.clockIn ? new Date(data.clockIn) : null)
+                : undefined;
+        const clockOut =
+            data && "clockOut" in data
+                ? (data.clockOut ? new Date(data.clockOut) : null)
+                : undefined;
 
         await applyManagerTimesheetUpdate(
             actorId,

@@ -2,7 +2,7 @@
 
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { TimesheetWorker } from "../../types";
 import { getInitials } from "../../utils/formatting";
 import { AppError } from "@repo/observability";
@@ -14,7 +14,7 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
     // 1. Verify Shift Ownership
     const validShift = await db.query.shift.findFirst({
         where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
-        columns: { id: true }
+        columns: { id: true, title: true }
     });
 
     if (!validShift) {
@@ -23,13 +23,18 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
 
     // 2. Query DB with inference
     const assignments = await db.query.shiftAssignment.findMany({
-        where: eq(shiftAssignment.shiftId, shiftId),
+        where: and(
+            eq(shiftAssignment.shiftId, shiftId),
+            ne(shiftAssignment.status, "removed"),
+        ),
         with: {
             worker: true
         }
     });
 
-    const timesheets: TimesheetWorker[] = assignments.map(a => {
+    const visibleAssignments = assignments.filter((assignment) => assignment.status !== "removed");
+
+    const timesheets: TimesheetWorker[] = visibleAssignments.map(a => {
         // Fallback name if worker relation is missing (deleted user?)
         const workerName = a.worker ? a.worker.name : "Unknown Worker";
 
@@ -39,7 +44,7 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
             name: workerName,
             avatarUrl: a.worker?.image || undefined,
             avatarInitials: getInitials(workerName),
-            role: "Worker", // Not in schema yet
+            role: validShift.title,
             // hourlyRate: 0,  // REMOVED per TICKET-005/008
             clockIn: (a.effectiveClockIn || a.actualClockIn) ? (a.effectiveClockIn || a.actualClockIn)!.toISOString() : undefined,
             clockOut: (a.effectiveClockOut || a.actualClockOut) ? (a.effectiveClockOut || a.actualClockOut)!.toISOString() : undefined,
@@ -66,6 +71,8 @@ function mapAssignmentStatus(status: string): TimesheetWorker['status'] {
             return 'cancelled';
         case 'no_show':
             return 'no-show';
+        case 'removed':
+            return 'cancelled';
         default:
             console.warn(`[TIMESHEET] Unknown assignment status: "${status}"`);
             return 'rostered';

@@ -21,8 +21,10 @@ interface ShiftWithRelations extends BaseShift {
 type AttendanceVerificationPolicy = "strict_geofence" | "soft_geofence" | "none";
 
 export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
-    // Calculate capacity based on assignments count
-    const filled = dbShift.assignments ? dbShift.assignments.length : 0;
+    const visibleAssignments = (dbShift.assignments ?? []).filter(
+        (assignment) => assignment.status !== "removed",
+    );
+    const filled = visibleAssignments.length;
 
     return {
         id: dbShift.id,
@@ -46,11 +48,11 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
             total: dbShift.capacityTotal
         },
         // Map assignments to worker details
-        assignedWorkers: dbShift.assignments?.map((a) => ({
+        assignedWorkers: visibleAssignments.map((a) => ({
             id: a.workerId,
             name: a.worker?.name ?? "Unknown",
             initials: getInitials(a.worker?.name),
             avatarUrl: a.worker?.image || undefined
-        })) || []
+        }))
     };
 };

@@ -1,3 +1,5 @@
+import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
+import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { cn } from "@repo/ui/lib/utils";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
@@ -31,58 +33,39 @@ export function ShiftApprovalBanner({
         : hasErrors
           ? `${needsAttentionCount} of ${workerCount} worker records still need clock or break updates before approval.`
           : `${filledCount} of ${workerCount} worker records are complete and ready to be finalized.`;
+    const Icon = isApproved || !hasErrors ? CheckCircle2 : AlertCircle;
 
     return (
-        <div
+        <Alert
             className={cn(
-                "rounded-2xl border px-5 py-4 shadow-sm",
-                isApproved && "border-emerald-200 bg-emerald-50/80",
-                !isApproved && hasErrors && "border-amber-200 bg-amber-50/80",
-                !isApproved && !hasErrors && "border-slate-200 bg-slate-50/80",
+                "rounded-2xl border px-5 py-4 shadow-none",
+                isApproved && "border-border/70 bg-muted/30",
+                !isApproved && "bg-background",
             )}
         >
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="flex items-start gap-3">
-                    <div
-                        className={cn(
-                            "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                            isApproved && "bg-emerald-100 text-emerald-700",
-                            !isApproved && hasErrors && "bg-amber-100 text-amber-700",
-                            !isApproved && !hasErrors && "bg-slate-900 text-white",
-                        )}
-                    >
-                        {isApproved ? (
-                            <CheckCircle2 className="h-5 w-5" />
-                        ) : hasErrors ? (
-                            <AlertCircle className="h-5 w-5" />
-                        ) : (
-                            <CheckCircle2 className="h-5 w-5" />
-                        )}
+            <Icon className={cn(isApproved && "text-primary", hasErrors && !isApproved && "text-destructive")} />
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <AlertTitle>{title}</AlertTitle>
+                        <Badge variant={isApproved ? "secondary" : hasErrors ? "destructive" : "outline"}>
+                            {isApproved ? "Approved" : hasErrors ? "Needs review" : "Ready"}
+                        </Badge>
+                        <Badge variant="outline">{filledCount}/{workerCount} complete</Badge>
+                        <Badge variant="outline">{totalHours} tracked</Badge>
                     </div>
-                    <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground">{title}</p>
-                            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-                                {filledCount}/{workerCount} complete
-                            </span>
-                            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/60">
-                                {totalHours} tracked
-                            </span>
-                        </div>
-                        <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
-                    </div>
+                    <AlertDescription className="max-w-2xl">
+                        {description}
+                    </AlertDescription>
                 </div>
 
                 {isApproved ? (
-                    <Button variant="outline" className="rounded-full self-start pointer-events-none opacity-80">
+                    <Button variant="outline" className="self-start" disabled>
                         Archived
                     </Button>
                 ) : (
                     <Button
-                        className={cn(
-                            "rounded-full px-5 font-semibold self-start",
-                            hasErrors && "pointer-events-none opacity-60",
-                        )}
+                        className="self-start"
                         disabled={hasErrors}
                         onClick={onApprove}
                     >
@@ -90,6 +73,6 @@ export function ShiftApprovalBanner({
                     </Button>
                 )}
             </div>
-        </div>
+        </Alert>
     );
 }
