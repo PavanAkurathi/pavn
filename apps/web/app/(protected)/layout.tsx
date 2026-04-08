@@ -23,7 +23,14 @@ export default async function ProtectedLayout({
 
     return (
         <div className="min-h-screen bg-slate-50">
-            <NavHeader activeOrg={activeOrg} />
+            <NavHeader
+                activeOrg={activeOrg}
+                user={{
+                    name: sessionResponse.user.name,
+                    email: sessionResponse.user.email,
+                    image: sessionResponse.user.image,
+                }}
+            />
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {children}
             </main>

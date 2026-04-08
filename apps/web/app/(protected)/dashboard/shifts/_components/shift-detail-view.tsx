@@ -1,29 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { Button } from "@repo/ui/components/ui/button";
-import { ArrowLeft, AlertCircle, UserPlus, X } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@repo/ui/components/ui/dialog";
-import { Textarea } from "@repo/ui/components/ui/textarea";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@repo/ui/components/ui/alert-dialog";
+import { ArrowLeft, UserPlus, X } from "lucide-react";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
 
 import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalBanner } from "./timesheet/shift-approval-banner";
 import { TimesheetTable } from "./timesheet/timesheet-table";
-import { AddWorkerDialog } from "./add-worker-dialog";
+import type { AddWorkerSelection } from "./add-worker-dialog";
 
 import { Shift, TimesheetWorker } from "@/lib/types";
 import { differenceInMinutes, format } from "date-fns";
@@ -39,7 +26,17 @@ import {
     TimesheetViewModel,
     workerNeedsAttention,
 } from "@/lib/timesheet-utils";
-import { getDashboardMockCrew, isDashboardMockShiftId } from "@/lib/shifts/data";
+import {
+    assignWorkersToShiftAction,
+    cancelShiftAction,
+    unassignWorkerFromShiftAction,
+    updateTimesheetAction,
+} from "../_actions/timesheet";
+
+const AddWorkerDialog = dynamic(
+    () => import("./add-worker-dialog").then((mod) => mod.AddWorkerDialog),
+    { ssr: false },
+);
 
 interface ShiftDetailViewProps {
     onBack: () => void;
@@ -49,7 +46,6 @@ interface ShiftDetailViewProps {
 }
 
 export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftDetailViewProps) {
-    const router = useRouter();
     const scheduledMinutes = Math.max(
         0,
         differenceInMinutes(new Date(shift.endTime), new Date(shift.startTime)),
@@ -59,6 +55,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const getWorkersFromProps = React.useCallback((): TimesheetViewModel[] => {
         const allWorkers = shift.assignedWorkers || [];
         const roleLabel = timesheets[0]?.role || "Event Staff";
+
         return allWorkers.map((assigned) => {
             const ts = timesheets.find((entry) => entry.workerId === assigned.id);
             if (ts) {
@@ -78,6 +75,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     jobTitle: ts.role || roleLabel,
                 };
             }
+
             const recommendedBreakMinutes = getRecommendedBreakMinutes(scheduledMinutes);
             const splitBreaks = splitBreakMinutes(recommendedBreakMinutes);
             return {
@@ -97,12 +95,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         });
     }, [scheduledDurationLabel, scheduledMinutes, shift.assignedWorkers, timesheets]);
 
-    const buildWorkerViewModel = React.useCallback((worker: {
-        id: string;
-        name: string;
-        avatar?: string;
-        initials: string;
-    }): TimesheetViewModel => {
+    const buildWorkerViewModel = React.useCallback((worker: AddWorkerSelection): TimesheetViewModel => {
         const recommendedBreakMinutes = getRecommendedBreakMinutes(scheduledMinutes);
         return {
             id: worker.id,
@@ -120,27 +113,9 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         };
     }, [scheduledDurationLabel, scheduledMinutes, shift.title]);
 
-    const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(getWorkersFromProps);
+    const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(() => getWorkersFromProps());
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
-    const [isCancelConfirmOpen, setIsCancelConfirmOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
-    const [noteWorkerId, setNoteWorkerId] = React.useState<string | null>(null);
-    const [noteDraft, setNoteDraft] = React.useState("");
-
-    // State for Save Confirmation Dialog
-    const [pendingSave, setPendingSave] = React.useState<{
-        id: string;
-        field: string;
-        value: any;
-        payload: UpdateTimesheetPayload;
-        action: string;
-        workerName: string;
-        fieldLabel: string;
-    } | null>(null);
-
-    React.useEffect(() => {
-        setWorkers(getWorkersFromProps());
-    }, [getWorkersFromProps]);
 
     const updateWorker = React.useCallback((id: string, field: string, value: any) => {
         setWorkers((prev) =>
@@ -163,39 +138,30 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         );
     }, []);
 
-    const handleAddWorkers = async (newWorkerIds: string[]) => {
+    const handleAddWorkers = async (newWorkers: AddWorkerSelection[]) => {
+        const newWorkerIds = newWorkers.map((worker) => worker.id);
+
         try {
-            await import("@/lib/api/shifts").then(mod => mod.assignWorkers(shift.id, newWorkerIds));
-
-            if (isDashboardMockShiftId(shift.id)) {
-                const mockCrew = getDashboardMockCrew();
-                const addedWorkers = mockCrew
-                    .filter((worker) => newWorkerIds.includes(worker.id))
-                    .map((worker) => buildWorkerViewModel(worker));
-
-                setWorkers((prev) => {
-                    const existingIds = new Set(prev.map((worker) => worker.id));
-                    return [
-                        ...prev,
-                        ...addedWorkers.filter((worker) => !existingIds.has(worker.id)),
-                    ];
-                });
-
-                toast.success(`Added ${newWorkerIds.length} worker${newWorkerIds.length === 1 ? "" : "s"} to the shift`);
-                return;
+            const result = await assignWorkersToShiftAction(shift.id, newWorkerIds);
+            if ("error" in result) {
+                throw new Error(result.error);
             }
 
-            toast.success(`Assigned ${newWorkerIds.length} workers successfully`);
-            router.refresh();
+            const addedWorkers = newWorkers.map((worker) => buildWorkerViewModel(worker));
+            setWorkers((prev) => {
+                const existingIds = new Set(prev.map((worker) => worker.id));
+                return [...prev, ...addedWorkers.filter((worker) => !existingIds.has(worker.id))];
+            });
+
+            toast.success(`Added ${newWorkerIds.length} worker${newWorkerIds.length === 1 ? "" : "s"} to the shift`);
         } catch (error) {
             console.error(error);
             toast.error("Failed to assign workers");
         }
     };
 
-
-    const isApproved = shift.status === 'approved';
-    const isCancelled = shift.status === 'cancelled';
+    const isApproved = shift.status === "approved";
+    const isCancelled = shift.status === "cancelled";
     const workerCount = workers.length;
     const filledCount = workers.filter((worker) => Boolean(worker.clockIn && worker.clockOut)).length;
     const needsAttentionCount = workers.filter(workerNeedsAttention).length;
@@ -205,133 +171,84 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     );
     const roleLabel = timesheets[0]?.role || "Event Staff";
 
-    const confirmSave = async () => {
-        if (!pendingSave) return;
-
-        try {
-            await import("@/lib/api/shifts").then(mod =>
-                mod.updateTimesheet(shift.id, pendingSave.id, pendingSave.action, pendingSave.payload)
-            );
-            toast.success("Timesheet saved");
-        } catch (e) {
-            console.error(e);
-            toast.error("Failed to save timesheet");
-        } finally {
-            setPendingSave(null);
-        }
-    };
-
-    const cancelSave = () => {
-        setPendingSave(null);
-    };
-
-    const handleEditWorkerNotes = React.useCallback((workerId: string) => {
-        const worker = workers.find((candidate) => candidate.id === workerId);
-        if (!worker) return;
-
-        setNoteWorkerId(workerId);
-        setNoteDraft(worker.notes || "");
-    }, [workers]);
-
-    const handleSaveWorkerNotes = React.useCallback(() => {
-        if (!noteWorkerId) return;
-
-        updateWorker(noteWorkerId, "notes", noteDraft.trim());
-        setNoteWorkerId(null);
-        setNoteDraft("");
-        toast.success("Manager note saved on this screen");
-    }, [noteDraft, noteWorkerId, updateWorker]);
-
     const handleRemoveWorker = React.useCallback(async (workerId: string) => {
         const worker = workers.find((candidate) => candidate.id === workerId);
         if (!worker) return;
 
-        if (isDashboardMockShiftId(shift.id)) {
-            setWorkers((prev) => prev.filter((candidate) => candidate.id !== workerId));
-            toast.success(`${worker.name} removed from this shift`);
-            return;
-        }
-
         try {
-            await import("@/lib/api/shifts").then((mod) => mod.unassignWorker(shift.id, workerId));
+            const result = await unassignWorkerFromShiftAction(shift.id, workerId);
+            if ("error" in result) {
+                throw new Error(result.error);
+            }
+
             setWorkers((prev) => prev.filter((candidate) => candidate.id !== workerId));
             toast.success(`${worker.name} removed from this shift`);
-            router.refresh();
         } catch (error) {
             console.error(error);
             toast.error(error instanceof Error ? error.message : "Failed to remove worker from shift");
         }
-    }, [router, shift.id, workers]);
+    }, [shift.id, workers]);
 
-    // Auto-save handler (Debounce or onBlur handled by child)
-    const saveTimesheetEntry = async (id: string, field: string, value: any) => {
-        let action = 'update_time';
-        let data: any = {};
+    const saveTimesheetEntry = React.useCallback(async (id: string, field: string, value: any) => {
+        if (field === "notes") {
+            return;
+        }
 
-        const latestWorker = workers.find(w => w.id === id);
+        const latestWorker = workers.find((worker) => worker.id === id);
         if (!latestWorker) return;
 
         try {
-            const shiftDate = new Date(shift.startTime); // Base date
+            const shiftDate = new Date(shift.startTime);
             const nextWorkerSnapshot = { ...latestWorker, [field]: value };
+            const payload: UpdateTimesheetPayload = {};
 
-            if (field === 'clockIn') {
-                data.clockIn = parseTimeStringToIso(value, shiftDate);
-                data.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
-                data.breakMinutes = combineBreakDurations(latestWorker);
-            } else if (field === 'clockOut') {
-                data.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
-                data.clockOut = parseTimeStringToIso(value, shiftDate);
-                data.breakMinutes = combineBreakDurations(latestWorker);
-            } else if (field === 'breakOneDuration' || field === 'breakTwoDuration') {
-                data.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
-                data.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
-                data.breakMinutes = combineBreakDurations(nextWorkerSnapshot);
+            if (field === "clockIn") {
+                payload.clockIn = parseTimeStringToIso(value, shiftDate);
+                payload.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
+                payload.breakMinutes = combineBreakDurations(latestWorker);
+            } else if (field === "clockOut") {
+                payload.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
+                payload.clockOut = parseTimeStringToIso(value, shiftDate);
+                payload.breakMinutes = combineBreakDurations(latestWorker);
+            } else if (field === "breakOneDuration" || field === "breakTwoDuration") {
+                payload.clockIn = parseTimeStringToIso(latestWorker.clockIn, shiftDate);
+                payload.clockOut = parseTimeStringToIso(latestWorker.clockOut, shiftDate);
+                payload.breakMinutes = combineBreakDurations(nextWorkerSnapshot);
             } else {
                 return;
             }
 
-            const workerName = workers.find(w => w.id === id)?.name || "Worker";
-            const fieldLabel =
-                field === "clockIn"
-                    ? "Clock In"
-                    : field === "clockOut"
-                        ? "Clock Out"
-                        : field === "breakOneDuration"
-                            ? "Break 1"
-                            : "Break 2";
-
-            setPendingSave({
-                id,
-                field,
-                value,
-                payload: data,
-                action,
-                workerName,
-                fieldLabel
-            });
-
-        } catch (e) {
-            console.error(e);
-            toast.error("Error preparing save");
+            const result = await updateTimesheetAction(shift.id, id, payload);
+            if ("error" in result) {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to save timesheet");
         }
-    };
+    }, [shift.id, shift.startTime, workers]);
 
     const handleCancelShift = async () => {
+        if (!window.confirm("Cancel this shift and notify assigned workers?")) {
+            return;
+        }
+
         setIsCancelling(true);
         try {
-            await import("@/lib/api/shifts").then(mod => mod.cancelShift(shift.id));
+            const result = await cancelShiftAction(shift.id);
+            if ("error" in result) {
+                throw new Error(result.error);
+            }
+
             toast.success("Shift cancelled successfully");
-            onBack(); // Return to previous screen
+            onBack();
         } catch (error) {
             console.error(error);
             toast.error("Failed to cancel shift");
         } finally {
             setIsCancelling(false);
-            setIsCancelConfirmOpen(false);
         }
     };
-
 
     return (
         <div className="flex flex-col space-y-6">
@@ -365,35 +282,15 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             <UserPlus data-icon="inline-start" />
                             Add worker
                         </Button>
-                        <AlertDialog open={isCancelConfirmOpen} onOpenChange={setIsCancelConfirmOpen}>
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    className="rounded-full px-3 text-muted-foreground hover:text-destructive"
-                                >
-                                    <X data-icon="inline-start" />
-                                    Cancel shift
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Cancel this shift?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will remove the shift from the schedule and notify any assigned workers.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Keep shift</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        onClick={handleCancelShift}
-                                        disabled={isCancelling}
-                                        className="bg-destructive text-white hover:bg-destructive/90"
-                                    >
-                                        {isCancelling ? "Cancelling..." : "Cancel shift"}
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                        <Button
+                            variant="ghost"
+                            className="rounded-full px-3 text-muted-foreground hover:text-destructive"
+                            onClick={handleCancelShift}
+                            disabled={isCancelling}
+                        >
+                            <X data-icon="inline-start" />
+                            {isCancelling ? "Cancelling..." : "Cancel shift"}
+                        </Button>
                     </div>
                 )}
             </div>
@@ -446,7 +343,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             data={workers}
                             onUpdateWorker={updateWorker}
                             onSaveWorker={saveTimesheetEntry}
-                            onEditWorkerNotes={handleEditWorkerNotes}
                             onRemoveWorker={handleRemoveWorker}
                             isApproved={isApproved}
                             isCancelled={isCancelled}
@@ -460,66 +356,9 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     isOpen={isAddWorkerOpen}
                     onClose={() => setIsAddWorkerOpen(false)}
                     onConfirm={handleAddWorkers}
-                    existingWorkerIds={workers.map(w => w.id)}
+                    existingWorkerIds={workers.map((worker) => worker.id)}
                 />
             ) : null}
-
-            <Dialog open={!!pendingSave} onOpenChange={(open) => !open && cancelSave()}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5 text-amber-500" />
-                            Unsaved Changes
-                        </DialogTitle>
-                        <DialogDescription>
-                            You have modified the <strong>{pendingSave?.fieldLabel}</strong> for <strong>{pendingSave?.workerName}</strong>.
-                            Do you want to save this change permanently?
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-2 text-sm text-muted-foreground bg-muted/30 p-3 rounded-md border">
-                        New Value: <span className="text-foreground font-semibold">{pendingSave?.value?.toString()}</span>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={cancelSave}>Cancel</Button>
-                        <Button onClick={confirmSave}>Save Changes</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={!!noteWorkerId} onOpenChange={(open) => {
-                if (!open) {
-                    setNoteWorkerId(null);
-                    setNoteDraft("");
-                }
-            }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Manager note</DialogTitle>
-                        <DialogDescription>
-                            Add context for this crew member before the shift is approved.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <Textarea
-                        value={noteDraft}
-                        onChange={(event) => setNoteDraft(event.target.value)}
-                        placeholder="Add a note about breaks, attendance, or follow-up..."
-                        className="min-h-[140px]"
-                    />
-                    <DialogFooter>
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setNoteWorkerId(null);
-                                setNoteDraft("");
-                            }}
-                        >
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSaveWorkerNotes}>Save note</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-        </div >
+        </div>
     );
 }

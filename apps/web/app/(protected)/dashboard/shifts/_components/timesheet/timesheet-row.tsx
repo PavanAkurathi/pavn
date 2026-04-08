@@ -1,21 +1,8 @@
 import * as React from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { Button } from "@repo/ui/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@repo/ui/components/ui/dropdown-menu";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@repo/ui/components/ui/select";
 import { Input } from "@repo/ui/components/ui/input";
-import { MessageSquareText, MoreHorizontal, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
 type StatusVariant = "default" | "destructive" | "warning";
@@ -38,8 +25,8 @@ interface TimesheetRowProps {
     onClockOutChange?: (value: string) => void;
     onBreakOneChange?: (value: string) => void;
     onBreakTwoChange?: (value: string) => void;
+    onNotesChange?: (value: string) => void;
     onSave?: (field: string, value: any) => void;
-    onEditNotes?: () => void;
     onRemoveFromShift?: () => void;
 }
 
@@ -72,7 +59,7 @@ export function TimesheetRow({
     onClockOutChange,
     onBreakOneChange,
     onBreakTwoChange,
-    onEditNotes,
+    onNotesChange,
     onRemoveFromShift,
     onSave,
 }: TimesheetRowProps) {
@@ -125,84 +112,72 @@ export function TimesheetRow({
             {/* 4. Break 1 */}
             <div className="flex flex-col gap-1.5 md:w-[150px]">
                 <span className="text-xs text-muted-foreground md:hidden">Break 1</span>
-                <Select
+                <select
                     value={breakOneDuration}
-                    onValueChange={(val) => {
-                        onBreakOneChange?.(val);
-                        onSave?.("breakOneDuration", val);
+                    onChange={(event) => {
+                        const value = event.target.value;
+                        onBreakOneChange?.(value);
+                        onSave?.("breakOneDuration", value);
                     }}
                     disabled={disabled}
+                    className={cn(
+                        "h-10 rounded-full border border-input bg-background px-4 text-sm font-mono outline-none ring-offset-background transition-[color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        getVariantClass(breakVariant),
+                    )}
                 >
-                    <SelectTrigger className={cn("rounded-full font-mono text-sm", getVariantClass(breakVariant))}>
-                        <SelectValue placeholder="Select duration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="0 min">0 min</SelectItem>
-                        <SelectItem value="15 min">15 min</SelectItem>
-                        <SelectItem value="30 min">30 min</SelectItem>
-                    </SelectContent>
-                </Select>
+                    <option value="0 min">0 min</option>
+                    <option value="15 min">15 min</option>
+                    <option value="30 min">30 min</option>
+                </select>
             </div>
 
             {/* 5. Break 2 */}
             <div className="flex flex-col gap-1.5 md:w-[150px]">
                 <span className="text-xs text-muted-foreground md:hidden">Break 2</span>
-                <Select
+                <select
                     value={breakTwoDuration}
-                    onValueChange={(val) => {
-                        onBreakTwoChange?.(val);
-                        onSave?.("breakTwoDuration", val);
+                    onChange={(event) => {
+                        const value = event.target.value;
+                        onBreakTwoChange?.(value);
+                        onSave?.("breakTwoDuration", value);
                     }}
                     disabled={disabled}
+                    className={cn(
+                        "h-10 rounded-full border border-input bg-background px-4 text-sm font-mono outline-none ring-offset-background transition-[color,box-shadow] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        getVariantClass(breakVariant),
+                    )}
                 >
-                    <SelectTrigger className={cn("rounded-full font-mono text-sm", getVariantClass(breakVariant))}>
-                        <SelectValue placeholder="Select duration" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="0 min">0 min</SelectItem>
-                        <SelectItem value="15 min">15 min</SelectItem>
-                        <SelectItem value="30 min">30 min</SelectItem>
-                    </SelectContent>
-                </Select>
+                    <option value="0 min">0 min</option>
+                    <option value="15 min">15 min</option>
+                    <option value="30 min">30 min</option>
+                </select>
             </div>
 
             {/* 6. Notes */}
             <div className="flex flex-col gap-1.5 md:w-[150px]">
                 <span className="text-xs text-muted-foreground md:hidden">Notes</span>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="justify-start rounded-full"
-                    onClick={onEditNotes}
+                <Input
+                    value={notes || ""}
+                    onChange={(event) => onNotesChange?.(event.target.value)}
+                    onBlur={() => onSave?.("notes", notes || "")}
+                    className="h-10 rounded-full text-sm"
+                    placeholder="Add note"
                     disabled={disabled}
-                >
-                    <MessageSquareText className="mr-2 h-4 w-4" />
-                    {notes ? "Edit note" : "Add note"}
-                </Button>
+                />
             </div>
 
             {/* 7. Row Actions */}
             <div className="flex items-center gap-2 md:ml-auto">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-9 w-9 rounded-full" disabled={disabled}>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={onEditNotes}>
-                            <MessageSquareText className="mr-2 h-4 w-4" />
-                            {notes ? "Edit note" : "Write note"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={onRemoveFromShift}
-                            className="text-destructive focus:text-destructive"
-                        >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Remove from shift
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full text-destructive hover:text-destructive"
+                    onClick={onRemoveFromShift}
+                    disabled={disabled}
+                >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Remove
+                </Button>
             </div>
         </div>
     );

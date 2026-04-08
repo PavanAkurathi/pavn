@@ -44,7 +44,6 @@ interface TimesheetTableProps {
     data: TimesheetViewModel[];
     onUpdateWorker: (id: string, field: string, value: any) => void;
     onSaveWorker: (id: string, field: string, value: any) => void;
-    onEditWorkerNotes: (id: string) => void;
     onRemoveWorker: (id: string) => void;
     isApproved: boolean;
     isCancelled: boolean;
@@ -55,7 +54,6 @@ export function TimesheetTable({
     data,
     onUpdateWorker,
     onSaveWorker,
-    onEditWorkerNotes,
     onRemoveWorker,
     isApproved,
     isCancelled,
@@ -186,8 +184,8 @@ export function TimesheetTable({
                                     onClockOutChange={(val) => onUpdateWorker(worker.id, "clockOut", val)}
                                     onBreakOneChange={(val) => onUpdateWorker(worker.id, "breakOneDuration", val)}
                                     onBreakTwoChange={(val) => onUpdateWorker(worker.id, "breakTwoDuration", val)}
+                                    onNotesChange={(val) => onUpdateWorker(worker.id, "notes", val)}
                                     onSave={(field, val) => onSaveWorker(worker.id, field, val)}
-                                    onEditNotes={() => onEditWorkerNotes(worker.id)}
                                     onRemoveFromShift={() => onRemoveWorker(worker.id)}
                                 />
                             );

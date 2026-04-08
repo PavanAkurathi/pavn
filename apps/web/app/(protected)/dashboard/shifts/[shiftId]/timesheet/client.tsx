@@ -1,6 +1,6 @@
 "use client";
 
-import { ShiftDetailView } from "@/components/shifts/shift-detail-view";
+import { ShiftDetailView } from "../../_components/shift-detail-view";
 import { DASHBOARD_SHIFTS_PATH, isSafeDashboardReturnPath } from "@/lib/routes";
 import { Shift, TimesheetWorker } from "@/lib/types";
 

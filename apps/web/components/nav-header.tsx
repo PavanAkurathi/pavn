@@ -28,9 +28,14 @@ interface NavHeaderProps {
         name: string;
         logo?: string | null;
     } | null;
+    user?: {
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+    } | null;
 }
 
-export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
+export function NavHeader({ activeOrg: serverOrg, user }: NavHeaderProps) {
     const pathname = usePathname();
     const activeOrg = serverOrg;
 
@@ -105,7 +110,7 @@ export function NavHeader({ activeOrg: serverOrg }: NavHeaderProps) {
                         <NotificationsPopover />
                     </div>
 
-                    <NavUser />
+                    <NavUser user={user} />
                 </div>
             </div>
             {/* Mobile Nav Placeholder (Optional - can be expanded later) */}

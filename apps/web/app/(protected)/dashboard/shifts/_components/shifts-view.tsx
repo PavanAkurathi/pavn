@@ -1,7 +1,7 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { addDays, addWeeks, format, startOfWeek } from "date-fns";
 
 import { ShiftList } from "./shift-list";
@@ -82,7 +82,6 @@ function ShiftsDashboardContent({
     onLayoutChange,
 }: ShiftsDashboardContentProps) {
     const router = useRouter();
-    const pathname = usePathname();
     const { crew } = useCrewData();
     const availableWorkers = useMemo(() => {
         const workerMap = new Map<string, { id: string; name: string; initials: string }>();
@@ -125,12 +124,39 @@ function ShiftsDashboardContent({
     });
     const [selectedWeekStart, setSelectedWeekStart] = useState(() => getInitialWeekStart(initialShifts));
 
+    const getMockModeFromUrl = useCallback(() => {
+        if (typeof window === "undefined") {
+            return false;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        return params.get("mock") === "1";
+    }, []);
+
+    const syncDashboardUrl = useCallback(
+        (tab: ShiftDashboardTab, layout: ShiftLayout) => {
+            if (typeof window === "undefined") {
+                return;
+            }
+
+            const href = getDashboardShiftsHref({
+                view: tab,
+                layout,
+                mock: getMockModeFromUrl(),
+            });
+
+            window.history.replaceState(null, "", href);
+        },
+        [getMockModeFromUrl],
+    );
+
     const handleTabChange = (value: string) => {
         const nextTab: ShiftDashboardTab = value === "past" ? "past" : "upcoming";
         router.push(
             getDashboardShiftsHref({
                 view: nextTab,
                 layout: resolveShiftLayout(nextTab, currentLayout),
+                mock: getMockModeFromUrl(),
             }),
         );
     };
@@ -203,16 +229,31 @@ function ShiftsDashboardContent({
     };
 
     const weekRangeLabel = `${format(selectedWeekStart, "MMM d")} - ${format(addDays(selectedWeekStart, 6), "MMM d")}`;
-    const buildShiftTimesheetHref = (shiftId: string) => {
-        const params =
-            typeof window !== "undefined"
-                ? new URLSearchParams(window.location.search)
-                : new URLSearchParams();
-        const currentSearch = params.toString();
-        const returnTo = currentSearch ? `${pathname}?${currentSearch}` : pathname;
+    const buildShiftTimesheetHref = useCallback((shiftId: string) => {
+        const returnTo = getDashboardShiftsHref({
+            view: defaultTab,
+            layout: currentLayout,
+            mock: getMockModeFromUrl(),
+        });
 
         return getShiftTimesheetHref(shiftId, { returnTo });
-    };
+    }, [currentLayout, defaultTab, getMockModeFromUrl]);
+
+    const openShiftTimesheet = useCallback((shift: Shift) => {
+        const href = buildShiftTimesheetHref(shift.id);
+
+        if (typeof window !== "undefined") {
+            window.location.assign(href);
+            return;
+        }
+
+        router.push(href);
+    }, [buildShiftTimesheetHref, router]);
+
+    const handleLayoutChange = useCallback((layout: ShiftLayout) => {
+        onLayoutChange(layout);
+        syncDashboardUrl(defaultTab, layout);
+    }, [defaultTab, onLayoutChange, syncDashboardUrl]);
 
     return (
         <div className="space-y-6">
@@ -240,7 +281,7 @@ function ShiftsDashboardContent({
                 setFilters={handleFilterUpdate}
                 layout={currentLayout}
                 availableLayouts={availableLayouts}
-                onLayoutChange={onLayoutChange}
+                onLayoutChange={handleLayoutChange}
                 weekRangeLabel={weekRangeLabel}
                 onPreviousWeek={() => setSelectedWeekStart((current) => addWeeks(current, -1))}
                 onTodayWeek={() => setSelectedWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
@@ -254,7 +295,7 @@ function ShiftsDashboardContent({
                     <WeeklyGridView
                         shifts={activeShifts}
                         weekStart={selectedWeekStart}
-                        onShiftClick={(shift) => router.push(buildShiftTimesheetHref(shift.id))}
+                        onShiftClick={openShiftTimesheet}
                     />
                 ) : currentLayout === SHIFT_LAYOUTS.LIST ? (
                     <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-6">
@@ -266,7 +307,7 @@ function ShiftsDashboardContent({
                                 <ShiftList
                                     shifts={activeShifts}
                                     isLoading={false}
-                                    onShiftClick={(shift) => router.push(buildShiftTimesheetHref(shift.id))}
+                                    onShiftClick={openShiftTimesheet}
                                 />
                             </div>
                         </TabsContent>
@@ -283,7 +324,7 @@ function ShiftsDashboardContent({
                                     <ShiftList
                                         shifts={pendingShifts}
                                         isLoading={false}
-                                        onShiftClick={(shift) => router.push(buildShiftTimesheetHref(shift.id))}
+                                        onShiftClick={openShiftTimesheet}
                                         isUrgentList={true}
                                     />
                                 </div>
@@ -294,7 +335,7 @@ function ShiftsDashboardContent({
                                 <ShiftList
                                     shifts={historyShifts}
                                     isLoading={false}
-                                    onShiftClick={(shift) => router.push(buildShiftTimesheetHref(shift.id))}
+                                    onShiftClick={openShiftTimesheet}
                                 />
                                 {historyShifts.length === 0 && !pendingShifts.length && (
                                     <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
@@ -310,7 +351,7 @@ function ShiftsDashboardContent({
                                 <ShiftList
                                     shifts={filteredShifts}
                                     isLoading={false}
-                                    onShiftClick={(shift) => router.push(buildShiftTimesheetHref(shift.id))}
+                                    onShiftClick={openShiftTimesheet}
                                 />
                                 {filteredShifts.length === 0 && (
                                     <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
@@ -324,7 +365,7 @@ function ShiftsDashboardContent({
                     <CalendarView
                         shifts={defaultTab === "upcoming" ? activeShifts : filteredShifts}
                         isLoading={false}
-                        onShiftClick={(shift) => router.push(buildShiftTimesheetHref(shift.id))}
+                        onShiftClick={openShiftTimesheet}
                     />
                 )}
             </div>

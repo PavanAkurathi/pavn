@@ -1,17 +1,6 @@
 import { Button } from "@repo/ui/components/ui/button";
 import { cn } from "@repo/ui/lib/utils";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@repo/ui/components/ui/alert-dialog";
 
 interface ShiftApprovalBannerProps {
     workerCount: number;
@@ -89,33 +78,16 @@ export function ShiftApprovalBanner({
                         Archived
                     </Button>
                 ) : (
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                className={cn(
-                                    "rounded-full px-5 font-semibold self-start",
-                                    hasErrors && "pointer-events-none opacity-60",
-                                )}
-                                disabled={hasErrors}
-                            >
-                                Approve shift
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Approve this shift?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will finalize the timesheets for {workerCount} workers and move the shift into approved history.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={onApprove} className="bg-green-600 hover:bg-green-700">
-                                    Approve shift
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
+                    <Button
+                        className={cn(
+                            "rounded-full px-5 font-semibold self-start",
+                            hasErrors && "pointer-events-none opacity-60",
+                        )}
+                        disabled={hasErrors}
+                        onClick={onApprove}
+                    >
+                        Approve shift
+                    </Button>
                 )}
             </div>
         </div>

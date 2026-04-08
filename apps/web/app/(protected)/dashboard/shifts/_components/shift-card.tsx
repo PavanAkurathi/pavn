@@ -1,7 +1,7 @@
 import { Card } from "@repo/ui/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { format, parseISO } from "date-fns";
-import { Shift } from "../../lib/types";
+import type { Shift } from "@/lib/types";
 
 interface ShiftCardProps {
     shifts: Shift[];

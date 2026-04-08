@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "seed": "bun --env-file=../../.env scripts/seed.ts",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:headed": "playwright test --headed",
@@ -10,6 +11,7 @@
     "test:api": "playwright test --project=api",
     "test:api:lifecycle": "playwright test --project=api tests/api/lifecycle.spec.ts",
     "test:web": "playwright test --project=web",
+    "test:web:smoke": "npm run seed && PLAYWRIGHT_REUSE_EXISTING_SERVER=1 PLAYWRIGHT_HTML_OPEN=never playwright test --project=web tests/web/smoke.spec.ts",
     "report": "playwright show-report",
     "codegen": "playwright codegen"
   },

@@ -6,6 +6,10 @@ import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '.env.test') });
 
+const reuseExistingServer =
+    process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === '1' ||
+    (!process.env.CI && process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER !== '0');
+
 /**
  * Playwright E2E Test Configuration for WorkersHive
  * 
@@ -104,13 +108,13 @@ export default defineConfig({
             {
                 command: 'cd ../../apps/api && bun run dev',
                 url: 'http://localhost:4005/health',
-                reuseExistingServer: !process.env.CI,
+                reuseExistingServer,
                 timeout: 120 * 1000,
             },
             {
                 command: 'cd ../../apps/web && bun --env-file=../../.env run dev',
                 url: 'http://localhost:3000',
-                reuseExistingServer: !process.env.CI,
+                reuseExistingServer,
                 timeout: 120 * 1000,
             },
         ],

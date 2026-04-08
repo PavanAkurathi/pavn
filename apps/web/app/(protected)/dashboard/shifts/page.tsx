@@ -1,6 +1,6 @@
 // apps/web/app/(protected)/dashboard/shifts/page.tsx
 
-import { ShiftsView } from "@/components/shifts/shifts-view";
+import { ShiftsView } from "./_components/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { DraftBanner } from "@/components/dashboard/draft-banner";
 import { PostLaunchChecklist } from "@/components/dashboard/post-launch-checklist";

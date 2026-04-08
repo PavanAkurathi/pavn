@@ -12,10 +12,17 @@ import { useCrewData } from "@/hooks/use-crew-data";
 import { getDashboardMockCrew } from "@/lib/shifts/data";
 import { cn } from "@repo/ui/lib/utils";
 
+export interface AddWorkerSelection {
+    id: string;
+    name: string;
+    avatar?: string;
+    initials: string;
+}
+
 interface AddWorkerDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (workerIds: string[]) => void;
+    onConfirm: (workers: AddWorkerSelection[]) => Promise<void> | void;
     existingWorkerIds?: string[];
 }
 
@@ -29,7 +36,6 @@ export function AddWorkerDialog({ isOpen, onClose, onConfirm, existingWorkerIds 
     const [selectedWorkerIds, setSelectedWorkerIds] = React.useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-    // Filter crew based on search and exclude already assigned workers
     const filteredCrew = React.useMemo(() => {
         return workerPool.filter((worker) => {
             const isAlreadyAssigned = existingWorkerIds.includes(worker.id);
@@ -54,8 +60,16 @@ export function AddWorkerDialog({ isOpen, onClose, onConfirm, existingWorkerIds 
         if (selectedWorkerIds.length === 0) return;
         setIsSubmitting(true);
         try {
-            // Mimic async operation if needed, or just pass up
-            await onConfirm(selectedWorkerIds);
+            const selectedWorkers = workerPool
+                .filter((worker) => selectedWorkerIds.includes(worker.id))
+                .map((worker) => ({
+                    id: worker.id,
+                    name: worker.name,
+                    avatar: worker.avatar,
+                    initials: worker.initials,
+                }));
+
+            await onConfirm(selectedWorkers);
             handleClose();
         } catch (error) {
             console.error("Failed to add workers", error);
