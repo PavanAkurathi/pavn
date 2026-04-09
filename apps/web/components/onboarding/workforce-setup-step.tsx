@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { ArrowRight, Upload, Users } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     Card,
@@ -14,15 +12,9 @@ import {
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
-import { getOnboardingHref, getRosterHref } from "@/lib/routes";
+import { getRosterHref } from "@/lib/routes";
 
-export function WorkforceSetupStep({
-    mockMode = false,
-}: {
-    mockMode?: boolean;
-}) {
-    const router = useRouter();
-
+export function WorkforceSetupStep() {
     return (
         <Card className="rounded-[28px] border-border/70 shadow-lg shadow-black/5">
             <CardHeader className="gap-4">
@@ -53,45 +45,18 @@ export function WorkforceSetupStep({
                 </Alert>
             </CardContent>
             <CardFooter className="flex flex-wrap gap-3">
-                {mockMode ? (
-                    <>
-                        <Button
-                            type="button"
-                            size="lg"
-                            onClick={() => router.push(getOnboardingHref({ step: "first_shift", mock: true }))}
-                        >
-                            Continue to first shift
-                            <ArrowRight data-icon="inline-end" />
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() =>
-                                toast.info(
-                                    "Mock mode keeps onboarding self-contained. Roster pages stay live-only for now.",
-                                )
-                            }
-                        >
-                            Import roster CSV
-                            <ArrowRight data-icon="inline-end" />
-                        </Button>
-                    </>
-                ) : (
-                    <>
-                        <Button asChild size="lg">
-                            <Link href={getRosterHref({ onboarding: "roster" })}>
-                                Open roster workspace
-                                <ArrowRight data-icon="inline-end" />
-                            </Link>
-                        </Button>
-                        <Button asChild variant="outline">
-                            <Link href="/rosters/import">
-                                Import roster CSV
-                                <ArrowRight data-icon="inline-end" />
-                            </Link>
-                        </Button>
-                    </>
-                )}
+                <Button asChild size="lg">
+                    <Link href={getRosterHref({ onboarding: "roster" })}>
+                        Open roster workspace
+                        <ArrowRight data-icon="inline-end" />
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                    <Link href="/rosters/import">
+                        Import roster CSV
+                        <ArrowRight data-icon="inline-end" />
+                    </Link>
+                </Button>
             </CardFooter>
         </Card>
     );

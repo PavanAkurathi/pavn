@@ -17,6 +17,7 @@ import { getDashboardShiftsHref, getShiftTimesheetHref } from "@/lib/routes";
 import {
     getAvailableShiftLayouts,
     getInitialWeekStart,
+    hasShiftsInWeek,
     resolveShiftLayout,
     type ShiftDashboardTab,
 } from "@/lib/shifts/weekly-grid";
@@ -47,13 +48,28 @@ export function ShiftsView({
     initialLayoutParam,
 }: ShiftsViewProps) {
     const availableLayouts = getAvailableShiftLayouts(defaultTab);
+    const currentWeekStart = useMemo(
+        () => startOfWeek(new Date(), { weekStartsOn: 0 }),
+        [],
+    );
+    const resolvedInitialLayout = useMemo(() => {
+        if (
+            defaultTab === "upcoming" &&
+            !initialLayoutParam &&
+            !hasShiftsInWeek(initialShifts, currentWeekStart)
+        ) {
+            return SHIFT_LAYOUTS.MONTH;
+        }
+
+        return resolveShiftLayout(defaultTab, initialLayoutParam);
+    }, [currentWeekStart, defaultTab, initialLayoutParam, initialShifts]);
     const [currentLayout, setCurrentLayout] = useState<ShiftLayout>(
-        resolveShiftLayout(defaultTab, initialLayoutParam),
+        resolvedInitialLayout,
     );
 
     useEffect(() => {
-        setCurrentLayout(resolveShiftLayout(defaultTab, initialLayoutParam));
-    }, [defaultTab, initialLayoutParam]);
+        setCurrentLayout(resolvedInitialLayout);
+    }, [resolvedInitialLayout]);
 
     const handleLayoutChange = (layout: ShiftLayout) => {
         setCurrentLayout(layout);
@@ -124,15 +140,6 @@ function ShiftsDashboardContent({
     });
     const [selectedWeekStart, setSelectedWeekStart] = useState(() => getInitialWeekStart(initialShifts));
 
-    const getMockModeFromUrl = useCallback(() => {
-        if (typeof window === "undefined") {
-            return false;
-        }
-
-        const params = new URLSearchParams(window.location.search);
-        return params.get("mock") === "1";
-    }, []);
-
     const syncDashboardUrl = useCallback(
         (tab: ShiftDashboardTab, layout: ShiftLayout) => {
             if (typeof window === "undefined") {
@@ -142,12 +149,11 @@ function ShiftsDashboardContent({
             const href = getDashboardShiftsHref({
                 view: tab,
                 layout,
-                mock: getMockModeFromUrl(),
             });
 
             window.history.replaceState(null, "", href);
         },
-        [getMockModeFromUrl],
+        [],
     );
 
     const handleTabChange = (value: string) => {
@@ -156,7 +162,6 @@ function ShiftsDashboardContent({
             getDashboardShiftsHref({
                 view: nextTab,
                 layout: resolveShiftLayout(nextTab, currentLayout),
-                mock: getMockModeFromUrl(),
             }),
         );
     };
@@ -233,11 +238,10 @@ function ShiftsDashboardContent({
         const returnTo = getDashboardShiftsHref({
             view: defaultTab,
             layout: currentLayout,
-            mock: getMockModeFromUrl(),
         });
 
         return getShiftTimesheetHref(shiftId, { returnTo });
-    }, [currentLayout, defaultTab, getMockModeFromUrl]);
+    }, [currentLayout, defaultTab]);
 
     const openShiftTimesheet = useCallback((shift: Shift) => {
         const href = buildShiftTimesheetHref(shift.id);

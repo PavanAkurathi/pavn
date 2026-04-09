@@ -24,10 +24,14 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
+        "@repo/auth": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
+        "@repo/dub": "workspace:*",
+        "@repo/email": "workspace:*",
         "@repo/geofence": "workspace:*",
+        "@repo/gig-workers": "workspace:*",
         "@repo/observability": "workspace:*",
         "drizzle-orm": "0.45.1",
         "nanoid": "^5.1.6",

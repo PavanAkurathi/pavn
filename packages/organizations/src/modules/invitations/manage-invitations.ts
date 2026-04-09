@@ -16,17 +16,12 @@ import {
 import {
     buildBusinessInviteUrl,
     getBusinessInvitationState,
-} from "@repo/organizations";
-import { Dub } from "dub";
+} from "./business-invitations";
+import { dub } from "@repo/dub";
 import { nanoid } from "nanoid";
 
 function getDubClient() {
-    const token = process.env.DUB_API_KEY?.trim();
-    if (!token) {
-        return null;
-    }
-
-    return new Dub({ token });
+    return process.env.DUB_API_KEY?.trim() ? dub : null;
 }
 
 function getWorkerInvitationUrl(invitationId: string): string {

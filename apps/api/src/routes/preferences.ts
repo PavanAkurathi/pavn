@@ -11,11 +11,12 @@ import {
     UpdateWorkerPreferencesSchema,
     WorkerPreferencesResponseSchema,
 } from "@repo/contracts/preferences";
-import { db } from "@repo/database";
-import { workerNotificationPreferences } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import { getSecurityOverview } from "@repo/auth";
+import {
+    getWorkerPreferences,
+    updateWorkerPreferences,
+} from "@repo/notifications";
 import type { AppContext } from "../index";
-import { getSecurityOverview } from "../lib/organization-workspace.js";
 
 export const preferencesRouter = new OpenAPIHono<AppContext>();
 
@@ -41,18 +42,7 @@ preferencesRouter.openapi(getPreferencesRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    let prefs = await db.query.workerNotificationPreferences.findFirst({
-        where: eq(workerNotificationPreferences.workerId, user.id)
-    });
-
-    if (!prefs) {
-        // Create defaults if not exists
-        [prefs] = await db.insert(workerNotificationPreferences)
-            .values({
-                workerId: user.id
-            })
-            .returning();
-    }
+    const prefs = await getWorkerPreferences(user.id);
 
     return c.json({ preferences: prefs } as any, 200);
 });
@@ -84,25 +74,11 @@ preferencesRouter.openapi(updatePreferencesRoute, async (c) => {
 
     const data = await c.req.json();
     const parsed = UpdateWorkerPreferencesSchema.safeParse(data);
-
     if (!parsed.success) {
         return c.json({ error: "Invalid data" }, 400);
     }
 
-    // Upsert preferences
-    const [updatedPrefs] = await db.insert(workerNotificationPreferences)
-        .values({
-            workerId: user.id,
-            ...parsed.data
-        })
-        .onConflictDoUpdate({
-            target: workerNotificationPreferences.workerId,
-            set: {
-                ...parsed.data,
-                updatedAt: new Date()
-            }
-        })
-        .returning();
+    const updatedPrefs = await updateWorkerPreferences(user.id, parsed.data);
 
     return c.json({ preferences: updatedPrefs } as any, 200);
 });

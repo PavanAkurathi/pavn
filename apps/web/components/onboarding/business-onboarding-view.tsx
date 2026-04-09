@@ -71,18 +71,16 @@ function getStepStatus(stepId: string, activeStepId: ActiveStepId, complete: boo
     return "upcoming";
 }
 
-function buildOnboardingHref(stepId: string, mockMode: boolean) {
-    return getOnboardingHref({ step: stepId, mock: mockMode });
+function buildOnboardingHref(stepId: string) {
+    return getOnboardingHref({ step: stepId });
 }
 
 export function BusinessOnboardingView({
     onboarding,
     requestedStepId,
-    mockMode = false,
 }: {
     onboarding: BusinessOnboardingState;
     requestedStepId?: string;
-    mockMode?: boolean;
 }) {
     const activeStepId = resolveActiveStep({
         steps: onboarding.steps,
@@ -118,11 +116,6 @@ export function BusinessOnboardingView({
                                 <Badge className="w-fit border-white/10 bg-white/10 text-white hover:bg-white/10">
                                     {SUBSCRIPTION.TRIAL_DAYS}-day free trial active
                                 </Badge>
-                                {mockMode ? (
-                                    <Badge className="w-fit border-amber-200/20 bg-amber-400/10 text-amber-100 hover:bg-amber-400/10">
-                                        Mock data
-                                    </Badge>
-                                ) : null}
                             </div>
                             <p className="text-sm font-medium leading-6 text-white/85">
                                 Let&apos;s get your business to the first published shift as quickly as possible.
@@ -140,13 +133,13 @@ export function BusinessOnboardingView({
                                     step.id === "account"
                                         ? undefined
                                         : step.id === "business"
-                                            ? buildOnboardingHref("business", mockMode)
+                                            ? buildOnboardingHref("business")
                                             : step.id === "location"
-                                                ? buildOnboardingHref("location", mockMode)
+                                                ? buildOnboardingHref("location")
                                                 : step.id === "workforce"
-                                                    ? buildOnboardingHref("workforce", mockMode)
+                                                    ? buildOnboardingHref("workforce")
                                                     : step.id === "first_shift"
-                                                        ? buildOnboardingHref("first_shift", mockMode)
+                                                        ? buildOnboardingHref("first_shift")
                                                         : undefined;
                                 const content = (
                                     <div
@@ -249,26 +242,24 @@ export function BusinessOnboardingView({
                                     organizationName={onboarding.organizationName}
                                     timezone={onboarding.organizationTimezone}
                                     attendanceVerificationPolicy={onboarding.attendanceVerificationPolicy}
-                                    nextHref={buildOnboardingHref("location", mockMode)}
-                                    mockMode={mockMode}
+                                    nextHref={buildOnboardingHref("location")}
                                 />
                             )}
 
                             {activeStepId === "location" && (
                                 <LocationBasicsStep
                                     timezone={onboarding.organizationTimezone}
-                                    backHref={buildOnboardingHref("business", mockMode)}
-                                    nextHref={buildOnboardingHref("workforce", mockMode)}
-                                    mockMode={mockMode}
+                                    backHref={buildOnboardingHref("business")}
+                                    nextHref={buildOnboardingHref("workforce")}
                                 />
                             )}
 
                             {activeStepId === "workforce" && (
-                                <WorkforceSetupStep mockMode={mockMode} />
+                                <WorkforceSetupStep />
                             )}
 
                             {activeStepId === "first_shift" && (
-                                <FirstShiftStep hasDraftShift={onboarding.hasDraftShift} mockMode={mockMode} />
+                                <FirstShiftStep hasDraftShift={onboarding.hasDraftShift} />
                             )}
                         </div>
                     </section>

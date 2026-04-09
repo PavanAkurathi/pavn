@@ -26,7 +26,9 @@ import {
 } from "@repo/scheduling-timekeeping";
 import {
     getAvailability,
+    getWorkerOrganizations,
     setAvailability,
+    updateWorkerProfile,
 } from "@repo/gig-workers";
 
 import {
@@ -325,23 +327,13 @@ workerRouter.openapi(updateProfileRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const body = await c.req.json();
-
-    // Only allow updating safe fields
-    const allowedFields: Record<string, any> = {};
-    if (body.name && typeof body.name === 'string') allowedFields.name = body.name;
-    if (body.image && typeof body.image === 'string') allowedFields.image = body.image;
-
-    if (Object.keys(allowedFields).length === 0) {
-        return c.json({ error: "No valid fields to update" }, 400);
+    let updated = null;
+    try {
+        updated = await updateWorkerProfile(user.id, body);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Invalid request";
+        return c.json({ error: message }, 400);
     }
-
-    const { db, eq } = await import("@repo/database");
-    const { user: userTable } = await import("@repo/database/schema");
-
-    const [updated] = await db.update(userTable)
-        .set({ ...allowedFields, updatedAt: new Date() })
-        .where(eq(userTable.id, user.id))
-        .returning();
 
     if (!updated) {
         return c.json({ error: "Failed to update profile" }, 400);
@@ -402,29 +394,9 @@ workerRouter.openapi(workerOrgsRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const { db, eq, and } = await import("@repo/database");
-    const { member, organization } = await import("@repo/database/schema");
-
-    const memberships = await db
-        .select({
-            orgId: member.organizationId,
-            role: member.role,
-            orgName: organization.name,
-            orgLogo: organization.logo,
-        })
-        .from(member)
-        .innerJoin(organization, eq(member.organizationId, organization.id))
-        .where(and(
-            eq(member.userId, user.id),
-            eq(member.status, 'active')
-        ));
+    const organizations = await getWorkerOrganizations(user.id);
 
     return c.json({
-        organizations: memberships.map(m => ({
-            id: m.orgId,
-            name: m.orgName,
-            logo: m.orgLogo,
-            role: m.role,
-        }))
+        organizations,
     } as any, 200);
 });

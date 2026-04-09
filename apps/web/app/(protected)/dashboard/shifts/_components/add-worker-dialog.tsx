@@ -9,7 +9,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@repo/ui/components/ui/avat
 import { Badge } from "@repo/ui/components/ui/badge";
 import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 import { useCrewData } from "@/hooks/use-crew-data";
-import { getDashboardMockCrew } from "@/lib/shifts/data";
 import { cn } from "@repo/ui/lib/utils";
 
 export interface AddWorkerSelection {
@@ -28,10 +27,7 @@ interface AddWorkerDialogProps {
 
 export function AddWorkerDialog({ isOpen, onClose, onConfirm, existingWorkerIds = [] }: AddWorkerDialogProps) {
     const { crew, isLoading } = useCrewData();
-    const workerPool = React.useMemo(
-        () => (crew.length > 0 ? crew : (process.env.NODE_ENV !== "production" ? getDashboardMockCrew() : [])),
-        [crew],
-    );
+    const workerPool = React.useMemo(() => crew, [crew]);
     const [searchQuery, setSearchQuery] = React.useState("");
     const [selectedWorkerIds, setSelectedWorkerIds] = React.useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = React.useState(false);

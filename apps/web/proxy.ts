@@ -10,7 +10,6 @@ import {
     getOnboardingHref,
     getVerifyEmailHref,
     isOnboardingExemptProtectedPath,
-    isOnboardingPath,
 } from "@/lib/routes";
 
 type ProxySession = {
@@ -55,23 +54,9 @@ function redirectToOnboarding(request: NextRequest) {
     return NextResponse.redirect(new URL(getOnboardingHref(), request.url));
 }
 
-function shouldAllowOnboardingMock(request: NextRequest) {
-    if (!isOnboardingPath(request.nextUrl.pathname)) {
-        return false;
-    }
-
-    const envMockEnabled =
-        process.env.PAVN_ONBOARDING_MOCKS === "1" ||
-        process.env.PAVN_ONBOARDING_MOCKS === "true";
-    const explicitMockEnabled = request.nextUrl.searchParams.get("mock") === "1";
-
-    return envMockEnabled || explicitMockEnabled;
-}
-
 function shouldEnforceOnboardingForRequest(request: NextRequest) {
     return (
         !isOnboardingEnforcementDisabled() &&
-        !shouldAllowOnboardingMock(request) &&
         !isOnboardingExemptProtectedPath(request.nextUrl.pathname)
     );
 }

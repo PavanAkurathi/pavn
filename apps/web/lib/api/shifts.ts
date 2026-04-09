@@ -2,11 +2,6 @@
 
 import type { Shift, TimesheetWorker } from "@/lib/types";
 import { apiJsonRequest } from "@/lib/server/api-client";
-import {
-    getDashboardMockShiftById,
-    getDashboardMockTimesheets,
-    isDashboardMockShiftId,
-} from "@/lib/shifts/data";
 
 type ShiftCollectionView = "upcoming" | "past" | "needs_approval" | "draft";
 type ShiftCollectionPayload = Shift[] | { dateGroups?: Shift[] };
@@ -112,20 +107,12 @@ export async function publishSchedule(payload: unknown, orgId?: string) {
 }
 
 export async function approveShift(shiftId: string, orgId?: string) {
-    if (isDashboardMockShiftId(shiftId)) {
-        return { ok: true, mock: true };
-    }
-
     return mutateShift(`/shifts/${shiftId}/approve`, {
         organizationId: orgId,
     });
 }
 
 export async function getShiftById(shiftId: string, orgId?: string): Promise<Shift | null> {
-    if (isDashboardMockShiftId(shiftId)) {
-        return getDashboardMockShiftById(shiftId);
-    }
-
     try {
         return await apiJsonRequest<Shift>(`/shifts/${shiftId}`, {
             organizationScoped: true,
@@ -141,10 +128,6 @@ export async function getShiftTimesheets(
     shiftId: string,
     orgId?: string,
 ): Promise<TimesheetWorker[]> {
-    if (isDashboardMockShiftId(shiftId)) {
-        return getDashboardMockTimesheets(shiftId);
-    }
-
     try {
         return await apiJsonRequest<TimesheetWorker[]>(`/shifts/${shiftId}/timesheets`, {
             organizationScoped: true,
@@ -163,10 +146,6 @@ export async function updateTimesheet(
     data: unknown,
     orgId?: string,
 ) {
-    if (isDashboardMockShiftId(shiftId)) {
-        return { ok: true, mock: true, shiftId, workerId, action, data };
-    }
-
     return mutateShift(`/shifts/${shiftId}/timesheet`, {
         method: "PATCH",
         body: { shiftId, workerId, action, data },
@@ -175,20 +154,12 @@ export async function updateTimesheet(
 }
 
 export async function cancelShift(shiftId: string, orgId?: string) {
-    if (isDashboardMockShiftId(shiftId)) {
-        return { ok: true, mock: true };
-    }
-
     return mutateShift(`/shifts/${shiftId}/cancel`, {
         organizationId: orgId,
     });
 }
 
 export async function assignWorkers(shiftId: string, workerIds: string[], orgId?: string) {
-    if (isDashboardMockShiftId(shiftId)) {
-        return { ok: true, mock: true, workerIds };
-    }
-
     return mutateShift(`/shifts/${shiftId}/assign`, {
         body: { workerIds },
         organizationId: orgId,
@@ -196,10 +167,6 @@ export async function assignWorkers(shiftId: string, workerIds: string[], orgId?
 }
 
 export async function unassignWorker(shiftId: string, workerId: string, orgId?: string) {
-    if (isDashboardMockShiftId(shiftId)) {
-        return { ok: true, mock: true, workerId };
-    }
-
     return mutateShift(`/shifts/${shiftId}/assign/${workerId}`, {
         method: "DELETE",
         organizationId: orgId,

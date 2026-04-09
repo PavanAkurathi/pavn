@@ -13,8 +13,8 @@ function createShift(overrides: Partial<Shift>): Shift {
         id: overrides.id || crypto.randomUUID(),
         title: overrides.title || "Server",
         locationName: overrides.locationName || "Main Hall",
-        startTime: overrides.startTime || "2026-04-05T13:00:00.000Z",
-        endTime: overrides.endTime || "2026-04-05T21:00:00.000Z",
+        startTime: overrides.startTime || "2026-04-06T13:00:00.000Z",
+        endTime: overrides.endTime || "2026-04-06T21:00:00.000Z",
         status: overrides.status || "published",
         assignedWorkers: overrides.assignedWorkers || [],
         capacity: overrides.capacity,
@@ -40,80 +40,78 @@ describe("resolveShiftLayout", () => {
 });
 
 describe("buildWeeklyGridModel", () => {
-    test("groups shifts into stable location lanes for the selected week", () => {
+    test("builds day columns with positioned events and overlap metadata", () => {
         const weekStart = new Date("2026-04-05T00:00:00.000Z");
         const shifts = [
             createShift({
                 id: "shift-1",
-                title: "Server",
+                title: "Host",
                 locationName: "Ballroom",
-                locationId: "loc-1",
                 startTime: "2026-04-06T13:00:00.000Z",
-                endTime: "2026-04-06T21:00:00.000Z",
+                endTime: "2026-04-06T17:00:00.000Z",
             }),
             createShift({
                 id: "shift-2",
                 title: "Server",
                 locationName: "Ballroom",
-                locationId: "loc-1",
-                startTime: "2026-04-08T13:00:00.000Z",
-                endTime: "2026-04-08T21:00:00.000Z",
+                startTime: "2026-04-06T14:00:00.000Z",
+                endTime: "2026-04-06T18:00:00.000Z",
             }),
             createShift({
                 id: "shift-3",
-                title: "Bartender",
-                locationName: "Ballroom",
-                locationId: "loc-1",
-                startTime: "2026-04-07T15:00:00.000Z",
-                endTime: "2026-04-07T23:00:00.000Z",
-            }),
-            createShift({
-                id: "shift-4",
-                title: "Server",
+                title: "Runner",
                 locationName: "Patio",
-                locationId: "loc-2",
-                startTime: "2026-04-06T13:00:00.000Z",
-                endTime: "2026-04-06T21:00:00.000Z",
-            }),
-            createShift({
-                id: "shift-5",
-                title: "Server",
-                locationName: "Ballroom",
-                locationId: "loc-1",
-                startTime: "2026-04-06T13:00:00.000Z",
-                endTime: "2026-04-06T21:00:00.000Z",
-            }),
-            createShift({
-                id: "shift-6",
-                title: "Server",
-                locationName: "Ballroom",
-                locationId: "loc-1",
-                startTime: "2026-04-15T13:00:00.000Z",
-                endTime: "2026-04-15T21:00:00.000Z",
+                startTime: "2026-04-08T15:00:00.000Z",
+                endTime: "2026-04-08T19:00:00.000Z",
             }),
         ];
 
         const model = buildWeeklyGridModel(shifts, weekStart);
 
+        expect(model.hasShifts).toBe(true);
         expect(model.days).toHaveLength(7);
-        expect(model.sections).toHaveLength(2);
-        expect(model.sections[0]?.locationName).toBe("Ballroom");
+        expect(model.startHour).toBe(6);
+        expect(model.endHour).toBe(22);
+        expect(model.timeSlots).toHaveLength(16);
 
-        const ballroomLanes = model.sections[0]?.lanes || [];
-        expect(ballroomLanes).toHaveLength(2);
-        expect(ballroomLanes[0]?.title).toBe("Server");
-        expect(ballroomLanes[1]?.title).toBe("Bartender");
+        const monday = model.days[1];
+        expect(monday?.events).toHaveLength(2);
+        expect(monday?.events.map((event) => event.shift.id)).toEqual(["shift-1", "shift-2"]);
+        expect(monday?.events[0]?.column).toBe(0);
+        expect(monday?.events[0]?.columnCount).toBe(2);
+        expect(monday?.events[1]?.column).toBe(1);
+        expect(monday?.events[1]?.columnCount).toBe(2);
 
-        const mondayServerCell = ballroomLanes[0]?.cells[1];
-        expect(mondayServerCell?.shifts.map((shift) => shift.id)).toEqual(["shift-1", "shift-5"]);
+        const wednesday = model.days[3];
+        expect(wednesday?.events).toHaveLength(1);
+        expect(wednesday?.events[0]?.locationName).toBe("Patio");
+    });
 
-        const wednesdayServerCell = ballroomLanes[0]?.cells[3];
-        expect(wednesdayServerCell?.shifts.map((shift) => shift.id)).toEqual(["shift-2"]);
+    test("splits overnight shifts across visible days", () => {
+        const weekStart = new Date("2026-04-05T00:00:00.000Z");
+        const shifts = [
+            createShift({
+                id: "overnight",
+                title: "Night Porter",
+                startTime: "2026-04-06T22:00:00.000Z",
+                endTime: "2026-04-07T02:00:00.000Z",
+            }),
+        ];
+
+        const model = buildWeeklyGridModel(shifts, weekStart);
+
+        expect(model.days[1]?.events).toHaveLength(1);
+        expect(model.days[1]?.events[0]?.startMinutes).toBe(1320);
+        expect(model.days[1]?.events[0]?.endMinutes).toBe(1440);
+
+        expect(model.days[2]?.events).toHaveLength(1);
+        expect(model.days[2]?.events[0]?.startMinutes).toBe(0);
+        expect(model.days[2]?.events[0]?.endMinutes).toBe(120);
     });
 });
 
 describe("getInitialWeekStart", () => {
-    test("uses the first upcoming shift week when available", () => {
+    test("defaults to the current week", () => {
         const shifts = [
             createShift({
                 startTime: "2026-04-12T13:00:00.000Z",
@@ -123,6 +121,6 @@ describe("getInitialWeekStart", () => {
 
         const weekStart = getInitialWeekStart(shifts, new Date("2026-04-01T12:00:00.000Z"));
 
-        expect(weekStart.toISOString()).toBe("2026-04-12T00:00:00.000Z");
+        expect(weekStart.toISOString()).toBe("2026-03-29T00:00:00.000Z");
     });
 });

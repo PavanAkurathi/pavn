@@ -88,6 +88,7 @@
   --role-host: #6ee7b7;      /* Pale Mint/Emerald */
   --role-support: #fde047;   /* Pale Sand/Yellow */
   --role-default: #cbd5e1;   /* Pale Slate/Grey */
+  --role-foreground: #0D0D0D;
 }
 
 /* 
@@ -144,6 +145,7 @@
   --role-host: #34d399;
   --role-support: #facc15;
   --role-default: #94a3b8;
+  --role-foreground: #0D0D0D;
 }
 
 /* 
@@ -197,6 +199,7 @@
   --color-role-host: var(--role-host);
   --color-role-support: var(--role-support);
   --color-role-default: var(--role-default);
+  --color-role-foreground: var(--role-foreground);
 
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;

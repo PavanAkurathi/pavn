@@ -6,11 +6,11 @@
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { db } from "@repo/database";
-import { deviceToken } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
-import { nanoid } from "nanoid";
-import Expo from "expo-server-sdk";
+import {
+    listActiveDeviceTokens,
+    registerDeviceToken,
+    unregisterDeviceToken,
+} from "@repo/notifications";
 import type { AppContext } from "../index";
 
 export const devicesRouter = new OpenAPIHono<AppContext>();
@@ -67,49 +67,19 @@ devicesRouter.openapi(registerRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const body = await c.req.json();
-    // Validate schema manually or rely on OpenAPI validator (OpenAPIHono validates if configured, but let's trust safeParse here if needed, actually OpenAPIHono validation middleware usually handles it if we set it up. But let's act safely).
     const parsed = RegisterSchema.safeParse(body);
     if (!parsed.success) {
         return c.json({ error: "Invalid request" }, 400);
     }
 
-    const { pushToken, platform, deviceName, appVersion, osVersion } = parsed.data;
-
-    // Validate Expo token format
-    if (!Expo.isExpoPushToken(pushToken)) {
-        return c.json({ error: "Invalid push token format" }, 400);
+    try {
+        const result = await registerDeviceToken(user.id, parsed.data);
+        return c.json(result, 200);
+    } catch (error) {
+        return c.json({
+            error: error instanceof Error ? error.message : "Invalid push token format",
+        }, 400);
     }
-
-    const now = new Date();
-
-    // Upsert token
-    await db.insert(deviceToken)
-        .values({
-            id: nanoid(),
-            userId: user.id,
-            pushToken,
-            platform,
-            deviceName,
-            appVersion,
-            osVersion,
-            isActive: true,
-            lastUsedAt: now,
-            createdAt: now,
-            updatedAt: now,
-        })
-        .onConflictDoUpdate({
-            target: [deviceToken.userId, deviceToken.pushToken],
-            set: {
-                isActive: true,
-                lastUsedAt: now,
-                deviceName,
-                appVersion,
-                osVersion,
-                updatedAt: now,
-            },
-        });
-
-    return c.json({ success: true }, 200);
 });
 
 const listDevicesRoute = createRoute({
@@ -130,20 +100,7 @@ devicesRouter.openapi(listDevicesRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    const tokens = await db.query.deviceToken.findMany({
-        where: and(
-            eq(deviceToken.userId, user.id),
-            eq(deviceToken.isActive, true)
-        ),
-        columns: {
-            id: true,
-            platform: true,
-            deviceName: true,
-            appVersion: true,
-            lastUsedAt: true,
-            createdAt: true,
-        },
-    });
+    const tokens = await listActiveDeviceTokens(user.id);
 
     return c.json({ devices: tokens }, 200);
 });
@@ -166,16 +123,8 @@ devicesRouter.openapi(unregisterRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const tokenId = c.req.param("tokenId");
-
-    const result = await db.update(deviceToken)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(and(
-            eq(deviceToken.id, tokenId),
-            eq(deviceToken.userId, user.id)
-        ))
-        .returning({ id: deviceToken.id });
-
-    if (result.length === 0) {
+    const found = await unregisterDeviceToken(user.id, tokenId);
+    if (!found) {
         return c.json({ error: "Device not found" }, 404);
     }
 

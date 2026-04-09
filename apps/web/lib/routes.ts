@@ -29,12 +29,10 @@ export const AUTH_SIGN_UP_EMAIL_API_PATH = "/api/auth/sign-up/email";
 export function getDashboardShiftsHref(options?: {
     view?: ShiftDashboardTab;
     layout?: ShiftLayout;
-    mock?: boolean;
 }) {
     return buildHref(DASHBOARD_SHIFTS_PATH, {
         view: options?.view,
         layout: options?.layout,
-        mock: options?.mock ? 1 : undefined,
     });
 }
 
@@ -77,11 +75,9 @@ export function getVerifyEmailHref(options?: {
 
 export function getOnboardingHref(options?: {
     step?: string;
-    mock?: boolean;
 }) {
     return buildHref(DASHBOARD_ONBOARDING_PATH, {
         step: options?.step,
-        mock: options?.mock ? 1 : undefined,
     });
 }
 

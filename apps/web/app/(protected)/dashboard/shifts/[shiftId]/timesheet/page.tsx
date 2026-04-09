@@ -1,11 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { getShiftById, getShiftTimesheets } from "@/lib/api/shifts";
 import { ShiftTimesheetClient } from "./client";
-import {
-    getDashboardMockShiftById,
-    getDashboardMockTimesheets,
-    isDashboardMockShiftId,
-} from "@/lib/shifts/data";
 import { DASHBOARD_SHIFTS_PATH } from "@/lib/routes";
 
 interface PageProps {
@@ -25,15 +20,10 @@ export default async function ShiftTimesheetPage({ params, searchParams }: PageP
         redirect(DASHBOARD_SHIFTS_PATH);
     }
 
-    const [shift, timesheets] = isDashboardMockShiftId(shiftId)
-        ? await Promise.all([
-            Promise.resolve(getDashboardMockShiftById(shiftId)),
-            Promise.resolve(getDashboardMockTimesheets(shiftId)),
-        ])
-        : await Promise.all([
-            getShiftById(shiftId),
-            getShiftTimesheets(shiftId),
-        ]);
+    const [shift, timesheets] = await Promise.all([
+        getShiftById(shiftId),
+        getShiftTimesheets(shiftId),
+    ]);
 
     if (!shift) {
         notFound();

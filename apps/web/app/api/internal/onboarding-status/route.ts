@@ -1,13 +1,11 @@
 import { NextResponse } from "next/server";
-import { getCurrentBusinessOnboardingState, isOnboardingMockModeEnabled } from "@/lib/onboarding";
+import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
 
 export const runtime = "nodejs";
 
-export async function GET(request: Request) {
-    const { searchParams } = new URL(request.url);
-    const mockMode = isOnboardingMockModeEnabled(searchParams.get("mock") === "1");
-    const { session, onboarding, shouldEnforceOnboarding, memberRole, isMockMode } =
-        await getCurrentBusinessOnboardingState({ mock: mockMode });
+export async function GET() {
+    const { session, onboarding, shouldEnforceOnboarding, memberRole } =
+        await getCurrentBusinessOnboardingState();
 
     if (!session) {
         return NextResponse.json(
@@ -21,6 +19,5 @@ export async function GET(request: Request) {
         isComplete: onboarding?.isComplete ?? false,
         memberRole,
         requiresOnboarding: shouldEnforceOnboarding,
-        isMockMode,
     });
 }

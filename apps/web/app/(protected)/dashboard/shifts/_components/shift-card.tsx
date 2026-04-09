@@ -2,6 +2,7 @@ import { Card } from "@repo/ui/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { format, parseISO } from "date-fns";
 import type { Shift } from "@/lib/types";
+import { getShiftRoleTone } from "@/lib/shifts/role-theme";
 
 interface ShiftCardProps {
     shifts: Shift[];
@@ -21,17 +22,6 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
 
     const startTime = parseISO(primaryShift.startTime);
     const endTime = parseISO(primaryShift.endTime);
-
-    // Helper for deterministic role colors using semantic tokens
-    const getRoleColor = (role: string) => {
-        const lowerRole = role.toLowerCase();
-        if (lowerRole.includes("server")) return { bg: "bg-role-server", ring: "ring-role-server" };
-        if (lowerRole.includes("bartender")) return { bg: "bg-role-bartender", ring: "ring-role-bartender" };
-        if (lowerRole.includes("kitchen") || lowerRole.includes("chef") || lowerRole.includes("cook")) return { bg: "bg-role-kitchen", ring: "ring-role-kitchen" };
-        if (lowerRole.includes("host")) return { bg: "bg-role-host", ring: "ring-role-host" };
-        if (lowerRole.includes("busser") || lowerRole.includes("runner")) return { bg: "bg-role-support", ring: "ring-role-support" };
-        return { bg: "bg-role-default", ring: "ring-role-default" };
-    };
 
     // Workers with Role Context for coloring
     // We map over shifts to get workers and assign them the role of that shift
@@ -56,9 +46,9 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
 
     return (
         <Card
-            className={`cursor-pointer transition-all hover:shadow-md overflow-hidden bg-white group ${isUrgent
-                ? "border-l-4 border-l-red-500 bg-red-50/10"
-                : "border-zinc-200 hover:border-zinc-300"
+            className={`group cursor-pointer overflow-hidden transition-all hover:shadow-md ${isUrgent
+                ? "border-l-4 border-l-primary bg-primary/5"
+                : "border-border bg-card hover:border-border/90"
                 }`}
             onClick={handleClick}
         >
@@ -68,24 +58,24 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
                 {/* LEFT COLUMN: Event Details */}
                 <div className="flex flex-col gap-1 flex-1">
                     <div className="flex justify-between items-start">
-                        <h3 className="font-bold text-lg text-zinc-900 leading-tight">
+                        <h3 className="text-lg font-bold leading-tight text-foreground">
                             {locationName || "Event"}
                         </h3>
                         {/* Optional: Status Badges */}
                         {isUrgent && (
-                            <span className="text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full tracking-wide">
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
                                 ACTION REQUIRED
                             </span>
                         )}
                     </div>
 
-                    <div className="flex flex-col text-sm text-zinc-500 font-medium mt-1">
+                    <div className="mt-1 flex flex-col text-sm font-medium text-muted-foreground">
                         <span>{format(startTime, "EEEE, MMMM d")}</span>
                         <span>{format(startTime, "hh:mm a")} - {format(endTime, "hh:mm a")} (EDT)</span>
                     </div>
 
                     {/* Address Line (Roles removed) */}
-                    <div className="text-sm text-zinc-500 mt-2 opacity-90">
+                    <div className="mt-2 text-sm text-muted-foreground opacity-90">
                         {primaryShift.locationAddress || locationName}
                     </div>
                 </div>
@@ -93,10 +83,10 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
                 {/* RIGHT COLUMN: Roles List with Colors */}
                 <div className="flex flex-col items-end gap-1 shrink-0 pt-1">
                     {roleBreakdown.map((item) => {
-                        const color = getRoleColor(item.role);
+                        const color = getShiftRoleTone(item.role);
                         return (
-                            <div key={item.role} className="text-xs text-zinc-500 font-medium flex items-center gap-2">
-                                <span className={`w-2 h-2 rounded-full ${color.bg}`} />
+                            <div key={item.role} className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                <span className={`w-2 h-2 rounded-full ${color.dot}`} />
                                 <span>{item.role}: {item.count}</span>
                             </div>
                         );
@@ -105,7 +95,7 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
             </div>
 
             {/* Footer: Workers & Action */}
-            <div className="bg-zinc-50/50 border-t border-zinc-100 px-5 py-3 flex items-center justify-between">
+            <div className="flex items-center justify-between border-t border-border/70 bg-muted/40 px-5 py-3">
 
                 {/* Left: Avatars - Styled with rings matching their role */}
                 <div className="flex items-center gap-3">
@@ -113,30 +103,30 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
                         <div className="flex -space-x-2">
                             {allAssignedWorkers.slice(0, 5).map((worker, i) => {
                                 // Add index to key to avoid duplicates if same worker assigned multiple times (edge case)
-                                const color = getRoleColor(worker.role);
+                                const color = getShiftRoleTone(worker.role);
                                 return (
                                     <Avatar key={`${worker.id}-${i}`} className={`w-8 h-8 border-2 border-white ring-2 ${color.ring} ring-offset-0`}>
                                         <AvatarImage src={worker.avatarUrl} />
-                                        <AvatarFallback className="text-[9px] bg-zinc-100 text-zinc-600 font-bold border border-zinc-200">
+                                        <AvatarFallback className="border border-border bg-muted text-[9px] font-bold text-muted-foreground">
                                             {worker.initials}
                                         </AvatarFallback>
                                     </Avatar>
                                 );
                             })}
                             {allAssignedWorkers.length > 5 && (
-                                <div className="w-8 h-8 rounded-full bg-zinc-50 border-2 border-white ring-2 ring-zinc-200 flex items-center justify-center text-[9px] text-zinc-500 font-bold">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-background text-[9px] font-bold text-muted-foreground ring-2 ring-border">
                                     +{allAssignedWorkers.length - 5}
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <span className="text-sm text-zinc-400 italic">No pros assigned</span>
+                        <span className="text-sm italic text-muted-foreground">No pros assigned</span>
                     )}
                 </div>
 
                 {/* Right: Action Link (Neutral Theme) */}
                 <button
-                    className="text-sm font-bold text-zinc-700 hover:text-zinc-900 hover:underline flex items-center gap-1 transition-colors"
+                    className="flex items-center gap-1 text-sm font-bold text-foreground transition-colors hover:text-primary hover:underline"
                     onClick={handleClick}
                 >
                     {actionLabel}

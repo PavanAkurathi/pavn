@@ -4,6 +4,13 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Field, FieldLabel } from "@repo/ui/components/ui/field";
 import { Input } from "@repo/ui/components/ui/input";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@repo/ui/components/ui/select";
 import { RotateCcw, Trash2 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
@@ -56,6 +63,8 @@ const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) =>
     String(index).padStart(2, "0"),
 );
 const PERIOD_OPTIONS: Array<TimeFieldParts["period"]> = ["AM", "PM"];
+const BREAK_OPTIONS = ["0 min", "15 min", "30 min"] as const;
+const EMPTY_SELECT_VALUE = "__empty__";
 
 const getVariantClass = (variant: StatusVariant = "default") => {
     switch (variant) {
@@ -88,54 +97,133 @@ function TimeSelectField({
             </FieldLabel>
             <div
                 className={cn(
-                    "flex h-10 items-center rounded-lg border px-2.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-1 focus-within:ring-ring",
+                    "flex h-10 items-center gap-1.5 rounded-lg border px-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-1 focus-within:ring-ring",
                     getVariantClass(variant),
                     disabled && "opacity-60",
                 )}
             >
-                <select
-                    aria-label={`${label} hour`}
+                <TimePartSelect
+                    ariaLabel={`${label} hour`}
                     value={value.hour}
-                    onChange={(event) => onChange({ ...value, hour: event.target.value })}
+                    placeholder="hh"
+                    options={HOUR_OPTIONS}
+                    onChange={(hour) => onChange({ ...value, hour })}
                     disabled={disabled}
-                    className="w-[3rem] bg-transparent text-sm font-medium text-foreground outline-none"
-                >
-                    <option value="">hh</option>
-                    {HOUR_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
-                <span className="px-1 text-sm font-medium text-muted-foreground">:</span>
-                <select
-                    aria-label={`${label} minute`}
+                    triggerClassName="w-[4.1rem]"
+                    contentClassName="min-w-[4.1rem]"
+                />
+                <span className="text-sm font-semibold text-muted-foreground">:</span>
+                <TimePartSelect
+                    ariaLabel={`${label} minute`}
                     value={value.minute}
-                    onChange={(event) => onChange({ ...value, minute: event.target.value })}
+                    placeholder="mm"
+                    options={MINUTE_OPTIONS}
+                    onChange={(minute) => onChange({ ...value, minute })}
                     disabled={disabled}
-                    className="w-[3rem] bg-transparent text-sm font-medium text-foreground outline-none"
-                >
-                    <option value="">mm</option>
-                    {MINUTE_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
-                <select
-                    aria-label={`${label} period`}
+                    triggerClassName="w-[4.1rem]"
+                    contentClassName="min-w-[4.1rem]"
+                />
+                <TimePartSelect
+                    ariaLabel={`${label} period`}
                     value={value.period}
-                    onChange={(event) => onChange({ ...value, period: event.target.value as TimeFieldParts["period"] })}
+                    placeholder="AM/PM"
+                    options={PERIOD_OPTIONS}
+                    onChange={(period) => onChange({ ...value, period: period as TimeFieldParts["period"] })}
                     disabled={disabled}
-                    className="ml-auto w-[4rem] bg-transparent text-sm font-medium text-muted-foreground outline-none"
-                >
-                    <option value="">AM/PM</option>
-                    {PERIOD_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
+                    triggerClassName="ml-auto w-[5.25rem]"
+                    contentClassName="min-w-[5.25rem]"
+                />
+            </div>
+        </Field>
+    );
+}
+
+function TimePartSelect({
+    ariaLabel,
+    value,
+    placeholder,
+    options,
+    onChange,
+    disabled,
+    triggerClassName,
+    contentClassName,
+}: {
+    ariaLabel: string;
+    value: string;
+    placeholder: string;
+    options: readonly string[];
+    onChange: (value: string) => void;
+    disabled?: boolean;
+    triggerClassName?: string;
+    contentClassName?: string;
+}) {
+    return (
+        <Select
+            value={value || EMPTY_SELECT_VALUE}
+            onValueChange={(nextValue) => onChange(nextValue === EMPTY_SELECT_VALUE ? "" : nextValue)}
+            disabled={disabled}
+        >
+            <SelectTrigger
+                aria-label={ariaLabel}
+                className={cn(
+                    "h-8 rounded-md border-0 bg-transparent px-2 text-sm font-medium shadow-none focus-visible:border-transparent focus-visible:ring-0",
+                    triggerClassName,
+                )}
+            >
+                <SelectValue placeholder={placeholder} />
+            </SelectTrigger>
+            <SelectContent position="popper" align="start" className={contentClassName}>
+                <SelectItem value={EMPTY_SELECT_VALUE}>{placeholder}</SelectItem>
+                {options.map((option) => (
+                    <SelectItem key={option} value={option}>
+                        {option}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+}
+
+function BreakSelectField({
+    label,
+    value,
+    onChange,
+    variant = "default",
+    disabled = false,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    variant?: StatusVariant;
+    disabled?: boolean;
+}) {
+    return (
+        <Field className="gap-1.5 md:w-full">
+            <FieldLabel className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground md:hidden">
+                {label}
+            </FieldLabel>
+            <div
+                className={cn(
+                    "rounded-lg border px-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-1 focus-within:ring-ring",
+                    getVariantClass(variant),
+                    disabled && "opacity-60",
+                )}
+            >
+                <Select value={value} onValueChange={onChange} disabled={disabled}>
+                    <SelectTrigger
+                        aria-label={label}
+                        className="h-10 w-full rounded-md border-0 bg-transparent px-2 text-sm font-medium shadow-none focus-visible:border-transparent focus-visible:ring-0"
+                    >
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent position="popper" align="start">
+                        {BREAK_OPTIONS.map((option) => (
+                            <SelectItem key={option} value={option}>
+                                {option}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
         </Field>
     );
@@ -300,43 +388,21 @@ export function TimesheetRow({
                 disabled={disabled}
             />
 
-            <Field className="gap-1.5 md:w-full">
-                <FieldLabel className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground md:hidden">
-                    Break 1
-                </FieldLabel>
-                <select
-                    value={draftBreakOne}
-                    onChange={(event) => setDraftBreakOne(event.target.value)}
-                    disabled={disabled}
-                    className={cn(
-                        "h-10 rounded-lg border px-3 text-sm font-medium text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:ring-1 focus:ring-ring",
-                        getVariantClass(breakVariant),
-                    )}
-                >
-                    <option value="0 min">0 min</option>
-                    <option value="15 min">15 min</option>
-                    <option value="30 min">30 min</option>
-                </select>
-            </Field>
+            <BreakSelectField
+                label="Break 1"
+                value={draftBreakOne}
+                onChange={setDraftBreakOne}
+                variant={breakVariant}
+                disabled={disabled}
+            />
 
-            <Field className="gap-1.5 md:w-full">
-                <FieldLabel className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground md:hidden">
-                    Break 2
-                </FieldLabel>
-                <select
-                    value={draftBreakTwo}
-                    onChange={(event) => setDraftBreakTwo(event.target.value)}
-                    disabled={disabled}
-                    className={cn(
-                        "h-10 rounded-lg border px-3 text-sm font-medium text-foreground shadow-sm outline-none transition-[border-color,box-shadow] focus:ring-1 focus:ring-ring",
-                        getVariantClass(breakVariant),
-                    )}
-                >
-                    <option value="0 min">0 min</option>
-                    <option value="15 min">15 min</option>
-                    <option value="30 min">30 min</option>
-                </select>
-            </Field>
+            <BreakSelectField
+                label="Break 2"
+                value={draftBreakTwo}
+                onChange={setDraftBreakTwo}
+                variant={breakVariant}
+                disabled={disabled}
+            />
 
             <Field className="gap-1.5 md:w-full">
                 <FieldLabel className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground md:hidden">

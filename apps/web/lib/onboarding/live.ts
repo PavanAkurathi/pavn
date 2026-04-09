@@ -17,9 +17,11 @@ import { parseOrganizationMetadata } from "@/lib/organization-metadata";
 import { getOnboardingHref } from "@/lib/routes";
 import { requiresBusinessOnboarding } from "@/lib/server/organization-roles";
 import { getApiSession } from "@/lib/server/auth-session";
-import type { CurrentBusinessOnboardingStateResult } from "./data";
+import type { CurrentBusinessOnboardingStateResult } from "./types";
 
-export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessOnboardingStateResult> {
+export async function getLiveBusinessOnboardingState(_options?: {
+    requestedStepId?: string;
+}): Promise<CurrentBusinessOnboardingStateResult> {
     const session = await getApiSession();
 
     if (!session) {
@@ -28,7 +30,6 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             onboarding: null as BusinessOnboardingState | null,
             memberRole: null as string | null,
             shouldEnforceOnboarding: false,
-            isMockMode: false,
         };
     }
 
@@ -43,7 +44,6 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             onboarding: null as BusinessOnboardingState | null,
             memberRole: null as string | null,
             shouldEnforceOnboarding: false,
-            isMockMode: false,
         };
     }
 
@@ -148,7 +148,6 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
             onboarding: null as BusinessOnboardingState | null,
             memberRole: currentMember?.role ?? null,
             shouldEnforceOnboarding: false,
-            isMockMode: false,
         };
     }
 
@@ -253,7 +252,6 @@ export async function getLiveBusinessOnboardingState(): Promise<CurrentBusinessO
         session,
         memberRole,
         shouldEnforceOnboarding,
-        isMockMode: false,
         onboarding: {
             orgId: activeOrgId,
             organizationName: org.name,

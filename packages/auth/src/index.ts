@@ -8,3 +8,4 @@ export {
     normalizePhoneNumber,
     sendSMS,
 } from "./providers/sms";
+export { getSecurityOverview } from "./modules/security/get-security-overview";

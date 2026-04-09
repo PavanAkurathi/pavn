@@ -7,8 +7,6 @@
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { db, eq } from "@repo/database";
-import { member } from "@repo/database/schema";
 import {
     OrganizationDefaultContextSchema,
     OrganizationInvitationStateSchema,
@@ -37,10 +35,31 @@ import { isAdminRole, isManagerRole } from "../lib/organization-roles.js";
 
 // Import from packages (Services)
 import {
+    acceptBusinessInvitation,
+    bulkImportRosterEntries,
+    bulkInviteWorkers,
     createLocation,
+    createLocationWithPlanLimit,
+    createTeamInvitation,
+    createWorkerInvitation,
     deleteLocation,
+    getDefaultOrganizationContext,
+    getOrganizationContacts,
+    getOrganizationInvitationState,
+    getOrganizationSummary,
+    getRosterWorkers,
     getSettings,
+    getScheduleBootstrap,
+    getWorkerProfile,
+    getWorkspaceSettings,
+    markBillingPromptHandled,
+    removeOrganizationMember,
+    removeWorkerByEmail,
+    resendOrganizationMemberInvite,
+    resendTeamInvitation,
+    cancelTeamInvitation,
     updateLocation,
+    updateOrganizationProfile,
     getLocations,
     updateSettings,
 } from "@repo/organizations";
@@ -51,30 +70,6 @@ import {
     reactivateWorker,
     updateWorker,
 } from "@repo/gig-workers";
-import {
-    acceptBusinessInvitation,
-    bulkInviteWorkers,
-    cancelTeamInvitation,
-    createTeamInvitation,
-    createWorkerInvitation,
-    resendTeamInvitation,
-} from "../lib/invitations.js";
-import {
-    bulkImportRosterEntries,
-    createLocationWithPlanLimit,
-    getOrganizationContacts,
-    getOrganizationInvitationState,
-    getOrganizationSummary,
-    getRosterWorkers,
-    getScheduleBootstrap,
-    getWorkerProfile,
-    getWorkspaceSettings,
-    markBillingPromptHandled,
-    removeOrganizationMember,
-    removeWorkerByEmail,
-    resendOrganizationMemberInvite,
-    updateOrganizationProfile,
-} from "../lib/organization-workspace.js";
 
 export const organizationsRouter = new OpenAPIHono<AppContext>();
 
@@ -679,23 +674,8 @@ organizationsRouter.openapi(getDefaultOrganizationRoute, async (c) => {
     const user = c.get("user");
 
     const activeOrganizationId = (session as any)?.activeOrganizationId || null;
-
-    if (activeOrganizationId) {
-        return c.json({ organizationId: activeOrganizationId }, 200);
-    }
-
-    if (!user) {
-        return c.json({ organizationId: null }, 200);
-    }
-
-    const membership = await db.query.member.findFirst({
-        where: eq(member.userId, user.id),
-        columns: {
-            organizationId: true,
-        },
-    });
-
-    return c.json({ organizationId: membership?.organizationId ?? null }, 200);
+    const result = await getDefaultOrganizationContext(user?.id, activeOrganizationId);
+    return c.json(result, 200);
 });
 
 const getMembersRoute = createRoute({

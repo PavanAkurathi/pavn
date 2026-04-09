@@ -10,9 +10,10 @@ import {
     ManagerPreferencesResponseSchema,
     UpdateManagerPreferencesSchema,
 } from "@repo/contracts/preferences";
-import { db } from "@repo/database";
-import { managerNotificationPreferences } from "@repo/database/schema";
-import { eq } from "drizzle-orm";
+import {
+    getManagerPreferences,
+    updateManagerPreferences,
+} from "@repo/notifications";
 import type { AppContext } from "../index";
 
 export const managerPreferencesRouter = new OpenAPIHono<AppContext>();
@@ -39,22 +40,7 @@ managerPreferencesRouter.openapi(getPreferencesRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
-    let prefs = await db.query.managerNotificationPreferences.findFirst({
-        where: eq(managerNotificationPreferences.managerId, user.id)
-    });
-
-    if (!prefs) {
-        // Create defaults if not exists
-        [prefs] = await db.insert(managerNotificationPreferences)
-            .values({
-                managerId: user.id,
-                clockInAlertsEnabled: true,
-                clockOutAlertsEnabled: true,
-                shiftScope: 'all',
-                locationScope: 'all'
-            })
-            .returning();
-    }
+    const prefs = await getManagerPreferences(user.id);
 
     return c.json({ preferences: prefs } as any, 200);
 });
@@ -91,20 +77,7 @@ managerPreferencesRouter.openapi(updatePreferencesRoute, async (c) => {
         return c.json({ error: "Invalid data" }, 400);
     }
 
-    // Upsert preferences
-    const [updatedPrefs] = await db.insert(managerNotificationPreferences)
-        .values({
-            managerId: user.id,
-            ...parsed.data
-        })
-        .onConflictDoUpdate({
-            target: managerNotificationPreferences.managerId,
-            set: {
-                ...parsed.data,
-                updatedAt: new Date()
-            }
-        })
-        .returning();
+    const updatedPrefs = await updateManagerPreferences(user.id, parsed.data);
 
     return c.json({ preferences: updatedPrefs } as any, 200);
 });

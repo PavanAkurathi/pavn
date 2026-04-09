@@ -17,8 +17,8 @@ import {
     syncOrganizationSubscriptionByCustomerId,
     syncOrganizationSubscriptionFromCheckoutCompletion,
 } from "@repo/billing";
+import { getOrganizationSummary } from "@repo/organizations";
 import type Stripe from "stripe";
-import { getOrganizationSummary } from "../lib/organization-workspace.js";
 
 export const billingRouter = new OpenAPIHono<AppContext>();
 

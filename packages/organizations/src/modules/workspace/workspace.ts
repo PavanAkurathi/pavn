@@ -9,13 +9,11 @@ import {
     resolveWorkerRoleSet,
 } from "@repo/database";
 import {
-    account,
     invitation,
     location,
     member,
     organization,
     rosterEntry,
-    session,
     user,
     workerRole,
 } from "@repo/database/schema";
@@ -27,7 +25,7 @@ import {
 } from "@repo/contracts";
 import { AppError } from "@repo/observability";
 import { getCrew } from "@repo/gig-workers";
-import { getBusinessInvitationState } from "@repo/organizations";
+import { getBusinessInvitationState } from "../invitations/business-invitations";
 import { nanoid } from "nanoid";
 
 type OrganizationMetadata = {
@@ -96,6 +94,28 @@ export async function getOrganizationSummary(orgId: string) {
             },
         })) ?? null
     );
+}
+
+export async function getDefaultOrganizationContext(
+    userId: string | null | undefined,
+    activeOrganizationId?: string | null,
+) {
+    if (activeOrganizationId) {
+        return { organizationId: activeOrganizationId };
+    }
+
+    if (!userId) {
+        return { organizationId: null };
+    }
+
+    const membership = await db.query.member.findFirst({
+        where: eq(member.userId, userId),
+        columns: {
+            organizationId: true,
+        },
+    });
+
+    return { organizationId: membership?.organizationId ?? null };
 }
 
 export async function getOrganizationContacts(orgId: string) {
@@ -246,38 +266,6 @@ export async function getWorkspaceSettings(
         locations,
         role: memberRecord[0]?.role || "member",
         members,
-    };
-}
-
-export async function getSecurityOverview(userId: string) {
-    const [accounts, sessions] = await Promise.all([
-        db
-            .select({
-                id: account.id,
-                accountId: account.accountId,
-                providerId: account.providerId,
-                createdAt: account.createdAt,
-                updatedAt: account.updatedAt,
-            })
-            .from(account)
-            .where(eq(account.userId, userId)),
-        db
-            .select({
-                id: session.id,
-                expiresAt: session.expiresAt,
-                createdAt: session.createdAt,
-                updatedAt: session.updatedAt,
-                ipAddress: session.ipAddress,
-                userAgent: session.userAgent,
-            })
-            .from(session)
-            .where(eq(session.userId, userId))
-            .orderBy(desc(session.createdAt)),
-    ]);
-
-    return {
-        accounts,
-        sessions,
     };
 }
 
