@@ -9,7 +9,7 @@ import { format } from "date-fns"
 import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { removeWorker, inviteWorker } from "../../actions/workers"
+import { removeWorker, inviteWorker } from "@/actions/workers"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {

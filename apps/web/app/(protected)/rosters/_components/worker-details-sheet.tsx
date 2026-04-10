@@ -14,7 +14,7 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@r
 import { Separator } from "@repo/ui/components/ui/separator";
 import { Mail, Phone, MapPin, AlertCircle, Calendar, Award } from "lucide-react";
 import { format } from "date-fns";
-import { AvailabilityList } from "./availability-list";
+import { AvailabilityList } from "@/components/workers/availability-list";
 
 export interface WorkerDetails {
     id: string;

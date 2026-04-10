@@ -1,4 +1,4 @@
-// apps/web/components/roster/availability-list.tsx
+// apps/web/components/workers/availability-list.tsx
 "use client";
 
 import { useEffect, useState } from "react";

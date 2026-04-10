@@ -17,10 +17,10 @@ import type {
     BusinessOnboardingState,
     OnboardingStep,
 } from "@repo/contracts/onboarding";
-import { BusinessBasicsStep } from "@/components/onboarding/business-basics-step";
-import { LocationBasicsStep } from "@/components/onboarding/location-basics-step";
-import { WorkforceSetupStep } from "@/components/onboarding/workforce-setup-step";
-import { FirstShiftStep } from "@/components/onboarding/first-shift-step";
+import { BusinessBasicsStep } from "./business-basics-step";
+import { LocationBasicsStep } from "./location-basics-step";
+import { WorkforceSetupStep } from "./workforce-setup-step";
+import { FirstShiftStep } from "./first-shift-step";
 import { getDashboardShiftsHref, getOnboardingHref } from "@/lib/routes";
 
 type ActiveStepId = "business" | "location" | "workforce" | "first_shift";

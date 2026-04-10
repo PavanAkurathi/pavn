@@ -8,7 +8,7 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Plus, MoreVertical, Mail } from "lucide-react";
 import Link from "next/link";
-import { AddMemberDialog } from "@/components/settings/team/add-member-dialog";
+import { AddMemberDialog } from "./team/add-member-dialog";
 import { format } from "date-fns";
 
 interface TeamListProps {

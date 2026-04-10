@@ -1,5 +1,5 @@
 
-import { NotificationsView } from "@/components/settings/notifications-view";
+import { NotificationsView } from "../_components/notifications-view";
 
 export default function NotificationsPage() {
     return (

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { BusinessOnboardingView } from "@/components/onboarding/business-onboarding-view";
+import { BusinessOnboardingView } from "./_components/business-onboarding-view";
 import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
 import { getDashboardShiftsHref } from "@/lib/routes";
 

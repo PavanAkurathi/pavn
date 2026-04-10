@@ -8,13 +8,13 @@ import { Separator } from "@repo/ui/components/ui/separator";
 import { User, Building, MapPin, Users, CreditCard, Shield, Bell } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
-import { ProfileForm } from "@/components/settings/profile-form";
-import { BusinessForm } from "@/components/settings/business-form";
-import { LocationsForm } from "@/components/settings/locations-form";
-import { SecurityForm } from "@/components/settings/security-form";
-import { TeamList } from "@/components/settings/team-list";
-import { BillingView } from "@/components/settings/billing/billing-view";
-import { NotificationsView } from "@/components/settings/notifications-view";
+import { ProfileForm } from "./profile-form";
+import { BusinessForm } from "./business-form";
+import { LocationsForm } from "./locations-form";
+import { SecurityForm } from "./security-form";
+import { TeamList } from "./team-list";
+import { BillingView } from "./billing/billing-view";
+import { NotificationsView } from "./notifications-view";
 import { deleteLocation, createLocation, updateLocation } from "@/actions/locations";
 
 interface SettingsViewProps {

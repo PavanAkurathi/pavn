@@ -36,7 +36,6 @@ import {
     SelectValue,
 } from "@repo/ui/components/ui/select"
 import { useState, useTransition } from "react"
-import { bulkInviteWorkers } from "../../actions/workers"
 import {
     Loader2,
     Send,
@@ -48,6 +47,7 @@ import {
     Columns
 } from "lucide-react"
 import { toast } from "sonner"
+import { bulkInviteWorkers } from "@/actions/workers"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]

@@ -22,7 +22,7 @@ import { MoreVertical, Send, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { AddWorkerDialog } from "./add-worker-dialog";
 import { toast } from "sonner";
-import { resendInvite, deleteMemberAction } from "../../actions/invites";
+import { resendInvite, deleteMemberAction } from "@/actions/invites";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { WorkerDetailsSheet } from "./worker-details-sheet";

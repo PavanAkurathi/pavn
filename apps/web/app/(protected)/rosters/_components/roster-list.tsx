@@ -10,7 +10,7 @@ import Link from "next/link";
 import { AddWorkerDialog } from "./add-worker-dialog";
 import { WorkerDetailsSheet, WorkerDetails } from "./worker-details-sheet";
 import { useState } from "react";
-import { resendInvite, deleteMemberAction } from "../../actions/invites";
+import { resendInvite, deleteMemberAction } from "@/actions/invites";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {

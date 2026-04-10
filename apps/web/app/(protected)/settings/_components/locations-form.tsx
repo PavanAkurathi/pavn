@@ -19,7 +19,7 @@ import {
 } from "@repo/ui/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Plus, MapPin, Trash2, MoreVertical, Edit } from "lucide-react";
-import { AddLocationModal } from "./add-location-modal";
+import { AddLocationModal } from "@/components/locations/add-location-modal";
 import { PLAN_LIMITS } from "@repo/config";
 
 type Location = {

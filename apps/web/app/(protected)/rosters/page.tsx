@@ -1,5 +1,5 @@
-import { DataTable } from "../../../components/roster/data-table";
-import { columns } from "../../../components/roster/columns";
+import { DataTable } from "./_components/data-table";
+import { columns } from "./_components/columns";
 import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
 import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
@@ -12,11 +12,11 @@ import {
 } from "@repo/ui/components/ui/card";
 import { ArrowRight, Upload, Users, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { AddWorkerDialog } from "../../../components/roster/add-worker-dialog";
+import { AddWorkerDialog } from "./_components/add-worker-dialog";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { getRosterWorkers } from "@/lib/api/organizations";
 import { getOnboardingHref } from "@/lib/routes";
-import type { WorkerDetails } from "../../../components/roster/columns";
+import type { WorkerDetails } from "./_components/columns";
 
 type RosterSearchParams = {
     onboarding?: "roster" | "roles";

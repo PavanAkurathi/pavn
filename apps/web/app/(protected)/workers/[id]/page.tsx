@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, Phone, Mail, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/components/ui/table";
-import { AvailabilityList } from "@/components/roster/availability-list";
+import { AvailabilityList } from "@/components/workers/availability-list";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { getWorkerProfile } from "@/lib/api/organizations";
 

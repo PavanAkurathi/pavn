@@ -30,7 +30,7 @@ import { publishSchedule, deleteDrafts } from "@/lib/api/shifts";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ExitDialog } from "@repo/ui/components/ui/exit-dialog";
-import { AddLocationModal } from "../settings/add-location-modal";
+import { AddLocationModal } from "../locations/add-location-modal";
 import { createLocation } from "@/actions/locations";
 import { buildRoleOptions } from "@/lib/schedule/roles";
 import { getDashboardShiftsHref } from "@/lib/routes";

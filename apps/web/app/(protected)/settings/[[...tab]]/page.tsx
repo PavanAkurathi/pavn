@@ -1,6 +1,6 @@
 // apps/web/app/(protected)/settings/[[...tab]]/page.tsx
 
-import { SettingsView } from "@/components/settings/settings-view";
+import { SettingsView } from "../_components/settings-view";
 import { getInvoiceHistory, getSubscriptionDetails } from "@/actions/billing";
 import {
     getSecurityOverview,
