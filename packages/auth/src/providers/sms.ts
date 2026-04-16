@@ -1,11 +1,34 @@
 import { validatePhoneNumber, formatPhoneNumber } from "@repo/utils";
 import { DEEPLINK_CONFIG } from "@repo/config";
 
-export const isValidPhoneNumber = (phone: string): boolean =>
-    validatePhoneNumber(phone, "US"); // TODO: make locale configurable when you expand internationally
+// Supported regions: US and Canada (same E.164 +1 prefix, both validated by libphonenumber)
+const SUPPORTED_REGIONS = ["US", "CA"] as const;
+type SupportedRegion = typeof SUPPORTED_REGIONS[number];
 
-export const normalizePhoneNumber = (phone: string): string =>
-    formatPhoneNumber(phone, "US");
+/**
+ * Validates a phone number against US or CA formats.
+ * Tries US first (default), then CA if US fails — both share the +1 country code.
+ */
+export const isValidPhoneNumber = (phone: string): boolean => {
+    for (const region of SUPPORTED_REGIONS) {
+        if (validatePhoneNumber(phone, region)) return true;
+    }
+    return false;
+};
+
+/**
+ * Normalizes a phone number to E.164 format.
+ * Tries US first (covers most +1 numbers), falls back to CA.
+ */
+export const normalizePhoneNumber = (phone: string): string => {
+    for (const region of SUPPORTED_REGIONS) {
+        if (validatePhoneNumber(phone, region)) {
+            return formatPhoneNumber(phone, region);
+        }
+    }
+    // Default to US formatting (will throw if truly invalid)
+    return formatPhoneNumber(phone, "US");
+};
 
 // ── Twilio (lazy ESM-safe initialization) ────────────────────────────────────
 

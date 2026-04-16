@@ -10,13 +10,17 @@
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { UpcomingShiftsResponseSchema } from "@repo/contracts/shifts";
 import {
     AvailabilityResponseSchema,
     WorkerSchema,
 } from "@repo/contracts/workforce";
 import type { AppContext } from "../index";
 import { getWorkerPhoneAccess } from "@repo/auth";
+import {
+    OpenApiLooseArraySchema,
+    OpenApiLooseObjectSchema,
+} from "../lib/openapi-schemas.js";
+import { jsonOk } from "../lib/response.js";
 
 // Import services
 import {
@@ -109,7 +113,7 @@ const getShiftsRoute = createRoute({
     responses: {
         200: {
             content: {
-                'application/json': { schema: UpcomingShiftsResponseSchema }
+                'application/json': { schema: OpenApiLooseArraySchema }
             },
             description: 'List of worker shifts'
         },
@@ -127,7 +131,7 @@ workerRouter.openapi(getShiftsRoute, async (c) => {
     const offset = parseInt(c.req.query("offset") || "0");
 
     const result = await getWorkerShifts(user.id, orgId, { status, limit, offset });
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const getShiftDetailRoute = createRoute({
@@ -143,7 +147,7 @@ const getShiftDetailRoute = createRoute({
     responses: {
         200: {
             content: {
-                'application/json': { schema: z.any() }
+                'application/json': { schema: OpenApiLooseObjectSchema }
             },
             description: 'Worker shift detail'
         },
@@ -159,7 +163,7 @@ workerRouter.openapi(getShiftDetailRoute, async (c) => {
 
     const shiftId = c.req.param("id");
     const result = await getWorkerShiftById(user.id, shiftId, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -174,7 +178,7 @@ const setAvailabilityRoute = createRoute({
     responses: {
         200: {
             description: 'Availability set successfully',
-            content: { 'application/json': { schema: z.any() } }
+            content: { 'application/json': { schema: OpenApiLooseObjectSchema } }
         },
         401: { description: 'Unauthorized' }
     }
@@ -184,9 +188,12 @@ workerRouter.openapi(setAvailabilityRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
+    const orgId = c.get("orgId");
+    if (!orgId) return c.json({ error: "Organization context required" }, 400);
+
     const body = await c.req.json();
-    const result = await setAvailability(body, user.id);
-    return c.json(result as any, 200);
+    const result = await setAvailability(body, user.id, orgId);
+    return jsonOk(c, result);
 });
 
 const getAvailabilityRoute = createRoute({
@@ -215,7 +222,7 @@ workerRouter.openapi(getAvailabilityRoute, async (c) => {
 
     // Using service call
     const result = await getAvailability(orgId || "", from, to, user.id);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -230,7 +237,7 @@ const requestAdjustmentRoute = createRoute({
     responses: {
         200: {
             description: 'Request submitted successfully',
-            content: { 'application/json': { schema: z.any() } }
+            content: { 'application/json': { schema: OpenApiLooseObjectSchema } }
         },
         401: { description: 'Unauthorized' }
     }
@@ -268,7 +275,7 @@ workerRouter.openapi(getAdjustmentsRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getWorkerCorrections(user.id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -297,14 +304,14 @@ workerRouter.openapi(getProfileRoute, async (c) => {
 
     const userRole = c.get("userRole");
 
-    return c.json({
+    return jsonOk(c, {
         id: user.id,
         name: user.name,
         email: user.email,
         image: user.image,
         role: userRole || "member",
         status: "active"
-    } as any, 200);
+    });
 });
 
 const updateProfileRoute = createRoute({
@@ -318,7 +325,8 @@ const updateProfileRoute = createRoute({
             description: 'Updated profile'
         },
         400: { description: 'Invalid request' },
-        401: { description: 'Unauthorized' }
+        401: { description: 'Unauthorized' },
+        404: { description: 'Worker not found' }
     }
 });
 
@@ -327,26 +335,16 @@ workerRouter.openapi(updateProfileRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const body = await c.req.json();
-    let updated = null;
-    try {
-        updated = await updateWorkerProfile(user.id, body);
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Invalid request";
-        return c.json({ error: message }, 400);
-    }
+    const updated = await updateWorkerProfile(user.id, body);
 
-    if (!updated) {
-        return c.json({ error: "Failed to update profile" }, 400);
-    }
-
-    return c.json({
+    return jsonOk(c, {
         id: updated.id,
         name: updated.name,
         email: updated.email,
         image: updated.image,
         role: "member",
         status: "active"
-    } as any, 200);
+    });
 });
 
 export default workerRouter;
@@ -361,7 +359,7 @@ const allShiftsRoute = createRoute({
     summary: 'Get All Shifts (Cross-Org)',
     description: 'Get worker shifts across ALL organizations they belong to. Includes conflict detection for overlapping shifts.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shifts from all orgs' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shifts from all orgs' },
         401: { description: 'Unauthorized' }
     }
 });
@@ -376,7 +374,7 @@ workerRouter.openapi(allShiftsRoute, async (c) => {
     const offset = parseInt(c.req.query("offset") || '0');
 
     const result = await getWorkerAllShifts(user.id, { status, orgId, limit, offset });
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const workerOrgsRoute = createRoute({
@@ -385,7 +383,7 @@ const workerOrgsRoute = createRoute({
     summary: 'Get Worker Organizations',
     description: 'List all organizations the worker belongs to.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Organization memberships' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Organization memberships' },
         401: { description: 'Unauthorized' }
     }
 });
@@ -396,7 +394,7 @@ workerRouter.openapi(workerOrgsRoute, async (c) => {
 
     const organizations = await getWorkerOrganizations(user.id);
 
-    return c.json({
+    return jsonOk(c, {
         organizations,
-    } as any, 200);
+    });
 });

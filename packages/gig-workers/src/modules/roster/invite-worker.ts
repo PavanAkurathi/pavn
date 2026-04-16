@@ -3,6 +3,7 @@ import { invitation, user, member, rosterEntry } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { normalizePhoneNumber } from "@repo/auth";
+import { AppError } from "@repo/observability";
 import { z } from "zod";
 
 const InviteWorkerInputSchema = z.object({
@@ -18,7 +19,12 @@ const InviteWorkerInputSchema = z.object({
 export const inviteWorker = async (data: unknown, orgId: string, inviterId?: string) => {
     const parsed = InviteWorkerInputSchema.safeParse(data);
     if (!parsed.success) {
-        throw new Error(`Invalid worker invite payload: ${parsed.error.issues.map((issue) => issue.message).join(", ")}`);
+        throw new AppError(
+            "Invalid worker invite payload",
+            "VALIDATION_ERROR",
+            400,
+            parsed.error.flatten(),
+        );
     }
 
     const { name, email, phoneNumber, role, jobTitle, roles, hourlyRate } = parsed.data;
@@ -42,7 +48,11 @@ export const inviteWorker = async (data: unknown, orgId: string, inviterId?: str
         });
 
         if (existingMember) {
-            throw new Error("User is already a member of this organization");
+            throw new AppError(
+                "User is already a member of this organization",
+                "MEMBER_ALREADY_EXISTS",
+                409,
+            );
         }
     }
 
@@ -55,11 +65,11 @@ export const inviteWorker = async (data: unknown, orgId: string, inviterId?: str
     });
 
     if (existingInvite) {
-        throw new Error("Invitation already sent");
+        throw new AppError("Invitation already sent", "INVITATION_EXISTS", 409);
     }
 
     if (!inviterId) {
-        throw new Error("Inviter ID required");
+        throw new AppError("Inviter ID required", "VALIDATION_ERROR", 400);
     }
 
     const newInvite = await db.insert(invitation).values({

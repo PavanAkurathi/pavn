@@ -118,6 +118,26 @@ export async function getDefaultOrganizationContext(
     return { organizationId: membership?.organizationId ?? null };
 }
 
+export async function getOrganizationMembershipContext(userId: string, orgId: string) {
+    const membership = await db.query.member.findFirst({
+        where: and(eq(member.organizationId, orgId), eq(member.userId, userId)),
+        columns: {
+            id: true,
+            role: true,
+        },
+    });
+
+    if (!membership) {
+        return null;
+    }
+
+    return {
+        memberId: membership.id,
+        organizationId: orgId,
+        role: membership.role,
+    };
+}
+
 export async function getOrganizationContacts(orgId: string) {
     const members = await db
         .select({

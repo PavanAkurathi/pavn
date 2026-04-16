@@ -53,10 +53,9 @@ import { Hono } from "hono";
 import { swaggerUI } from "@hono/swagger-ui";
 import { cors } from "hono/cors";
 import { auth } from "@repo/auth";
-import { db, eq, and } from "@repo/database";
-import { member } from "@repo/database/schema";
 import { corsConfig } from "@repo/config";
-import { requestId, errorHandler, initSentry, logMessage, timeout } from "@repo/observability";
+import { getOrganizationMembershipContext } from "@repo/organizations";
+import { initSentry, logMessage } from "@repo/observability";
 
 // Import route modules
 // Import route modules
@@ -67,15 +66,22 @@ import { billingRouter } from "./routes/billing.js";
 import { organizationsRouter } from "./routes/organizations.js";
 import { geofenceRouter } from "./routes/geofence.js";
 import { getApiReadinessSummary, validateApiRuntimeEnv } from "./lib/runtime-env.js";
+import { errorHandler } from "./lib/error-handler.js";
+import { requestId, timeout, rateLimit, RATE_LIMITS } from "./middleware/index.js";
 import { normalizeOrganizationRole, type Role } from "./lib/organization-roles.js";
 
 // Types
+// Extend session type to include Better-Auth organization plugin fields
+type SessionWithOrg = typeof auth.$Infer.Session.session & {
+    activeOrganizationId?: string | null;
+};
+
 export type AppContext = {
     Variables: {
         requestId: string;
         orgId: string;
         user: typeof auth.$Infer.Session.user | null;
-        session: typeof auth.$Infer.Session.session | null;
+        session: SessionWithOrg | null;
         userRole: Role | null;
     };
 };
@@ -90,14 +96,41 @@ const app = new OpenAPIHono<AppContext>();
 // OPENAPI & SWAGGER
 // =============================================================================
 
-app.doc("/openapi.json", {
+const openApiDocument = {
     openapi: "3.0.0",
     info: {
         version: "1.0.0",
         title: "WorkersHive API",
         description: "API for managing shifts, workers, and organizations.",
     },
-});
+    paths: {
+        "/health": {
+            get: {
+                summary: "Health check",
+                responses: {
+                    "200": {
+                        description: "Service is healthy",
+                    },
+                },
+            },
+        },
+        "/ready": {
+            get: {
+                summary: "Readiness check",
+                responses: {
+                    "200": {
+                        description: "Service is ready",
+                    },
+                    "503": {
+                        description: "Service is not ready",
+                    },
+                },
+            },
+        },
+    },
+};
+
+app.get("/openapi.json", (c) => c.json(openApiDocument));
 
 app.get("/docs", swaggerUI({ url: "/openapi.json" }));
 
@@ -111,9 +144,16 @@ app.get("/", (c) => c.text("WorkersHive API 🚀"));
 // CORS
 app.use("*", cors(corsConfig));
 
-// Request tracing & timeout
+// Request tracing, timeout & global rate limit
 app.use("*", requestId());
 app.use("*", timeout(30000));
+// Global rate limit — catches broad abuse; route-specific limits are tighter
+app.use("/shifts/*", rateLimit(RATE_LIMITS.api));
+app.use("/worker/*", rateLimit(RATE_LIMITS.api));
+app.use("/timesheets/*", rateLimit(RATE_LIMITS.api));
+app.use("/organizations/*", rateLimit(RATE_LIMITS.api));
+app.use("/billing/*", rateLimit(RATE_LIMITS.api));
+app.use("/api/auth/*", rateLimit(RATE_LIMITS.auth));
 app.use("*", async (c, next) => {
     await next();
 
@@ -156,11 +196,20 @@ void (async () => {
     );
 })();
 
+// Geo-restrict all signup/verification paths to US and Canada
+const GEO_RESTRICTED_AUTH_PATHS = [
+    "/api/auth/sign-up/email",          // Admin email signup
+    "/api/auth/phone-number/send-otp",  // Worker phone OTP (triggers auto-signup)
+    "/api/auth/phone-number/verify",    // Phone verification (creates account via signUpOnVerification)
+    "/api/auth/email-otp/send-verification-otp", // Email OTP flow
+];
+const ALLOWED_COUNTRIES = ["US", "CA"];
+
 app.use("/api/auth/*", async (c, next) => {
-    if (c.req.path === "/api/auth/sign-up/email" && c.req.method === "POST") {
+    if (c.req.method === "POST" && GEO_RESTRICTED_AUTH_PATHS.includes(c.req.path)) {
         const country = c.req.header("x-vercel-ip-country") || c.req.header("cf-ipcountry");
 
-        if (country && !["US", "CA"].includes(country)) {
+        if (country && !ALLOWED_COUNTRIES.includes(country)) {
             return c.json(
                 { message: "Registration is currently limited to the US and Canada." },
                 403
@@ -176,7 +225,7 @@ app.on(["POST", "GET", "PATCH", "PUT", "DELETE"], "/api/auth/*", async (c) => {
     try {
         return await auth.handler(c.req.raw);
     } catch (error) {
-        console.error("[AUTH ERROR]", error);
+        logMessage("[AUTH ERROR] Auth handler exception", { path: c.req.path, method: c.req.method });
         return c.json({ error: "Internal Auth Error" }, 500);
     }
 });
@@ -280,14 +329,7 @@ app.use("*", async (c, next) => {
         return c.json({ error: "Missing organization context", code: "ORG_REQUIRED" }, 401);
     }
 
-    // Verify membership and get role
-    const memberRecord = await db.query.member.findFirst({
-        where: and(
-            eq(member.organizationId, orgId),
-            eq(member.userId, session.user.id)
-        ),
-        columns: { id: true, role: true }
-    });
+    const memberRecord = await getOrganizationMembershipContext(session.user.id, orgId);
 
     if (!memberRecord) {
         return c.json({ error: "Not a member of this organization", code: "ACCESS_DENIED" }, 403);

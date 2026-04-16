@@ -1,7 +1,7 @@
 {
   "config": {
-    "configFile": "/Users/av/Documents/pavn/packages/e2e/playwright.config.ts",
-    "rootDir": "/Users/av/Documents/pavn/packages/e2e/tests",
+    "configFile": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/playwright.config.ts",
+    "rootDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/tests",
     "forbidOnly": false,
     "fullyParallel": true,
     "globalSetup": null,
@@ -10,21 +10,17 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {
-      "actualWorkers": 4
-    },
+    "metadata": {},
     "preserveOutput": "always",
     "projects": [
       {
-        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "outputDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 4
-        },
+        "metadata": {},
         "id": "api",
         "name": "api",
-        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/api",
+        "testDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/tests/api",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -32,15 +28,13 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "outputDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 4
-        },
+        "metadata": {},
         "id": "web",
         "name": "web",
-        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/tests/web",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -48,15 +42,13 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "outputDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 4
-        },
+        "metadata": {},
         "id": "web-firefox",
         "name": "web-firefox",
-        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/tests/web",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -64,15 +56,13 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "outputDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 4
-        },
+        "metadata": {},
         "id": "web-safari",
         "name": "web-safari",
-        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/tests/web",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -80,15 +70,13 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "outputDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 4
-        },
+        "metadata": {},
         "id": "mobile-chrome",
         "name": "mobile-chrome",
-        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/tests/web",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -96,15 +84,13 @@
         "timeout": 30000
       },
       {
-        "outputDir": "/Users/av/Documents/pavn/packages/e2e/test-results",
+        "outputDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {
-          "actualWorkers": 4
-        },
+        "metadata": {},
         "id": "mobile-safari",
         "name": "mobile-safari",
-        "testDir": "/Users/av/Documents/pavn/packages/e2e/tests/web",
+        "testDir": "/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/tests/web",
         "testIgnore": [],
         "testMatch": [
           "**/*.@(spec|test).?(c|m)[jt]s?(x)"
@@ -141,203 +127,20 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.58.1",
-    "workers": 4,
+    "workers": 2,
     "webServer": null
   },
-  "suites": [
+  "suites": [],
+  "errors": [
     {
-      "title": "web/smoke.spec.ts",
-      "file": "web/smoke.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Manager web smoke",
-          "file": "web/smoke.spec.ts",
-          "line": 22,
-          "column": 6,
-          "specs": [
-            {
-              "title": "login page loads",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 1358,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-08T01:38:43.654Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "4219922fea2e2bd3c691-83e6d00298674b09abe1",
-              "file": "web/smoke.spec.ts",
-              "line": 23,
-              "column": 9
-            },
-            {
-              "title": "signup page loads",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 1,
-                      "parallelIndex": 1,
-                      "status": "passed",
-                      "duration": 1383,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-08T01:38:43.636Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "4219922fea2e2bd3c691-50a423b5bd3835244a98",
-              "file": "web/smoke.spec.ts",
-              "line": 31,
-              "column": 9
-            },
-            {
-              "title": "seeded admin reaches the shifts dashboard",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 2,
-                      "parallelIndex": 2,
-                      "status": "passed",
-                      "duration": 4787,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-08T01:38:43.659Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "4219922fea2e2bd3c691-e921445b816c34facce6",
-              "file": "web/smoke.spec.ts",
-              "line": 38,
-              "column": 9
-            },
-            {
-              "title": "create schedule flow opens",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 3,
-                      "parallelIndex": 3,
-                      "status": "passed",
-                      "duration": 5427,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-08T01:38:43.683Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "4219922fea2e2bd3c691-9d50a328365021490d12",
-              "file": "web/smoke.spec.ts",
-              "line": 49,
-              "column": 9
-            },
-            {
-              "title": "roster page loads with workforce actions",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "web",
-                  "projectName": "web",
-                  "results": [
-                    {
-                      "workerIndex": 0,
-                      "parallelIndex": 0,
-                      "status": "passed",
-                      "duration": 4336,
-                      "errors": [],
-                      "stdout": [],
-                      "stderr": [],
-                      "retry": 0,
-                      "startTime": "2026-04-08T01:38:45.620Z",
-                      "annotations": [],
-                      "attachments": []
-                    }
-                  ],
-                  "status": "expected"
-                }
-              ],
-              "id": "4219922fea2e2bd3c691-a9ea003a0654bdcf2769",
-              "file": "web/smoke.spec.ts",
-              "line": 58,
-              "column": 9
-            }
-          ]
-        }
-      ]
+      "message": "Error: EPERM: operation not permitted, unlink '/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results/results.json'",
+      "stack": "Error: EPERM: operation not permitted, unlink '/sessions/peaceful-bold-hawking/mnt/pavn/packages/e2e/test-results/results.json'"
     }
   ],
-  "errors": [],
   "stats": {
-    "startTime": "2026-04-08T01:38:42.288Z",
-    "duration": 7719.398999999999,
-    "expected": 5,
+    "startTime": "2026-04-16T13:19:30.903Z",
+    "duration": 66623.5,
+    "expected": 0,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

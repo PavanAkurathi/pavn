@@ -11,6 +11,8 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { type Context } from "hono";
+import { OpenApiLooseObjectSchema } from "../lib/openapi-schemas.js";
+import { jsonOk, bodyOk } from "../lib/response.js";
 
 // Import services
 import {
@@ -44,7 +46,7 @@ timesheetsRouter.openapi(getReportRoute, async (c: Context<AppContext>) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
     const result = await getTimesheetsReport(orgId, queryParams);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const getFiltersRoute = createRoute({
@@ -54,7 +56,7 @@ const getFiltersRoute = createRoute({
     description: 'Get available filters for reports.',
     responses: {
         200: {
-            content: { 'application/json': { schema: z.any() } },
+            content: { 'application/json': { schema: OpenApiLooseObjectSchema } },
             description: 'Filters'
         }
     }
@@ -64,7 +66,7 @@ timesheetsRouter.openapi(getFiltersRoute, async (c) => {
     const orgId = c.get("orgId");
     const queryParams = parseQueryParams(c.req.url);
     const result = await getReportFilters(orgId, queryParams);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -98,7 +100,7 @@ timesheetsRouter.openapi(exportRoute, async (c) => {
     c.header('Content-Type', result.contentType);
     c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
 
-    return c.body(result.data as any);
+    return bodyOk(c, result.data);
 });
 
 const exportCsvRoute = createRoute({
@@ -123,7 +125,7 @@ timesheetsRouter.openapi(exportCsvRoute, async (c) => {
     c.header('Content-Type', result.contentType);
     c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
 
-    return c.body(result.data as any);
+    return bodyOk(c, result.data);
 });
 
 const exportPdfRoute = createRoute({
@@ -148,7 +150,7 @@ timesheetsRouter.openapi(exportPdfRoute, async (c) => {
     c.header('Content-Type', result.contentType);
     c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
 
-    return c.body(result.data as any);
+    return bodyOk(c, result.data);
 });
 
 // =============================================================================

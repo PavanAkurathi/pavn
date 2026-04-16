@@ -2,21 +2,30 @@ import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
+import { logError, logMessage } from "@repo/observability";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
-export function resolveRequestedUserRole(ctx: any): "admin" | "worker" {
+interface AuthHookContext {
+    headers?: Record<string, string>;
+    body?: Record<string, unknown>;
+}
+
+export function resolveRequestedUserRole(ctx: Record<string, unknown> | null): "admin" | "worker" {
+    if (!ctx) return "admin";
     let role: "admin" | "worker" = "admin";
 
-    if (ctx?.headers) {
-        const parsedHeaders = new Headers(ctx.headers as Record<string, string>);
+    const hookCtx = ctx as unknown as AuthHookContext;
+
+    if (hookCtx?.headers) {
+        const parsedHeaders = new Headers(hookCtx.headers);
         const roleHeader = parsedHeaders.get("x-user-role");
         if (roleHeader === "worker") {
             role = "worker";
         }
     }
 
-    if (ctx?.body && typeof ctx.body === "object" && "role" in ctx.body) {
-        const bodyRole = (ctx.body as Record<string, string>).role;
+    if (hookCtx?.body && typeof hookCtx.body === "object" && "role" in hookCtx.body) {
+        const bodyRole = hookCtx.body.role;
         if (bodyRole === "worker") {
             role = "worker";
         }
@@ -58,18 +67,19 @@ async function createOrganizationForAdminSignup(userId: string, companyName: str
     return orgId;
 }
 
-export async function handleCreatedAuthUser(user: any, ctx: any) {
-    const companyName = (ctx?.body as Record<string, unknown>)?.companyName as string | undefined;
+export async function handleCreatedAuthUser(user: Record<string, unknown>, ctx: Record<string, unknown> | null) {
+    const hookCtx = ctx as unknown as AuthHookContext;
+    const companyName = hookCtx?.body?.companyName as string | undefined;
+    const userId = user.id as string;
+
     if (companyName) {
         try {
-            const orgId = await createOrganizationForAdminSignup(user.id, companyName);
-            console.log(`[AUTH] Org "${companyName}" (${orgId}) created for admin user ${user.id}`);
+            const orgId = await createOrganizationForAdminSignup(userId, companyName);
+            logMessage("[AUTH] Organization created for admin signup", { orgId, userId });
         } catch (e) {
-            console.error(`[AUTH CRITICAL] Org creation failed for user ${user.id}:`, e);
-            await db
-                .update(schema.user as any)
-                .set({ metadata: JSON.stringify({ orgSetupFailed: true }) })
-                .where(eq(schema.user.id, user.id));
+            logError(e, { context: "org_creation_on_signup", userId });
+            // Note: orgSetupFailed is tracked via observability logging.
+            // The user table has no metadata column — do not attempt to write there.
             throw new Error("Account created but organization setup failed. Please contact support.");
         }
         return;

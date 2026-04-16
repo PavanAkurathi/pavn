@@ -14,14 +14,14 @@
  */
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import {
-    ShiftSchema,
-    TimesheetWorkerSchema,
-    UpcomingShiftsResponseSchema,
-} from "@repo/contracts/shifts";
 import type { AppContext } from "../index";
-import { requireManager } from "../middleware";
+import { requireManager, rateLimit, RATE_LIMITS } from "../middleware";
 import { isManagerRole } from "../lib/organization-roles.js";
+import {
+    OpenApiLooseArraySchema,
+    OpenApiLooseObjectSchema,
+} from "../lib/openapi-schemas.js";
+import { jsonOk } from "../lib/response.js";
 
 // Import services from packages (pure business logic)
 import {
@@ -56,7 +56,7 @@ const getDraftsRoute = createRoute({
     summary: 'Get Draft Shifts',
     description: 'Get all shifts in draft status.',
     responses: {
-        200: { content: { 'application/json': { schema: z.array(ShiftSchema) } }, description: 'Draft shifts' },
+        200: { content: { 'application/json': { schema: OpenApiLooseArraySchema } }, description: 'Draft shifts' },
         403: { description: 'Forbidden' }
     }
 });
@@ -67,7 +67,7 @@ shiftsRouter.openapi(getDraftsRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getDraftShifts(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const deleteDraftsRoute = createRoute({
@@ -101,7 +101,7 @@ const upcomingRoute = createRoute({
     description: 'Retrieve a list of future published shifts for the organization.',
     responses: {
         200: {
-            content: { 'application/json': { schema: UpcomingShiftsResponseSchema } },
+            content: { 'application/json': { schema: OpenApiLooseArraySchema } },
             description: 'List of upcoming shifts',
         },
         403: { description: 'Access denied' },
@@ -116,7 +116,7 @@ shiftsRouter.openapi(upcomingRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getUpcomingShifts(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const getPendingRoute = createRoute({
@@ -125,7 +125,7 @@ const getPendingRoute = createRoute({
     summary: 'Get Pending Shifts',
     description: 'Get shifts waiting for approval.',
     responses: {
-        200: { content: { 'application/json': { schema: z.array(ShiftSchema) } }, description: 'Pending shifts' },
+        200: { content: { 'application/json': { schema: OpenApiLooseArraySchema } }, description: 'Pending shifts' },
         403: { description: 'Forbidden' }
     }
 });
@@ -136,7 +136,7 @@ shiftsRouter.openapi(getPendingRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getPendingShifts(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const getHistoryRoute = createRoute({
@@ -151,7 +151,7 @@ const getHistoryRoute = createRoute({
         })
     },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift history' },
+        200: { content: { 'application/json': { schema: OpenApiLooseArraySchema } }, description: 'Shift history' },
         403: { description: 'Forbidden' }
     }
 });
@@ -164,7 +164,7 @@ shiftsRouter.openapi(getHistoryRoute, async (c) => {
     const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "50"), 1), 100);
     const offset = Math.max(parseInt(c.req.query("offset") || "0"), 0);
     const result = await getHistoryShifts(orgId, { limit, offset });
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -178,7 +178,7 @@ const getGroupRoute = createRoute({
     description: 'Get details of a shift group.',
     request: { params: z.object({ groupId: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift group' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shift group' },
         403: { description: 'Forbidden' }
     }
 });
@@ -190,7 +190,7 @@ shiftsRouter.openapi(getGroupRoute, async (c) => {
     const groupId = c.req.param("groupId");
     const orgId = c.get("orgId");
     const result = await getShiftGroup(groupId, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -204,7 +204,7 @@ const getShiftRoute = createRoute({
     description: 'Get shift details.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: ShiftSchema } }, description: 'Shift details' }
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shift details' }
     }
 });
 
@@ -212,7 +212,7 @@ shiftsRouter.openapi(getShiftRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const result = await getShiftById(id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const approveShiftRoute = createRoute({
@@ -222,7 +222,7 @@ const approveShiftRoute = createRoute({
     description: 'Approve a pending shift.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift approved' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shift approved' },
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden' }
     }
@@ -238,7 +238,7 @@ shiftsRouter.openapi(approveShiftRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const result = await approveShift(id, orgId, user.id);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const cancelShiftRoute = createRoute({
@@ -248,7 +248,7 @@ const cancelShiftRoute = createRoute({
     description: 'Cancel a shift.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift canceled' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shift canceled' },
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden' }
     }
@@ -264,7 +264,7 @@ shiftsRouter.openapi(cancelShiftRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const result = await cancelShift(id, orgId, user.id);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const assignWorkerRoute = createRoute({
@@ -274,7 +274,7 @@ const assignWorkerRoute = createRoute({
     description: 'Assign a worker to a shift.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker assigned' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker assigned' },
         403: { description: 'Forbidden' }
     }
 });
@@ -288,7 +288,7 @@ shiftsRouter.openapi(assignWorkerRoute, async (c) => {
     const body = await c.req.json();
 
     const result = await assignWorker(body, id, orgId, undefined, c.req.query("force") === "true");
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -302,7 +302,7 @@ const getShiftTimesheetsRoute = createRoute({
     description: 'Get timesheets for a shift.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.array(TimesheetWorkerSchema) } }, description: 'Timesheets' },
+        200: { content: { 'application/json': { schema: OpenApiLooseArraySchema } }, description: 'Timesheets' },
         403: { description: 'Forbidden' }
     }
 });
@@ -314,7 +314,7 @@ shiftsRouter.openapi(getShiftTimesheetsRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const result = await getShiftTimesheets(id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const updateTimesheetRoute = createRoute({
@@ -324,7 +324,7 @@ const updateTimesheetRoute = createRoute({
     description: 'Update a timesheet entry.',
     request: { params: z.object({ shiftId: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Timesheet updated' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Timesheet updated' },
         403: { description: 'Forbidden' }
     }
 });
@@ -343,7 +343,7 @@ shiftsRouter.openapi(updateTimesheetRoute, async (c) => {
     }
 
     const result = await updateTimesheet({ ...body, shiftId }, orgId, user?.id || "system");
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -356,11 +356,12 @@ const publishRoute = createRoute({
     summary: 'Publish Schedule',
     description: 'Publish draft shifts.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Schedule published' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Schedule published' },
         403: { description: 'Forbidden' }
     }
 });
 
+shiftsRouter.use('/publish', rateLimit(RATE_LIMITS.publish));
 shiftsRouter.openapi(publishRoute, async (c) => {
     const userRole = c.get("userRole");
     if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
@@ -370,7 +371,7 @@ shiftsRouter.openapi(publishRoute, async (c) => {
 
     // publishSchedule(body, headerOrgId)
     const result = await publishSchedule(body, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 export default shiftsRouter;
@@ -386,7 +387,7 @@ const editShiftRoute = createRoute({
     description: 'Update a published/draft shift (title, times, capacity, location).',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift updated' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shift updated' },
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden' },
         409: { description: 'Conflict — invalid state or capacity' }
@@ -404,7 +405,7 @@ shiftsRouter.openapi(editShiftRoute, async (c) => {
 
     const body = await c.req.json();
     const result = await editShift(id, orgId, user.id, body);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -418,7 +419,7 @@ const unassignWorkerRoute = createRoute({
     description: 'Remove a worker from a shift. Cannot unassign if worker has already clocked in.',
     request: { params: z.object({ id: z.string(), workerId: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker unassigned' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker unassigned' },
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden' },
         409: { description: 'Conflict — worker already clocked in' }
@@ -436,7 +437,7 @@ shiftsRouter.openapi(unassignWorkerRoute, async (c) => {
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
     const result = await unassignWorker(shiftId, workerId, orgId, user.id);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -450,7 +451,7 @@ const duplicateShiftRoute = createRoute({
     description: 'Copy a shift as a new draft with new start/end times.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Shift duplicated' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shift duplicated' },
         403: { description: 'Forbidden' }
     }
 });
@@ -463,7 +464,7 @@ shiftsRouter.openapi(duplicateShiftRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
     const result = await duplicateShift(id, orgId, body);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -476,7 +477,7 @@ const openShiftsRoute = createRoute({
     summary: 'Get Open Shifts',
     description: 'Get future shifts with unfilled capacity (spots remaining > 0).',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Open shifts' },
+        200: { content: { 'application/json': { schema: OpenApiLooseArraySchema } }, description: 'Open shifts' },
         403: { description: 'Forbidden' }
     }
 });
@@ -487,5 +488,5 @@ shiftsRouter.openapi(openShiftsRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getOpenShifts(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });

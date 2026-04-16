@@ -6,7 +6,7 @@ import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 import { sendPushNotification } from "@repo/notifications";
-import { AppError } from "@repo/observability";
+import { AppError, logError } from "@repo/observability";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 
 const LocationPingSchema = z.object({
@@ -148,7 +148,7 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
                     shiftId: relevantShift?.id || null,
                     url: "/(tabs)",
                 },
-            }).catch(err => console.error("Arrival push failed", err));
+            }).catch(err => logError(err, { context: "arrival_push_notification", workerId, shiftId: relevantShift?.id }));
         }
     }
 

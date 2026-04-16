@@ -1,6 +1,7 @@
 import { db } from "@repo/database";
 import { user } from "@repo/database/schema";
 import { eq } from "drizzle-orm";
+import { AppError } from "@repo/observability";
 import { z } from "zod";
 
 const UpdateWorkerProfileSchema = z.object({
@@ -11,7 +12,7 @@ const UpdateWorkerProfileSchema = z.object({
 export async function updateWorkerProfile(userId: string, payload: unknown) {
     const parsed = UpdateWorkerProfileSchema.safeParse(payload);
     if (!parsed.success) {
-        throw new Error("Invalid request");
+        throw new AppError("Invalid request", "VALIDATION_ERROR", 400, parsed.error.flatten());
     }
 
     const allowedFields: Record<string, string> = {};
@@ -23,7 +24,7 @@ export async function updateWorkerProfile(userId: string, payload: unknown) {
     }
 
     if (Object.keys(allowedFields).length === 0) {
-        throw new Error("No valid fields to update");
+        throw new AppError("No valid fields to update", "VALIDATION_ERROR", 400);
     }
 
     const [updated] = await db.update(user)
@@ -31,5 +32,9 @@ export async function updateWorkerProfile(userId: string, payload: unknown) {
         .where(eq(user.id, userId))
         .returning();
 
-    return updated ?? null;
+    if (!updated) {
+        throw new AppError("Worker not found", "NOT_FOUND", 404);
+    }
+
+    return updated;
 }

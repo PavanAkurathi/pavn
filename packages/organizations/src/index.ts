@@ -33,6 +33,7 @@ export {
     bulkImportRosterEntries,
     createLocationWithPlanLimit,
     getDefaultOrganizationContext,
+    getOrganizationMembershipContext,
     getOrganizationContacts,
     getOrganizationInvitationState,
     getOrganizationSummary,

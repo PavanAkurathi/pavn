@@ -1,6 +1,7 @@
 import { db } from "@repo/database";
 import { member } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
+import { AppError } from "@repo/observability";
 
 export const deactivateWorker = async (id: string, orgId: string) => {
     const existing = await db.query.member.findFirst({
@@ -11,7 +12,7 @@ export const deactivateWorker = async (id: string, orgId: string) => {
     });
 
     if (!existing) {
-        throw new Error("Member not found");
+        throw new AppError("Member not found", "NOT_FOUND", 404);
     }
 
     const updated = await db

@@ -12,6 +12,9 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { AppContext } from "../index";
 import { isManagerRole } from "../lib/organization-roles.js";
+import { OpenApiLooseObjectSchema } from "../lib/openapi-schemas.js";
+import { rateLimit, RATE_LIMITS } from "../middleware/index.js";
+import { jsonOk } from "../lib/response.js";
 
 // Import services from geofence package
 import {
@@ -44,6 +47,7 @@ const clockInRoute = createRoute({
     }
 });
 
+geofenceRouter.use('/clock-in', rateLimit(RATE_LIMITS.clockAction));
 geofenceRouter.openapi(clockInRoute, async (c) => {
     const user = c.get("user");
     const orgId = c.get("orgId");
@@ -51,7 +55,7 @@ geofenceRouter.openapi(clockInRoute, async (c) => {
 
     const body = await c.req.json();
     const result = await clockIn(body, user.id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const clockOutRoute = createRoute({
@@ -65,6 +69,7 @@ const clockOutRoute = createRoute({
     }
 });
 
+geofenceRouter.use('/clock-out', rateLimit(RATE_LIMITS.clockAction));
 geofenceRouter.openapi(clockOutRoute, async (c) => {
     const user = c.get("user");
     const orgId = c.get("orgId");
@@ -72,7 +77,7 @@ geofenceRouter.openapi(clockOutRoute, async (c) => {
 
     const body = await c.req.json();
     const result = await clockOut(body, user.id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -85,11 +90,12 @@ const ingestLocationRoute = createRoute({
     summary: 'Ingest Location Ping',
     description: 'Receive background location update from worker mobile app. Used for arrival detection and geofence monitoring.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Location processed' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Location processed' },
         401: { description: 'Unauthorized' }
     }
 });
 
+geofenceRouter.use('/location', rateLimit(RATE_LIMITS.api));
 geofenceRouter.openapi(ingestLocationRoute, async (c) => {
     const user = c.get("user");
     const orgId = c.get("orgId");
@@ -97,7 +103,7 @@ geofenceRouter.openapi(ingestLocationRoute, async (c) => {
 
     const body = await c.req.json();
     const result = await ingestLocation(body, user.id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -110,12 +116,13 @@ const managerOverrideRoute = createRoute({
     summary: 'Manager Override',
     description: 'Manager manually sets or corrects clock-in/out times for a worker. No snapping rules applied — exact times are trusted.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Override applied' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Override applied' },
         401: { description: 'Unauthorized' },
         403: { description: 'Forbidden — admin role required' }
     }
 });
 
+geofenceRouter.use('/manager-override', rateLimit(RATE_LIMITS.strict));
 geofenceRouter.openapi(managerOverrideRoute, async (c) => {
     const user = c.get("user");
     const userRole = c.get("userRole");
@@ -128,7 +135,7 @@ geofenceRouter.openapi(managerOverrideRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
     const result = await managerOverride(body, user.id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -141,7 +148,7 @@ const getFlaggedTimesheetsRoute = createRoute({
     summary: 'Get Flagged Timesheets',
     description: 'List assignments that need review (missing clock-in/out, geofence violations, pending corrections). Admin only.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Flagged timesheets and pending corrections' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Flagged timesheets and pending corrections' },
         403: { description: 'Forbidden' }
     }
 });
@@ -154,7 +161,7 @@ geofenceRouter.openapi(getFlaggedTimesheetsRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getFlaggedTimesheets(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -167,7 +174,7 @@ const requestCorrectionRoute = createRoute({
     summary: 'Request Correction',
     description: 'Submit time correction request.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Request result' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Request result' },
         401: { description: 'Unauthorized' }
     }
 });
@@ -179,7 +186,7 @@ geofenceRouter.openapi(requestCorrectionRoute, async (c) => {
 
     const body = await c.req.json();
     const result = await requestCorrection(body, user.id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const getPendingCorrectionsRoute = createRoute({
@@ -201,7 +208,7 @@ geofenceRouter.openapi(getPendingCorrectionsRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getPendingCorrections(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const reviewCorrectionRoute = createRoute({
@@ -210,7 +217,7 @@ const reviewCorrectionRoute = createRoute({
     summary: 'Review Correction',
     description: 'Approve or deny correction request (Admin).',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Review result' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Review result' },
         403: { description: 'Forbidden' }
     }
 });
@@ -226,7 +233,7 @@ geofenceRouter.openapi(reviewCorrectionRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
     const result = await reviewCorrection(body, user.id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 export default geofenceRouter;

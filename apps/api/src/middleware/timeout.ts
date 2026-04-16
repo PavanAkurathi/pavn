@@ -1,8 +1,9 @@
-import { Context, Next } from "hono";
-import { AppError } from "./errors";
+import type { Context, Next } from "hono";
+import { AppError } from "@repo/observability";
+import type { AppContext } from "../index.js";
 
 export const timeout = (durationMs: number = 30000) => {
-    return async (c: Context, next: Next) => {
+    return async (c: Context<AppContext>, next: Next) => {
         let timer: ReturnType<typeof setTimeout> | undefined;
 
         const timeoutPromise = new Promise((_, reject) => {
@@ -12,10 +13,7 @@ export const timeout = (durationMs: number = 30000) => {
         });
 
         try {
-            await Promise.race([
-                next(),
-                timeoutPromise
-            ]);
+            await Promise.race([next(), timeoutPromise]);
         } finally {
             if (timer) clearTimeout(timer);
         }

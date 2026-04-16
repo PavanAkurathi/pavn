@@ -14,3 +14,5 @@
 
 export { requireManager, requireAdmin, requireOwner, requirePermission, hasPermission } from "./rbac";
 export { rateLimit, RATE_LIMITS, cleanupRateLimitCache } from "./rate-limit";
+export { requestId } from "./request-id";
+export { timeout } from "./timeout";

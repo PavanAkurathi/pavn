@@ -28,7 +28,7 @@ export const updateWorker = async (data: unknown, id: string, orgId: string) => 
     });
 
     if (!existing) {
-        throw new Error("Member not found");
+        throw new AppError("Member not found", "NOT_FOUND", 404);
     }
 
     const updateData: UpdateWorkerInput = parsed.data;

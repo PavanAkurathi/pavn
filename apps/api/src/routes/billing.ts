@@ -7,6 +7,7 @@ import {
 } from "@repo/contracts/billing";
 import type { AppContext } from "../index";
 import { isAdminRole } from "../lib/organization-roles.js";
+import { logError, logMessage } from "@repo/observability";
 import {
     clearOrganizationSubscriptionByCustomerId,
     createOrganizationBillingPortalSession,
@@ -194,7 +195,7 @@ billingRouter.openapi(stripeWebhookRoute, async (c) => {
         const stripe = requireStripe();
         event = stripe.webhooks.constructEvent(body, signature, endpointSecret);
     } catch (error: any) {
-        console.error(`Webhook Signature Error: ${error.message}`);
+        logMessage("[Billing] Webhook signature verification failed", { error: error.message });
         return c.json({ error: `Webhook Error: ${error.message}` }, 400);
     }
 
@@ -240,7 +241,7 @@ billingRouter.openapi(stripeWebhookRoute, async (c) => {
             default:
         }
     } catch (error) {
-        console.error("[Webhook] Handler Error:", error);
+        logError(error, { context: "stripe_webhook_handler", eventType: event.type });
         return c.json({ error: "Webhook handler failed" }, 500);
     }
 

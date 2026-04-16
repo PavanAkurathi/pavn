@@ -12,6 +12,7 @@ import {
     unregisterDeviceToken,
 } from "@repo/notifications";
 import type { AppContext } from "../index";
+import { OpenApiLooseDevicesSchema } from "../lib/openapi-schemas.js";
 
 export const devicesRouter = new OpenAPIHono<AppContext>();
 
@@ -89,7 +90,7 @@ const listDevicesRoute = createRoute({
     description: 'List active devices for the user.',
     responses: {
         200: {
-            content: { 'application/json': { schema: z.object({ devices: z.array(z.any()) }) } }, // Simplify schema for now
+            content: { 'application/json': { schema: OpenApiLooseDevicesSchema } },
             description: 'List of devices'
         },
         401: { description: 'Unauthorized' }

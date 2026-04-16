@@ -33,16 +33,19 @@ export const isAllowedOrigin = (origin: string | undefined): boolean => {
     if (origin.match(/^https:\/\/pavn(-[a-z0-9]+)?\.vercel\.app$/)) return true;
     if (origin.match(/^https:\/\/pavn-web(-[a-z0-9]+)?\.vercel\.app$/)) return true;
 
-    // Allow pavanworkershives Vercel team URLs
-    if (origin.includes('pavanworkershives-projects.vercel.app')) return true;
+    // Allow pavanworkershives Vercel team URLs (exact subdomain match)
+    if (origin.match(/^https:\/\/[a-z0-9-]+-pavanworkershives-projects\.vercel\.app$/)) return true;
 
     return false;
 };
 
 export const corsConfig = {
     origin: (origin: string | undefined) => {
-        // Allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return '*';
+        // No-origin requests come from mobile native apps, server-to-server, or curl.
+        // Browsers ALWAYS send Origin on cross-origin requests, so no-origin means
+        // the request is NOT browser-based. Return a safe fixed value (not '*')
+        // because credentials:true + '*' is rejected by browsers anyway.
+        if (!origin) return 'https://pavn.vercel.app';
         return isAllowedOrigin(origin) ? origin : null;
     },
     allowHeaders: ["x-org-id", "Content-Type", "Authorization", "sentry-trace", "baggage"],

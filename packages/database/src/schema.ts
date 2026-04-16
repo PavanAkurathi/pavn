@@ -668,6 +668,8 @@ export const idempotencyKey = pgTable("idempotency_key", {
 export const workerAvailability = pgTable("worker_availability", {
     id: text("id").primaryKey(),
     workerId: text("worker_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    // [TENANT-001] Organization scope — prevents cross-tenant availability leaks
+    organizationId: text("organization_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
 
     // Time Range
     startTime: timestamp("start_time", { withTimezone: true, mode: 'date' }).notNull(),
@@ -685,13 +687,18 @@ export const workerAvailability = pgTable("worker_availability", {
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
     availWorkerIdx: index("avail_worker_idx").on(table.workerId),
-    availTimeIdx: index("avail_time_idx").on(table.startTime, table.endTime)
+    availTimeIdx: index("avail_time_idx").on(table.startTime, table.endTime),
+    availOrgIdx: index("avail_org_idx").on(table.organizationId),
 }));
 
 export const workerAvailabilityRelations = relations(workerAvailability, ({ one }) => ({
     worker: one(user, {
         fields: [workerAvailability.workerId],
         references: [user.id],
+    }),
+    organization: one(organization, {
+        fields: [workerAvailability.organizationId],
+        references: [organization.id],
     }),
 }));
 

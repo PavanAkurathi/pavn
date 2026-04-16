@@ -18,6 +18,7 @@ mock.module("@repo/database", () => ({
 mock.module("@repo/database/schema", () => ({
     member: { id: "id", organizationId: "organizationId" },
     organization: { id: "id" },
+    auditLog: { actorId: "actorId" },
 }));
 
 mock.module("drizzle-orm", () => ({

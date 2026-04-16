@@ -16,6 +16,7 @@ import {
     normalizeAuthPhoneNumber,
     resolveRequestedUserRole,
 } from "./user-lifecycle";
+import { logError, logMessage } from "@repo/observability";
 import {
     buildTrustedOrigins,
     getBetterAuthInfraConnection,
@@ -24,11 +25,9 @@ import {
     requireAuthEnv,
 } from "./env";
 
-// In production, crash immediately if secret is missing.
-// In dev/build, use a clearly labeled fallback.
-const authSecret = isAuthProd
-    ? requireAuthEnv("BETTER_AUTH_SECRET")
-    : (process.env.BETTER_AUTH_SECRET ?? "dev_only_secret_not_for_production");
+// Always require BETTER_AUTH_SECRET — no fallback in any environment.
+// A missing secret in dev should fail fast, not silently use a known value.
+const authSecret = requireAuthEnv("BETTER_AUTH_SECRET");
 
 const trustedOrigins = buildTrustedOrigins();
 
@@ -124,26 +123,24 @@ export const auth = betterAuth({
     databaseHooks: {
         user: {
             create: {
-                before: async (user: any, ctx: any) => {
-                    const params = user as Record<string, unknown>;
-                    params.role = resolveRequestedUserRole(ctx);
-                    normalizeAuthPhoneNumber(params);
+                before: async (user: Record<string, unknown>, ctx: Record<string, unknown> | null) => {
+                    user.role = resolveRequestedUserRole(ctx);
+                    normalizeAuthPhoneNumber(user);
                     return { data: user };
                 },
-                after: async (user: any, ctx: any) => {
+                after: async (user: Record<string, unknown>, ctx: Record<string, unknown> | null) => {
                     await handleCreatedAuthUser(user, ctx);
                 },
             },
             update: {
-                before: async (user: any) => {
-                    const params = user as Record<string, unknown>;
-                    if (typeof params.phoneNumber === "string" && params.phoneNumber.startsWith("+")) {
+                before: async (user: Record<string, unknown>) => {
+                    if (typeof user.phoneNumber === "string" && user.phoneNumber.startsWith("+")) {
                         try {
-                            if (isValidPhoneNumber(params.phoneNumber)) {
-                                params.phoneNumber = normalizePhoneNumber(params.phoneNumber);
+                            if (isValidPhoneNumber(user.phoneNumber)) {
+                                user.phoneNumber = normalizePhoneNumber(user.phoneNumber);
                             }
                         } catch {
-                            console.warn("[AUTH] Phone normalization failed on update — using as-is");
+                            logMessage("[AUTH] Phone normalization failed on update — using as-is");
                         }
                     }
                     return { data: user };
@@ -172,9 +169,9 @@ export const auth = betterAuth({
             async sendVerificationOTP({ email, otp, type }) {
                 try {
                     await sendOtp(email, otp);
-                    console.log(`[AUTH] Email OTP (${type}) dispatched to ${email.slice(0, 3)}***`);
+                    logMessage(`[AUTH] Email OTP dispatched`, { type, emailPrefix: email.slice(0, 3) });
                 } catch (e) {
-                    console.error(`[AUTH ERROR] Failed to send email OTP to ${email}:`, e);
+                    logError(e, { context: "email_otp_send", emailPrefix: email.slice(0, 3) });
                     throw new Error("Failed to send verification code. Please try again.");
                 }
             },
@@ -190,7 +187,7 @@ export const auth = betterAuth({
                     }
                     await sendOTP(phoneNumber, code);
                 } catch (e) {
-                    console.error(`[AUTH ERROR] Failed to send SMS OTP:`, e);
+                    logError(e, { context: "sms_otp_send" });
                     if (e instanceof Error && e.message.includes("has not been invited")) {
                         throw e;
                     }

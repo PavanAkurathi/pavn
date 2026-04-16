@@ -20,7 +20,6 @@ const required = {
   ],
   workers_app: [
     "EXPO_PUBLIC_API_URL",
-    "EXPO_PUBLIC_DUB_PUBLISHABLE_KEY",
   ],
 };
 
@@ -30,6 +29,7 @@ const optional = {
     "EXPO_PUBLIC_SENTRY_DSN",
   ],
   deeplinks: [
+    "EXPO_PUBLIC_DUB_PUBLISHABLE_KEY",
     "EXPO_PUBLIC_DUB_DOMAIN",
     "DUB_API_KEY",
     "NEXT_PUBLIC_AUTH_URL",

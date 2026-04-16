@@ -31,6 +31,7 @@
         "@repo/config": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
+        "@repo/observability": "workspace:*",
         "@repo/utils": "workspace:*",
         "better-auth": "1.5.1-beta.3",
         "drizzle-orm": "^0.45.1",

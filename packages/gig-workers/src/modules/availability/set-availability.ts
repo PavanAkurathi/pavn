@@ -11,7 +11,7 @@ const SetAvailabilitySchema = z.object({
     reason: z.string().optional()
 });
 
-export const setAvailability = async (data: unknown, workerId: string) => {
+export const setAvailability = async (data: unknown, workerId: string, organizationId: string) => {
     const result = SetAvailabilitySchema.safeParse(data);
 
     if (!result.success) {
@@ -31,6 +31,7 @@ export const setAvailability = async (data: unknown, workerId: string) => {
     await db.insert(workerAvailability).values({
         id,
         workerId,
+        organizationId,
         startTime: start,
         endTime: end,
         type

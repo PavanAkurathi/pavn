@@ -29,6 +29,13 @@
       "when": 1773381000000,
       "tag": "0003_attendance_verification_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1744764000000,
+      "tag": "0004_tenant_001_availability_org_scope",
+      "breakpoints": true
     }
   ]
 }

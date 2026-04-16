@@ -32,6 +32,8 @@ import {
 } from "@repo/contracts/workforce";
 import type { AppContext } from "../index.js";
 import { isAdminRole, isManagerRole } from "../lib/organization-roles.js";
+import { OpenApiLooseObjectSchema } from "../lib/openapi-schemas.js";
+import { jsonOk } from "../lib/response.js";
 
 // Import from packages (Services)
 import {
@@ -105,7 +107,7 @@ organizationsRouter.openapi(getCrewRoute, async (c) => {
     const offset = parseInt(c.req.query("offset") || "0");
 
     const result = await getCrew(orgId, { search, limit, offset });
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const inviteWorkerRoute = createRoute({
@@ -131,8 +133,11 @@ const inviteWorkerRoute = createRoute({
         }
     },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Invitation sent' },
-        403: { description: 'Forbidden' }
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Invitation sent' },
+        400: { description: 'Invalid request' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Forbidden' },
+        409: { description: 'Worker already invited or already a member' }
     }
 });
 
@@ -146,7 +151,7 @@ organizationsRouter.openapi(inviteWorkerRoute, async (c) => {
 
     const body = await c.req.json();
     const result = await inviteWorker(body, orgId, user.id);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const createWorkerInvitationRoute = createRoute({
@@ -312,7 +317,7 @@ const updateWorkerRoute = createRoute({
     description: 'Update worker details.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker updated' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker updated' },
         403: { description: 'Forbidden' }
     }
 });
@@ -325,7 +330,7 @@ organizationsRouter.openapi(updateWorkerRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
     const result = await updateWorker(body, id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const deactivateWorkerRoute = createRoute({
@@ -335,7 +340,7 @@ const deactivateWorkerRoute = createRoute({
     description: 'Deactivate a worker account.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker deactivated' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker deactivated' },
         403: { description: 'Forbidden' }
     }
 });
@@ -347,7 +352,7 @@ organizationsRouter.openapi(deactivateWorkerRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const result = await deactivateWorker(id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const reactivateWorkerRoute = createRoute({
@@ -357,7 +362,7 @@ const reactivateWorkerRoute = createRoute({
     description: 'Reactivate a suspended worker account.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Worker reactivated' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker reactivated' },
         403: { description: 'Forbidden' }
     }
 });
@@ -369,7 +374,7 @@ organizationsRouter.openapi(reactivateWorkerRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const result = await reactivateWorker(id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const createTeamInvitationRoute = createRoute({
@@ -673,7 +678,7 @@ organizationsRouter.openapi(getDefaultOrganizationRoute, async (c) => {
     const session = c.get("session");
     const user = c.get("user");
 
-    const activeOrganizationId = (session as any)?.activeOrganizationId || null;
+    const activeOrganizationId = session?.activeOrganizationId || null;
     const result = await getDefaultOrganizationContext(user?.id, activeOrganizationId);
     return c.json(result, 200);
 });
@@ -849,7 +854,7 @@ organizationsRouter.openapi(getLocationsRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getLocations(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const createLocationRoute = createRoute({
@@ -871,7 +876,7 @@ organizationsRouter.openapi(createLocationRoute, async (c) => {
     const body = await c.req.json();
     await createLocationWithPlanLimit(orgId, body);
     const result = await createLocation(body, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const updateLocationRoute = createRoute({
@@ -894,7 +899,7 @@ organizationsRouter.openapi(updateLocationRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
     const result = await updateLocation(body, id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const deleteLocationRoute = createRoute({
@@ -904,7 +909,7 @@ const deleteLocationRoute = createRoute({
     description: 'Remove a location.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Location deleted' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Location deleted' },
         403: { description: 'Forbidden' }
     }
 });
@@ -916,7 +921,7 @@ organizationsRouter.openapi(deleteLocationRoute, async (c) => {
     const id = c.req.param("id");
     const orgId = c.get("orgId");
     const result = await deleteLocation(id, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -1018,7 +1023,7 @@ organizationsRouter.openapi(updateSettingsRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
     const result = await updateSettings(body, orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 const getSettingsRoute = createRoute({
@@ -1039,7 +1044,7 @@ organizationsRouter.openapi(getSettingsRoute, async (c) => {
     const orgId = c.get("orgId");
     // getSettings logic in services/get-settings.ts takes orgId
     const result = await getSettings(orgId);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 export default organizationsRouter;

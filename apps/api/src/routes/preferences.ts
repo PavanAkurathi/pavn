@@ -17,6 +17,7 @@ import {
     updateWorkerPreferences,
 } from "@repo/notifications";
 import type { AppContext } from "../index";
+import { jsonOk } from "../lib/response.js";
 
 export const preferencesRouter = new OpenAPIHono<AppContext>();
 
@@ -44,7 +45,7 @@ preferencesRouter.openapi(getPreferencesRoute, async (c) => {
 
     const prefs = await getWorkerPreferences(user.id);
 
-    return c.json({ preferences: prefs } as any, 200);
+    return jsonOk(c, { preferences: prefs });
 });
 
 const updatePreferencesRoute = createRoute({
@@ -80,7 +81,7 @@ preferencesRouter.openapi(updatePreferencesRoute, async (c) => {
 
     const updatedPrefs = await updateWorkerPreferences(user.id, parsed.data);
 
-    return c.json({ preferences: updatedPrefs } as any, 200);
+    return jsonOk(c, { preferences: updatedPrefs });
 });
 
 const getSecurityOverviewRoute = createRoute({

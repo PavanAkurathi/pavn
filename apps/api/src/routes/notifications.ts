@@ -10,6 +10,8 @@ import type { AppContext } from "../index";
 import { dispatchPendingNotifications } from "@repo/notifications";
 import { bulkImportWorkers, parseWorkerFile } from "@repo/gig-workers";
 import { isAdminRole, isManagerRole } from "../lib/organization-roles.js";
+import { OpenApiLooseObjectSchema } from "../lib/openapi-schemas.js";
+import { jsonOk } from "../lib/response.js";
 
 export const notificationsRouter = new OpenAPIHono<AppContext>();
 
@@ -23,7 +25,7 @@ const dispatchRoute = createRoute({
     summary: 'Process Pending Notifications',
     description: 'Processes all pending scheduled notifications whose send time has passed. Call this on a 1-minute cron schedule.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Dispatch results' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Dispatch results' },
         403: { description: 'Forbidden' }
     }
 });
@@ -40,7 +42,7 @@ notificationsRouter.openapi(dispatchRoute, async (c) => {
     }
 
     const result = await dispatchPendingNotifications();
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 // =============================================================================
@@ -53,7 +55,7 @@ const bulkImportRoute = createRoute({
     summary: 'Bulk Import Workers',
     description: 'Import workers from CSV data. Expects JSON array of worker rows with name, email, phone fields.',
     responses: {
-        200: { content: { 'application/json': { schema: z.any() } }, description: 'Import results' },
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Import results' },
         403: { description: 'Forbidden' }
     }
 });
@@ -72,7 +74,7 @@ notificationsRouter.openapi(bulkImportRoute, async (c) => {
     }
 
     const result = await bulkImportWorkers(orgId, body.rows);
-    return c.json(result as any, 200);
+    return jsonOk(c, result);
 });
 
 export default notificationsRouter;

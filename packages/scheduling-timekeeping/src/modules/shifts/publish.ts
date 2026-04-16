@@ -237,6 +237,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             db.query.workerAvailability.findMany({
                 where: and(
                     inArray(workerAvailability.workerId, uniqueWorkerIds),
+                    eq(workerAvailability.organizationId, activeOrgId), // [SEC-CRITICAL] TENANT-001 fix: scope availability to org
                     lt(workerAvailability.startTime, searchEnd),
                     gt(workerAvailability.endTime, searchStart)
                 )

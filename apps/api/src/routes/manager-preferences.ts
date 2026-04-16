@@ -15,6 +15,7 @@ import {
     updateManagerPreferences,
 } from "@repo/notifications";
 import type { AppContext } from "../index";
+import { jsonOk } from "../lib/response.js";
 
 export const managerPreferencesRouter = new OpenAPIHono<AppContext>();
 
@@ -42,7 +43,7 @@ managerPreferencesRouter.openapi(getPreferencesRoute, async (c) => {
 
     const prefs = await getManagerPreferences(user.id);
 
-    return c.json({ preferences: prefs } as any, 200);
+    return jsonOk(c, { preferences: prefs });
 });
 
 const updatePreferencesRoute = createRoute({
@@ -79,7 +80,7 @@ managerPreferencesRouter.openapi(updatePreferencesRoute, async (c) => {
 
     const updatedPrefs = await updateManagerPreferences(user.id, parsed.data);
 
-    return c.json({ preferences: updatedPrefs } as any, 200);
+    return jsonOk(c, { preferences: updatedPrefs });
 });
 
 export default managerPreferencesRouter;
