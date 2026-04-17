@@ -209,4 +209,20 @@ export const auth = betterAuth({
         }),
         ...infraPlugins,
     ],
+
+    // ── Advanced Cookie Config ────────────────────────────────────────────────
+    // Vercel's *.vercel.app is on the Public Suffix List, so cross-subdomain
+    // cookie detection (dmn_chk_*) will always fail — browsers reject cookies
+    // set on public suffixes. Disable it and let cookies default to the exact
+    // host that serves the response (pavn-web.vercel.app via the auth proxy).
+    advanced: {
+        crossSubDomainCookies: {
+            enabled: false,
+        },
+        defaultCookieAttributes: {
+            secure: isAuthProd,
+            sameSite: "lax" as const,
+            path: "/",
+        },
+    },
 });
