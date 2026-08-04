@@ -107,6 +107,16 @@ export const auth = betterAuth({
         },
     }),
 
+    // ── Session ────────────────────────────────────────────────────────────────
+    // Cache the session in a short-lived signed cookie so repeated
+    // get-session calls (client hooks, server layouts) don't each hit the DB.
+    session: {
+        cookieCache: {
+            enabled: true,
+            maxAge: 5 * 60, // 5 minutes
+        },
+    },
+
     // ── User Schema ────────────────────────────────────────────────────────────
     user: {
         additionalFields: {

@@ -1,13 +1,6 @@
 import { z } from "zod";
 import { AttendanceVerificationPolicySchema } from "./shared";
-
-const NorthAmericaPhoneNumberSchema = z
-    .string()
-    .refine(
-        (value) =>
-            /^\s*\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\s*$/.test(value),
-        "Must be a valid US/Canada phone number",
-    );
+import { PhoneNumberSchema } from "./auth";
 
 export const LocationSchema = z.object({
     id: z.string(),
@@ -61,7 +54,7 @@ export const InvitationMethodsSchema = z.object({
 export const TeamMemberInvitationInputSchema = z.object({
     name: z.string().min(1),
     email: z.string().email(),
-    phoneNumber: NorthAmericaPhoneNumberSchema.optional(),
+    phoneNumber: PhoneNumberSchema.optional(),
     role: TeamInvitationRoleSchema,
     invites: InvitationMethodsSchema,
 });

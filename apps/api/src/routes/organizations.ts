@@ -30,6 +30,11 @@ import {
     WorkerInviteInputSchema,
     WorkerProfileSchema,
 } from "@repo/contracts/workforce";
+import {
+    createTempWorkers,
+    listTempWorkers,
+    renameTempWorker,
+} from "@repo/scheduling-timekeeping";
 import type { AppContext } from "../index.js";
 import { isAdminRole, isManagerRole } from "../lib/organization-roles.js";
 import { OpenApiLooseObjectSchema } from "../lib/openapi-schemas.js";
@@ -68,6 +73,7 @@ import {
 import {
     deactivateWorker,
     getCrew,
+    getAvailability,
     inviteWorker,
     reactivateWorker,
     updateWorker,
@@ -107,6 +113,40 @@ organizationsRouter.openapi(getCrewRoute, async (c) => {
     const offset = parseInt(c.req.query("offset") || "0");
 
     const result = await getCrew(orgId, { search, limit, offset });
+    return jsonOk(c, result);
+});
+
+const getAvailabilityRoute = createRoute({
+    method: "get",
+    path: "/availability",
+    summary: "Get Worker Availability",
+    description: "List worker availability for the active organization.",
+    request: {
+        query: z.object({
+            from: z.string().optional(),
+            to: z.string().optional(),
+            workerId: z.string().optional(),
+        }),
+    },
+    responses: {
+        200: {
+            content: { "application/json": { schema: z.array(OpenApiLooseObjectSchema) } },
+            description: "Worker availability",
+        },
+        403: { description: "Forbidden" },
+    },
+});
+
+organizationsRouter.openapi(getAvailabilityRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const from = c.req.query("from") || new Date().toISOString();
+    const to = c.req.query("to") || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const workerId = c.req.query("workerId");
+
+    const result = await getAvailability(orgId, from, to, workerId);
     return jsonOk(c, result);
 });
 
@@ -876,6 +916,69 @@ organizationsRouter.openapi(createLocationRoute, async (c) => {
     const body = await c.req.json();
     await createLocationWithPlanLimit(orgId, body);
     const result = await createLocation(body, orgId);
+    return jsonOk(c, result);
+});
+
+const listTempWorkersRoute = createRoute({
+    method: 'get',
+    path: '/temp-workers',
+    summary: 'List Temp Workers',
+    description: 'List agency/temp workers for the organization.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.array(OpenApiLooseObjectSchema) } }, description: 'Temp workers' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+organizationsRouter.openapi(listTempWorkersRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const result = await listTempWorkers(orgId);
+    return jsonOk(c, result);
+});
+
+const createTempWorkersRoute = createRoute({
+    method: 'post',
+    path: '/temp-workers',
+    summary: 'Create Temp Workers',
+    description: 'Add temp workers by name, or generate placeholders from a count.',
+    responses: {
+        200: { content: { 'application/json': { schema: z.array(OpenApiLooseObjectSchema) } }, description: 'Created temp workers' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+organizationsRouter.openapi(createTempWorkersRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const body = await c.req.json();
+    const result = await createTempWorkers(body, orgId);
+    return jsonOk(c, result);
+});
+
+const renameTempWorkerRoute = createRoute({
+    method: 'patch',
+    path: '/temp-workers/{id}',
+    summary: 'Rename Temp Worker',
+    description: 'Set the real name of a temp worker once known.',
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Updated temp worker' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+organizationsRouter.openapi(renameTempWorkerRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const { id } = c.req.param();
+    const body = await c.req.json();
+    const result = await renameTempWorker(body, id, orgId);
     return jsonOk(c, result);
 });
 

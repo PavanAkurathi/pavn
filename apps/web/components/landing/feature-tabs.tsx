@@ -1,7 +1,7 @@
 'use client';
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@repo/ui/components/ui/tabs';
-import { Calendar, Clock, DollarSign, MapPin, Smartphone } from 'lucide-react';
+import { Calendar, MapPin, Smartphone } from 'lucide-react';
 import Image from 'next/image';
 
 export function FeatureTabs() {
@@ -65,6 +65,7 @@ export function FeatureTabs() {
                                     src="/images/mockups/schedule-composite.png"
                                     alt="Shift Scheduler UI"
                                     fill
+                                    sizes="(min-width: 768px) 50vw, 100vw"
                                     className="object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
                                 />
                             </div>

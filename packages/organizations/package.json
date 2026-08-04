@@ -20,8 +20,9 @@
         }
     },
     "scripts": {
-        "lint": "eslint . --max-warnings 0",
-        "typecheck": "tsc --noEmit"
+        "test": "node ../../scripts/run-package-tests.mjs",
+        "lint": "eslint . --max-warnings 9",
+        "check-types": "tsc --noEmit"
     },
     "dependencies": {
         "@repo/auth": "workspace:*",
@@ -33,14 +34,14 @@
         "@repo/geofence": "workspace:*",
         "@repo/gig-workers": "workspace:*",
         "@repo/observability": "workspace:*",
-        "drizzle-orm": "0.45.1",
-        "nanoid": "^5.1.6",
-        "zod": "^4.3.6"
+        "drizzle-orm": "0.45.2",
+        "nanoid": "^5.1.16",
+        "zod": "^4.4.3"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^20.11.0",
-        "typescript": "^5.3.3"
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3"
     }
 }

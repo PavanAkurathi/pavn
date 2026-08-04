@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { addDays, addWeeks, format, startOfWeek } from "date-fns";
 
 import { ShiftList } from "./shift-list";
-import { CalendarView } from "./calendar-view";
 import { EventFilters } from "./event-filters";
 import { WeeklyGridView } from "./weekly-grid-view";
 import { SHIFT_LAYOUTS, SHIFT_STATUS, LOCATIONS } from "@/lib/constants";
@@ -17,7 +16,6 @@ import { getDashboardShiftsHref, getShiftTimesheetHref } from "@/lib/routes";
 import {
     getAvailableShiftLayouts,
     getInitialWeekStart,
-    hasShiftsInWeek,
     resolveShiftLayout,
     type ShiftDashboardTab,
 } from "@/lib/shifts/weekly-grid";
@@ -48,21 +46,10 @@ export function ShiftsView({
     initialLayoutParam,
 }: ShiftsViewProps) {
     const availableLayouts = getAvailableShiftLayouts(defaultTab);
-    const currentWeekStart = useMemo(
-        () => startOfWeek(new Date(), { weekStartsOn: 0 }),
-        [],
+    const resolvedInitialLayout = useMemo(
+        () => resolveShiftLayout(defaultTab, initialLayoutParam),
+        [defaultTab, initialLayoutParam],
     );
-    const resolvedInitialLayout = useMemo(() => {
-        if (
-            defaultTab === "upcoming" &&
-            !initialLayoutParam &&
-            !hasShiftsInWeek(initialShifts, currentWeekStart)
-        ) {
-            return SHIFT_LAYOUTS.MONTH;
-        }
-
-        return resolveShiftLayout(defaultTab, initialLayoutParam);
-    }, [currentWeekStart, defaultTab, initialLayoutParam, initialShifts]);
     const [currentLayout, setCurrentLayout] = useState<ShiftLayout>(
         resolvedInitialLayout,
     );
@@ -139,7 +126,6 @@ function ShiftsDashboardContent({
         workerId: null,
     });
     const [selectedWeekStart, setSelectedWeekStart] = useState(() => getInitialWeekStart(initialShifts));
-
     const syncDashboardUrl = useCallback(
         (tab: ShiftDashboardTab, layout: ShiftLayout) => {
             if (typeof window === "undefined") {
@@ -244,14 +230,7 @@ function ShiftsDashboardContent({
     }, [currentLayout, defaultTab]);
 
     const openShiftTimesheet = useCallback((shift: Shift) => {
-        const href = buildShiftTimesheetHref(shift.id);
-
-        if (typeof window !== "undefined") {
-            window.location.assign(href);
-            return;
-        }
-
-        router.push(href);
+        router.push(buildShiftTimesheetHref(shift.id));
     }, [buildShiftTimesheetHref, router]);
 
     const handleLayoutChange = useCallback((layout: ShiftLayout) => {
@@ -301,7 +280,7 @@ function ShiftsDashboardContent({
                         weekStart={selectedWeekStart}
                         onShiftClick={openShiftTimesheet}
                     />
-                ) : currentLayout === SHIFT_LAYOUTS.LIST ? (
+                ) : (
                     <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-6">
                         <TabsContent value="upcoming" className="space-y-6 mt-0">
                             <div className="space-y-4 max-w-4xl">
@@ -365,12 +344,6 @@ function ShiftsDashboardContent({
                             </div>
                         </TabsContent>
                     </Tabs>
-                ) : (
-                    <CalendarView
-                        shifts={defaultTab === "upcoming" ? activeShifts : filteredShifts}
-                        isLoading={false}
-                        onShiftClick={openShiftTimesheet}
-                    />
                 )}
             </div>
         </div>

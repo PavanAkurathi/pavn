@@ -1,3 +1,5 @@
+import "server-only";
+
 import type {
     BusinessOnboardingState,
     OnboardingStep,
@@ -19,9 +21,22 @@ import { requiresBusinessOnboarding } from "@/lib/server/organization-roles";
 import { getApiSession } from "@/lib/server/auth-session";
 import type { CurrentBusinessOnboardingStateResult } from "./types";
 
+type ApiSession = NonNullable<Awaited<ReturnType<typeof getApiSession>>>;
+type ApiSessionWithActiveOrganization = ApiSession & {
+    session?: ApiSession["session"] & {
+        activeOrganizationId?: string | null;
+    };
+};
+
+function getSessionActiveOrganizationId(session: ApiSession) {
+    return (session as ApiSessionWithActiveOrganization).session?.activeOrganizationId ?? undefined;
+}
+
 export async function getLiveBusinessOnboardingState(_options?: {
     requestedStepId?: string;
 }): Promise<CurrentBusinessOnboardingStateResult> {
+    void _options;
+
     const session = await getApiSession();
 
     if (!session) {
@@ -35,7 +50,7 @@ export async function getLiveBusinessOnboardingState(_options?: {
 
     const activeOrgId = await resolveActiveOrganizationId(
         session.user.id,
-        (session.session as any)?.activeOrganizationId as string | undefined
+        getSessionActiveOrganizationId(session)
     );
 
     if (!activeOrgId) {

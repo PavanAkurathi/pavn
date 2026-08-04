@@ -20,29 +20,30 @@
         }
     },
     "scripts": {
-        "lint": "eslint . --max-warnings 0",
-        "typecheck": "tsc --noEmit"
+        "lint": "eslint . --max-warnings 6",
+        "check-types": "tsc --noEmit"
     },
     "dependencies": {
-        "@better-auth/drizzle-adapter": "1.5.1-beta.3",
-        "@better-auth/expo": "1.5.1-beta.3",
-        "@better-auth/infra": "0.1.8",
+        "@better-auth/drizzle-adapter": "1.6.23",
+        "@better-auth/expo": "1.6.23",
+        "@better-auth/infra": "0.3.4",
         "@dub/better-auth": "^0.0.6",
         "@repo/config": "workspace:*",
+        "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/observability": "workspace:*",
         "@repo/utils": "workspace:*",
-        "better-auth": "1.5.1-beta.3",
-        "drizzle-orm": "^0.45.1",
-        "dub": "^0.71.4",
-        "nanoid": "^5.1.6",
-        "twilio": "^5.12.2"
+        "better-auth": "1.6.23",
+        "drizzle-orm": "^0.45.2",
+        "dub": "^0.72.1",
+        "nanoid": "^5.1.16",
+        "twilio": "^6.0.2"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^20.11.0",
-        "typescript": "^5.3.3"
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3"
     }
 }

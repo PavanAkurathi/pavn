@@ -7,11 +7,8 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "gig-workers",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+    "experiments": {
+      "reactCompiler": true
     },
     "ios": {
       "supportsTablet": true,
@@ -84,10 +81,15 @@
           "android": {
             "kotlinVersion": "1.9.25",
             "usesCleartextTraffic": true
-          },
-          "ios": {
-            "newArchEnabled": true
           }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff"
         }
       ]
     ],

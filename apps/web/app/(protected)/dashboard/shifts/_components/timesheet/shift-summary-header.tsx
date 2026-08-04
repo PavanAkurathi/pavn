@@ -1,11 +1,8 @@
 // apps/web/components/shifts/timesheet/shift-summary-header.tsx
 
 import * as React from "react";
-import Link from "next/link";
-import { Button } from "@repo/ui/components/ui/button";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Separator } from "@repo/ui/components/ui/separator";
-import { getCreateScheduleHref } from "@/lib/routes";
 
 interface ShiftSummaryHeaderProps {
     title: string;
@@ -15,8 +12,8 @@ interface ShiftSummaryHeaderProps {
     location: string;
     timeRange: string;
     breakDuration: string;
-    createdBy: string;
-    createdAt: string;
+    createdBy?: string;
+    createdAt?: string;
 }
 
 export function ShiftSummaryHeader({
@@ -42,17 +39,16 @@ export function ShiftSummaryHeader({
                         <div className="text-sm text-muted-foreground">{date} · {location}</div>
                     </div>
                 </div>
-                <Button asChild variant="outline" className="self-start">
-                    <Link href={getCreateScheduleHref()}>Book again</Link>
-                </Button>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="font-medium text-foreground">{timeRange}</span>
                 <Separator orientation="vertical" className="hidden h-4 sm:block" />
-                <span className="text-muted-foreground">
-                    Created by {createdBy} on {createdAt}
-                </span>
+                {createdAt ? (
+                    <span className="text-muted-foreground">
+                        {createdBy ? `Created by ${createdBy} on ${createdAt}` : `Created ${createdAt}`}
+                    </span>
+                ) : null}
             </div>
         </div>
     );

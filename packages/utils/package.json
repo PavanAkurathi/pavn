@@ -14,17 +14,18 @@
         }
     },
     "scripts": {
-        "lint": "eslint .",
-        "typecheck": "tsc --noEmit"
+        "test": "node ../../scripts/run-package-tests.mjs",
+        "lint": "eslint . --max-warnings 3",
+        "check-types": "tsc --noEmit"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^20.11.0",
-        "typescript": "^5.3.3"
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3"
     },
     "dependencies": {
-        "google-libphonenumber": "^3.2.34",
+        "google-libphonenumber": "^3.2.44",
         "@types/google-libphonenumber": "^7.4.30"
     }
 }

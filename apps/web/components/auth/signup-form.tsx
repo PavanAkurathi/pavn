@@ -19,28 +19,17 @@ import { authClient } from "@repo/auth/client";
 import { toast } from "sonner";
 import { useForm, Controller } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { SignupSchema, type SignupInput, type SignupValues } from "@repo/contracts/auth";
 import { SUBSCRIPTION } from "@repo/config";
 
-type AuthClientErrorContext = { error: { message: string } };
-
-const signupSchema = z.object({
-    firstName: z.string().min(2, "First name must be at least 2 characters"),
-    lastName: z.string().min(2, "Last name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email address"),
-    phone: z.string().trim().regex(/^\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/, "Must be a valid US/Canada phone number"),
-    businessName: z.string().min(2, "Business name must be at least 2 characters"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-});
-
-type SignupFormValues = z.infer<typeof signupSchema>;
+type AuthClientErrorContext = { error: { message: string; code?: string } };
 
 export function SignupForm() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
-    const form = useForm<SignupFormValues>({
-        resolver: zodResolver(signupSchema),
+    const form = useForm<SignupInput, unknown, SignupValues>({
+        resolver: zodResolver(SignupSchema),
         defaultValues: {
             firstName: "",
             lastName: "",
@@ -51,7 +40,8 @@ export function SignupForm() {
         },
     });
 
-    const onSubmit = async (data: SignupFormValues) => {
+    // data is the parsed schema output, so data.phone is already E.164.
+    const onSubmit = async (data: SignupValues) => {
         setIsLoading(true);
 
         const fullName = `${data.firstName.trim()} ${data.lastName.trim()}`;
@@ -89,7 +79,15 @@ export function SignupForm() {
                 router.push(`/auth/verify-email?email=${encodeURIComponent(data.email)}`);
             },
             onError: (ctx: AuthClientErrorContext) => {
-                toast.error(ctx.error.message);
+                const message = ctx.error.message || "Something went wrong. Please try again.";
+                const lower = message.toLowerCase();
+                if (ctx.error.code === "INVALID_PHONE_NUMBER" || lower.includes("phone")) {
+                    form.setError("phone", { type: "server", message });
+                } else if (lower.includes("email") || lower.includes("already exist")) {
+                    form.setError("email", { type: "server", message });
+                } else {
+                    toast.error(message);
+                }
                 setIsLoading(false);
             }
         });
@@ -171,7 +169,7 @@ export function SignupForm() {
                                         id="phone"
                                         type="tel"
                                         autoComplete="tel"
-                                        placeholder="(555) 123-4567"
+                                        placeholder="(415) 555-0132"
                                         aria-invalid={fieldState.invalid}
                                     />
                                     {fieldState.invalid && <FieldError error={fieldState.error?.message} />}

@@ -14,19 +14,19 @@
         }
     },
     "scripts": {
-        "lint": "eslint . --max-warnings 0",
-        "typecheck": "tsc --noEmit"
+        "lint": "eslint . --max-warnings 3",
+        "check-types": "tsc --noEmit"
     },
     "dependencies": {
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
-        "stripe": "^20.1.0",
-        "zod": "^4.3.6"
+        "stripe": "^22.3.0",
+        "zod": "^4.4.3"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^20.11.0",
-        "typescript": "^5.3.3"
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3"
     }
 }

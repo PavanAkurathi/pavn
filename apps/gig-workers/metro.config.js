@@ -5,8 +5,6 @@ const { withUniwindConfig } = require("uniwind/metro");
 // Sentry wrapper includes getDefaultConfig internally + sourcemap support.
 const config = getSentryExpoConfig(__dirname);
 
-config.resolver.unstable_enablePackageExports = true;
-
 module.exports = withUniwindConfig(config, {
     cssEntryFile: "./global.css",
     dtsFile: "./uniwind-env.d.ts",

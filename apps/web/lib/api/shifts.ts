@@ -159,9 +159,15 @@ export async function cancelShift(shiftId: string, orgId?: string) {
     });
 }
 
-export async function assignWorkers(shiftId: string, workerIds: string[], orgId?: string) {
+export async function assignWorkers(
+    shiftId: string,
+    workerIds: string[],
+    orgId?: string,
+    tempWorkerIds: string[] = [],
+    rosterEntryIds: string[] = [],
+) {
     return mutateShift(`/shifts/${shiftId}/assign`, {
-        body: { workerIds },
+        body: { workerIds, tempWorkerIds, rosterEntryIds },
         organizationId: orgId,
     });
 }

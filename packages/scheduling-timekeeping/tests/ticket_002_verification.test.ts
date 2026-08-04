@@ -141,7 +141,8 @@ describe("TICKET-002: Refactor Assignment Service", () => {
             mockBuilder
         );
 
-        const updatePayload = mockUpdateSet.mock.calls[0]![0];
+        const updateCall = mockUpdateSet.mock.calls[0] as any[];
+        const updatePayload = updateCall[0];
         expect(updatePayload.actualClockIn).toBe(clockedInTime);
         expect(updatePayload.actualClockOut).toBeNull();
         expect(updatePayload.status).toBe("active");

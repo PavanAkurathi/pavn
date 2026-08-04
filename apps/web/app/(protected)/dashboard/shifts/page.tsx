@@ -44,9 +44,6 @@ export default async function ShiftsPage(props: {
         <div className="space-y-6">
             <ApprovalBanner count={pendingCount} />
             <DraftBanner count={draftCount} />
-            {onboardingState.onboarding?.isComplete ? (
-                <PostLaunchChecklist steps={onboardingState.onboarding.deferredSteps} />
-            ) : null}
 
             <div className="flex items-center justify-between">
                 <div>
@@ -63,6 +60,10 @@ export default async function ShiftsPage(props: {
                 pendingCount={pendingCount}
                 initialLayoutParam={layoutParam}
             />
+
+            {onboardingState.onboarding?.isComplete ? (
+                <PostLaunchChecklist steps={onboardingState.onboarding.deferredSteps} />
+            ) : null}
         </div>
     );
 }

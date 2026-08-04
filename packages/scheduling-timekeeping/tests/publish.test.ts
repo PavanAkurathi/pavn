@@ -3,6 +3,29 @@ import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { publishSchedule } from "../src/modules/shifts/publish";
 import { nanoid } from "nanoid";
 
+const isoDate = (date: Date) => date.toISOString().slice(0, 10);
+
+function futureDate(daysFromNow: number) {
+    const date = new Date();
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCDate(date.getUTCDate() + daysFromNow);
+    return isoDate(date);
+}
+
+function nextWeekdayDate(weekday: number) {
+    const date = new Date();
+    date.setUTCHours(0, 0, 0, 0);
+    const daysUntilWeekday = (weekday - date.getUTCDay() + 7) % 7 || 7;
+    date.setUTCDate(date.getUTCDate() + daysUntilWeekday);
+    return isoDate(date);
+}
+
+function addDays(dateString: string, days: number) {
+    const date = new Date(`${dateString}T00:00:00.000Z`);
+    date.setUTCDate(date.getUTCDate() + days);
+    return isoDate(date);
+}
+
 // --- Mocks ---
 // We need to capture what is inserted to verify the structure
 // For fluent API: db.insert().values().onConflictDoUpdate().returning()
@@ -87,7 +110,7 @@ describe("Publish  (WH-131 Fix)", () => {
                 schedules: [{
                     startTime: "09:00",
                     endTime: "17:00",
-                    dates: ["2026-05-20"],
+                    dates: [futureDate(14)],
                     scheduleName: "Morning Shift",
                     positions: [{
                         roleName: "Server",
@@ -144,7 +167,7 @@ describe("Publish  (WH-131 Fix)", () => {
                 schedules: [{
                     startTime: "09:00",
                     endTime: "17:00",
-                    dates: ["2026-05-21"],
+                    dates: [futureDate(15)],
                     scheduleName: "Open Shift Test",
                     positions: [{
                         roleName: "Server",
@@ -233,7 +256,7 @@ describe("Publish  (WH-131 Fix)", () => {
             schedules: [{
                 startTime: "09:00",
                 endTime: "17:00",
-                dates: ["2026-06-10"],
+                dates: [futureDate(16)],
                 scheduleName: "Foreign Venue",
                 positions: []
             }]
@@ -250,7 +273,7 @@ describe("Publish  (WH-131 Fix)", () => {
     // WH-130: Recurrence Tests
     test("expands recurring dates (weekly)", async () => {
         const orgId = "org_123";
-        // Start on a Sunday (2026-06-01 is a Monday)
+        const startMonday = nextWeekdayDate(1);
         const body = {
             organizationId: orgId,
             locationId: "loc_1",
@@ -265,7 +288,7 @@ describe("Publish  (WH-131 Fix)", () => {
             schedules: [{
                 startTime: "09:00",
                 endTime: "17:00",
-                dates: ["2026-06-01"], // Monday
+                dates: [startMonday],
                 scheduleName: "Recurring Test",
                 positions: [{
                     roleName: "Server",
@@ -281,6 +304,8 @@ describe("Publish  (WH-131 Fix)", () => {
 
     test("expands recurring dates (on_date)", async () => {
         const orgId = "org_123";
+        const startFriday = nextWeekdayDate(5);
+        const endDate = addDays(startFriday, 10);
         const body = {
             organizationId: orgId,
             locationId: "loc_1",
@@ -290,12 +315,12 @@ describe("Publish  (WH-131 Fix)", () => {
                 pattern: 'weekly',
                 daysOfWeek: [5], // Friday
                 endType: 'on_date',
-                endDate: '2026-06-15' // Should include June 5, June 12. Skip June 19.
+                endDate
             },
             schedules: [{
                 startTime: "09:00",
                 endTime: "17:00",
-                dates: ["2026-06-05"], // Friday
+                dates: [startFriday],
                 scheduleName: "Recurring Test",
                 positions: [{ roleName: "Cook", workerIds: ["w1"] }]
             }]
@@ -321,7 +346,7 @@ describe("Publish  (WH-131 Fix)", () => {
             schedules: [{
                 startTime: "09:00",
                 endTime: "17:00",
-                dates: ["2026-06-05"],
+                dates: [futureDate(17)],
                 scheduleName: "Rate Test",
                 positions: [{
                     roleName: "Server",

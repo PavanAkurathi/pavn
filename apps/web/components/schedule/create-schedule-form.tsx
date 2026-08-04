@@ -8,7 +8,7 @@ import { useForm } from "@repo/ui/components/ui/form";
 import { useFieldArray } from "@repo/ui/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import posthog from "posthog-js";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
@@ -330,9 +330,34 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
     };
 
     return (
-        <div className="mx-auto flex max-w-5xl flex-col gap-8 py-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-8 pb-6">
 
             <Form {...(form as any)}>
+
+                {/* Focused-flow header: brand context, a protected way back, and the
+                    primary action reachable without scrolling. */}
+                <header className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+                    <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
+                        <div className="flex min-w-0 items-center gap-3">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Exit schedule builder"
+                                onClick={handleExit}
+                            >
+                                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                            </Button>
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-foreground">Create a Schedule</p>
+                                <p className="truncate text-xs text-muted-foreground">Post shifts your workers can see right away.</p>
+                            </div>
+                        </div>
+                        <Button type="button" onClick={handleReview} className="shrink-0">
+                            Review &amp; Publish
+                        </Button>
+                    </div>
+                </header>
 
                 {/* SECTION 1: WORK LOCATION */}
                 <div className="flex flex-col gap-4">
@@ -474,7 +499,10 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
                     open={isAddLocationOpen}
                     onOpenChange={setIsAddLocationOpen}
                     onSave={async (data) => {
-                        const res = await createLocation({ ...data, timezone: "UTC" });
+                        const res = await createLocation({
+                            ...data,
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        });
                         if (res.success) {
                             mutateLocations();
                             return {};

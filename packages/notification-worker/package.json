@@ -10,12 +10,12 @@
     "dependencies": {
         "@repo/database": "workspace:*",
         "@repo/notifications": "workspace:*",
-        "drizzle-orm": "0.45.1"
+        "drizzle-orm": "0.45.2"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/bun": "latest",
-        "@types/node": "^22.15.3",
-        "typescript": "5.9.2"
+        "@types/node": "^26.1.0",
+        "typescript": "6.0.3"
     }
 }

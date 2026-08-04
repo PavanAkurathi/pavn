@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Button } from "@repo/ui/components/ui/button";
-import { ArrowLeft, UserPlus, X } from "lucide-react";
+import { ArrowLeft, Printer, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Separator } from "@repo/ui/components/ui/separator";
@@ -11,9 +11,10 @@ import { Separator } from "@repo/ui/components/ui/separator";
 import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalBanner } from "./timesheet/shift-approval-banner";
 import { TimesheetTable } from "./timesheet/timesheet-table";
-import type { AddWorkerSelection } from "./add-worker-dialog";
+import { AddWorkerDialog, type AddWorkerSelection } from "./add-worker-dialog";
 
 import { Shift, TimesheetWorker } from "@/lib/types";
+import { useOrganizationId } from "@/hooks/use-schedule-data";
 import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -35,10 +36,6 @@ import {
     updateTimesheetAction,
 } from "../_actions/timesheet";
 
-const AddWorkerDialog = dynamic(
-    () => import("./add-worker-dialog").then((mod) => mod.AddWorkerDialog),
-    { ssr: false },
-);
 
 interface ShiftDetailViewProps {
     onBack: () => void;
@@ -56,7 +53,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
     const getWorkersFromProps = React.useCallback((): TimesheetViewModel[] => {
         const allWorkers = shift.assignedWorkers || [];
-        const roleLabel = timesheets[0]?.role || "Event Staff";
+        const roleLabel = timesheets[0]?.role || shift.title;
 
         return allWorkers.map((assigned) => {
             const ts = timesheets.find((entry) => entry.workerId === assigned.id);
@@ -67,6 +64,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     name: ts.name,
                     avatar: ts.avatarUrl || assigned.avatarUrl || "",
                     initials: ts.avatarInitials || assigned.initials,
+                    isTemp: ts.isTemp,
+                    invitePending: ts.invitePending,
+                    agency: ts.agency,
+                    phone: ts.phone,
                     shiftDuration: scheduledDurationLabel,
                     scheduledMinutes,
                     clockIn: ts.clockIn ? format(new Date(ts.clockIn), "hh:mm a") : "",
@@ -95,7 +96,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 jobTitle: roleLabel,
             };
         });
-    }, [scheduledDurationLabel, scheduledMinutes, shift.assignedWorkers, timesheets]);
+    }, [scheduledDurationLabel, scheduledMinutes, shift.assignedWorkers, shift.title, timesheets]);
 
     const buildWorkerViewModel = React.useCallback((worker: AddWorkerSelection): TimesheetViewModel => {
         const recommendedBreakMinutes = getRecommendedBreakMinutes(scheduledMinutes);
@@ -104,6 +105,9 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             name: worker.name,
             avatar: worker.avatar || "",
             initials: worker.initials,
+            isTemp: worker.isTemp,
+            invitePending: worker.invitePending,
+            agency: worker.agency,
             shiftDuration: scheduledDurationLabel,
             scheduledMinutes,
             clockIn: "",
@@ -132,10 +136,13 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     }, []);
 
     const handleAddWorkers = async (newWorkers: AddWorkerSelection[]) => {
+        const rosterIds = newWorkers.filter((worker) => !worker.isTemp && !worker.invitePending).map((worker) => worker.id);
+        const tempIds = newWorkers.filter((worker) => worker.isTemp).map((worker) => worker.id);
+        const pendingEntryIds = newWorkers.filter((worker) => worker.invitePending).map((worker) => worker.id);
         const newWorkerIds = newWorkers.map((worker) => worker.id);
 
         try {
-            const result = await assignWorkersToShiftAction(shift.id, newWorkerIds);
+            const result = await assignWorkersToShiftAction(shift.id, rosterIds, tempIds, pendingEntryIds);
             if ("error" in result) {
                 throw new Error(result.error);
             }
@@ -153,8 +160,36 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         }
     };
 
+    const orgId = useOrganizationId();
+
+    const renameTempWorker = React.useCallback(async (tempId: string, name: string) => {
+        if (!name.trim() || !orgId) return;
+
+        try {
+            const res = await fetch(`/api/organizations/${orgId}/temp-workers/${tempId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ name: name.trim() }),
+            });
+            if (!res.ok) throw new Error("Rename failed");
+
+            setWorkers((prev) => prev.map((worker) => (worker.id === tempId ? { ...worker, name: name.trim() } : worker)));
+            toast.success(`Renamed to ${name.trim()}`);
+        } catch (error) {
+            console.error(error);
+            toast.error("Failed to rename temp worker");
+        }
+    }, [orgId]);
+
     const isApproved = shift.status === "approved";
     const isCancelled = shift.status === "cancelled";
+    // Before the shift starts this page is about staffing; clock-ins and
+    // approval only make sense once reality has begun.
+    const hasStarted = new Date(shift.startTime).getTime() <= Date.now();
+    const showTimesheets = hasStarted || isApproved || isCancelled;
+    const capacityTotal = shift.capacity?.total ?? 0;
+    const openSlotCount = Math.max(capacityTotal - workers.length, 0);
     const workerCount = workers.length;
     const filledCount = workers.filter((worker) => Boolean(worker.clockIn && worker.clockOut)).length;
     const needsAttentionCount = workers.filter(workerNeedsAttention).length;
@@ -162,8 +197,8 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const totalHours = formatTrackedMinutes(
         workers.reduce((total, worker) => total + calculateTrackedMinutes(worker), 0),
     );
-    const roleLabel = timesheets[0]?.role || "Event Staff";
-    const summaryBreakLabel = `${getRecommendedBreakMinutes(scheduledMinutes)} min break`;
+    const roleLabel = timesheets[0]?.role || shift.title;
+    const summaryBreakLabel = `${getRecommendedBreakMinutes(scheduledMinutes)} min suggested break`;
 
     const handleRemoveWorker = React.useCallback(async (workerId: string) => {
         const worker = workers.find((candidate) => candidate.id === workerId);
@@ -269,23 +304,45 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         <ArrowLeft />
                     </Button>
                     <div className="flex flex-col gap-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                            Shifts <span aria-hidden="true">›</span> Shift Details
+                        </p>
                         <div className="flex flex-wrap items-center gap-2">
-                            <h2 className="text-2xl font-semibold tracking-tight">Timesheets</h2>
+                            <h2 className="text-2xl font-semibold tracking-tight">
+                                {showTimesheets ? "Timesheets" : "Staffing"}
+                            </h2>
                             {isApproved ? <Badge variant="secondary">Approved</Badge> : null}
                             {isCancelled ? <Badge variant="destructive">Cancelled</Badge> : null}
                             {!isApproved && !isCancelled ? (
-                                <Badge variant="outline">
-                                    {filledCount} of {workerCount} filled
-                                </Badge>
+                                showTimesheets ? (
+                                    <Badge variant="outline">
+                                        {filledCount} of {workerCount} filled
+                                    </Badge>
+                                ) : (
+                                    <Badge
+                                        variant="outline"
+                                        className={openSlotCount > 0 ? "border-destructive/50 text-destructive" : undefined}
+                                    >
+                                        {workers.length} of {capacityTotal || workers.length} staffed
+                                    </Badge>
+                                )
                             ) : null}
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            Review worker time entries, break windows, and notes before approval.
+                            {showTimesheets
+                                ? "Review worker time entries, break windows, and notes before approval."
+                                : "Fill open slots and confirm who is working before the shift starts."}
                         </p>
                     </div>
                 </div>
                 {!isApproved && !isCancelled && (
                     <div className="flex items-center gap-2 self-start">
+                        <Button asChild variant="outline">
+                            <Link href={`/dashboard/shifts/${shift.id}/timesheet/print`}>
+                                <Printer data-icon="inline-start" aria-hidden="true" />
+                                Print Sign-In Sheet
+                            </Link>
+                        </Button>
                         <Button variant="outline" onClick={() => setIsAddWorkerOpen(true)}>
                             <UserPlus data-icon="inline-start" />
                             Add worker
@@ -311,11 +368,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         location={shift.locationName}
                         timeRange={`${format(new Date(shift.startTime), "h:mm a")} - ${format(new Date(shift.endTime), "h:mm a")}`}
                         breakDuration={summaryBreakLabel}
-                        createdBy="Admin"
-                        createdAt="Oct 14, 11:37 PM"
+                        createdAt={shift.createdAt ? format(new Date(shift.createdAt), "MMM d, h:mm a") : undefined}
                     />
 
-                    {!isCancelled ? (
+                    {showTimesheets && !isCancelled ? (
                         <>
                             <Separator />
                             <ShiftApprovalBanner
@@ -335,20 +391,24 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="text-lg font-semibold tracking-tight">Team timesheets</h3>
-                                <Badge variant="outline">{workerCount} workers</Badge>
-                                {needsAttentionCount > 0 ? (
-                                    <Badge variant="destructive">
-                                        {needsAttentionCount} need review
+                                <h3 className="text-lg font-semibold tracking-tight">
+                                    {showTimesheets ? "Team timesheets" : "Assigned workers"}
+                                </h3>
+                                <Badge variant="outline">
+                                    {workers.length} of {capacityTotal || workers.length} staffed
+                                </Badge>
+                                {showTimesheets && needsAttentionCount > 0 ? (
+                                    <Badge variant="destructive">{needsAttentionCount} need review</Badge>
+                                ) : openSlotCount > 0 ? (
+                                    <Badge variant="outline" className="border-destructive/50 text-destructive">
+                                        {openSlotCount} open slot{openSlotCount === 1 ? "" : "s"}
                                     </Badge>
-                                ) : (
-                                    <Badge variant="secondary">
-                                        All records complete
-                                    </Badge>
-                                )}
+                                ) : null}
                             </div>
                             <p className="max-w-xl text-sm text-muted-foreground">
-                                Update time entries, break windows, notes, and removals here before final approval.
+                                {showTimesheets
+                                    ? "Update time entries, break windows, notes, and removals before final approval."
+                                    : "Fill open slots and confirm who is working. Clock-in and hours open once the shift starts."}
                             </p>
                         </div>
 
@@ -359,6 +419,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             onRemoveWorker={handleRemoveWorker}
                             isApproved={isApproved}
                             isCancelled={isCancelled}
+                            openSlotCount={openSlotCount}
+                            onAddWorker={() => setIsAddWorkerOpen(true)}
+                            timesReadOnly={!showTimesheets}
+                            onRenameTemp={renameTempWorker}
                         />
                     </div>
                 </CardContent>

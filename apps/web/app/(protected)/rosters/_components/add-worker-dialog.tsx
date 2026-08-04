@@ -43,14 +43,15 @@ const addWorkerSchema = z.object({
     sendEmail: z.boolean().default(true),
 });
 
-type AddWorkerValues = z.infer<typeof addWorkerSchema>;
+type AddWorkerFormValues = z.input<typeof addWorkerSchema>;
+type AddWorkerSubmitValues = z.output<typeof addWorkerSchema>;
 
 export function AddWorkerDialog() {
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const form = useForm<AddWorkerValues>({
+    const form = useForm<AddWorkerFormValues, unknown, AddWorkerSubmitValues>({
         resolver: zodResolver(addWorkerSchema),
         defaultValues: {
             name: "",
@@ -63,7 +64,7 @@ export function AddWorkerDialog() {
         },
     });
 
-    async function onSubmit(data: AddWorkerValues) {
+    async function onSubmit(data: AddWorkerSubmitValues) {
         setIsSubmitting(true);
         try {
             const result = await inviteWorker({

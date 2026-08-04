@@ -1,4 +1,5 @@
 import * as React from "react"
+import type * as DialogPrimitive from "@radix-ui/react-dialog"
 import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "../../lib/utils"
@@ -14,15 +15,19 @@ const Drawer = ({
 )
 Drawer.displayName = "Drawer"
 
-const DrawerTrigger = DrawerPrimitive.Trigger
+const DrawerTrigger: React.ForwardRefExoticComponent<
+  DialogPrimitive.DialogTriggerProps & React.RefAttributes<HTMLButtonElement>
+> = DrawerPrimitive.Trigger
 
 const DrawerPortal = DrawerPrimitive.Portal
 
-const DrawerClose = DrawerPrimitive.Close
+const DrawerClose: React.ForwardRefExoticComponent<
+  DialogPrimitive.DialogCloseProps & React.RefAttributes<HTMLButtonElement>
+> = DrawerPrimitive.Close
 
 const DrawerOverlay = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Overlay>
+  HTMLDivElement,
+  DialogPrimitive.DialogOverlayProps
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Overlay
     ref={ref}
@@ -33,8 +38,8 @@ const DrawerOverlay = React.forwardRef<
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName
 
 const DrawerContent = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Content>
+  HTMLDivElement,
+  DialogPrimitive.DialogContentProps
 >(({ className, children, ...props }, ref) => (
   <DrawerPortal>
     <DrawerOverlay />
@@ -76,8 +81,8 @@ const DrawerFooter = ({
 DrawerFooter.displayName = "DrawerFooter"
 
 const DrawerTitle = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Title>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Title>
+  HTMLHeadingElement,
+  DialogPrimitive.DialogTitleProps
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
@@ -91,8 +96,8 @@ const DrawerTitle = React.forwardRef<
 DrawerTitle.displayName = DrawerPrimitive.Title.displayName
 
 const DrawerDescription = React.forwardRef<
-  React.ElementRef<typeof DrawerPrimitive.Description>,
-  React.ComponentPropsWithoutRef<typeof DrawerPrimitive.Description>
+  HTMLParagraphElement,
+  DialogPrimitive.DialogDescriptionProps
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Description
     ref={ref}

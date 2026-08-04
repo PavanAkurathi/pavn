@@ -31,7 +31,9 @@ export const getHistoryShifts = async (orgId: string, pagination: { limit: numbe
             location: true,
             assignments: {
                 with: {
-                    worker: true
+                    worker: true,
+                    tempWorker: true,
+                    rosterEntry: true
                 }
             }
         }

@@ -2,7 +2,7 @@
 
 import { db } from "@repo/database";
 import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { logAudit } from "@repo/database";
 import { AppError } from "@repo/observability";
 import { cancelNotificationByType } from "@repo/notifications";
@@ -36,7 +36,7 @@ export const unassignWorker = async (
     const assignment = await db.query.shiftAssignment.findFirst({
         where: and(
             eq(shiftAssignment.shiftId, shiftId),
-            eq(shiftAssignment.workerId, workerId),
+            or(eq(shiftAssignment.workerId, workerId), eq(shiftAssignment.tempWorkerId, workerId), eq(shiftAssignment.rosterEntryId, workerId)),
             eq(shiftAssignment.status, "active")
         ),
         columns: { id: true, actualClockIn: true },

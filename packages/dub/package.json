@@ -10,13 +10,13 @@
         "check-types": "tsc --noEmit"
     },
     "dependencies": {
-        "dub": "^0.69.0"
+        "dub": "^0.72.1"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@repo/eslint-config": "workspace:*",
-        "@types/node": "^20.11.24",
-        "eslint": "^8.57.0",
-        "typescript": "^5.3.3"
+        "@types/node": "^26.1.0",
+        "eslint": "^10.6.0",
+        "typescript": "^6.0.3"
     }
 }

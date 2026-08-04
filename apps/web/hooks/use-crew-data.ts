@@ -11,6 +11,8 @@ export interface CrewMember {
     roles: string[];
     hours: number;
     initials: string;
+    /** True for invited roster entries without accounts yet. */
+    invitePending?: boolean;
 }
 
 import useSWR from "swr";

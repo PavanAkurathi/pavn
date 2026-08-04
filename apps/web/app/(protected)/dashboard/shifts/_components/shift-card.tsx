@@ -11,17 +11,29 @@ interface ShiftCardProps {
     actionLabel?: string;
 }
 
-export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all Pros" }: ShiftCardProps) {
+export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift" }: ShiftCardProps) {
     if (!shifts || shifts.length === 0) return null;
 
     const primaryShift = shifts[0]!;
-    // Use location name as the main "Event Title", cleaning up undesired suffixes
-    const rawName = primaryShift.locationName || "";
-    // Remove "A Longwood Venue" with optional colon/hyphen prefix, case insensitive
-    const locationName = rawName.replace(/[:|-]?\s*A Longwood Venue/i, "").trim();
+    const locationName = (primaryShift.locationName || "").trim();
 
     const startTime = parseISO(primaryShift.startTime);
     const endTime = parseISO(primaryShift.endTime);
+
+    // Understaffed shifts get the red bulb: open slots on a shift that can
+    // still be staffed. Settled shifts (approved/cancelled/completed) stay calm.
+    const openSlotCount = shifts.reduce((sum, s) => {
+        const total = s.capacity?.total ?? 0;
+        const filled = s.capacity?.filled ?? s.assignedWorkers?.length ?? 0;
+        return sum + Math.max(total - filled, 0);
+    }, 0);
+    const isSettled = ["completed", "approved", "cancelled"].includes(primaryShift.status);
+    const isUnderstaffed = openSlotCount > 0 && !isSettled;
+    // Viewer's timezone abbreviation (e.g. "PDT") — honest until shifts are
+    // anchored to the location's timezone.
+    const timeZoneLabel = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
+        .formatToParts(startTime)
+        .find((part) => part.type === "timeZoneName")?.value;
 
     // Workers with Role Context for coloring
     // We map over shifts to get workers and assign them the role of that shift
@@ -38,19 +50,29 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
 
     const roleBreakdown = Object.entries(roleCounts).map(([role, count]) => ({ role, count }));
 
-    // Click handler
-    const handleClick = (e?: React.MouseEvent) => {
+    const handleClick = (e?: React.MouseEvent | React.KeyboardEvent) => {
         e?.stopPropagation();
         if (onClick) onClick(primaryShift);
     };
 
     return (
         <Card
-            className={`group cursor-pointer overflow-hidden transition-all hover:shadow-md ${isUrgent
+            role="button"
+            tabIndex={0}
+            aria-label={`View shift at ${locationName || "location"} on ${format(startTime, "EEEE, MMMM d")}`}
+            className={`group cursor-pointer overflow-hidden transition-[box-shadow,border-color] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isUrgent
                 ? "border-l-4 border-l-primary bg-primary/5"
-                : "border-border bg-card hover:border-border/90"
+                : isUnderstaffed
+                    ? "border-destructive/50 bg-card hover:border-destructive/70"
+                    : "border-border bg-card hover:border-border/90"
                 }`}
             onClick={handleClick}
+            onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleClick(e);
+                }
+            }}
         >
             {/* Main Content Area: Flex Row for Side-by-Side Layout */}
             <div className="p-5 flex justify-between items-start gap-4">
@@ -69,13 +91,12 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
                         )}
                     </div>
 
-                    <div className="mt-1 flex flex-col text-sm font-medium text-muted-foreground">
-                        <span>{format(startTime, "EEEE, MMMM d")}</span>
-                        <span>{format(startTime, "hh:mm a")} - {format(endTime, "hh:mm a")} (EDT)</span>
+                    <div className="mt-1 text-sm font-medium text-muted-foreground">
+                        {format(startTime, "h:mm a")} – {format(endTime, "h:mm a")}
+                        {timeZoneLabel ? ` (${timeZoneLabel})` : ""}
                     </div>
 
-                    {/* Address Line (Roles removed) */}
-                    <div className="mt-2 text-sm text-muted-foreground opacity-90">
+                    <div className="mt-1 max-w-xl truncate text-sm text-muted-foreground opacity-90">
                         {primaryShift.locationAddress || locationName}
                     </div>
                 </div>
@@ -105,7 +126,7 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
                                 // Add index to key to avoid duplicates if same worker assigned multiple times (edge case)
                                 const color = getShiftRoleTone(worker.role);
                                 return (
-                                    <Avatar key={`${worker.id}-${i}`} className={`w-8 h-8 border-2 border-white ring-2 ${color.ring} ring-offset-0`}>
+                                    <Avatar key={`${worker.id}-${i}`} className={`w-8 h-8 border-2 border-background ring-2 ${color.ring} ring-offset-0`}>
                                         <AvatarImage src={worker.avatarUrl} />
                                         <AvatarFallback className="border border-border bg-muted text-[9px] font-bold text-muted-foreground">
                                             {worker.initials}
@@ -120,17 +141,22 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View all P
                             )}
                         </div>
                     ) : (
-                        <span className="text-sm italic text-muted-foreground">No pros assigned</span>
+                        <span className={`text-sm font-medium ${isUnderstaffed ? "text-destructive" : "text-muted-foreground"}`}>
+                            {(() => {
+                                const totalCap = shifts.reduce((sum, s) => sum + (s.capacity?.total ?? 0), 0);
+                                return totalCap > 0 ? `0 of ${totalCap} filled` : "No workers assigned";
+                            })()}
+                        </span>
                     )}
                 </div>
 
                 {/* Right: Action Link (Neutral Theme) */}
-                <button
-                    className="flex items-center gap-1 text-sm font-bold text-foreground transition-colors hover:text-primary hover:underline"
-                    onClick={handleClick}
+                <span
+                    aria-hidden="true"
+                    className="flex items-center gap-1 text-sm font-bold text-foreground transition-colors group-hover:text-primary group-hover:underline"
                 >
                     {actionLabel}
-                </button>
+                </span>
             </div>
         </Card>
     );

@@ -20,6 +20,7 @@ export { getWorkerShiftById } from "./modules/time-tracking/worker-shifts";
 export { getShiftTimesheets } from "./modules/time-tracking/get-timesheets";
 export { updateTimesheet } from "./modules/time-tracking/update-timesheet";
 export { unassignWorker } from "./modules/time-tracking/unassign-worker";
+export { listTempWorkers, createTempWorkers, renameTempWorker } from "./modules/time-tracking/temp-workers";
 export { getWorkerAllShifts } from "./modules/time-tracking/worker-all-shifts";
 
 export { exportTimesheets } from "./modules/reporting/export-timesheets";

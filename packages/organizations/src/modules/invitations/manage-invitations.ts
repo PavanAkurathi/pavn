@@ -7,7 +7,7 @@ import {
     inArray,
     resolveWorkerRoleSet,
 } from "@repo/database";
-import { invitation, member, rosterEntry, user } from "@repo/database/schema";
+import { invitation, member, rosterEntry, shiftAssignment, user } from "@repo/database/schema";
 import {
     BulkWorkerInviteInputSchema,
     TeamMemberInvitationInputSchema,
@@ -233,12 +233,43 @@ export async function acceptBusinessInvitation(
     sourceHeaders: Headers,
     invitationId: string,
 ) {
+    // Capture invite details before acceptance mutates its status.
+    const inviteRecord = await db.query.invitation.findFirst({
+        where: eq(invitation.id, invitationId),
+        columns: { email: true, organizationId: true },
+    });
+
     await auth.api.acceptInvitation({
         headers: sourceHeaders,
         body: {
             invitationId,
         },
     });
+
+    // Migrate any shift assignments made against the pending roster entry to
+    // the worker's real account, so pre-scheduled shifts follow them in.
+    if (inviteRecord) {
+        const normalizedEmail = inviteRecord.email.trim().toLowerCase();
+        const [acceptedUser, entry] = await Promise.all([
+            db.query.user.findFirst({
+                where: eq(user.email, normalizedEmail),
+                columns: { id: true },
+            }),
+            db.query.rosterEntry.findFirst({
+                where: and(
+                    eq(rosterEntry.email, normalizedEmail),
+                    eq(rosterEntry.organizationId, inviteRecord.organizationId),
+                ),
+                columns: { id: true },
+            }),
+        ]);
+
+        if (acceptedUser && entry) {
+            await db.update(shiftAssignment)
+                .set({ workerId: acceptedUser.id, rosterEntryId: null })
+                .where(eq(shiftAssignment.rosterEntryId, entry.id));
+        }
+    }
 
     return { success: true };
 }

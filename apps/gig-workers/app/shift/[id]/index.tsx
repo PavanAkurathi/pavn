@@ -54,7 +54,7 @@ const formatHours = (value: number | null): string => {
 
 function useRunningTimer(clockInIso: string | undefined) {
     const [elapsed, setElapsed] = useState(0);
-    const interval = useRef<NodeJS.Timeout | null>(null);
+    const interval = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         if (!clockInIso) return;

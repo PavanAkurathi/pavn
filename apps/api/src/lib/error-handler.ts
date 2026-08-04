@@ -4,6 +4,14 @@ import { ZodError } from "zod";
 import { AppError, logError } from "@repo/observability";
 import type { AppContext } from "../index.js";
 
+type ErrorWithDetails = AppError & {
+    data?: unknown;
+};
+
+function getErrorDetails(err: ErrorWithDetails) {
+    return err.details ?? err.data;
+}
+
 export const errorHandler = async (err: Error, c: Context<AppContext>) => {
     const requestId = c.get("requestId");
 
@@ -20,7 +28,7 @@ export const errorHandler = async (err: Error, c: Context<AppContext>) => {
                 success: false,
                 error: err.message,
                 code: err.code,
-                details: err.details,
+                details: getErrorDetails(err),
                 requestId,
             },
             err.statusCode as any,

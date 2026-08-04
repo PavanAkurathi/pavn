@@ -43,14 +43,14 @@ export function LocationPicker({ locations, value, onValueChange, onAddLocation 
                         role="combobox"
                         aria-expanded={open}
                         className={cn(
-                            "w-full justify-between h-auto min-h-16 py-3 text-left font-normal",
+                            "w-full justify-between h-auto min-h-16 overflow-hidden py-3 text-left font-normal",
                             !value && "text-muted-foreground"
                         )}
                     >
                         {selectedLocation ? (
-                            <div className="flex flex-col gap-0.5">
-                                <span className="font-medium text-foreground">{selectedLocation.name}</span>
-                                <span className="text-xs text-muted-foreground truncate">{selectedLocation.address}</span>
+                            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                <span className="truncate font-medium text-foreground">{selectedLocation.name}</span>
+                                <span className="truncate text-xs text-muted-foreground">{selectedLocation.address}</span>
                             </div>
                         ) : (
                             "Select work location"

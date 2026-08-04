@@ -12,7 +12,6 @@ export const SHIFT_STATUS = {
 export const SHIFT_LAYOUTS = {
     WEEKLY: 'weekly' as const,
     LIST: 'list' as const,
-    MONTH: 'month' as const,
 };
 
 export const LOCATIONS = {

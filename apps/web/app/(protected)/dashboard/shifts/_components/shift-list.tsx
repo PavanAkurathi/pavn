@@ -24,11 +24,11 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
         return (
             <div className="py-16 text-center">
                 <div className="mx-auto max-w-md">
-                    <Calendar className="mx-auto mb-4 h-16 w-16 text-zinc-300" />
-                    <h3 className="mb-3 text-xl font-semibold text-zinc-900">
+                    <Calendar aria-hidden="true" className="mx-auto mb-4 h-16 w-16 text-muted-foreground/40" />
+                    <h3 className="mb-3 text-xl font-semibold text-foreground">
                         No shifts found
                     </h3>
-                    <p className="text-zinc-500">There are no shifts to display in this view.</p>
+                    <p className="text-muted-foreground">There are no shifts to display in this view.</p>
                 </div>
             </div>
         );
@@ -37,8 +37,9 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
     return (
         <div className="space-y-8">
             {isLoading ? (
-                <div className="text-center p-12">
-                    <Loader2 className="animate-spin w-8 h-8 text-zinc-400 mx-auto" />
+                <div className="text-center p-12" role="status" aria-live="polite">
+                    <Loader2 aria-hidden="true" className="animate-spin w-8 h-8 text-muted-foreground mx-auto" />
+                    <span className="sr-only">Loading shifts…</span>
                 </div>
             ) : (
                 sortedDates.map((date) => (

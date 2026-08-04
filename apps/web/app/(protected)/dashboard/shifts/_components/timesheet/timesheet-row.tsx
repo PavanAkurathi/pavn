@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@repo/ui/components/ui/select";
-import { RotateCcw, Trash2 } from "lucide-react";
+import { Check, Pencil, Phone, RotateCcw, Trash2 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
 import {
@@ -51,9 +51,17 @@ interface TimesheetRowProps {
     clockOutVariant?: StatusVariant;
     breakVariant?: StatusVariant;
     disabled?: boolean;
+    /** True before the shift starts: time/break/notes are locked, but the
+     *  worker can still be managed (removed, renamed, called). */
+    timesReadOnly?: boolean;
+    isTemp?: boolean;
+    agency?: string;
+    phone?: string;
+    invitePending?: boolean;
     onNotesChange?: (value: string) => void;
     onRequestConfirmation?: (request: PendingTimesheetConfirmation) => void;
     onRemoveFromShift?: () => void;
+    onRenameTemp?: (name: string) => void;
 }
 
 const HOUR_OPTIONS = Array.from({ length: 12 }, (_, index) =>
@@ -244,10 +252,26 @@ export function TimesheetRow({
     clockOutVariant = "default",
     breakVariant = "default",
     disabled = false,
+    timesReadOnly = false,
+    isTemp = false,
+    agency,
+    phone,
+    invitePending = false,
     onNotesChange,
     onRequestConfirmation,
     onRemoveFromShift,
+    onRenameTemp,
 }: TimesheetRowProps) {
+    const fieldsDisabled = disabled || timesReadOnly;
+    const [isRenaming, setIsRenaming] = React.useState(false);
+    const [renameDraft, setRenameDraft] = React.useState("");
+
+    const submitRename = () => {
+        const next = renameDraft.trim();
+        if (next && onRenameTemp) onRenameTemp(next);
+        setIsRenaming(false);
+        setRenameDraft("");
+    };
     const [draftClockIn, setDraftClockIn] = React.useState(() => parseDisplayTimeParts(clockIn));
     const [draftClockOut, setDraftClockOut] = React.useState(() => parseDisplayTimeParts(clockOut));
     const [draftBreakOne, setDraftBreakOne] = React.useState(breakOneDuration || "0 min");
@@ -359,15 +383,58 @@ export function TimesheetRow({
             )}
         >
             <div className="flex min-w-0 items-center gap-3 pr-2">
-                <Avatar className="size-10">
+                <Avatar className={cn("size-10", isTemp && "border border-dashed border-border")}>
                     <AvatarImage src={workerAvatar} alt={workerName} />
                     <AvatarFallback>{workerName.slice(0, 2).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div className="flex min-w-0 flex-col">
-                    <span className="truncate font-medium text-foreground">{workerName}</span>
-                    <span className="text-xs text-muted-foreground">
-                        {shiftDuration}
-                        {draftBreakTotal !== "0 min" ? ` · ${draftBreakTotal} total break` : ""}
+                    {isRenaming ? (
+                        <div className="flex items-center gap-1.5">
+                            <Input
+                                autoFocus
+                                value={renameDraft}
+                                onChange={(e) => setRenameDraft(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") submitRename();
+                                    if (e.key === "Escape") setIsRenaming(false);
+                                }}
+                                placeholder="Real name"
+                                className="h-8 max-w-[160px] text-sm"
+                            />
+                            <Button size="icon" variant="ghost" className="size-7" aria-label="Save name" onClick={submitRename}>
+                                <Check aria-hidden="true" className="size-3.5" />
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1">
+                            <span className="truncate font-medium text-foreground">{workerName}</span>
+                            {isTemp && onRenameTemp ? (
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-6 shrink-0 text-muted-foreground"
+                                    aria-label={`Rename ${workerName}`}
+                                    onClick={() => {
+                                        setRenameDraft(workerName.startsWith("Temp ") ? "" : workerName);
+                                        setIsRenaming(true);
+                                    }}
+                                >
+                                    <Pencil aria-hidden="true" className="size-3.5" />
+                                </Button>
+                            ) : null}
+                            {phone ? (
+                                <Button asChild size="icon" variant="ghost" className="size-6 shrink-0 text-muted-foreground" aria-label={`Call ${workerName}`}>
+                                    <a href={`tel:${phone}`}><Phone aria-hidden="true" className="size-3.5" /></a>
+                                </Button>
+                            ) : null}
+                        </div>
+                    )}
+                    <span className="truncate text-xs text-muted-foreground">
+                        {isTemp
+                            ? (agency || "Temp worker")
+                            : invitePending
+                                ? "Invite pending"
+                                : `${shiftDuration}${draftBreakTotal !== "0 min" ? ` · ${draftBreakTotal} total break` : ""}`}
                     </span>
                 </div>
             </div>
@@ -377,7 +444,7 @@ export function TimesheetRow({
                 value={draftClockIn}
                 onChange={setDraftClockIn}
                 variant={clockInVariant}
-                disabled={disabled}
+                disabled={fieldsDisabled}
             />
 
             <TimeSelectField
@@ -385,7 +452,7 @@ export function TimesheetRow({
                 value={draftClockOut}
                 onChange={setDraftClockOut}
                 variant={clockOutVariant}
-                disabled={disabled}
+                disabled={fieldsDisabled}
             />
 
             <BreakSelectField
@@ -393,7 +460,7 @@ export function TimesheetRow({
                 value={draftBreakOne}
                 onChange={setDraftBreakOne}
                 variant={breakVariant}
-                disabled={disabled}
+                disabled={fieldsDisabled}
             />
 
             <BreakSelectField
@@ -401,7 +468,7 @@ export function TimesheetRow({
                 value={draftBreakTwo}
                 onChange={setDraftBreakTwo}
                 variant={breakVariant}
-                disabled={disabled}
+                disabled={fieldsDisabled}
             />
 
             <Field className="gap-1.5 md:w-full">
@@ -413,7 +480,7 @@ export function TimesheetRow({
                     onChange={(event) => onNotesChange?.(event.target.value)}
                     className="h-10 rounded-lg bg-background text-sm shadow-sm"
                     placeholder="Add note"
-                    disabled={disabled}
+                    disabled={fieldsDisabled}
                 />
             </Field>
 
@@ -425,7 +492,7 @@ export function TimesheetRow({
                             variant="outline"
                             size="sm"
                             onClick={resetDraftValues}
-                            disabled={disabled}
+                            disabled={fieldsDisabled}
                         >
                             <RotateCcw data-icon="inline-start" />
                             Reset
@@ -433,7 +500,7 @@ export function TimesheetRow({
                         <Button
                             size="sm"
                             onClick={requestConfirmation}
-                            disabled={disabled || hasIncompleteTimeEdit}
+                            disabled={fieldsDisabled || hasIncompleteTimeEdit}
                         >
                             Update
                         </Button>

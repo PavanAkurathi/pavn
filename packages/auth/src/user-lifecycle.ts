@@ -2,8 +2,9 @@ import { db } from "@repo/database";
 import * as schema from "@repo/database/schema";
 import { nanoid } from "nanoid";
 import { eq } from "drizzle-orm";
+import { APIError } from "better-auth/api";
+import { PhoneNumberSchema, PHONE_NUMBER_ERROR } from "@repo/contracts/auth";
 import { logError, logMessage } from "@repo/observability";
-import { isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
 interface AuthHookContext {
     headers?: Record<string, string>;
@@ -36,11 +37,17 @@ export function resolveRequestedUserRole(ctx: Record<string, unknown> | null): "
 
 export function normalizeAuthPhoneNumber(params: Record<string, unknown>) {
     if (typeof params.phoneNumber === "string" && params.phoneNumber) {
-        if (!isValidPhoneNumber(params.phoneNumber)) {
-            throw new Error("Invalid phone number. Use E.164 format e.g. +14155552671");
+        const parsed = PhoneNumberSchema.safeParse(params.phoneNumber);
+        if (!parsed.success) {
+            // APIError surfaces as a 400 with this message in the auth client's
+            // onError callback; a plain Error would become an opaque 500.
+            throw new APIError("BAD_REQUEST", {
+                message: parsed.error.issues[0]?.message ?? PHONE_NUMBER_ERROR,
+                code: "INVALID_PHONE_NUMBER",
+            });
         }
 
-        params.phoneNumber = normalizePhoneNumber(params.phoneNumber);
+        params.phoneNumber = parsed.data;
     }
 }
 

@@ -286,6 +286,21 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
 // 4. SCHEDULING (Shifts & Assignments)
 // ============================================================================
 
+export const tempWorker = pgTable("temp_worker", {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(), // "Temp 1" until the real name is known
+    agency: text("agency"), // e.g. "ABC Staffing"
+    phone: text("phone"),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+    tempWorkerOrgIdx: index("temp_worker_org_idx").on(table.organizationId),
+}));
+
 export const shift = pgTable("shift", {
     id: text("id").primaryKey(),
 
@@ -345,9 +360,19 @@ export const shiftAssignment = pgTable("shift_assignment", {
         .notNull()
         .references(() => shift.id, { onDelete: "cascade" }),
 
+    // Exactly one of workerId / tempWorkerId is set: roster workers have app
+    // accounts and clock in themselves; temp (agency) workers are tracked by
+    // the manager and never log in.
     workerId: text("worker_id")
-        .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
+
+    tempWorkerId: text("temp_worker_id")
+        .references(() => tempWorker.id, { onDelete: "restrict" }),
+
+    // Invited in-house worker without an account yet; migrated to workerId
+    // when the invitation is accepted.
+    rosterEntryId: text("roster_entry_id")
+        .references(() => rosterEntry.id, { onDelete: "restrict" }),
 
     // -- Timesheet Data (Triple-Timestamp Model) --
     // 1. Actual (Behavioral) - Raw device timestamp
@@ -433,6 +458,14 @@ export const shiftAssignmentRelations = relations(shiftAssignment, ({ one }) => 
     worker: one(user, {
         fields: [shiftAssignment.workerId],
         references: [user.id],
+    }),
+    tempWorker: one(tempWorker, {
+        fields: [shiftAssignment.tempWorkerId],
+        references: [tempWorker.id],
+    }),
+    rosterEntry: one(rosterEntry, {
+        fields: [shiftAssignment.rosterEntryId],
+        references: [rosterEntry.id],
     }),
 }));
 

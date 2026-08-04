@@ -24,12 +24,10 @@ import {
     FieldSet,
 } from '@repo/ui/components/ui/field';
 import { ToggleGroup, ToggleGroupItem } from '@repo/ui/components/ui/toggle-group';
-import { getApiBaseUrl } from '@/lib/constants';
 
 type PreferencesForm = UpdateManagerPreferences;
 
 export function NotificationsView() {
-    const apiBaseUrl = getApiBaseUrl();
     const [loading, setLoading] = useState(true);
 
     const form = useForm<PreferencesForm>({
@@ -45,7 +43,7 @@ export function NotificationsView() {
     useEffect(() => {
         async function load() {
             try {
-                const res = await fetch(`${apiBaseUrl}/manager-preferences`, {
+                const res = await fetch("/api/manager-preferences", {
                     headers: {
                         'Content-Type': 'application/json'
                     }
@@ -62,11 +60,11 @@ export function NotificationsView() {
             }
         }
         load();
-    }, []);
+    }, [form]);
 
     const onSubmit = async (data: PreferencesForm) => {
         try {
-            const res = await fetch(`${apiBaseUrl}/manager-preferences`, {
+            const res = await fetch("/api/manager-preferences", {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -75,7 +73,7 @@ export function NotificationsView() {
             if (!res.ok) throw new Error("Failed to save");
 
             toast.success("Preferences saved successfully");
-        } catch (e) {
+        } catch {
             toast.error("Failed to save preferences");
         }
     };

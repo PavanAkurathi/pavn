@@ -68,7 +68,7 @@ export function AddLocationModal({ open, onOpenChange, onSave, initialData }: Ad
         setName(place.name || "");
 
         // Extract Zip Code
-        const zipComponent = place.address_components?.find(c => c.types.includes("postal_code"));
+        const zipComponent = place.address_components?.find((component) => component.types.includes("postal_code"));
         if (zipComponent) {
             setZip(zipComponent.long_name);
         }
@@ -229,7 +229,7 @@ export function AddLocationModal({ open, onOpenChange, onSave, initialData }: Ad
                             <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 text-[10px] px-1.5 h-5">NEW</Badge>
                         </div>
                         <div className="text-sm text-muted-foreground mb-2">
-                            Please upload files for Pros review detailing arrival information...
+                            Upload files with arrival details for workers — parking, entrances, check-in steps…
                         </div>
 
                         <div className="border-2 border-dashed border-input rounded-lg p-8 flex flex-col items-center justify-center text-center bg-slate-50/50 hover:bg-slate-100 transition-colors cursor-pointer group">

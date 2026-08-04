@@ -1,6 +1,6 @@
 import { Shift as ApiShift } from "../types";
 import { getInitials } from "./formatting";
-import { shift, location, user, shiftAssignment, organization } from "@repo/database/schema";
+import { shift, location, user, shiftAssignment, organization, tempWorker, rosterEntry } from "@repo/database/schema";
 import { InferSelectModel } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 
@@ -14,6 +14,8 @@ interface ShiftWithRelations extends BaseShift {
     assignments: Array<
         InferSelectModel<typeof shiftAssignment> & {
             worker: InferSelectModel<typeof user> | null;
+            tempWorker?: InferSelectModel<typeof tempWorker> | null;
+            rosterEntry?: InferSelectModel<typeof rosterEntry> | null;
         }
     >;
 }
@@ -41,6 +43,7 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
         // Convert Date objects to ISO Strings
         startTime: dbShift.startTime.toISOString(),
         endTime: dbShift.endTime.toISOString(),
+        createdAt: dbShift.createdAt ? dbShift.createdAt.toISOString() : undefined,
         status: dbShift.status as ApiShift['status'],
         // price: dbShift.price || 0, // REMOVED per TICKET-005
         capacity: {
@@ -48,11 +51,18 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
             total: dbShift.capacityTotal
         },
         // Map assignments to worker details
-        assignedWorkers: visibleAssignments.map((a) => ({
-            id: a.workerId,
-            name: a.worker?.name ?? "Unknown",
-            initials: getInitials(a.worker?.name),
-            avatarUrl: a.worker?.image || undefined
-        }))
+        assignedWorkers: visibleAssignments.map((a) => {
+            const name = a.tempWorkerId
+                ? (a.tempWorker?.name ?? "Temp worker")
+                : a.rosterEntryId
+                    ? (a.rosterEntry?.name ?? "Invited worker")
+                    : (a.worker?.name ?? "Unknown");
+            return {
+                id: (a.workerId ?? a.tempWorkerId ?? a.rosterEntryId)!,
+                name,
+                initials: getInitials(name),
+                avatarUrl: a.worker?.image || undefined
+            };
+        })
     };
 };

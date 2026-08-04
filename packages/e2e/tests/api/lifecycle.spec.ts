@@ -46,7 +46,16 @@ async function createSessionContext(
     });
 }
 
-async function createManagerAndOrg(apiBaseUrl: string, runId: number) {
+function createRunId(label: string): string {
+    return `${label}-${Date.now()}-${crypto.randomUUID()}`;
+}
+
+function createPhoneLine(runId: string | number): string {
+    const digits = String(runId).replace(/\D/g, "");
+    return digits.slice(-4).padStart(4, "0");
+}
+
+async function createManagerAndOrg(apiBaseUrl: string, runId: string | number) {
     const managerEmail = `manager-lifecycle-${runId}@test.workershive.com`;
     const password = "TestPassword123!";
     const managerSignupContext = await playwrightRequest.newContext({ baseURL: apiBaseUrl });
@@ -59,7 +68,9 @@ async function createManagerAndOrg(apiBaseUrl: string, runId: number) {
             companyName: `Lifecycle Org ${runId}`,
         },
     });
-    expect(managerSignUp.ok()).toBeTruthy();
+    if (!managerSignUp.ok()) {
+        throw new Error(`Manager signup failed (${managerSignUp.status()}): ${await managerSignUp.text()}`);
+    }
 
     const managerUser = await db.query.user.findFirst({
         where: eq(user.email, managerEmail),
@@ -87,15 +98,19 @@ async function createManagerAndOrg(apiBaseUrl: string, runId: number) {
     };
 }
 
-function createUniqueWorkerPhone(runId: number): string {
-    return `+1415${String(runId).slice(-7).padStart(7, "0")}`;
+function createUniqueWorkerPhone(runId: string | number): string {
+    return `+1415556${createPhoneLine(runId)}`;
+}
+
+function createUniqueUnrosteredPhone(runId: string | number): string {
+    return `+1415557${createPhoneLine(runId)}`;
 }
 
 async function createInvitedWorkerForOrg(
     apiBaseUrl: string,
     orgId: string,
     managerContext: APIRequestContext,
-    runId: number,
+    runId: string | number,
     options?: {
         name?: string;
         email?: string;
@@ -175,8 +190,8 @@ async function createInvitedWorkerForOrg(
 test.describe("manager/worker lifecycle", () => {
     test("registration to approved shift works across manager and worker roles", async ({ baseURL }) => {
         const apiBaseUrl = baseURL ?? process.env.API_URL ?? "http://localhost:4005";
-        const runId = Date.now();
-        const workerPhoneNumber = "+14155550199";
+        const runId = createRunId("registration");
+        const workerPhoneNumber = createUniqueWorkerPhone(runId);
         const { orgId, managerSignupContext, managerContext } = await createManagerAndOrg(apiBaseUrl, runId);
 
         const locationId = `loc_lifecycle_${runId}`;
@@ -337,7 +352,7 @@ test.describe("manager/worker lifecycle", () => {
 
     test("shift lifecycle covers business publish, worker execution, and correction review", async ({ baseURL }) => {
         const apiBaseUrl = baseURL ?? process.env.API_URL ?? "http://localhost:4005";
-        const runId = Date.now() + 10;
+        const runId = createRunId("shift");
         const { orgId, managerSignupContext, managerContext } = await createManagerAndOrg(apiBaseUrl, runId);
 
         const locationId = `loc_shift_lifecycle_${runId}`;
@@ -542,7 +557,7 @@ test.describe("manager/worker lifecycle", () => {
     });
 
     test("worker phone access stays locked until workforce access exists", async () => {
-        const randomPhone = `+1415${String(Date.now()).slice(-7)}`;
+        const randomPhone = createUniqueUnrosteredPhone(createRunId("locked-phone"));
         const access = await getWorkerPhoneAccess(randomPhone);
 
         expect(access.eligible).toBe(false);
@@ -553,10 +568,10 @@ test.describe("manager/worker lifecycle", () => {
 
     test("phone activation syncs invited roles and custom-role scheduling supports open slots", async ({ baseURL }) => {
         const apiBaseUrl = baseURL ?? process.env.API_URL ?? "http://localhost:4005";
-        const runId = Date.now() + 1;
+        const runId = createRunId("roles");
         const { orgId, managerContext, managerSignupContext } = await createManagerAndOrg(apiBaseUrl, runId);
         const locationId = `loc_role_lifecycle_${runId}`;
-        const phoneNumber = "+14155552671";
+        const phoneNumber = createUniqueWorkerPhone(runId);
         const normalizedPhone = normalizePhoneNumber(phoneNumber);
         const workerUserId = crypto.randomUUID();
 

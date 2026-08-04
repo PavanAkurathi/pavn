@@ -28,7 +28,7 @@ import {
 } from "@repo/ui/components/ui/input-group";
 import { Spinner } from "@repo/ui/components/ui/spinner";
 import { ToggleGroup, ToggleGroupItem } from "@repo/ui/components/ui/toggle-group";
-import { Search, TriangleAlert, ArrowDownAZ, ArrowUpAZ, Users } from "lucide-react";
+import { Search, TriangleAlert, ArrowDownAZ, ArrowUpAZ, Users, UserPlus } from "lucide-react";
 import { TimesheetRow } from "./timesheet-row";
 import {
     AlertDialog,
@@ -44,6 +44,43 @@ import {
 import { TimesheetViewModel, getWorkerStatus } from "@/lib/timesheet-utils";
 
 // Removed local TimesheetData in favor of shared TimesheetViewModel
+
+// A disabled pill that mirrors the real time/break fields so open-slot rows
+// keep the same column grid as filled rows.
+function PlaceholderPill({ text }: { text: string }) {
+    return (
+        <div className="flex h-10 items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/20 px-2 text-sm font-medium text-muted-foreground/50">
+            {text}
+        </div>
+    );
+}
+
+function OpenSlotRow({ onAddWorker, disabled }: { onAddWorker?: () => void; disabled: boolean }) {
+    const actionable = !disabled && Boolean(onAddWorker);
+    return (
+        <div className="grid gap-3 border-b border-border/60 py-3 last:border-0 md:grid-cols-[minmax(220px,1.45fr)_148px_148px_116px_116px_minmax(160px,1fr)_148px] md:items-center md:gap-3.5">
+            <button
+                type="button"
+                onClick={onAddWorker}
+                disabled={!actionable}
+                className="flex items-center gap-3 pr-2 text-left disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+            >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-dashed border-destructive/50 text-destructive">
+                    <UserPlus aria-hidden="true" className="size-4" />
+                </span>
+                <span className="text-sm font-medium text-destructive">
+                    Open slot{actionable ? " — add a worker" : ""}
+                </span>
+            </button>
+            <PlaceholderPill text="hh : mm --" />
+            <PlaceholderPill text="hh : mm --" />
+            <PlaceholderPill text="0 min" />
+            <PlaceholderPill text="0 min" />
+            <div className="hidden md:block" />
+            <div className="hidden md:block" />
+        </div>
+    );
+}
 
 // Custom filter for "Issues" (Late, Missing, etc)
 const issueFilter: FilterFn<TimesheetViewModel> = (row, columnId, value) => {
@@ -68,6 +105,12 @@ interface TimesheetTableProps {
     onRemoveWorker: (id: string) => void;
     isApproved: boolean;
     isCancelled: boolean;
+    /** Unfilled slots to render as placeholder rows (required headcount view). */
+    openSlotCount?: number;
+    onAddWorker?: () => void;
+    /** True before the shift starts: rows show but time entry is locked. */
+    timesReadOnly?: boolean;
+    onRenameTemp?: (id: string, name: string) => void;
 }
 
 interface PendingTimesheetConfirmation {
@@ -88,6 +131,10 @@ export function TimesheetTable({
     onRemoveWorker,
     isApproved,
     isCancelled,
+    openSlotCount = 0,
+    onAddWorker,
+    timesReadOnly = false,
+    onRenameTemp,
 }: TimesheetTableProps) {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState("");
@@ -218,7 +265,7 @@ export function TimesheetTable({
                 </div>
 
                 <div className="flex flex-col bg-white px-5">
-                    {table.getRowModel().rows?.length === 0 ? (
+                    {table.getRowModel().rows?.length === 0 && (globalFilter || showIssuesOnly || openSlotCount === 0) ? (
                         <Empty className="border-0 py-12 md:py-14">
                             <EmptyHeader>
                                 <EmptyMedia variant="icon">
@@ -256,13 +303,29 @@ export function TimesheetTable({
                                     clockOutVariant={status.clockOutVariant}
                                     breakVariant={status.breakVariant}
                                     disabled={isApproved || isCancelled}
+                                    timesReadOnly={timesReadOnly}
+                                    isTemp={worker.isTemp}
+                                    agency={worker.agency}
+                                    phone={worker.phone}
+                                    invitePending={worker.invitePending}
                                     onNotesChange={(val) => onUpdateWorkerNotes(worker.id, val)}
                                     onRequestConfirmation={(request) => setPendingConfirmation(request)}
                                     onRemoveFromShift={() => onRemoveWorker(worker.id)}
+                                    onRenameTemp={onRenameTemp ? (name) => onRenameTemp(worker.id, name) : undefined}
                                 />
                             );
                         })
                     )}
+
+                    {!globalFilter && !showIssuesOnly && openSlotCount > 0
+                        ? Array.from({ length: openSlotCount }).map((_, index) => (
+                            <OpenSlotRow
+                                key={`open-slot-${index}`}
+                                onAddWorker={onAddWorker}
+                                disabled={isApproved || isCancelled}
+                            />
+                        ))
+                        : null}
                 </div>
             </div>
 
