@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 
-const mockUserFindFirst = mock(() => Promise.resolve(null));
-const mockMemberFindFirst = mock(() => Promise.resolve(null));
-const mockInvitationFindFirst = mock(() => Promise.resolve(null));
+// Annotated so individual tests can mockResolvedValue a row; inferring from the
+// null default would pin these to Promise<null>.
+type MaybeRow = { id: string } | null;
+
+const mockUserFindFirst = mock((): Promise<MaybeRow> => Promise.resolve(null));
+const mockMemberFindFirst = mock((): Promise<MaybeRow> => Promise.resolve(null));
+const mockInvitationFindFirst = mock((): Promise<MaybeRow> => Promise.resolve(null));
 
 mock.module("@repo/database", () => ({
     db: {

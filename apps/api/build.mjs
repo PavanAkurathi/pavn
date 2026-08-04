@@ -7,7 +7,7 @@
 import * as esbuild from 'esbuild';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = join(__dirname, '../..');
@@ -21,8 +21,30 @@ if (!existsSync(distDir)) {
     mkdirSync(distDir, { recursive: true });
 }
 
+/**
+ * esbuild's alias feature matches on prefixes, so an alias for "@repo/x" also
+ * captures "@repo/x/sub" and rewrites it to "<...>/index.ts/sub", which cannot
+ * resolve. Every subpath therefore needs its own entry. Deriving them from the
+ * package's exports map keeps that automatic — a missing "@repo/contracts/auth"
+ * entry silently broke this build (and the API deploy) once already.
+ */
+function subpathAliases(pkgDir) {
+    const pkg = JSON.parse(
+        readFileSync(join(monorepoRoot, pkgDir, 'package.json'), 'utf8'),
+    );
+    const out = {};
+    for (const [key, value] of Object.entries(pkg.exports ?? {})) {
+        const target = typeof value === 'string' ? value : value.import ?? value.default;
+        if (!target) continue;
+        const name = key === '.' ? pkg.name : `${pkg.name}/${key.slice(2)}`;
+        out[name] = join(monorepoRoot, pkgDir, target);
+    }
+    return out;
+}
+
 // Build aliases for workspace packages - point to TypeScript source
 const aliases = {
+    ...subpathAliases('packages/contracts'),
     '@repo/auth': join(monorepoRoot, 'packages/auth/src/index.ts'),
     '@repo/auth/client': join(monorepoRoot, 'packages/auth/src/client.ts'),
     '@repo/database': join(monorepoRoot, 'packages/database/src/index.ts'),

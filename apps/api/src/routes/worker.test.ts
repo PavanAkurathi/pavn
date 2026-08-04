@@ -16,8 +16,11 @@ mock.module("@repo/auth", () => ({
     getWorkerPhoneAccess: mockGetWorkerPhoneAccess,
 }));
 
+// These factories replace the module wholesale, so every named import that
+// worker.ts pulls in has to be listed here or the import throws at load time.
 mock.module("@repo/scheduling-timekeeping", () => ({
     getWorkerShifts: noop,
+    getWorkerShiftById: noopObject,
     getWorkerAllShifts: noopObject,
     UpcomingShiftsResponseSchema: z.array(z.any()),
 }));
@@ -25,6 +28,8 @@ mock.module("@repo/scheduling-timekeeping", () => ({
 mock.module("@repo/gig-workers", () => ({
     setAvailability: noopObject,
     getAvailability: noopObject,
+    getWorkerOrganizations: noop,
+    updateWorkerProfile: noopObject,
     AvailabilityResponseSchema: z.any(),
     WorkerSchema: z.any(),
 }));

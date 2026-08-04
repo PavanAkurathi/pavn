@@ -57,6 +57,13 @@ mock.module("../src/utils/ids", () => ({
     newId: () => "test_id"
 }));
 
+// publishSchedule rejects past dates (INVALID_PAST_DATES) before it reaches the
+// overlap logic under test, so these dates have to stay in the future as the
+// suite ages. Anchored 30 days out to stay valid in every timezone.
+const FUTURE_DATE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+
 describe("Overlap Scope and Info Disclosure", () => {
     beforeEach(() => {
         mockSelect.mockClear();
@@ -72,7 +79,7 @@ describe("Overlap Scope and Info Disclosure", () => {
             schedules: [{
                 startTime: "09:00",
                 endTime: "17:00",
-                dates: ["2026-06-01"],
+                dates: [FUTURE_DATE],
                 scheduleName: "Test",
                 positions: [{ roleName: "Guard", workerIds: ["w1"] }]
             }]
@@ -99,8 +106,8 @@ describe("Overlap Scope and Info Disclosure", () => {
         const mockWhere = mock(() => Promise.resolve([
             {
                 workerId: 'w1',
-                startTime: new Date("2026-06-01T09:00:00Z"),
-                endTime: new Date("2026-06-01T17:00:00Z"),
+                startTime: new Date(`${FUTURE_DATE}T09:00:00Z`),
+                endTime: new Date(`${FUTURE_DATE}T17:00:00Z`),
                 title: "SECRET_PROJECT_X" // Sensitive Title
             }
         ]));
@@ -120,7 +127,7 @@ describe("Overlap Scope and Info Disclosure", () => {
             schedules: [{
                 startTime: "09:00",
                 endTime: "17:00",
-                dates: ["2026-06-01"],
+                dates: [FUTURE_DATE],
                 scheduleName: "Test",
                 positions: [{ roleName: "Guard", workerIds: ["w1"] }]
             }]

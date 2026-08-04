@@ -2,9 +2,9 @@ name: Schema Drift Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
 jobs:
   check-drift:
@@ -21,14 +21,16 @@ jobs:
         run: bun install
 
       - name: Generate Migrations
-        run: |
-          cd packages/database
-          bun run generate
+        # The script is `db:generate`; calling `generate` made this step fail on
+        # a missing script every run, so drift was never actually checked.
+        run: bun run --filter @repo/database db:generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Check for Changes
         run: |
           if [[ -n $(git status --porcelain) ]]; then
-            echo "Schema drift detected! Please run 'bun run generate' and commit the changes."
+            echo "Schema drift detected! Run 'bun run --filter @repo/database db:generate' and commit the result."
             git status
             git diff
             exit 1

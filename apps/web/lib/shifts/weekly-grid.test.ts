@@ -29,8 +29,12 @@ function createShift(overrides: Partial<Shift>): Shift {
 }
 
 describe("resolveShiftLayout", () => {
-    test("defaults upcoming to weekly", () => {
-        expect(resolveShiftLayout("upcoming", null)).toBe(SHIFT_LAYOUTS.WEEKLY);
+    test("defaults upcoming to list", () => {
+        expect(resolveShiftLayout("upcoming", null)).toBe(SHIFT_LAYOUTS.LIST);
+    });
+
+    test("honours an explicit weekly layout on upcoming", () => {
+        expect(resolveShiftLayout("upcoming", SHIFT_LAYOUTS.WEEKLY)).toBe(SHIFT_LAYOUTS.WEEKLY);
     });
 
     test("defaults past to list and blocks weekly", () => {

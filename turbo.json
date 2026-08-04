@@ -26,7 +26,26 @@
     "TWILIO_PHONE_NUMBER",
     "NEXT_PUBLIC_POSTHOG_KEY",
     "NEXT_PUBLIC_POSTHOG_HOST",
-    "PORT"
+    "PORT",
+    "NODE_ENV",
+    "CI",
+    "VERCEL_URL",
+    "EMAIL_FROM",
+    "MOCK_EMAIL",
+    "MOCK_SMS",
+    "ALLOW_MOCK_OTP_DEBUG",
+    "SENTRY_DSN",
+    "SENTRY_AUTH_TOKEN",
+    "GOOGLE_MAPS_API_KEY",
+    "GEOCODING_PROVIDER",
+    "EXPO_SCHEME",
+    "BRANCH_BASE_URL",
+    "APP_STORE_URL",
+    "PLAY_STORE_URL",
+    "NEXT_PUBLIC_DUB_DOMAIN",
+    "PAVN_DISABLE_ONBOARDING_ENFORCEMENT",
+    "RUN_DB_TESTS",
+    "RUN_EXPLORATION_DB_TESTS"
   ],
   "tasks": {
     "build": {
@@ -57,6 +76,9 @@
       "dependsOn": [
         "^test"
       ]
+    },
+    "test:e2e": {
+      "cache": false
     },
     "dev": {
       "cache": false,
