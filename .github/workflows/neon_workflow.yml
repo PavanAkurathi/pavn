@@ -28,17 +28,18 @@ jobs:
       db_url: ${{ steps.create_neon_branch.outputs.db_url }}
       db_url_with_pooler: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
     needs: setup
-    # NEON_PROJECT_ID is unset, so create-branch-action returned an empty db_url
-    # and every PR failed at "Run Migrations" with `url: ''`. Skip the whole
-    # preview-branch flow until the Neon project id and API key are configured.
-    # (Guarded on the repo *variable* because the secrets context is not
-    # available in a job-level `if`.)
     if: |
-      vars.NEON_PROJECT_ID != '' && github.event_name == 'pull_request' && (
+      github.event_name == 'pull_request' && (
       github.event.action == 'synchronize'
       || github.event.action == 'opened'
       || github.event.action == 'reopened')
     runs-on: ubuntu-latest
+    # The `secrets` context is not available in any `if` expression (job or
+    # step), so the key is surfaced as env, which `if` can read. Without a key
+    # create-branch-action emits an empty db_url instead of failing, which then
+    # broke "Run Migrations" with `url: ''` on every PR.
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,9 +54,7 @@ jobs:
         run: echo "expires_at=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
       - name: Create Neon Branch
         id: create_neon_branch
-        # Without NEON_API_KEY the action emits an empty db_url instead of
-        # failing, which then broke "Run Migrations" with `url: ''` on every PR.
-        if: ${{ secrets.NEON_API_KEY != '' }}
+        if: env.NEON_API_KEY != ''
         uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
@@ -64,7 +63,7 @@ jobs:
           expires_at: ${{ steps.get_expiration_date.outputs.expires_at }}
 
       - name: Report missing Neon configuration
-        if: ${{ secrets.NEON_API_KEY == '' }}
+        if: env.NEON_API_KEY == ''
         run: |
           echo "::warning title=Neon preview branch skipped::NEON_API_KEY is not set, so no preview database was created and migrations did not run. Add the NEON_API_KEY secret to enable per-PR preview databases."
       # WARNING: db:migrate runs drizzle-kit migrate, which only applies what is
@@ -85,10 +84,12 @@ jobs:
     needs: setup
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       - name: Delete Neon Branch
         # No key means no branch was ever created; nothing to tear down.
-        if: ${{ secrets.NEON_API_KEY != '' }}
+        if: env.NEON_API_KEY != ''
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
