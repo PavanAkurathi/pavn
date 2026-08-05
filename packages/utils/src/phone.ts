@@ -3,6 +3,33 @@ import { PhoneNumberUtil, PhoneNumberFormat } from 'google-libphonenumber';
 const phoneUtil = PhoneNumberUtil.getInstance();
 
 /**
+ * Resolves the region a phone number actually belongs to, restricted to the
+ * given candidate regions. Unlike validatePhoneNumber, a number written in
+ * international format (e.g. "+44...") for a region outside the candidates
+ * returns null instead of passing.
+ * @param phone The phone number in any common format
+ * @param candidates Allowed region codes, tried in order as parsing hints
+ * @returns the matched region code, or null if invalid or unsupported
+ */
+export const getPhoneRegion = (
+    phone: string,
+    candidates: readonly string[] = ['US', 'CA'],
+): string | null => {
+    for (const region of candidates) {
+        try {
+            const number = phoneUtil.parseAndKeepRawInput(phone, region);
+            if (phoneUtil.isValidNumber(number)) {
+                const actual = phoneUtil.getRegionCodeForNumber(number);
+                return actual && candidates.includes(actual) ? actual : null;
+            }
+        } catch {
+            // try next candidate region
+        }
+    }
+    return null;
+};
+
+/**
  * Validates a phone number string.
  * @param phone The phone number to validate (e.g. "+14155552671" or "4155552671")
  * @param region default region code (e.g. "US") if number is not international format

@@ -6,7 +6,6 @@ import * as React from 'react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import {
-    CalendarDays,
     ChevronLeft,
     ChevronRight,
     Filter,
@@ -94,7 +93,6 @@ export function EventFilters({
     const layoutOptions = [
         { value: SHIFT_LAYOUTS.WEEKLY, label: 'Weekly', icon: LayoutGrid },
         { value: SHIFT_LAYOUTS.LIST, label: 'List', icon: List },
-        { value: SHIFT_LAYOUTS.MONTH, label: 'Month', icon: CalendarDays },
     ].filter((option) => availableLayouts.includes(option.value));
 
     return (
@@ -138,7 +136,7 @@ export function EventFilters({
                 {layout === SHIFT_LAYOUTS.WEEKLY ? (
                     <div className="flex items-center gap-2 rounded-xl border bg-background px-2 py-1.5">
                         <Button variant="ghost" size="icon" onClick={onPreviousWeek} aria-label="Previous week">
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                         </Button>
                         <div className="min-w-[170px] px-1 text-center">
                             <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Week</p>
@@ -148,7 +146,7 @@ export function EventFilters({
                             Today
                         </Button>
                         <Button variant="ghost" size="icon" onClick={onNextWeek} aria-label="Next week">
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
                         </Button>
                     </div>
                 ) : (
@@ -165,13 +163,11 @@ export function EventFilters({
                         <PopoverContent className="w-auto p-0" align="start">
                             <div className="p-3">
                                 <Calendar
-                                    initialFocus
                                     mode="range"
                                     defaultMonth={dateRange?.from}
                                     selected={dateRange}
                                     onSelect={handleRangeChange}
-                                    numberOfMonths={2}
-                                    pagedNavigation
+                                    numberOfMonths={1}
                                     className="w-full"
                                 />
                             </div>

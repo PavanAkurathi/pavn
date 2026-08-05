@@ -32,13 +32,11 @@ export default async function CreateSchedulePage() {
     }));
 
     return (
-        <div className="container flex flex-col items-center justify-center min-h-screen max-w-3xl py-10">
-            <div className="w-full">
-                <CreateScheduleForm
-                    initialData={initialData}
-                    prefetchedCrew={prefetchedCrew}
-                />
-            </div>
+        <div className="mx-auto w-full max-w-5xl px-4 pb-16 sm:px-6">
+            <CreateScheduleForm
+                initialData={initialData}
+                prefetchedCrew={prefetchedCrew}
+            />
         </div>
     );
 }

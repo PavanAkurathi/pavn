@@ -28,19 +28,31 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
             ne(shiftAssignment.status, "removed"),
         ),
         with: {
-            worker: true
+            worker: true,
+            tempWorker: true,
+            rosterEntry: true
         }
     });
 
     const visibleAssignments = assignments.filter((assignment) => assignment.status !== "removed");
 
     const timesheets: TimesheetWorker[] = visibleAssignments.map(a => {
+        const isTemp = !!a.tempWorkerId;
+        const isPendingInvite = !!a.rosterEntryId;
         // Fallback name if worker relation is missing (deleted user?)
-        const workerName = a.worker ? a.worker.name : "Unknown Worker";
+        const workerName = isTemp
+            ? (a.tempWorker?.name ?? "Temp worker")
+            : isPendingInvite
+                ? (a.rosterEntry?.name ?? "Invited worker")
+                : (a.worker ? a.worker.name : "Unknown Worker");
 
         return {
             id: a.id,
-            workerId: a.workerId,
+            workerId: (a.workerId ?? a.tempWorkerId ?? a.rosterEntryId)!,
+            isTemp,
+            invitePending: isPendingInvite || undefined,
+            agency: a.tempWorker?.agency ?? undefined,
+            phone: (isTemp ? a.tempWorker?.phone : isPendingInvite ? a.rosterEntry?.phoneNumber : a.worker?.phoneNumber) ?? undefined,
             name: workerName,
             avatarUrl: a.worker?.image || undefined,
             avatarInitials: getInitials(workerName),

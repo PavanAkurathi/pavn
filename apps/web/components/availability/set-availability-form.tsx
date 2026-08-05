@@ -3,14 +3,11 @@
 
 import { useState } from "react";
 import { Button } from "@repo/ui/components/ui/button";
-import { Calendar } from "@repo/ui/components/ui/calendar"; // Assuming standard UI presence
 import { useForm } from "@repo/ui/components/ui/form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { authClient } from "@repo/auth/client";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { getApiBaseUrl } from "@/lib/constants";
 import {
     Form,
     FormControl,
@@ -44,7 +41,6 @@ type FormValues = {
 };
 
 export function SetAvailabilityForm() {
-    const apiBaseUrl = getApiBaseUrl();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -79,9 +75,7 @@ export function SetAvailabilityForm() {
         // ... (keep previous lines) ... 
 
         try {
-            // Direct call to Hono Service (Port 4005)
-            // TODO: Use env var for URL
-            const res = await fetch(`${apiBaseUrl}/worker/availability`, {
+            const res = await fetch("/api/worker/availability", {
                 method: "POST",
                 credentials: "include", // Ensure session cookies are sent
                 headers: {
@@ -104,8 +98,11 @@ export function SetAvailabilityForm() {
             setMessage({ type: 'success', text: "Availability set successfully!" });
             form.reset({ ...values, type: "unavailable" });
 
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.message });
+        } catch (error) {
+            setMessage({
+                type: 'error',
+                text: error instanceof Error ? error.message : "Failed to set availability",
+            });
         } finally {
             setIsLoading(false);
         }
@@ -114,11 +111,11 @@ export function SetAvailabilityForm() {
     return (
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
             <h3 className="font-semibold leading-none tracking-tight mb-4">Set Availability</h3>
-            <Form {...(form as any)}>
+            <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
                     <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="type"
                         render={({ field }) => (
                             <FormItem>
@@ -140,7 +137,7 @@ export function SetAvailabilityForm() {
                     />
 
                     <FormField
-                        control={form.control as any}
+                        control={form.control}
                         name="date"
                         render={({ field }) => (
                             <FormItem className="flex flex-col">
@@ -157,7 +154,7 @@ export function SetAvailabilityForm() {
 
                     <div className="grid grid-cols-2 gap-4">
                         <FormField
-                            control={form.control as any}
+                            control={form.control}
                             name="startTime"
                             render={({ field }) => (
                                 <FormItem>
@@ -170,7 +167,7 @@ export function SetAvailabilityForm() {
                             )}
                         />
                         <FormField
-                            control={form.control as any}
+                            control={form.control}
                             name="endTime"
                             render={({ field }) => (
                                 <FormItem>

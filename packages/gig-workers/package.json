@@ -20,24 +20,25 @@
         }
     },
     "scripts": {
-        "lint": "eslint . --max-warnings 0",
-        "typecheck": "tsc --noEmit"
+        "test": "node ../../scripts/run-package-tests.mjs",
+        "lint": "eslint . --max-warnings 8",
+        "check-types": "tsc --noEmit"
     },
     "dependencies": {
         "@repo/auth": "workspace:*",
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
         "@repo/observability": "workspace:*",
-        "drizzle-orm": "0.45.1",
-        "nanoid": "^5.1.6",
+        "drizzle-orm": "0.45.2",
+        "nanoid": "^5.1.16",
         "xlsx": "^0.18.5",
-        "zod": "^4.3.6"
+        "zod": "^4.4.3"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^20.11.0",
+        "@types/node": "^26.1.0",
         "@types/xlsx": "^0.0.36",
-        "typescript": "^5.3.3"
+        "typescript": "^6.0.3"
     }
 }

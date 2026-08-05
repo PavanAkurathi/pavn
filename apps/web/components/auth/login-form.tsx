@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Alert, AlertDescription } from "@repo/ui/components/ui/alert";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
@@ -22,6 +23,7 @@ export function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isLoading, setIsLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
@@ -30,6 +32,7 @@ export function LoginForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMessage(null);
         setIsLoading(true);
 
         await authClient.signIn.email({
@@ -50,7 +53,10 @@ export function LoginForm() {
                 router.push(safeCallbackURL);
             },
             onError: (ctx: AuthClientErrorContext) => {
-                toast.error(ctx.error.message);
+                setErrorMessage(
+                    ctx.error.message ||
+                    "We couldn't sign you in. Check your email and password, then try again.",
+                );
                 setIsLoading(false);
             }
         });
@@ -66,6 +72,13 @@ export function LoginForm() {
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    <div aria-live="polite">
+                        {errorMessage ? (
+                            <Alert variant="destructive">
+                                <AlertDescription>{errorMessage}</AlertDescription>
+                            </Alert>
+                        ) : null}
+                    </div>
                     <FieldGroup>
                         <Field>
                             <FieldLabel htmlFor="email">Email address</FieldLabel>

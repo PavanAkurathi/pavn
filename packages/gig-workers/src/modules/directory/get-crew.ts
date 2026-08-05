@@ -1,5 +1,5 @@
 import { db } from "@repo/database";
-import { member, user, workerRole } from "@repo/database/schema";
+import { member, rosterEntry, user, workerRole } from "@repo/database/schema";
 import { eq, notInArray, and, ilike, inArray } from "drizzle-orm";
 import { getInitials } from "../../utils/formatting";
 import { deriveCrewRoles } from "../../utils/crew-roles";
@@ -49,7 +49,7 @@ export const getCrew = async (orgId: string, options: { search?: string, limit?:
         rolesByWorker.set(role.workerId, list);
     }
 
-    return crew.map((worker) => {
+    const activeCrew = crew.map((worker) => {
         const roles = deriveCrewRoles(
             rolesByWorker.get(worker.id) || [],
             worker.jobTitle || null
@@ -70,4 +70,34 @@ export const getCrew = async (orgId: string, options: { search?: string, limit?:
             hours: 0
         };
     });
+
+    // Invited in-house workers without accounts yet: schedulable immediately;
+    // their assignments migrate to the real account on invite acceptance.
+    const activeEmails = new Set(activeCrew.map((w) => (w.email || "").toLowerCase()));
+    const pendingEntries = await db.query.rosterEntry.findMany({
+        where: and(
+            eq(rosterEntry.organizationId, orgId),
+            search ? ilike(rosterEntry.name, `%${search}%`) : undefined,
+        ),
+    });
+
+    const invitedCrew = pendingEntries
+        .filter((entry) => !activeEmails.has(entry.email.toLowerCase()))
+        .map((entry) => ({
+            memberId: entry.id,
+            id: entry.id,
+            name: entry.name,
+            email: entry.email,
+            image: null as string | null,
+            avatar: null as string | null,
+            role: entry.roles?.[0] ?? entry.jobTitle ?? undefined,
+            roles: entry.roles?.length ? entry.roles : (entry.jobTitle ? [entry.jobTitle] : []),
+            jobTitle: entry.jobTitle,
+            status: "invited",
+            initials: getInitials(entry.name),
+            hours: 0,
+            invitePending: true,
+        }));
+
+    return [...activeCrew, ...invitedCrew];
 };

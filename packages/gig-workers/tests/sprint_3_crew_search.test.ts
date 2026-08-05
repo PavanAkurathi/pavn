@@ -7,6 +7,9 @@ const mockInnerJoin: any = mock(() => ({ where: mockWhere }));
 const mockFrom: any = mock(() => ({ innerJoin: mockInnerJoin }));
 const mockSelect: any = mock(() => ({ from: mockFrom }));
 const mockFindMany: any = mock(() => Promise.resolve([]));
+// getCrew also reads pending roster entries so invited workers are schedulable
+// before they accept; without this the query throws on an undefined table.
+const mockRosterFindMany: any = mock(() => Promise.resolve([]));
 
 mock.module("@repo/database", () => ({
     db: {
@@ -14,6 +17,9 @@ mock.module("@repo/database", () => ({
         query: {
             workerRole: {
                 findMany: mockFindMany,
+            },
+            rosterEntry: {
+                findMany: mockRosterFindMany,
             },
         },
     }
@@ -30,8 +36,10 @@ describe("WH-116: Crew Search", () => {
         mockLimit.mockClear();
         mockOffset.mockClear();
         mockFindMany.mockClear();
+        mockRosterFindMany.mockClear();
         mockOffset.mockImplementation(() => Promise.resolve([]));
         mockFindMany.mockImplementation(() => Promise.resolve([]));
+        mockRosterFindMany.mockImplementation(() => Promise.resolve([]));
     });
 
     test("passes search term to DB query", async () => {

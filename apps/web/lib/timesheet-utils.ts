@@ -30,6 +30,10 @@ export interface TimesheetViewModel {
     breakOneDuration?: string;
     breakTwoDuration?: string;
     notes?: string;
+    isTemp?: boolean;
+    invitePending?: boolean;
+    agency?: string;
+    phone?: string;
 }
 
 export function parseBreakMinutes(value?: string | null) {

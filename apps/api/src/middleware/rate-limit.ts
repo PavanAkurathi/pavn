@@ -98,6 +98,11 @@ export const RATE_LIMITS = {
  */
 export function rateLimit(config: RateLimitConfig) {
     return async (c: Context<AppContext>, next: Next) => {
+        if (process.env.NODE_ENV !== "production" || process.env.DISABLE_RATE_LIMIT === "true") {
+            await next();
+            return;
+        }
+
         const userId = c.get("user")?.id;
         const orgId = c.get("orgId");
         const path = c.req.path;

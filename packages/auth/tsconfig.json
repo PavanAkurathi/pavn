@@ -3,8 +3,13 @@
     "compilerOptions": {
         "outDir": "dist",
         "rootDir": "src",
-        "declaration": true,
-        "declarationMap": true,
+        // This package is consumed as source (every export in package.json points
+        // at ./src/*.ts and there is no build step), so no declarations are ever
+        // emitted. Leaving declaration on only made tsc validate declaration
+        // emit, which fails TS2883 on authClient: better-auth's inferred client
+        // type references AuthQueryAtom from a path that cannot be named here.
+        "declaration": false,
+        "declarationMap": false,
         "lib": [
             "ESNext",
             "DOM"

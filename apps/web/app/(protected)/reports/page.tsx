@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import useSWR from "swr";
 import { DateRange } from "react-day-picker";
-import { Download, Calendar as CalendarIcon, MapPin, Briefcase, User, Search } from "lucide-react";
+import { Download, Calendar as CalendarIcon, MapPin, Briefcase, Search } from "lucide-react";
 
 import { Button } from "@repo/ui/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Popover, PopoverTrigger, PopoverContent } from "@repo/ui/components/ui/popover";
 import { Calendar } from "@repo/ui/components/ui/calendar";
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@repo/ui/components/ui/select";
@@ -16,7 +16,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import { useOrganizationId } from "@/hooks/use-schedule-data";
-import { getApiBaseUrl } from "@/lib/constants";
 
 // Fetcher with auth
 const fetcher = async (url: string, orgId: string) => {
@@ -54,7 +53,6 @@ interface FilterOptions {
 }
 
 export default function ReportsPage() {
-    const apiBase = getApiBaseUrl();
     const orgId = useOrganizationId();
 
     // Date range state - default to current month
@@ -83,20 +81,20 @@ export default function ReportsPage() {
 
     // Fetch filter options
     const { data: filterOptions } = useSWR<FilterOptions>(
-        orgId && queryParams ? `${apiBase}/timesheets/filters?${queryParams}` : null,
+        orgId && queryParams ? `/api/timesheets/filters?${queryParams}` : null,
         (url: string) => fetcher(url, orgId!)
     );
 
     // Fetch timesheet data
     const { data: reportData, isLoading } = useSWR<ReportData>(
-        orgId && queryParams ? `${apiBase}/timesheets?${queryParams}` : null,
+        orgId && queryParams ? `/api/timesheets?${queryParams}` : null,
         (url: string) => fetcher(url, orgId!)
     );
 
     // Export handler
     const handleExport = () => {
         if (!queryParams) return;
-        const exportUrl = `${apiBase}/timesheets/export?${queryParams}&format=csv`;
+        const exportUrl = `/api/timesheets/export?${queryParams}&format=csv`;
         window.open(exportUrl, '_blank');
     };
 

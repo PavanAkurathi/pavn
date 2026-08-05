@@ -142,7 +142,6 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                     mode="single"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
-                                                    initialFocus
                                                 />
                                             </PopoverContent>
                                         </Popover>
@@ -169,7 +168,6 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                                                     mode="single"
                                                     selected={field.value}
                                                     onSelect={field.onChange}
-                                                    initialFocus
                                                     disabled={(date) => {
                                                         const start = watch(`schedules.${index}.startDate`);
                                                         return start ? date < start : false;

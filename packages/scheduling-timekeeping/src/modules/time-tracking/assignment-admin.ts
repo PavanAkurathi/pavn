@@ -1,6 +1,6 @@
 import { db, TxOrDb } from "@repo/database";
 import { shiftAssignment, assignmentAuditEvent, shift } from "@repo/database/schema";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and, ne, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { differenceInMinutes } from "date-fns";
 import { AppError } from "@repo/observability";
@@ -33,7 +33,7 @@ export async function getAssignment(shiftId: string, workerId: string, orgId?: s
     const assignment = await db.query.shiftAssignment.findFirst({
         where: and(
             eq(shiftAssignment.shiftId, shiftId),
-            eq(shiftAssignment.workerId, workerId),
+            or(eq(shiftAssignment.workerId, workerId), eq(shiftAssignment.tempWorkerId, workerId), eq(shiftAssignment.rosterEntryId, workerId)),
             ne(shiftAssignment.status, "removed"),
         ),
         with: {
@@ -116,7 +116,7 @@ export async function applyManagerTimesheetUpdate(
         const assignment = await transaction.query.shiftAssignment.findFirst({
             where: and(
                 eq(shiftAssignment.shiftId, shiftId),
-                eq(shiftAssignment.workerId, workerId),
+                or(eq(shiftAssignment.workerId, workerId), eq(shiftAssignment.tempWorkerId, workerId), eq(shiftAssignment.rosterEntryId, workerId)),
                 ne(shiftAssignment.status, "removed"),
             ),
         });

@@ -5,7 +5,10 @@
             "ES2022"
         ],
         "module": "NodeNext",
-        "moduleResolution": "NodeNext"
+        "moduleResolution": "NodeNext",
+        "types": [
+            "node"
+        ]
     },
     "include": [
         "src"

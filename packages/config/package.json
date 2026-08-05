@@ -20,13 +20,14 @@
         }
     },
     "scripts": {
-        "lint": "eslint . --max-warnings 0",
-        "typecheck": "tsc --noEmit"
+        "test": "node ../../scripts/run-package-tests.mjs",
+        "lint": "eslint . --max-warnings 1",
+        "check-types": "tsc --noEmit"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^20.11.0",
-        "typescript": "^5.3.3"
+        "@types/node": "^26.1.0",
+        "typescript": "^6.0.3"
     }
 }

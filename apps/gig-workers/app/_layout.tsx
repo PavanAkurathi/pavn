@@ -109,7 +109,7 @@ function RootLayout() {
                     }}
                 >
                     <SafeAreaProvider>
-                        <StatusBar style="dark" backgroundColor={workerTheme.colors.background} />
+                        <StatusBar style="dark" />
                         <ErrorBoundary>
                             <Stack screenOptions={{ headerShown: false }}>
                                 <Stack.Screen name="index" />

@@ -3,10 +3,11 @@ import { Hono } from "hono";
 import { AppError } from "@repo/observability";
 import { errorHandler } from "./error-handler";
 import { requestId } from "../middleware/request-id";
+import type { AppContext } from "../index";
 
 describe("errorHandler", () => {
     test("serializes AppError responses", async () => {
-        const app = new Hono();
+        const app = new Hono<AppContext>();
         app.use("*", requestId());
         app.onError((err, c) => errorHandler(err, c));
         app.get("/error", () => {
@@ -25,7 +26,7 @@ describe("errorHandler", () => {
     });
 
     test("converts generic errors to 500 responses", async () => {
-        const app = new Hono();
+        const app = new Hono<AppContext>();
         app.use("*", requestId());
         app.onError((err, c) => errorHandler(err, c));
         app.get("/panic", () => {

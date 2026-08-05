@@ -1,12 +1,5 @@
 import { z } from "zod";
-
-const NorthAmericaPhoneNumberSchema = z
-    .string()
-    .refine(
-        (value) =>
-            /^\s*\+?1?\s*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\s*$/.test(value),
-        "Must be a valid US/Canada phone number",
-    );
+import { PhoneNumberSchema } from "./auth";
 
 export const WorkerSchema = z.object({
     id: z.string(),
@@ -53,7 +46,7 @@ export const WorkerInvitationMethodsSchema = z.object({
 export const WorkerInviteInputSchema = z.object({
     name: z.string().min(1),
     email: z.string().email(),
-    phoneNumber: NorthAmericaPhoneNumberSchema.optional(),
+    phoneNumber: PhoneNumberSchema.optional(),
     role: z.enum(["admin", "member"]),
     jobTitle: z.string().optional(),
     roles: z.array(z.string().min(1)).optional(),

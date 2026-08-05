@@ -15,9 +15,11 @@ type ShiftActionResult =
 export async function assignWorkersToShiftAction(
     shiftId: string,
     workerIds: string[],
+    tempWorkerIds: string[] = [],
+    rosterEntryIds: string[] = [],
 ): Promise<ShiftActionResult> {
     try {
-        await assignWorkers(shiftId, workerIds);
+        await assignWorkers(shiftId, workerIds, undefined, tempWorkerIds, rosterEntryIds);
         return { success: true };
     } catch (error: any) {
         console.error("Failed to assign workers:", error);

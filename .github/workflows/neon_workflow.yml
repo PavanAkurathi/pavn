@@ -34,6 +34,12 @@ jobs:
       || github.event.action == 'opened'
       || github.event.action == 'reopened')
     runs-on: ubuntu-latest
+    # The `secrets` context is not available in any `if` expression (job or
+    # step), so the key is surfaced as env, which `if` can read. Without a key
+    # create-branch-action emits an empty db_url instead of failing, which then
+    # broke "Run Migrations" with `url: ''` on every PR.
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,13 +54,26 @@ jobs:
         run: echo "expires_at=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
       - name: Create Neon Branch
         id: create_neon_branch
+        if: env.NEON_API_KEY != ''
         uses: neondatabase/create-branch-action@v6
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}
           branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ steps.get_expiration_date.outputs.expires_at }}
+
+      - name: Report missing Neon configuration
+        if: env.NEON_API_KEY == ''
+        run: |
+          echo "::warning title=Neon preview branch skipped::NEON_API_KEY is not set, so no preview database was created and migrations did not run. Add the NEON_API_KEY secret to enable per-PR preview databases."
+      # WARNING: db:migrate runs drizzle-kit migrate, which only applies what is
+      # listed in drizzle/meta/_journal.json. The journal currently has 5 entries
+      # while 8 migration SQL files exist, so a preview branch built this way is
+      # missing 0010/0011/0012 (temp workers, roster-entry assignments) and does
+      # NOT match production. Fix the journal/snapshot divergence before trusting
+      # a preview branch's schema.
       - name: Run Migrations
+        if: ${{ steps.create_neon_branch.outputs.db_url_with_pooler != '' }}
         run: bun --filter=@repo/database run db:migrate
         env:
           # to use pooled connection
@@ -65,8 +84,12 @@ jobs:
     needs: setup
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
     steps:
       - name: Delete Neon Branch
+        # No key means no branch was ever created; nothing to tear down.
+        if: env.NEON_API_KEY != ''
         uses: neondatabase/delete-branch-action@v3
         with:
           project_id: ${{ vars.NEON_PROJECT_ID }}

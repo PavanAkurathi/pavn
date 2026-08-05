@@ -16,7 +16,9 @@ export const getShiftGroup = async (groupId: string, orgId: string) => {
         with: {
             assignments: {
                 with: {
-                    worker: true
+                    worker: true,
+                    tempWorker: true,
+                    rosterEntry: true
                 }
             },
             location: true

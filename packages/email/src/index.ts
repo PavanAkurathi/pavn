@@ -2,24 +2,32 @@ import { Resend } from 'resend';
 
 // Initialize Resend with API Key from environment
 const FROM_EMAIL = process.env.EMAIL_FROM || "onboarding@resend.dev"; // Use EMAIL_FROM env var or fallback to default
-const allowEmailOtpDebug =
-    process.env.NODE_ENV !== "production" && process.env.ALLOW_EMAIL_OTP_DEBUG === "true";
 const maskEmail = (email: string) => {
     const [local, domain] = email.split("@");
     if (!local || !domain) return "***";
     return `${local.slice(0, 2)}***@${domain}`;
 };
 
+// Dev-only delivery bypass: log instead of send. Never active in production —
+// there, a missing/broken key must fail loudly so it gets fixed before launch.
+const isEmailMocked = () =>
+    process.env.NODE_ENV !== "production" &&
+    (process.env.MOCK_EMAIL === "true" || !process.env.RESEND_API_KEY);
+
 export const sendOtp = async (email: string, otp: string) => {
     const apiKey = process.env.RESEND_API_KEY;
     const isProd = process.env.NODE_ENV === "production";
 
-    if (!apiKey) {
-        console.warn(`[Email] RESEND_API_KEY is missing. OTP delivery skipped for ${maskEmail(email)}.`);
-        if (allowEmailOtpDebug) {
-            console.warn(`[Email] OTP debug enabled for ${maskEmail(email)}.`);
-        }
+    if (isEmailMocked()) {
+        console.warn(`[EMAIL MOCK] OTP for ${maskEmail(email)}: ${otp}`);
         return;
+    }
+
+    if (!apiKey) {
+        throw new Error(
+            "RESEND_API_KEY is not configured — cannot send verification emails in production. " +
+            "Attach a valid Resend key and a verified sending domain (EMAIL_FROM) before launch.",
+        );
     }
 
     const resend = new Resend(apiKey);
@@ -47,10 +55,7 @@ export const sendOtp = async (email: string, otp: string) => {
             if (isProd) {
                 throw new Error("Failed to send verification email");
             }
-            console.warn(`[Email] OTP delivery fallback skipped for ${maskEmail(email)}.`);
-            if (allowEmailOtpDebug) {
-                console.warn(`[Email] OTP debug enabled for ${maskEmail(email)}.`);
-            }
+            console.warn(`[EMAIL MOCK] Send failed in dev — OTP for ${maskEmail(email)}: ${otp}`);
             return;
         }
 
@@ -58,10 +63,7 @@ export const sendOtp = async (email: string, otp: string) => {
     } catch (e) {
         console.error("[Email] Exception sending OTP:", e);
         if (!isProd) {
-            console.warn(`[Email] OTP delivery fallback skipped for ${maskEmail(email)}.`);
-            if (allowEmailOtpDebug) {
-                console.warn(`[Email] OTP debug enabled for ${maskEmail(email)}.`);
-            }
+            console.warn(`[EMAIL MOCK] Send failed in dev — OTP for ${maskEmail(email)}: ${otp}`);
             return;
         }
         throw e;
@@ -87,9 +89,16 @@ export const sendInvite = async ({
 }: SendInviteOptions) => {
     const apiKey = process.env.RESEND_API_KEY;
 
-    if (!apiKey) {
-        console.warn(`[Email] RESEND_API_KEY is missing. Invite delivery skipped for ${maskEmail(email)}.`);
+    if (isEmailMocked()) {
+        console.warn(`[EMAIL MOCK] Invite for ${maskEmail(email)} (${role}): ${inviteUrl}`);
         return;
+    }
+
+    if (!apiKey) {
+        throw new Error(
+            "RESEND_API_KEY is not configured — cannot send invite emails in production. " +
+            "Attach a valid Resend key and a verified sending domain (EMAIL_FROM) before launch.",
+        );
     }
 
     const resend = new Resend(apiKey);
@@ -116,8 +125,10 @@ export const sendInvite = async ({
         return data;
     } catch (e) {
         console.error("[Email] Exception sending Invite:", e);
-        if (process.env.NODE_ENV === "development") {
-            console.warn(`[Email] Invite fallback skipped for ${maskEmail(email)}.`);
+        if (process.env.NODE_ENV !== "production") {
+            console.warn(`[EMAIL MOCK] Send failed in dev — invite for ${maskEmail(email)}: ${inviteUrl}`);
+            return;
         }
+        throw e;
     }
 }

@@ -54,9 +54,8 @@ export interface WeeklyGridModel {
 type RawWeeklyGridEvent = Omit<WeeklyGridEvent, "column" | "columnCount">;
 
 const ALL_LAYOUTS = new Set<ShiftLayout>([
-    SHIFT_LAYOUTS.WEEKLY,
     SHIFT_LAYOUTS.LIST,
-    SHIFT_LAYOUTS.MONTH,
+    SHIFT_LAYOUTS.WEEKLY,
 ]);
 
 const DEFAULT_START_HOUR = 6;
@@ -64,22 +63,23 @@ const DEFAULT_END_HOUR = 22;
 
 export function getAvailableShiftLayouts(tab: ShiftDashboardTab): ShiftLayout[] {
     if (tab === "past") {
-        return [SHIFT_LAYOUTS.LIST, SHIFT_LAYOUTS.MONTH];
+        return [SHIFT_LAYOUTS.LIST];
     }
 
-    return [SHIFT_LAYOUTS.WEEKLY, SHIFT_LAYOUTS.LIST, SHIFT_LAYOUTS.MONTH];
+    return [SHIFT_LAYOUTS.LIST, SHIFT_LAYOUTS.WEEKLY];
 }
 
 export function resolveShiftLayout(tab: ShiftDashboardTab, layout: string | null | undefined): ShiftLayout {
     if (tab === "past") {
-        return layout === SHIFT_LAYOUTS.MONTH ? SHIFT_LAYOUTS.MONTH : SHIFT_LAYOUTS.LIST;
+        return SHIFT_LAYOUTS.LIST;
     }
 
     if (layout && ALL_LAYOUTS.has(layout as ShiftLayout)) {
         return layout as ShiftLayout;
     }
 
-    return SHIFT_LAYOUTS.WEEKLY;
+    // Date-grouped list is the operational default (the "daily" view).
+    return SHIFT_LAYOUTS.LIST;
 }
 
 export function getInitialWeekStart(_shifts: Shift[], now = new Date()): Date {

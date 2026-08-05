@@ -40,6 +40,7 @@ export const ShiftSchema = z.object({
     workerId: z.string().optional(),
     capacity: ShiftCapacitySchema.optional(),
     assignedWorkers: z.array(AssignedWorkerSummarySchema).optional(),
+    createdAt: z.string().optional(),
 });
 
 export const UpcomingShiftsResponseSchema = z.array(ShiftSchema);
@@ -66,7 +67,12 @@ export const TimesheetReportSchema = z.object({
 
 export const TimesheetWorkerSchema = z.object({
     id: z.string(),
+    /** Roster user id, or temp worker id when isTemp is true. */
     workerId: z.string(),
+    isTemp: z.boolean().optional(),
+    invitePending: z.boolean().optional(),
+    agency: z.string().optional(),
+    phone: z.string().optional(),
     name: z.string(),
     avatarUrl: z.string().optional(),
     avatarInitials: z.string(),

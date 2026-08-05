@@ -14,7 +14,7 @@
  * return jsonOk(c, result);
  */
 
-import type { Context } from "hono";
+import type { Context, TypedResponse } from "hono";
 
 /**
  * Send a typed JSON response with status 200.
@@ -30,5 +30,5 @@ export function jsonOk<T>(c: Context, data: T) {
  * Used for CSV/Excel export endpoints where c.body() is needed.
  */
 export function bodyOk(c: Context, data: string | ArrayBuffer | ReadableStream) {
-    return c.body(data as unknown as string);
+    return c.body(data as unknown as string, 200) as Response & TypedResponse<{}, 200, string>;
 }
