@@ -28,8 +28,13 @@ jobs:
       db_url: ${{ steps.create_neon_branch.outputs.db_url }}
       db_url_with_pooler: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
     needs: setup
+    # NEON_PROJECT_ID is unset, so create-branch-action returned an empty db_url
+    # and every PR failed at "Run Migrations" with `url: ''`. Skip the whole
+    # preview-branch flow until the Neon project id and API key are configured.
+    # (Guarded on the repo *variable* because the secrets context is not
+    # available in a job-level `if`.)
     if: |
-      github.event_name == 'pull_request' && (
+      vars.NEON_PROJECT_ID != '' && github.event_name == 'pull_request' && (
       github.event.action == 'synchronize'
       || github.event.action == 'opened'
       || github.event.action == 'reopened')
@@ -54,6 +59,12 @@ jobs:
           branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ steps.get_expiration_date.outputs.expires_at }}
+      # WARNING: db:migrate runs drizzle-kit migrate, which only applies what is
+      # listed in drizzle/meta/_journal.json. The journal currently has 5 entries
+      # while 8 migration SQL files exist, so a preview branch built this way is
+      # missing 0010/0011/0012 (temp workers, roster-entry assignments) and does
+      # NOT match production. Fix the journal/snapshot divergence before trusting
+      # a preview branch's schema.
       - name: Run Migrations
         run: bun --filter=@repo/database run db:migrate
         env:
@@ -63,7 +74,7 @@ jobs:
   delete_neon_branch:
     name: Delete Neon Branch
     needs: setup
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: vars.NEON_PROJECT_ID != '' && github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Delete Neon Branch
