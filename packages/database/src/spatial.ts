@@ -17,8 +17,13 @@ export const jsonPositionToGeometry = (column: SQLWrapper) => sql`
     )
 `;
 
+// The outer parentheses are load-bearing for CREATE INDEX. Postgres only lets an
+// expression index omit surrounding parens when the expression is a plain
+// function call; a cast needs its own. drizzle-kit adds exactly one paren layer,
+// so without these the generated index is `USING gist ((expr)::geography)` and
+// fails with `syntax error at or near "::"`. Harmless everywhere else.
 export const jsonPositionToGeography = (column: SQLWrapper) =>
-    sql`(${jsonPositionToGeometry(column)})::geography`;
+    sql`((${jsonPositionToGeometry(column)})::geography)`;
 
 export const jsonPositionLatitude = (column: SQLWrapper) =>
     sql<number>`((${column} ->> 'lat')::double precision)`.mapWith(Number);

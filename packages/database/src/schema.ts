@@ -162,9 +162,14 @@ export const location = pgTable("location", {
 }, (table) => ({
     locationOrgIdx: index("location_org_idx").on(table.organizationId),
     // GEO-002: position stores {lat, lng} in jsonb, so spatial queries index the derived geography expression.
+    // NOT .concurrently(): drizzle-kit wraps every migration in a transaction and
+    // CREATE INDEX CONCURRENTLY is illegal inside one, so `db:migrate` could never
+    // apply this index. That is why migrations ended up being run by hand and the
+    // journal fell out of sync. `location` is small (a handful of rows per org),
+    // so a plain CREATE INDEX is fine; build it concurrently by hand if it ever
+    // needs adding to a large live table.
     locationPosGistIdx: index("location_position_gist_idx")
-        .using("gist", jsonPositionToGeography(table.position))
-        .concurrently(),
+        .using("gist", jsonPositionToGeography(table.position)),
     geofenceRadiusRangeCheck: check(
         "check_geofence_radius_range",
         sql`${table.geofenceRadius} >= 10 AND ${table.geofenceRadius} <= 500`
@@ -435,7 +440,15 @@ export const shiftAssignment = pgTable("shift_assignment", {
     assignmentWorkerIdx: index("assignment_worker_idx").on(table.workerId),
     assignmentStatusIdx: index("assignment_status_idx").on(table.status),
     // Constraint: A worker cannot be assigned to the same shift twice
-    uniqueWorkerPerShift: unique("unique_worker_shift").on(table.shiftId, table.workerId)
+    uniqueWorkerPerShift: unique("unique_worker_shift").on(table.shiftId, table.workerId),
+    // Exactly one assignment identity: app user XOR temp/agency worker XOR
+    // invited roster entry. Lives in production (added by hand-written migration
+    // 0012) but was never declared here, so a schema-generated environment would
+    // silently lose it.
+    singleIdentity: check(
+        "shift_assignment_single_identity",
+        sql`num_nonnulls(${table.workerId}, ${table.tempWorkerId}, ${table.rosterEntryId}) = 1`
+    ),
 }));
 
 export const shiftRelations = relations(shift, ({ one, many }) => ({
