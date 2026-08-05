@@ -7,7 +7,7 @@
             "packages/notification-worker/**",
             "packages/database/**",
             "packages/notifications/**",
-            "pnpm-lock.yaml",
+            "bun.lock",
             "turbo.json"
         ]
     },

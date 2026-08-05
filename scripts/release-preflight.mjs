@@ -6,31 +6,19 @@ loadRootEnv();
 const steps = [
   {
     label: "Launch env audit",
-    command: ["npm", "run", "check-env"],
+    command: ["bun", "run", "check-env"],
   },
   {
-    label: "Typecheck packages/database",
-    command: ["npm", "run", "typecheck", "--workspace=packages/database"],
-  },
-  {
-    label: "Typecheck packages/scheduling-timekeeping",
-    command: ["npm", "run", "typecheck", "--workspace=packages/scheduling-timekeeping"],
-  },
-  {
-    label: "Typecheck packages/geofence",
-    command: ["npm", "run", "typecheck", "--workspace=packages/geofence"],
-  },
-  {
-    label: "Typecheck apps/api",
-    command: ["npm", "run", "typecheck", "--workspace=apps/api"],
-  },
-  {
-    label: "Typecheck apps/gig-workers",
-    command: ["npx", "tsc", "--noEmit", "-p", "apps/gig-workers/tsconfig.json"],
+    // One turbo run covers every workspace, so this cannot silently skip a
+    // package the way the old per-workspace list did. The task is `check-types`
+    // — the previous `typecheck` name no longer exists anywhere and made every
+    // one of these steps fail on a missing script.
+    label: "Typecheck all workspaces",
+    command: ["bun", "run", "check-types"],
   },
   {
     label: "Typecheck packages/e2e",
-    command: ["npx", "tsc", "--noEmit", "-p", "packages/e2e/tsconfig.json"],
+    command: ["bunx", "tsc", "--noEmit", "-p", "packages/e2e/tsconfig.json"],
   },
   {
     label: "Targeted regression tests",
@@ -46,7 +34,7 @@ const steps = [
   },
   {
     label: "Manager/worker lifecycle E2E",
-    command: ["npm", "run", "release:lifecycle:local"],
+    command: ["bun", "run", "release:lifecycle:local"],
   },
 ];
 

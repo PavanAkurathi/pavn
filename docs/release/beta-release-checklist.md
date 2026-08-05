@@ -8,13 +8,13 @@ Use it before tagging a beta or inviting a wider test group.
 
 What we already have:
 
-- `apps/web`
-  - TypeScript check via `npm run check-types --workspace=apps/web`
+- All workspaces
+  - Lint, TypeScript, tests and builds via the CI gates: `bun run lint`,
+    `bun run check-types`, `bun run test`, `bun run build:all`
 - `apps/api`
-  - TypeScript check via `npm run typecheck --workspace=apps/api`
   - Vercel bundle build via `node apps/api/build.mjs`
 - `apps/gig-workers`
-  - TypeScript check via `npx tsc -p apps/gig-workers/tsconfig.json --noEmit`
+  - Covered by `bun run check-types` (the app now defines that script)
   - very light Jest smoke test in [App.test.tsx](/Users/av/Documents/pavn/apps/gig-workers/__tests__/App.test.tsx)
   - one Maestro login flow in [login.yaml](/Users/av/Documents/pavn/apps/gig-workers/.maestro/login.yaml)
 - `packages/e2e`
@@ -41,10 +41,10 @@ So the repo does have testing, but the mobile side is still mostly:
 Run these first:
 
 ```bash
-npm run check-types --workspace=apps/web
-npm run typecheck --workspace=apps/api
-npx tsc -p apps/gig-workers/tsconfig.json --noEmit
-node apps/api/build.mjs
+bun run lint
+bun run check-types
+bun run test
+bun run build:all
 ```
 
 If local API validation is needed:

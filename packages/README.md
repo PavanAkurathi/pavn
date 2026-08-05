@@ -23,8 +23,6 @@ The practical split is:
   - attendance verification, correction flows, location ingestion, geospatial enforcement
 - `@repo/notifications`
   - push dispatch, scheduling, queued notification delivery
-- `@repo/jobs`
-  - background workflows that compose the business-logic packages
 
 ## Foundation Packages
 
