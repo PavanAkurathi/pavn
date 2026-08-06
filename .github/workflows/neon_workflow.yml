@@ -48,7 +48,9 @@ jobs:
         with:
           bun-version: latest
       - name: Install dependencies
-        run: bun install
+        # --frozen-lockfile to match ci.yml; a plain install re-resolves and has
+        # been failing intermittently on the xlsx tarball.
+        run: bun install --frozen-lockfile
       - name: Get branch expiration date
         id: get_expiration_date
         run: echo "expires_at=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"

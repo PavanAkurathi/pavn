@@ -18,7 +18,10 @@ jobs:
           bun-version: latest
 
       - name: Install Dependencies
-        run: bun install
+        # --frozen-lockfile to match ci.yml. A plain `bun install` re-resolves
+        # and re-fetches, which kept failing on the xlsx tarball (0.18.5 is the
+        # last SheetJS release published to npm and its tarball is unreliable).
+        run: bun install --frozen-lockfile
 
       - name: Generate Migrations
         # The script is `db:generate`; calling `generate` made this step fail on
