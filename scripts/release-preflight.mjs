@@ -33,6 +33,13 @@ const steps = [
     ],
   },
   {
+    // Builds the Vercel bundle and loads it. Typechecks and tests run against
+    // source, so neither can see a bundle that throws on require() — which is
+    // how a dead production API passed every other gate here.
+    label: "API bundle loads",
+    command: ["bun", "run", "verify:api-bundle"],
+  },
+  {
     label: "Manager/worker lifecycle E2E",
     command: ["bun", "run", "release:lifecycle:local"],
   },

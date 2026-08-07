@@ -50,6 +50,20 @@ jobs:
           BETTER_AUTH_SECRET: ci-build-placeholder-secret-not-used-at-runtime
           DATABASE_URL: postgres://ci:ci@localhost:5432/ci
 
+      # A successful esbuild run only proves a file was written. This loads that
+      # file and drives a request through it, which is what catches a bundle
+      # that throws at module load — the failure mode that took the production
+      # API down while every gate above stayed green.
+      - name: Verify API bundle loads
+        run: bun run verify:api-bundle
+        env:
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+          NEXT_PUBLIC_API_URL: http://localhost:4005
+          NEXT_PUBLIC_AUTH_URL: http://localhost:4005
+          BETTER_AUTH_URL: http://localhost:4005
+          BETTER_AUTH_SECRET: ci-build-placeholder-secret-not-used-at-runtime
+          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest

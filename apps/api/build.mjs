@@ -90,6 +90,21 @@ async function build() {
             alias: aliases,
             resolveExtensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
             loader: { '.ts': 'ts', '.tsx': 'tsx' },
+
+            /**
+             * ESM dependencies that call `createRequire(import.meta.url)` (e.g.
+             * expo-server-sdk) get `import.meta` rewritten to `{}` when bundled
+             * to CJS, so the call receives `undefined` and throws at module load
+             * — the whole function crashes with FUNCTION_INVOCATION_FAILED before
+             * a single route runs, which no build-time check catches. Point
+             * `import.meta.url` at the real bundle file instead.
+             */
+            banner: {
+                js: "const __esbuildImportMetaUrl = require('node:url').pathToFileURL(__filename).href;",
+            },
+            define: {
+                'import.meta.url': '__esbuildImportMetaUrl',
+            },
             logLevel: 'info',
             metafile: true,
         });
