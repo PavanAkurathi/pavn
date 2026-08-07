@@ -1,9 +1,18 @@
 
 name: Publish Update
 
-on:
-  push:
-    branches: ["*"]
+# Manual-only until OTA updates actually exist.
+#
+# This ran on every push to every branch, but `expo-updates` is not a dependency
+# anywhere in the repo and app.json declares no `updates` block and no
+# `runtimeVersion` — there is no runtime to deliver an update to.
+#
+# Before restoring `on: push`:
+#   1. bunx expo install expo-updates
+#   2. add `updates` + a `runtimeVersion` policy to app.json
+#   3. verify a build actually picks up a published update
+#
+# Run manually meanwhile: eas workflow:run publish-update.yml
 
 jobs:
   update:

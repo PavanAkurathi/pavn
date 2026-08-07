@@ -24,10 +24,11 @@ The Notification & Tracking Service (Epic WH-200) provides a robust infrastructu
 ## Setup & Configuration
 
 ### Environment Variables
-Ensure these are set in `packages/api/.env` and `apps/gig-workers/.env`:
+The API reads the repo-root `.env` (there is no per-app env file); the mobile app
+reads `apps/gig-workers/.env`:
 ```bash
-EXPO_PUBLIC_API_URL=http://localhost:4000
-EXPO_ACCESS_TOKEN=your_expo_token # For sending pushes
+EXPO_PUBLIC_API_URL=http://localhost:4005   # apps/api defaults to PORT || 4005
+EXPO_ACCESS_TOKEN=your_expo_token           # For sending pushes
 ```
 
 ### Android Permissions

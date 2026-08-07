@@ -1,9 +1,15 @@
 
 name: Submit Android App
 
-on:
-  push:
-    branches: ["main"]
+# Manual-only until store submission is configured.
+#
+# eas.json has `submit.production: {}` — no ascAppId/appleTeamId for iOS, no
+# serviceAccountKeyPath/track for Android — so this job cannot succeed. It was
+# also triggered on pushes to `main` while the default branch is `master`, so it
+# never actually ran and the breakage stayed invisible.
+#
+# Before restoring `on: push`: fill in eas.json submit.production, then
+# run manually once to verify: eas workflow:run submit-android.yml
 
 jobs:
   submit_android:
