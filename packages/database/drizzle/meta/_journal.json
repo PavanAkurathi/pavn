@@ -5,36 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1772390501546,
-      "tag": "0000_dapper_ma_gnuci",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1773124658597,
-      "tag": "0001_solid_scorpion",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1773201600000,
-      "tag": "0002_roster_entry_roles",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1773381000000,
-      "tag": "0003_attendance_verification_policy",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1744764000000,
-      "tag": "0004_tenant_001_availability_org_scope",
+      "when": 1786145021885,
+      "tag": "0000_baseline",
       "breakpoints": true
     }
   ]

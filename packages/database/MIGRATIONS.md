@@ -1,55 +1,74 @@
 # Database Migrations
 
-> The previous contents of this file described migrations `0006`–`0009` that have
-> never existed on disk, and told you to run a drop/recreate sequence flagged
-> "DATA LOSS RISK". Following it would have been actively harmful. Replaced with
-> the state verified against production on 2026-08-05.
-
 ## Current state
 
-**The production schema is correct and complete.** What diverged is the migration
-bookkeeping, not the database:
+`drizzle/` holds a **single `0000_baseline`** migration, squashed on 2026-08-07
+from the old `0000`–`0012` history. Production's `drizzle.__drizzle_migrations`
+holds the one matching row. `db:generate` against a clean tree is a no-op, and
+`.github/workflows/schema-drift.yml` is blocking (`exit 1`) again.
 
-- `drizzle.__drizzle_migrations` holds **4 rows** (`0000`–`0003`, applied Mar 2026).
-- `drizzle/meta/_journal.json` lists **5** entries.
-- **8** migration SQL files exist on disk.
+The baseline was verified, not assumed. It was applied to an empty database via
+`drizzle-kit migrate` (exit 0) and the result fingerprinted against production:
 
-`0004`, `0010`, `0011` and `0012` were applied out of band — by hand or via
-`scripts/apply-manual-migrations.ts` — and never recorded. Separately, only **2
-snapshots** exist for 5 journal entries, so `drizzle-kit generate` diffs
-`schema.ts` against `0001` and re-emits everything from `0002` onward.
+| | fingerprint | count |
+|---|---|---|
+| tables | `9e69dc4c` | 26 |
+| columns | `24443ff5` | 315 |
+| indexes | `405c245a` | 79 |
+| constraints | `6f3f7c5c` | 71 |
 
-## Why migrations were applied by hand
+All four match production exactly.
 
-Rebuilding the schema from scratch was impossible, for three independent reasons:
+## What was wrong before
 
-1. `location_position_gist_idx` was declared `.concurrently()`.
-   `CREATE INDEX CONCURRENTLY` is illegal inside a transaction and `drizzle-kit`
-   wraps every migration in one, so `db:migrate` could never apply it. The
-   obsolete `0010` says as much in its own header.
-2. `jsonPositionToGeography` emitted `(expr)::geography`. Postgres only lets an
-   expression index omit surrounding parentheses when the expression is a plain
-   function call, so the generated index failed with
-   `syntax error at or near "::"`.
-3. No migration ever created the **PostGIS** extension, which production has and
-   a fresh database does not.
+Production's schema was always correct and complete — only the bookkeeping had
+diverged. `__drizzle_migrations` held 4 rows, `_journal.json` listed 5, and 8 SQL
+files existed, because `0004`/`0010`/`0011`/`0012` were applied out of band. Only
+2 snapshots existed for 5 journal entries, so `drizzle-kit` diffed `schema.ts`
+against `0001` and re-emitted everything from `0002` on.
 
-## Do not run `db:generate` and commit the result
+Migrations had to be run by hand because a from-scratch rebuild was impossible
+for three independent reasons, each fixed in the squash:
 
-It emits SQL that recreates objects which already exist in production
-(`CREATE TABLE temp_worker`, the three-identity columns, the PostGIS index) and
-would fail on its first statement. `.github/workflows/schema-drift.yml` is
-warning-only for exactly this reason.
+1. **`CREATE INDEX CONCURRENTLY`** — `location_position_gist_idx` was declared
+   `.concurrently()`. That is illegal inside a transaction and `drizzle-kit` wraps
+   every migration in one, so `db:migrate` could never apply it. `location` is
+   small, so `schema.ts` now declares a plain index; build it concurrently by hand
+   if it ever needs adding to a large live table.
+2. **`(expr)::geography`** — Postgres only lets an expression index omit
+   surrounding parentheses when the expression is a plain function call. A cast
+   needs its own layer, so `jsonPositionToGeography` now emits
+   `((expr)::geography)`.
+3. **No PostGIS** — nothing ever created the extension. The baseline now opens
+   with `CREATE EXTENSION IF NOT EXISTS postgis`.
 
-## The fix
+Two things production had that `schema.ts` did not, now declared:
 
-A baseline squash — a single `0000_baseline` generated from `schema.ts` and
-verified to reproduce production exactly, plus one bookkeeping row inserted into
-`__drizzle_migrations` **without executing it**. Old migrations get archived under
-`drizzle/_archive/` rather than deleted.
+- `shift_assignment_single_identity`, the XOR check that exactly one of
+  `worker_id` / `temp_worker_id` / `roster_entry_id` is set. It existed only
+  because hand-written `0012` added it, so a generated environment silently lost
+  it.
+- Three foreign keys carried Postgres' default `_fkey` names (from the same
+  hand-written SQL) instead of drizzle's convention. Production was renamed to
+  match; the columns, references and `ON DELETE` behaviour were already identical.
 
-Tracked in PR #8, along with fixes for all three bugs above. Once it lands,
-restore `exit 1` in `schema-drift.yml`.
+## If you need to undo it
+
+`scripts/ROLLBACK-2026-08-07-baseline-squash.sql` restores the old ledger rows and
+reverts the three constraint renames. It touches bookkeeping and names only — no
+table data. The pre-squash migration files are in git history at `6f8cbf9`.
+
+## Rules
+
+**Never hand-apply migrations again.** The whole reason the journal diverged was
+out-of-band SQL. If `db:migrate` can't apply something, fix the generator or the
+schema rather than reaching for `psql`.
+
+**Never edit `0000_baseline.sql` or its snapshot.** Change `schema.ts` and run
+`db:generate`, which will emit `0001` onward.
+
+If you ever regenerate the baseline from scratch, re-add the
+`CREATE EXTENSION IF NOT EXISTS postgis` line — `drizzle-kit` does not emit it.
 
 ## Commands
 

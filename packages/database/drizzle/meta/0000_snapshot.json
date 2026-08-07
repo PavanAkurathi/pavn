@@ -1,5 +1,5 @@
 {
-  "id": "6234da80-e43d-4f50-b80c-b36c375cad9d",
+  "id": "6cbb448e-86c2-42e1-adda-77fa13b6964a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -925,19 +925,19 @@
           "method": "btree",
           "with": {}
         },
-        "location_pos_idx": {
-          "name": "location_pos_idx",
+        "location_position_gist_idx": {
+          "name": "location_position_gist_idx",
           "columns": [
             {
-              "expression": "position",
-              "isExpression": false,
+              "expression": "((\n    ST_SetSRID(\n        ST_MakePoint(\n            ((\"position\" ->> 'lng')::double precision),\n            ((\"position\" ->> 'lat')::double precision)\n        ),\n        4326\n    )\n)::geography)",
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": false,
           "concurrently": false,
-          "method": "btree",
+          "method": "gist",
           "with": {}
         }
       },
@@ -959,7 +959,12 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "check_geofence_radius_range": {
+          "name": "check_geofence_radius_range",
+          "value": "\"location\".\"geofence_radius\" >= 10 AND \"location\".\"geofence_radius\" <= 500"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.manager_notification_preferences": {
@@ -1271,6 +1276,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'weekly_40'"
+        },
+        "attendance_verification_policy": {
+          "name": "attendance_verification_policy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'strict_geofence'"
         }
       },
       "indexes": {},
@@ -1286,7 +1298,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "check_attendance_verification_policy": {
+          "name": "check_attendance_verification_policy",
+          "value": "\"organization\".\"attendance_verification_policy\" in ('strict_geofence', 'soft_geofence', 'none')"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.rate_limit_state": {
@@ -1380,6 +1397,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "roles": {
+          "name": "roles",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
         },
         "status": {
           "name": "status",
@@ -1790,6 +1814,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "capacity_total": {
           "name": "capacity_total",
           "type": "integer",
@@ -2025,7 +2055,19 @@
           "name": "worker_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "temp_worker_id": {
+          "name": "temp_worker_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "roster_entry_id": {
+          "name": "roster_entry_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "actual_clock_in": {
           "name": "actual_clock_in",
@@ -2124,6 +2166,36 @@
         "clock_out_method": {
           "name": "clock_out_method",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_in_accuracy": {
+          "name": "clock_in_accuracy",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_in_distance": {
+          "name": "clock_in_distance",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_in_warning": {
+          "name": "clock_in_warning",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_out_accuracy": {
+          "name": "clock_out_accuracy",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clock_out_distance": {
+          "name": "clock_out_distance",
+          "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false
         },
@@ -2260,6 +2332,32 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
+        "shift_assignment_temp_worker_id_temp_worker_id_fk": {
+          "name": "shift_assignment_temp_worker_id_temp_worker_id_fk",
+          "tableFrom": "shift_assignment",
+          "tableTo": "temp_worker",
+          "columnsFrom": [
+            "temp_worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "shift_assignment_roster_entry_id_roster_entry_id_fk": {
+          "name": "shift_assignment_roster_entry_id_roster_entry_id_fk",
+          "tableFrom": "shift_assignment",
+          "tableTo": "roster_entry",
+          "columnsFrom": [
+            "roster_entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
         "shift_assignment_adjusted_by_user_id_fk": {
           "name": "shift_assignment_adjusted_by_user_id_fk",
           "tableFrom": "shift_assignment",
@@ -2286,7 +2384,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "shift_assignment_single_identity": {
+          "name": "shift_assignment_single_identity",
+          "value": "num_nonnulls(\"shift_assignment\".\"worker_id\", \"shift_assignment\".\"temp_worker_id\", \"shift_assignment\".\"roster_entry_id\") = 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.subscription": {
@@ -2400,6 +2503,99 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.temp_worker": {
+      "name": "temp_worker",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "agency": {
+          "name": "agency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "temp_worker_org_idx": {
+          "name": "temp_worker_org_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "temp_worker_organization_id_organization_id_fk": {
+          "name": "temp_worker_organization_id_organization_id_fk",
+          "tableFrom": "temp_worker",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -2684,6 +2880,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'admin'"
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'UTC'"
+        },
         "emergency_contact": {
           "name": "emergency_contact",
           "type": "json",
@@ -2806,6 +3016,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "organization_id": {
+          "name": "organization_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "start_time": {
           "name": "start_time",
           "type": "timestamp with time zone",
@@ -2876,6 +3092,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "avail_org_idx": {
+          "name": "avail_org_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -2885,6 +3116,19 @@
           "tableTo": "user",
           "columnsFrom": [
             "worker_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "worker_availability_organization_id_organization_id_fk": {
+          "name": "worker_availability_organization_id_organization_id_fk",
+          "tableFrom": "worker_availability",
+          "tableTo": "organization",
+          "columnsFrom": [
+            "organization_id"
           ],
           "columnsTo": [
             "id"

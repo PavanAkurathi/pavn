@@ -1,3 +1,11 @@
+-- Baseline migration. Squashed from migrations 0000-0012 on 2026-08-07 and
+-- verified to reproduce the production schema exactly.
+--
+-- PostGIS is created here by hand: drizzle-kit never emits CREATE EXTENSION,
+-- so without this line the location_position_gist_idx geography index at the
+-- bottom of this file fails on a fresh database. If you ever regenerate this
+-- baseline from scratch, re-add this line.
+CREATE EXTENSION IF NOT EXISTS postgis;--> statement-breakpoint
 CREATE TABLE "account" (
 	"id" text PRIMARY KEY NOT NULL,
 	"account_id" text NOT NULL,
@@ -99,7 +107,8 @@ CREATE TABLE "location" (
 	"geocoded_at" timestamp with time zone,
 	"geocode_source" text,
 	"created_at" timestamp with time zone NOT NULL,
-	"updated_at" timestamp with time zone NOT NULL
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "check_geofence_radius_range" CHECK ("location"."geofence_radius" >= 10 AND "location"."geofence_radius" <= 500)
 );
 --> statement-breakpoint
 CREATE TABLE "manager_notification_preferences" (
@@ -141,7 +150,9 @@ CREATE TABLE "organization" (
 	"timezone" text DEFAULT 'America/New_York' NOT NULL,
 	"break_threshold_minutes" integer,
 	"regional_overtime_policy" text DEFAULT 'weekly_40' NOT NULL,
-	CONSTRAINT "organization_slug_unique" UNIQUE("slug")
+	"attendance_verification_policy" text DEFAULT 'strict_geofence' NOT NULL,
+	CONSTRAINT "organization_slug_unique" UNIQUE("slug"),
+	CONSTRAINT "check_attendance_verification_policy" CHECK ("organization"."attendance_verification_policy" in ('strict_geofence', 'soft_geofence', 'none'))
 );
 --> statement-breakpoint
 CREATE TABLE "rate_limit_state" (
@@ -160,6 +171,7 @@ CREATE TABLE "roster_entry" (
 	"role" text DEFAULT 'member',
 	"hourly_rate" integer,
 	"job_title" text,
+	"roles" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"status" text DEFAULT 'uninvited' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now()
 );
@@ -204,6 +216,7 @@ CREATE TABLE "shift" (
 	"description" text,
 	"start_time" timestamp with time zone NOT NULL,
 	"end_time" timestamp with time zone NOT NULL,
+	"timezone" text,
 	"capacity_total" integer DEFAULT 1 NOT NULL,
 	"price" integer DEFAULT 0,
 	"status" text DEFAULT 'published' NOT NULL,
@@ -215,7 +228,9 @@ CREATE TABLE "shift" (
 CREATE TABLE "shift_assignment" (
 	"id" text PRIMARY KEY NOT NULL,
 	"shift_id" text NOT NULL,
-	"worker_id" text NOT NULL,
+	"worker_id" text,
+	"temp_worker_id" text,
+	"roster_entry_id" text,
 	"actual_clock_in" timestamp,
 	"actual_clock_out" timestamp,
 	"effective_clock_in" timestamp,
@@ -232,6 +247,11 @@ CREATE TABLE "shift_assignment" (
 	"clock_out_position" jsonb,
 	"clock_out_verified" boolean DEFAULT false,
 	"clock_out_method" text,
+	"clock_in_accuracy" numeric(10, 2),
+	"clock_in_distance" numeric(10, 2),
+	"clock_in_warning" text,
+	"clock_out_accuracy" numeric(10, 2),
+	"clock_out_distance" numeric(10, 2),
 	"needs_review" boolean DEFAULT false,
 	"review_reason" text,
 	"last_known_position" jsonb,
@@ -241,7 +261,8 @@ CREATE TABLE "shift_assignment" (
 	"status" text DEFAULT 'active' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "unique_worker_shift" UNIQUE("shift_id","worker_id")
+	CONSTRAINT "unique_worker_shift" UNIQUE("shift_id","worker_id"),
+	CONSTRAINT "shift_assignment_single_identity" CHECK (num_nonnulls("shift_assignment"."worker_id", "shift_assignment"."temp_worker_id", "shift_assignment"."roster_entry_id") = 1)
 );
 --> statement-breakpoint
 CREATE TABLE "subscription" (
@@ -260,6 +281,17 @@ CREATE TABLE "subscription" (
 	"trial_start" timestamp with time zone,
 	"trial_end" timestamp with time zone,
 	"seats" integer,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "temp_worker" (
+	"id" text PRIMARY KEY NOT NULL,
+	"organization_id" text NOT NULL,
+	"name" text NOT NULL,
+	"agency" text,
+	"phone" text,
+	"notes" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -292,6 +324,8 @@ CREATE TABLE "user" (
 	"image" text,
 	"phone_number" text,
 	"stripe_customer_id" text,
+	"role" text DEFAULT 'admin',
+	"timezone" text DEFAULT 'UTC',
 	"emergency_contact" json,
 	"address" json,
 	"created_at" timestamp with time zone NOT NULL,
@@ -311,6 +345,7 @@ CREATE TABLE "verification" (
 CREATE TABLE "worker_availability" (
 	"id" text PRIMARY KEY NOT NULL,
 	"worker_id" text NOT NULL,
+	"organization_id" text NOT NULL,
 	"start_time" timestamp with time zone NOT NULL,
 	"end_time" timestamp with time zone NOT NULL,
 	"type" text DEFAULT 'unavailable' NOT NULL,
@@ -379,12 +414,16 @@ ALTER TABLE "shift" ADD CONSTRAINT "shift_location_id_location_id_fk" FOREIGN KE
 ALTER TABLE "shift" ADD CONSTRAINT "shift_contact_id_user_id_fk" FOREIGN KEY ("contact_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shift_assignment" ADD CONSTRAINT "shift_assignment_shift_id_shift_id_fk" FOREIGN KEY ("shift_id") REFERENCES "public"."shift"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shift_assignment" ADD CONSTRAINT "shift_assignment_worker_id_user_id_fk" FOREIGN KEY ("worker_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "shift_assignment" ADD CONSTRAINT "shift_assignment_temp_worker_id_temp_worker_id_fk" FOREIGN KEY ("temp_worker_id") REFERENCES "public"."temp_worker"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "shift_assignment" ADD CONSTRAINT "shift_assignment_roster_entry_id_roster_entry_id_fk" FOREIGN KEY ("roster_entry_id") REFERENCES "public"."roster_entry"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "shift_assignment" ADD CONSTRAINT "shift_assignment_adjusted_by_user_id_fk" FOREIGN KEY ("adjusted_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "temp_worker" ADD CONSTRAINT "temp_worker_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_correction_request" ADD CONSTRAINT "time_correction_request_shift_assignment_id_shift_assignment_id_fk" FOREIGN KEY ("shift_assignment_id") REFERENCES "public"."shift_assignment"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_correction_request" ADD CONSTRAINT "time_correction_request_worker_id_user_id_fk" FOREIGN KEY ("worker_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_correction_request" ADD CONSTRAINT "time_correction_request_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "time_correction_request" ADD CONSTRAINT "time_correction_request_reviewed_by_user_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "worker_availability" ADD CONSTRAINT "worker_availability_worker_id_user_id_fk" FOREIGN KEY ("worker_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "worker_availability" ADD CONSTRAINT "worker_availability_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "worker_location" ADD CONSTRAINT "worker_location_worker_id_user_id_fk" FOREIGN KEY ("worker_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "worker_location" ADD CONSTRAINT "worker_location_shift_id_shift_id_fk" FOREIGN KEY ("shift_id") REFERENCES "public"."shift"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "worker_location" ADD CONSTRAINT "worker_location_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -405,7 +444,15 @@ CREATE UNIQUE INDEX "idx_device_tokens_unique" ON "device_tokens" USING btree ("
 CREATE INDEX "idx_device_tokens_user" ON "device_tokens" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idempotency_org_idx" ON "idempotency_key" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "location_org_idx" ON "location" USING btree ("organization_id");--> statement-breakpoint
-CREATE INDEX "location_pos_idx" ON "location" USING btree ("position");--> statement-breakpoint
+CREATE INDEX "location_position_gist_idx" ON "location" USING gist (((
+    ST_SetSRID(
+        ST_MakePoint(
+            (("position" ->> 'lng')::double precision),
+            (("position" ->> 'lat')::double precision)
+        ),
+        4326
+    )
+)::geography));--> statement-breakpoint
 CREATE INDEX "member_org_idx" ON "member" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "member_user_idx" ON "member" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "idx_notifications_pending_queue" ON "scheduled_notifications" USING btree ("scheduled_at","status");--> statement-breakpoint
@@ -423,6 +470,7 @@ CREATE INDEX "shift_location_idx" ON "shift" USING btree ("location_id");--> sta
 CREATE INDEX "assignment_shift_idx" ON "shift_assignment" USING btree ("shift_id");--> statement-breakpoint
 CREATE INDEX "assignment_worker_idx" ON "shift_assignment" USING btree ("worker_id");--> statement-breakpoint
 CREATE INDEX "assignment_status_idx" ON "shift_assignment" USING btree ("status");--> statement-breakpoint
+CREATE INDEX "temp_worker_org_idx" ON "temp_worker" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "correction_assignment_idx" ON "time_correction_request" USING btree ("shift_assignment_id");--> statement-breakpoint
 CREATE INDEX "correction_worker_idx" ON "time_correction_request" USING btree ("worker_id");--> statement-breakpoint
 CREATE INDEX "correction_status_idx" ON "time_correction_request" USING btree ("status");--> statement-breakpoint
@@ -430,6 +478,7 @@ CREATE INDEX "correction_org_idx" ON "time_correction_request" USING btree ("org
 CREATE INDEX "user_email_idx" ON "user" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "avail_worker_idx" ON "worker_availability" USING btree ("worker_id");--> statement-breakpoint
 CREATE INDEX "avail_time_idx" ON "worker_availability" USING btree ("start_time","end_time");--> statement-breakpoint
+CREATE INDEX "avail_org_idx" ON "worker_availability" USING btree ("organization_id");--> statement-breakpoint
 CREATE INDEX "worker_location_worker_idx" ON "worker_location" USING btree ("worker_id");--> statement-breakpoint
 CREATE INDEX "worker_location_shift_idx" ON "worker_location" USING btree ("shift_id");--> statement-breakpoint
 CREATE INDEX "worker_location_time_idx" ON "worker_location" USING btree ("recorded_at");--> statement-breakpoint

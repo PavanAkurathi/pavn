@@ -30,26 +30,19 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # TEMPORARILY NON-BLOCKING. Drift is reported as a warning instead of
-      # failing the run, because the drift this currently detects is pre-existing
-      # and NOT introduced by any PR: drizzle/meta holds 5 journal entries but
-      # only 2 snapshots (0000, 0001), so drizzle-kit diffs schema.ts against
-      # 0001 and re-emits everything from 0002 onward — including a CREATE TABLE
-      # for temp_worker and a DROP/CREATE of the PostGIS gist index, all of which
-      # already exist in production.
-      #
-      # Do NOT "fix" this by committing the generated migration. It would fail on
-      # its first statement against the live database.
-      #
-      # RESTORE `exit 1` once the journal/snapshot divergence is reconciled
-      # (release plan step A1). Until then this check cannot distinguish
-      # pre-existing drift from drift a PR actually introduces.
+      # BLOCKING again as of 2026-08-07. The journal/snapshot divergence that
+      # forced this to warning-only is reconciled: drizzle/ now holds a single
+      # 0000_baseline verified to reproduce production exactly, and production's
+      # __drizzle_migrations holds the one matching row. `db:generate` against a
+      # clean tree is now a genuine no-op, so anything this step reports is drift
+      # the PR actually introduced.
       - name: Check for Changes
         run: |
           if [[ -n $(git status --porcelain) ]]; then
-            echo "::warning title=Schema drift detected::schema.ts does not match the committed migrations. This is the known pre-existing journal/snapshot divergence (release plan A1), not a regression from this PR. Do not commit the generated migration — see .github/workflows/schema-drift.yml."
+            echo "::error title=Schema drift detected::schema.ts does not match the committed migrations. Run 'bun run --filter @repo/database db:generate' and commit the generated migration."
             git status
             git diff
+            exit 1
           else
             echo "No schema drift."
           fi
