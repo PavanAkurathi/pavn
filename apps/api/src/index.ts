@@ -313,6 +313,13 @@ app.use("*", async (c, next) => {
         '/devices',
         '/organizations/invitations',
         '/organizations/default',
+        // Security prefs are per-user (linked accounts + active sessions) and
+        // the handler only reads c.get("user"), never orgId. Requiring an
+        // x-org-id here 401'd the whole /settings page, since it fetches this
+        // alongside the org-scoped workspace call in a single Promise.all.
+        // Listed as the exact path, not a '/preferences' prefix, so any route
+        // added under it later still has to opt out of tenant scoping on purpose.
+        '/preferences/security',
     ];
     const isOrgFree = ORG_FREE_PREFIXES.some(prefix => c.req.path.startsWith(prefix));
 
