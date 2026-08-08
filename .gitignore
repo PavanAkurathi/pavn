@@ -5,12 +5,16 @@ node_modules
 .pnp
 .pnp.js
 
-# Local env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Local env files.
+# Deny every .env* by default, then re-allow the few that are deliberately
+# tracked and contain only public values. The broad rule is what matters:
+# `.env` alone did not cover copies like `.env.backup-20260808`, which hold
+# exactly the same secrets as the real thing.
+.env*
+!.env.example
+!**/.env.example
+!apps/gig-workers/.env.staging
+!packages/e2e/.env.test
 
 # OTP debug files (written by SMS provider in dev)
 latest-otp.txt
