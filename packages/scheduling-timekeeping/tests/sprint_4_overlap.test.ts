@@ -1,6 +1,10 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { publishSchedule } from "../src/modules/shifts/publish";
+import { member as memberTable } from "@repo/database/schema";
+
+// Worker ids these tests assign, all app users in the test org.
+const MOCK_ORG_MEMBER_IDS = ["w1"];
 
 // --- Mocks ---
 // We need to capture what is inserted to verify the structure
@@ -33,11 +37,24 @@ const mockBuilder: any = {
         member: { findMany: mock(() => Promise.resolve([])) }
     },
     select: mock(() => ({
-        from: mock(() => ({
-            innerJoin: mock(() => ({
-                where: mockSelectWhere
-            }))
-        }))
+        from: mock((table: unknown) => {
+            // The identity lookup publish() now does must NOT go through
+            // mockSelectWhere: these tests prime it with mockResolvedValueOnce to
+            // simulate a single overlapping row, and the identity query runs first,
+            // so sharing the mock would silently eat that priming and the overlap
+            // assertions would pass for the wrong reason.
+            if (table === memberTable) {
+                const rows = MOCK_ORG_MEMBER_IDS.map((id) => ({ id, name: `Test ${id}` }));
+                return {
+                    innerJoin: mock(() => ({ where: mock(() => Promise.resolve(rows)) })),
+                    where: mock(() => Promise.resolve(rows))
+                };
+            }
+            return {
+                innerJoin: mock(() => ({ where: mockSelectWhere })),
+                where: mock(() => Promise.resolve([]))
+            };
+        })
     }))
 };
 

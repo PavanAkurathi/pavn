@@ -277,7 +277,16 @@ export function CreateScheduleForm({ initialData, prefetchedCrew }: CreateSchedu
             router.push(getDashboardShiftsHref());
         } catch (error) {
             console.error("Schedule publish failed", error);
-            toast.error("Failed to publish schedule.");
+            // Surface the API's reason. Validation and conflict failures come back
+            // with an actionable message ("... has an overlapping shift during this
+            // time"), and apiJsonRequest already unwraps it; swallowing it left the
+            // manager with a dead end and no way to tell a double-booking from an
+            // outage. Genuine 500s are sanitised server-side to "Internal Server
+            // Error", so nothing internal leaks through here — but that string is
+            // useless to a manager, so it falls back to the generic line.
+            const reason = error instanceof Error ? error.message?.trim() : "";
+            const isOpaque = !reason || /^internal server error$/i.test(reason) || /^request failed \(\d+\)$/i.test(reason);
+            toast.error(isOpaque ? "Failed to publish schedule. Please try again." : reason);
         } finally {
             setIsSubmitting(false);
             setIsReviewOpen(false);

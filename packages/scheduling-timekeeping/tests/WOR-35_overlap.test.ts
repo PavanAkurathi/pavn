@@ -1,15 +1,24 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { publishSchedule } from "../src/modules/shifts/publish";
+import { member as memberTable } from "@repo/database/schema";
 import { eq, and, ne, lte, gte } from "drizzle-orm";
 
 // Mock Database
+// publish() resolves each incoming id against member / roster_entry / temp_worker
+// and rejects ids it cannot find in the org, so the member lookup has to claim
+// "w1". Everything else resolves empty — no overlap, not a roster/agency worker.
+const MOCK_ORG_MEMBER_IDS = ["w1"];
 const mockSelect = mock(() => ({
-    from: mock(() => ({
-        innerJoin: mock(() => ({
-            where: mock(() => Promise.resolve([])) // Default to no overlap
-        }))
-    }))
+    from: mock((table: unknown) => {
+        const rows = table === memberTable
+            ? MOCK_ORG_MEMBER_IDS.map((id) => ({ id, name: `Test ${id}` }))
+            : [];
+        return {
+            innerJoin: mock(() => ({ where: mock(() => Promise.resolve(rows)) })),
+            where: mock(() => Promise.resolve(rows))
+        };
+    })
 }));
 
 const mockDb: any = {
@@ -113,11 +122,21 @@ describe("Overlap Scope and Info Disclosure", () => {
         ]));
 
         mockDb.select = mock(() => ({
-            from: mock(() => ({
-                innerJoin: mock(() => ({
-                    where: mockWhere
-                }))
-            }))
+            from: mock((table: unknown) => {
+                // Identity lookup resolves "w1" as an org member; only the overlap
+                // scan returns the conflicting row carrying the sensitive title.
+                if (table === memberTable) {
+                    const rows = MOCK_ORG_MEMBER_IDS.map((id) => ({ id, name: `Test ${id}` }));
+                    return {
+                        innerJoin: mock(() => ({ where: mock(() => Promise.resolve(rows)) })),
+                        where: mock(() => Promise.resolve(rows))
+                    };
+                }
+                return {
+                    innerJoin: mock(() => ({ where: mockWhere })),
+                    where: mock(() => Promise.resolve([]))
+                };
+            })
         }));
 
         const body = {

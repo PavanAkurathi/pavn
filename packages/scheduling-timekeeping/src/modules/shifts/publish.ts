@@ -1,6 +1,6 @@
 import { db, TxOrDb } from "@repo/database";
-import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences } from "@repo/database/schema";
-import { eq, and, lt, gt, inArray, like, sql } from "drizzle-orm";
+import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences, rosterEntry, tempWorker, member, user } from "@repo/database/schema";
+import { eq, and, lt, gt, inArray, like, sql, or } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
 import { z } from "zod";
 
@@ -205,6 +205,65 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
         );
     }
 
+    // Resolve which identity each incoming id refers to.
+    //
+    // `workerIds` from the client is a single flat list, but an assignable person
+    // can be any of three things: an app user, an in-house worker who was invited
+    // and has not accepted yet (roster_entry), or an agency worker (temp_worker).
+    // shift_assignment has a separate FK column for each, and exactly one must be
+    // set (the shift_assignment_single_identity check). Writing every id into
+    // workerId — which is a FK to "user" — is what made publishing an invited
+    // worker fail with a raw 23503 from Postgres.
+    //
+    // Users are resolved through `member`, not `user`, so that an id belonging to
+    // another tenant's user cannot be assigned into this org's shifts.
+    type IdentityKind = 'user' | 'roster' | 'temp';
+    const identityKind = new Map<string, IdentityKind>();
+    // Names are collected in the same pass purely so conflict errors can say
+    // "Bella Barista has an overlapping shift" instead of quoting a raw id at a
+    // manager who has no way to look it up.
+    const displayName = new Map<string, string>();
+
+    if (allWorkerIds.size > 0) {
+        const ids = Array.from(allWorkerIds);
+        const [memberRows, rosterRows, tempRows] = await Promise.all([
+            db.select({ id: member.userId, name: user.name }).from(member)
+                .innerJoin(user, eq(user.id, member.userId))
+                .where(and(inArray(member.userId, ids), eq(member.organizationId, activeOrgId))),
+            db.select({ id: rosterEntry.id, name: rosterEntry.name }).from(rosterEntry)
+                .where(and(inArray(rosterEntry.id, ids), eq(rosterEntry.organizationId, activeOrgId))),
+            db.select({ id: tempWorker.id, name: tempWorker.name }).from(tempWorker)
+                .where(and(inArray(tempWorker.id, ids), eq(tempWorker.organizationId, activeOrgId))),
+        ]);
+
+        for (const r of memberRows) { identityKind.set(r.id, 'user'); if (r.name) displayName.set(r.id, r.name); }
+        for (const r of rosterRows) { identityKind.set(r.id, 'roster'); if (r.name) displayName.set(r.id, r.name); }
+        for (const r of tempRows) { identityKind.set(r.id, 'temp'); if (r.name) displayName.set(r.id, r.name); }
+
+        const unresolved = ids.filter((id) => !identityKind.has(id));
+        if (unresolved.length > 0) {
+            throw new AppError(
+                `Cannot assign ${unresolved.length === 1 ? 'a worker who is' : 'workers who are'} not part of this organization: ${unresolved.join(", ")}`,
+                "UNKNOWN_WORKER",
+                400
+            );
+        }
+    }
+
+    // Falls back to the id only if a name is genuinely missing, so an error is
+    // never less informative than it was before.
+    const nameFor = (id: string) => displayName.get(id) ?? id;
+
+    // Maps an incoming id onto the shift_assignment column that can actually hold
+    // it, so exactly one identity column is ever populated.
+    const identityColumns = (id: string) => {
+        switch (identityKind.get(id)) {
+            case 'roster': return { workerId: null, rosterEntryId: id, tempWorkerId: null };
+            case 'temp': return { workerId: null, rosterEntryId: null, tempWorkerId: id };
+            default: return { workerId: id, rosterEntryId: null, tempWorkerId: null };
+        }
+    };
+
     // Fetch Existing Assignments in Batch
     const overlapMap = new Map<string, Array<{ startTime: Date; endTime: Date; title: string }>>();
     const availabilityMap = new Map<string, Array<{ startTime: Date; endTime: Date; type: string }>>();
@@ -218,8 +277,13 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
 
         const [existing, availabilityRecords] = await Promise.all([
+            // Matches on all three identity columns, not just workerId: an invited
+            // or agency worker is just as double-bookable as an app user, and
+            // checking only workerId let those conflicts through unnoticed.
             db.select({
                 workerId: shiftAssignment.workerId,
+                rosterEntryId: shiftAssignment.rosterEntryId,
+                tempWorkerId: shiftAssignment.tempWorkerId,
                 startTime: shift.startTime,
                 endTime: shift.endTime,
                 title: shift.title
@@ -227,7 +291,11 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                 .from(shiftAssignment)
                 .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
                 .where(and(
-                    inArray(shiftAssignment.workerId, uniqueWorkerIds),
+                    or(
+                        inArray(shiftAssignment.workerId, uniqueWorkerIds),
+                        inArray(shiftAssignment.rosterEntryId, uniqueWorkerIds),
+                        inArray(shiftAssignment.tempWorkerId, uniqueWorkerIds)
+                    ),
                     inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress', 'completed', 'approved']),
                     eq(shift.organizationId, activeOrgId), // [SEC-CRITICAL] Scope to Org to prevent cross-tenant leak
                     lt(shift.startTime, searchEnd),
@@ -244,12 +312,14 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             })
         ]);
 
-        // Group by Worker
+        // Group by Worker, keyed on whichever identity column is populated so the
+        // lookup below works with the flat id the client sent, whatever kind it is.
         for (const record of existing) {
-            if (!record.workerId) continue;
-            const list = overlapMap.get(record.workerId) || [];
+            const identity = record.workerId ?? record.rosterEntryId ?? record.tempWorkerId;
+            if (!identity) continue;
+            const list = overlapMap.get(identity) || [];
             list.push({ startTime: record.startTime, endTime: record.endTime, title: record.title });
-            overlapMap.set(record.workerId, list);
+            overlapMap.set(identity, list);
         }
 
         // Group Availability
@@ -337,7 +407,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
                         if (dbConflict) {
                             throw new AppError(
-                                `Worker ${workerId} has an overlapping shift during this time.`,
+                                `${nameFor(workerId)} already has an overlapping shift during this time.`,
                                 "OVERLAP_CONFLICT",
                                 409
                             );
@@ -353,22 +423,24 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
                         if (availabilityConflict) {
                             throw new AppError(
-                                `Worker ${workerId} is unavailable during this time`,
+                                `${nameFor(workerId)} is unavailable during this time.`,
                                 "AVAILABILITY_CONFLICT",
                                 409
                             );
                         }
 
                         // 2. Check In-Memory Batch for overlap (Current Request)
-                        // We iterate existing assignments.
+                        // We iterate existing assignments. Compare against whichever
+                        // identity column this pending row used, not workerId alone.
                         for (const existingAssign of assignmentsToInsert) {
-                            if (existingAssign.workerId === workerId) {
+                            const pendingIdentity = existingAssign.workerId ?? existingAssign.rosterEntryId ?? existingAssign.tempWorkerId;
+                            if (pendingIdentity === workerId) {
                                 // Find sibling shift details (we need start/end time)
                                 const siblingShift = shiftsToInsert.find(s => s.id === existingAssign.shiftId);
                                 if (siblingShift) {
                                     if (siblingShift.startTime < endDateTime && siblingShift.endTime > startDateTime) {
                                         throw new AppError(
-                                            `Worker ${workerId} is double-booked in this request.`,
+                                            `${nameFor(workerId)} is double-booked in this request.`,
                                             "OVERLAP_CONFLICT",
                                             409
                                         );
@@ -381,7 +453,9 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                             // SMART ID: Use 'asg' prefix
                             id: newId('asg'),
                             shiftId: shiftId,
-                            workerId: workerId,
+                            // Exactly one of these three is non-null, per the
+                            // shift_assignment_single_identity check constraint.
+                            ...identityColumns(workerId),
                             status: 'active',
                             budgetRateSnapshot: null // CHANGED per TICKET-006 (was hourlyRateMap check)
                         });
@@ -438,7 +512,10 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
 
             // OPTIMIZATION: Bulk fetch preferences to avoid N+1 inside loop
-            // Optimization for N+1: Collect all worker IDs
+            // Optimization for N+1: Collect all worker IDs.
+            // Only app users are notifiable — invited and agency workers have a
+            // null workerId and no device to push to, so filter(Boolean) now
+            // deliberately drops them rather than merely tidying the list.
             const workerIdsForNotifs = Array.from(new Set(assignmentsToInsert.map(a => a.workerId).filter(Boolean))) as string[];
 
             const preferencesMap = new Map<string, any>(); // Using any to match the shape expected by buildNotificationSchedule which matches schema

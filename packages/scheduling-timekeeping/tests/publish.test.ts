@@ -1,7 +1,11 @@
 
 import { describe, expect, test, mock, beforeEach } from "bun:test";
 import { publishSchedule } from "../src/modules/shifts/publish";
+import { member as memberTable } from "@repo/database/schema";
 import { nanoid } from "nanoid";
+
+// Worker ids these tests assign, all of them app users in org_123.
+const MOCK_ORG_MEMBER_IDS = ["w1", "worker_1", "worker_2", "worker_3", "worker_rate_test"];
 
 const isoDate = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -61,11 +65,23 @@ const mockBuilder: any = {
         member: { findMany: mock(() => Promise.resolve([])) }
     },
     select: mock(() => ({
-        from: mock(() => ({
-            innerJoin: mock(() => ({
-                where: mock(() => Promise.resolve([]))
-            }))
-        }))
+        from: mock((table: unknown) => {
+            // publish() resolves every incoming id against member / roster_entry /
+            // temp_worker to decide which identity column it belongs in, and
+            // rejects anything it cannot find in this org. These tests all assign
+            // app users, so the member lookup has to claim their ids — otherwise
+            // they read as belonging to another tenant. Any other table (the
+            // overlap scan, roster, temp) resolves empty, which is the "no
+            // conflicts, not a roster/agency worker" case these tests want.
+            const isMemberLookup = table === memberTable;
+            const rows = isMemberLookup
+                ? MOCK_ORG_MEMBER_IDS.map((id) => ({ id, name: `Test ${id}` }))
+                : [];
+            return {
+                innerJoin: mock(() => ({ where: mock(() => Promise.resolve(rows)) })),
+                where: mock(() => Promise.resolve(rows))
+            };
+        })
     }))
 };
 
