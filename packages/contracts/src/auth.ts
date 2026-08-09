@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getPhoneRegion, formatPhoneNumber } from "@repo/utils";
+import { getPhoneRegion, formatPhoneNumber } from "./phone";
 
 /**
  * Regions accepted for phone-based auth and SMS delivery. Both share the +1

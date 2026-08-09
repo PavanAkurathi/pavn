@@ -1,4 +1,4 @@
-import { validatePhoneNumber, formatPhoneNumber } from "@repo/utils";
+import { validatePhoneNumber, formatPhoneNumber } from "@repo/contracts";
 import { DEEPLINK_CONFIG } from "@repo/config";
 
 // Supported regions: US and Canada (same E.164 +1 prefix, both validated by libphonenumber)

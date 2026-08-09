@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { validatePhoneNumber, formatPhoneNumber } from '@repo/utils';
+import { validatePhoneNumber, formatPhoneNumber } from '@repo/contracts';
 
 export const phoneSchema = z.string()
     .refine((val) => validatePhoneNumber(val, 'US'), {

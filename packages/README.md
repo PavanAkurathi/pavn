@@ -28,7 +28,6 @@ The practical split is:
 
 - `@repo/database`
 - `@repo/config`
-- `@repo/utils`
 - `@repo/observability`
 
 ## UI / Tooling Packages

@@ -61,8 +61,9 @@
         "check-types": "tsc --noEmit"
     },
     "dependencies": {
-        "@repo/utils": "workspace:*",
-        "zod": "^4.4.3"
+        "zod": "^4.4.3",
+        "google-libphonenumber": "^3.2.44",
+        "@types/google-libphonenumber": "^7.4.31"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",

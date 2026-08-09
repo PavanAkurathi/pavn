@@ -104,8 +104,7 @@
         "@react-navigation/bottom-tabs": "^7.18.5",
         "@react-navigation/native": "^7.3.5",
         "@react-navigation/native-stack": "^7.17.7",
-        "@repo/contracts": "workspace:*",
-        "@repo/utils": "workspace:*",
+        "@repo/contracts": "*",
         "@sentry/react-native": "~7.11.0",
         "better-auth": "1.6.23",
         "expo": "^57.0.11",
@@ -234,11 +233,10 @@
         "@better-auth/infra": "0.3.4",
         "@dub/better-auth": "^0.0.6",
         "@repo/config": "workspace:*",
-        "@repo/contracts": "workspace:*",
+        "@repo/contracts": "*",
         "@repo/database": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/observability": "workspace:*",
-        "@repo/utils": "workspace:*",
         "better-auth": "1.6.23",
         "drizzle-orm": "^0.45.2",
         "dub": "^0.72.1",
@@ -282,7 +280,8 @@
       "name": "@repo/contracts",
       "version": "0.0.0",
       "dependencies": {
-        "@repo/utils": "workspace:*",
+        "@types/google-libphonenumber": "^7.4.31",
+        "google-libphonenumber": "^3.2.44",
         "zod": "^4.4.3",
       },
       "devDependencies": {
@@ -582,20 +581,6 @@
         "react": "19.2.8",
         "react-dom": "19.2.8",
         "react-hook-form": "^7.85.0",
-      },
-    },
-    "packages/utils": {
-      "name": "@repo/utils",
-      "version": "0.0.0",
-      "dependencies": {
-        "@types/google-libphonenumber": "^7.4.31",
-        "google-libphonenumber": "^3.2.44",
-      },
-      "devDependencies": {
-        "@repo/eslint-config": "*",
-        "@repo/typescript-config": "*",
-        "@types/node": "^26.2.0",
-        "typescript": "^6.0.3",
       },
     },
   },
@@ -1369,8 +1354,6 @@
     "@repo/typescript-config": ["@repo/typescript-config@workspace:packages/typescript-config"],
 
     "@repo/ui": ["@repo/ui@workspace:packages/ui"],
-
-    "@repo/utils": ["@repo/utils@workspace:packages/utils"],
 
     "@rollup/plugin-commonjs": ["@rollup/plugin-commonjs@28.0.1", "", { "dependencies": { "@rollup/pluginutils": "^5.0.1", "commondir": "^1.0.1", "estree-walker": "^2.0.2", "fdir": "^6.2.0", "is-reference": "1.2.1", "magic-string": "^0.30.3", "picomatch": "^4.0.2" }, "peerDependencies": { "rollup": "^2.68.0||^3.0.0||^4.0.0" }, "optionalPeers": ["rollup"] }, "sha512-+tNWdlWKbpB3WgBN7ijjYkq9X5uhjmcvyjEght4NmH5fAU++zfQzAJ6wumLS+dNcvwEZhKx2Z+skY8m7v0wGSA=="],
 

@@ -65,7 +65,6 @@ const aliases = {
     '@repo/scheduling-timekeeping': join(monorepoRoot, 'packages/scheduling-timekeeping/src/index.ts'),
     '@repo/observability': join(monorepoRoot, 'packages/observability/src/index.ts'),
     '@repo/notifications': join(monorepoRoot, 'packages/notifications/src/index.ts'),
-    '@repo/utils': join(monorepoRoot, 'packages/utils/src/index.ts'),
     '@repo/gig-workers': join(monorepoRoot, 'packages/gig-workers/src/index.ts'),
     '@repo/email': join(monorepoRoot, 'packages/email/src/index.ts'),
 };

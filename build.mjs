@@ -31,7 +31,6 @@ const aliases = {
     '@repo/scheduling-timekeeping': join(__dirname, 'packages/scheduling-timekeeping/src/index.ts'),
     '@repo/observability': join(__dirname, 'packages/observability/src/index.ts'),
     '@repo/notifications': join(__dirname, 'packages/notifications/src/index.ts'),
-    '@repo/utils': join(__dirname, 'packages/utils/src/index.ts'),
     '@repo/email': join(__dirname, 'packages/email/src/index.ts'),
     'zod/v4': require.resolve('zod', { paths: [join(__dirname, 'apps/api')] }),
 };

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { validatePhoneNumber, formatPhoneNumber } from "../src/phone";
+import { validatePhoneNumber, formatPhoneNumber } from "./phone";
 
 describe("Phone Utils", () => {
     test("validates US numbers correctly", () => {

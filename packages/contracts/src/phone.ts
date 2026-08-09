@@ -39,7 +39,8 @@ export const validatePhoneNumber = (phone: string, region: string = 'US'): boole
     try {
         const number = phoneUtil.parseAndKeepRawInput(phone, region);
         return phoneUtil.isValidNumber(number);
-    } catch (e) {
+    } catch {
+        // libphonenumber throws on unparseable input; that just means invalid.
         return false;
     }
 };
@@ -58,7 +59,9 @@ export const formatPhoneNumber = (phone: string, region: string = 'US'): string 
             throw new Error("Invalid phone number");
         }
         return phoneUtil.format(number, PhoneNumberFormat.E164);
-    } catch (e) {
-        throw new Error(`Failed to format phone number: ${phone}`);
+    } catch (cause) {
+        // Preserve the parser's reason — without it, a bad region code and a
+        // malformed number are indistinguishable at the call site.
+        throw new Error(`Failed to format phone number: ${phone}`, { cause });
     }
 };

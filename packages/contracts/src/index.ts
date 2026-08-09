@@ -1,4 +1,5 @@
 export * from "./auth";
+export * from "./phone";
 export * from "./billing";
 export * from "./onboarding";
 export * from "./organizations";
