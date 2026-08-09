@@ -34,7 +34,8 @@ import {
 import { IntervalTimePicker, calculateDefaultEndTime } from "@repo/ui/components/ui/time-picker";
 import { PositionSelectorDialog, PositionItem } from "./position-selector-dialog";
 import { PositionChips } from "./position-chips";
-import { useState } from "react";
+import { useWorkerAvailability, isUnavailableDuring } from "@/hooks/use-worker-availability";
+import { useState, useMemo } from "react";
 
 // ... imports
 import { CrewMember, Role } from "@/hooks/use-crew-data";
@@ -82,6 +83,67 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
     }, [watchStartTime, index, setValue, watch]);
 
     const breakDuration = watch(`schedules.${index}.breakDuration`);
+
+    // Availability lookup for exactly the slots this block would create, so the
+    // picker can warn before publish rejects the assignment outright.
+    const watchDates = watch(`schedules.${index}.dates`);
+    const watchEndTime = watch(`schedules.${index}.endTime`);
+
+    const blockIntervals = useMemo(() => {
+        // The calendar stores Date objects, the draft-restore path can hand back
+        // ISO strings. Accept both — reading only one silently produced an empty
+        // set and no availability lookup at all.
+        const dates: unknown[] = Array.isArray(watchDates) ? watchDates : [];
+        if (!dates.length || !watchStartTime || !watchEndTime) return [];
+
+        const toDayString = (value: unknown): string => {
+            if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                // Local calendar day, not UTC: toISOString() would roll a
+                // late-evening local date back to the previous day.
+                const month = `${value.getMonth() + 1}`.padStart(2, "0");
+                const day = `${value.getDate()}`.padStart(2, "0");
+                return `${value.getFullYear()}-${month}-${day}`;
+            }
+            if (typeof value === "string") return value.slice(0, 10);
+            return "";
+        };
+
+        return dates
+            .map((date) => {
+                const day = toDayString(date);
+                if (!day) return null;
+                const start = new Date(`${day}T${watchStartTime}:00`);
+                let end = new Date(`${day}T${watchEndTime}:00`);
+                // Overnight block: the end time lands before the start, so it
+                // belongs to the following day.
+                if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+                return Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())
+                    ? null
+                    : { start, end };
+            })
+            .filter((interval): interval is { start: Date; end: Date } => interval !== null);
+    }, [watchDates, watchStartTime, watchEndTime]);
+
+    // One request spanning the whole block rather than one per date.
+    const availabilityRange = useMemo(() => {
+        if (!blockIntervals.length) return { from: undefined, to: undefined };
+        const from = new Date(Math.min(...blockIntervals.map((i) => i.start.getTime())));
+        const to = new Date(Math.max(...blockIntervals.map((i) => i.end.getTime())));
+        return { from: from.toISOString(), to: to.toISOString() };
+    }, [blockIntervals]);
+
+    const { availabilityByWorker } = useWorkerAvailability(availabilityRange.from, availabilityRange.to);
+
+    const unavailableWorkerIds = useMemo(() => {
+        const ids = new Set<string>();
+        if (!blockIntervals.length) return ids;
+        for (const [workerId, windows] of availabilityByWorker) {
+            if (blockIntervals.some((i) => isUnavailableDuring(windows, i.start, i.end))) {
+                ids.add(workerId);
+            }
+        }
+        return ids;
+    }, [availabilityByWorker, blockIntervals]);
 
     const handlePositionsSelect = (selectedItems: PositionItem[]) => {
         // Append selected positions to the Field Array
@@ -388,6 +450,7 @@ export function ScheduleBlock({ index, onRemove, onDuplicate, canDelete, roles, 
                     onSelect={handlePositionsSelect}
                     roles={roles}
                     crew={crew}
+                    unavailableWorkerIds={unavailableWorkerIds}
                 />
             </CardContent >
         </Card >

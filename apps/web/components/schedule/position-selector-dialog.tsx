@@ -33,6 +33,12 @@ interface PositionSelectorDialogProps {
     onSelect: (selections: PositionItem[]) => void;
     roles: Role[];
     crew: CrewMember[];
+    /**
+     * Workers who have blocked off time overlapping this schedule block.
+     * publish() rejects these outright (AVAILABILITY_CONFLICT); surfacing them
+     * here turns that rejection into a warning at the point of choosing.
+     */
+    unavailableWorkerIds?: Set<string>;
 }
 
 export function PositionSelectorDialog({
@@ -40,7 +46,8 @@ export function PositionSelectorDialog({
     onClose,
     onSelect,
     roles,
-    crew
+    crew,
+    unavailableWorkerIds
 }: PositionSelectorDialogProps) {
     const [activeTab, setActiveTab] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
@@ -154,6 +161,7 @@ export function PositionSelectorDialog({
                     <div className="divide-y border rounded-md">
                         {filteredCrew.map(worker => {
                             const isOvertime = worker.hours > 40;
+                            const isUnavailable = unavailableWorkerIds?.has(worker.id) ?? false;
                             const currentRoleId = customRoleName.trim()
                                 ? normalizedCustomRole
                                 : (activeTab === "all" ? ((worker.roles || [])[0] || "General") : activeTab);
@@ -181,6 +189,12 @@ export function PositionSelectorDialog({
                                         <div className="min-w-0 truncate">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <p className="truncate text-sm font-medium leading-none text-foreground">{worker.name}</p>
+                                                {isUnavailable ? (
+                                                    <Badge variant="destructive" className="gap-1">
+                                                        <AlertTriangle className="size-3" />
+                                                        Unavailable
+                                                    </Badge>
+                                                ) : null}
                                             </div>
                                         </div>
                                     </div>
