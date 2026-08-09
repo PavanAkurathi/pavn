@@ -48,7 +48,11 @@ test.describe("manager browser signup flow", () => {
 
         await page.goto("/");
 
-        await expect(page.getByRole("heading", { name: /stop paying the/i })).toBeVisible();
+        // .first(): the landing page carries three "Stop paying the…" headings
+        // (hero, ROI section, comparison table), so an unanchored match trips
+        // Playwright strict mode and the spec died here before ever reaching the
+        // onboarding assertion it exists to make.
+        await expect(page.getByRole("heading", { name: /stop paying the/i }).first()).toBeVisible();
         await page.getByRole("link", { name: /get started free/i }).click();
 
         await expect(page).toHaveURL(/\/auth\/signup$/);
@@ -119,7 +123,12 @@ test.describe("manager browser signup flow", () => {
 
         await expect(page.locator("#onboarding_location_name")).toBeVisible();
         await expect(page.locator("#onboarding_location_address")).toBeVisible();
-        await expect(page.getByText(/add the first place where schedules are published and workers clock in/i)).toBeVisible();
+        // The step's own heading. The previous assertion looked for the step
+        // `description` from lib/onboarding/live.ts, which never reaches the DOM
+        // — only `title` and `supportingText` render, so it could not pass at any
+        // wording. Matching on the heading role also avoids colliding with the
+        // identically-named entry in the step rail.
+        await expect(page.getByRole("heading", { name: /add your first location/i })).toBeVisible();
         await page.locator("#onboarding_location_name").fill("Downtown Boston");
         await page.locator("#onboarding_location_address").fill("4 Yawkey Way, Boston, MA 02215");
         await page.getByRole("button", { name: /save location and continue/i }).click();
