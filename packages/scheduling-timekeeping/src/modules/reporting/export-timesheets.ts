@@ -31,7 +31,7 @@ export async function exportTimesheets(
         throw new AppError("Invalid query parameters", "VALIDATION_ERROR", 400, parsed.error.flatten());
     }
 
-    const { start: startDate, end: endDate, locationId, position, workerId, search } = parsed.data;
+    const { start: startDate, end: endDate, locationId, position, workerId, search, format: outputFormat } = parsed.data;
 
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -68,14 +68,17 @@ export async function exportTimesheets(
             locationName: location.name,
             scheduledStart: shift.startTime,
             scheduledEnd: shift.endTime,
-            shiftPrice: shift.price,
             clockIn: shiftAssignment.effectiveClockIn,
             clockOut: shiftAssignment.effectiveClockOut,
             breakMinutes: shiftAssignment.breakMinutes,
             totalDurationMinutes: shiftAssignment.totalDurationMinutes,
-            grossPayCents: shiftAssignment.payoutAmountCents,
-            hourlyRateSnapshot: shiftAssignment.budgetRateSnapshot,
             assignmentStatus: shiftAssignment.status,
+            // No money is selected here on purpose. Pay calculation was removed
+            // from this product (TICKET-003/005/006/008) — the export reports
+            // hours and lets the payroll system apply rates. shift.price,
+            // payoutAmountCents and budgetRateSnapshot are never written (every
+            // writer sets null), so selecting them only suggested to the next
+            // reader that pay was handled somewhere.
         })
         .from(shiftAssignment)
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
@@ -86,7 +89,21 @@ export async function exportTimesheets(
 
     // 2. Process Data (Calculate Overtime)
     // We need to track weekly totals if policy is 'weekly_40'
-    const processedRows = [];
+    // Explicitly typed rather than left to inference: both output formats read
+    // these fields, and an implicit any[] here silently widens every cell.
+    type ExportRow = {
+        workerName: string | null;
+        workerEmail: string | null;
+        scheduledStart: Date;
+        clockIn: Date | null;
+        clockOut: Date | null;
+        breakMinutes: number | null;
+        totalDurationMinutes: number;
+        regularHours: number;
+        overtimeHours: number;
+        totalHours: number;
+    };
+    const processedRows: ExportRow[] = [];
     const workerWeeklyHours: Record<string, Record<string, number>> = {}; // workerId -> weekKey -> minutes
 
     for (const row of results) {
@@ -148,7 +165,46 @@ export async function exportTimesheets(
         });
     }
 
-    // 3. Generate Output (XML Spreadsheet)
+    // 3. Generate Output
+    //
+    // Column order is shared by both formats so a payroll importer sees the same
+    // shape either way. Hours only — see the note on the select above.
+    const COLUMNS = [
+        "Worker Name", "Email", "Date", "Start Time", "End Time",
+        "Break (min)", "Regular Hours", "Overtime Hours", "Total Hours",
+    ] as const;
+
+    const rowValues = (row: ExportRow) => [
+        row.workerName ?? "",
+        row.workerEmail ?? "",
+        format(row.scheduledStart, 'yyyy-MM-dd'),
+        formatInTimeZone(row.clockIn!, 'UTC', 'HH:mm'),
+        formatInTimeZone(row.clockOut!, 'UTC', 'HH:mm'),
+        String(row.breakMinutes || 0),
+        row.regularHours.toFixed(2),
+        row.overtimeHours.toFixed(2),
+        row.totalHours.toFixed(2),
+    ];
+
+    // The Reports page asks for format=csv and its button says "Export CSV",
+    // but this function used to ignore the parameter and always return
+    // SpreadsheetML named .xls. Anything feeding the file to a payroll importer
+    // that expects CSV got XML instead.
+    if (outputFormat === 'csv') {
+        const csvCell = (value: string) =>
+            /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+        const csvBody = [
+            COLUMNS.join(","),
+            ...processedRows.map((row) => rowValues(row).map(csvCell).join(",")),
+        ].join("\r\n");
+
+        return {
+            data: csvBody,
+            contentType: 'text/csv; charset=utf-8',
+            filename: `payroll_export_${startDate}_${endDate}.csv`,
+        };
+    }
+
     const xmlBody = `<?xml version="1.0"?>
 <?mso-application progid="Excel.Sheet"?>
 <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
@@ -159,15 +215,7 @@ export async function exportTimesheets(
  <Worksheet ss:Name="Timesheets">
   <Table>
    <Row>
-    <Cell><Data ss:Type="String">Worker Name</Data></Cell>
-    <Cell><Data ss:Type="String">Email</Data></Cell>
-    <Cell><Data ss:Type="String">Date</Data></Cell>
-    <Cell><Data ss:Type="String">Start Time</Data></Cell>
-    <Cell><Data ss:Type="String">End Time</Data></Cell>
-    <Cell><Data ss:Type="String">Break (min)</Data></Cell>
-    <Cell><Data ss:Type="String">Regular Hours</Data></Cell>
-    <Cell><Data ss:Type="String">Overtime Hours</Data></Cell>
-    <Cell><Data ss:Type="String">Total Hours</Data></Cell>
+${COLUMNS.map(c => `    <Cell><Data ss:Type="String">${escapeXml(c)}</Data></Cell>`).join('\n')}
    </Row>
    ${processedRows.map(row => `
    <Row>

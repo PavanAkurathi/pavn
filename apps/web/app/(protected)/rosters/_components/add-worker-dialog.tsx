@@ -185,11 +185,20 @@ export function AddWorkerDialog() {
                                 name="hourlyRate"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Hourly Rate ($)</FormLabel>
+                                        <FormLabel>Hourly Rate</FormLabel>
                                         <FormControl>
                                             <Input type="number" step="0.01" min="0" placeholder="0.00" {...field} />
                                         </FormControl>
-                                        <FormDescription>Optional hourly pay rate.</FormDescription>
+                                        {/* This product reports hours, not pay — timesheet exports carry
+                                            regular/overtime hours and the payroll system applies rates
+                                            (TICKET-003/005/006/008 removed cost calculation deliberately).
+                                            The old "Optional hourly pay rate." read like the rate drove
+                                            payouts. The currency symbol is dropped from the label too,
+                                            since orgs are not all in USD. */}
+                                        <FormDescription>
+                                            For your reference on the roster. Timesheet exports report hours,
+                                            not pay — your payroll system applies the rate.
+                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}

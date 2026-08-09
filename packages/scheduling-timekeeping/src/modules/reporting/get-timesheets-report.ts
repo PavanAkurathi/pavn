@@ -78,8 +78,6 @@ export async function getTimesheetsReport(
             clockOut: shiftAssignment.effectiveClockOut,
             breakMinutes: shiftAssignment.breakMinutes,
             totalDurationMinutes: shiftAssignment.totalDurationMinutes,
-            grossPayCents: shiftAssignment.payoutAmountCents,
-            shiftPrice: shift.price,
             assignmentStatus: shiftAssignment.status,
         })
         .from(shiftAssignment)
@@ -101,7 +99,6 @@ export async function getTimesheetsReport(
     // Calculate summary (would be better as aggregate query for large datasets)
     const uniqueWorkers = new Set(pageResults.map(r => r.workerId));
     let totalHours = 0;
-    let totalPay = 0;
 
     // Transform to response format
     const data = pageResults.map(row => {
@@ -109,10 +106,8 @@ export async function getTimesheetsReport(
             ? differenceInMinutes(row.clockOut, row.clockIn) - (row.breakMinutes || 0)
             : 0;
         const hours = totalMinutes / 60;
-        const pay = row.grossPayCents ? row.grossPayCents / 100 : 0;
 
         totalHours += hours;
-        totalPay += pay;
 
         // Generate initials
         const initials = row.workerName
@@ -147,8 +142,6 @@ export async function getTimesheetsReport(
                 actualEnd: row.clockOut ? format(row.clockOut, 'HH:mm') : null,
                 breakMinutes: row.breakMinutes || 0,
                 totalHours: Math.round(hours * 100) / 100,
-                hourlyRate: row.shiftPrice ? row.shiftPrice / 100 : 0,
-                totalPay: Math.round(pay * 100) / 100,
             },
             status: row.assignmentStatus,
         };
@@ -165,7 +158,6 @@ export async function getTimesheetsReport(
         summary: {
             totalWorkers: uniqueWorkers.size,
             totalHours: Math.round(totalHours * 100) / 100,
-            totalPay: Math.round(totalPay * 100) / 100,
         },
     };
 }
