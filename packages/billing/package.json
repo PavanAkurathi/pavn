@@ -20,13 +20,13 @@
     "dependencies": {
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
-        "stripe": "^22.3.0",
+        "stripe": "^22.4.0",
         "zod": "^4.4.3"
     },
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^26.1.0",
+        "@types/node": "^26.2.0",
         "typescript": "^6.0.3"
     }
 }

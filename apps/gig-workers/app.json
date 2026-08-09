@@ -91,7 +91,10 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

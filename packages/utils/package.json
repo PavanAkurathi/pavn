@@ -21,11 +21,11 @@
     "devDependencies": {
         "@repo/eslint-config": "*",
         "@repo/typescript-config": "*",
-        "@types/node": "^26.1.0",
+        "@types/node": "^26.2.0",
         "typescript": "^6.0.3"
     },
     "dependencies": {
         "google-libphonenumber": "^3.2.44",
-        "@types/google-libphonenumber": "^7.4.30"
+        "@types/google-libphonenumber": "^7.4.31"
     }
 }
