@@ -5,11 +5,11 @@
     "build": "node build.mjs",
     "build:all": "turbo run build",
     "dev": "turbo run dev --filter=pavn-web --filter=pavn-api --ui=stream --log-order=stream",
-    "dev:all": "turbo run dev --filter=pavn-web --filter=pavn-api --filter=docs --filter=@repo/notification-worker --ui=stream --log-order=stream",
+    "dev:all": "turbo run dev --filter=pavn-web --filter=pavn-api --filter=docs --filter=notification-worker --ui=stream --log-order=stream",
     "dev:web": "turbo run dev --filter=pavn-web --ui=stream --log-order=stream",
     "dev:api": "turbo run dev --filter=pavn-api --ui=stream --log-order=stream",
     "dev:docs": "turbo run dev --filter=docs --ui=stream --log-order=stream",
-    "dev:worker": "turbo run dev --filter=@repo/notification-worker --ui=stream --log-order=stream",
+    "dev:worker": "turbo run dev --filter=notification-worker --ui=stream --log-order=stream",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
@@ -58,7 +58,8 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "tests/*"
   ],
   "dependencies": {
     "@better-auth/infra": "0.3.4",

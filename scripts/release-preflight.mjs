@@ -17,8 +17,8 @@ const steps = [
     command: ["bun", "run", "check-types"],
   },
   {
-    label: "Typecheck packages/e2e",
-    command: ["bunx", "tsc", "--noEmit", "-p", "packages/e2e/tsconfig.json"],
+    label: "Typecheck tests/e2e",
+    command: ["bunx", "tsc", "--noEmit", "-p", "tests/e2e/tsconfig.json"],
   },
   {
     label: "Targeted regression tests",

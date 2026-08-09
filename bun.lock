@@ -167,6 +167,21 @@
         "use-latest-callback": "^0.3.4",
       },
     },
+    "apps/notification-worker": {
+      "name": "notification-worker",
+      "version": "1.0.0",
+      "dependencies": {
+        "@repo/database": "workspace:*",
+        "@repo/notifications": "workspace:*",
+        "drizzle-orm": "0.45.2",
+      },
+      "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/bun": "latest",
+        "@types/node": "^26.2.0",
+        "typescript": "6.0.3",
+      },
+    },
     "apps/web": {
       "name": "pavn-web",
       "version": "0.1.0",
@@ -325,21 +340,6 @@
         "typescript": "^6.0.3",
       },
     },
-    "packages/e2e": {
-      "name": "@repo/e2e",
-      "version": "1.0.0",
-      "dependencies": {
-        "@repo/database": "workspace:*",
-        "playwright": "1.61.1",
-      },
-      "devDependencies": {
-        "@playwright/test": "^1.62.1",
-        "@types/node": "^26.2.0",
-        "bun-types": "^1.3.14",
-        "dotenv": "^17.4.2",
-        "typescript": "^6.0.3",
-      },
-    },
     "packages/email": {
       "name": "@repo/email",
       "version": "0.0.0",
@@ -411,21 +411,6 @@
         "@types/node": "^26.2.0",
         "@types/xlsx": "^0.0.36",
         "typescript": "^6.0.3",
-      },
-    },
-    "packages/notification-worker": {
-      "name": "@repo/notification-worker",
-      "version": "1.0.0",
-      "dependencies": {
-        "@repo/database": "workspace:*",
-        "@repo/notifications": "workspace:*",
-        "drizzle-orm": "0.45.2",
-      },
-      "devDependencies": {
-        "@repo/typescript-config": "workspace:*",
-        "@types/bun": "latest",
-        "@types/node": "^26.2.0",
-        "typescript": "6.0.3",
       },
     },
     "packages/notifications": {
@@ -581,6 +566,22 @@
         "react": "19.2.8",
         "react-dom": "19.2.8",
         "react-hook-form": "^7.85.0",
+      },
+    },
+    "tests/e2e": {
+      "name": "e2e",
+      "version": "1.0.0",
+      "dependencies": {
+        "@repo/auth": "*",
+        "@repo/database": "workspace:*",
+        "playwright": "1.61.1",
+      },
+      "devDependencies": {
+        "@playwright/test": "^1.62.1",
+        "@types/node": "^26.2.0",
+        "bun-types": "^1.3.14",
+        "dotenv": "^17.4.2",
+        "typescript": "^6.0.3",
       },
     },
   },
@@ -1331,8 +1332,6 @@
 
     "@repo/dub": ["@repo/dub@workspace:packages/dub"],
 
-    "@repo/e2e": ["@repo/e2e@workspace:packages/e2e"],
-
     "@repo/email": ["@repo/email@workspace:packages/email"],
 
     "@repo/eslint-config": ["@repo/eslint-config@workspace:packages/eslint-config"],
@@ -1340,8 +1339,6 @@
     "@repo/geofence": ["@repo/geofence@workspace:packages/geofence"],
 
     "@repo/gig-workers": ["@repo/gig-workers@workspace:packages/gig-workers"],
-
-    "@repo/notification-worker": ["@repo/notification-worker@workspace:packages/notification-worker"],
 
     "@repo/notifications": ["@repo/notifications@workspace:packages/notifications"],
 
@@ -2032,6 +2029,8 @@
     "dub": ["dub@0.72.1", "", { "dependencies": { "jsonpath-rfc9535": "1.1.0", "zod": "^3.25.0 || ^4.0.0" } }, "sha512-UCf8iB9/H/r+tsQH1HeGwAicBIUDnM8ogEsrNN344LdfRXX9bz1P8BhhGaGXefFzfT3FqI4KgH1O+mCH/VkW7g=="],
 
     "dunder-proto": ["dunder-proto@1.0.1", "", { "dependencies": { "call-bind-apply-helpers": "^1.0.1", "es-errors": "^1.3.0", "gopd": "^1.2.0" } }, "sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A=="],
+
+    "e2e": ["e2e@workspace:tests/e2e"],
 
     "ecdsa-sig-formatter": ["ecdsa-sig-formatter@1.0.11", "", { "dependencies": { "safe-buffer": "^5.0.1" } }, "sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ=="],
 
@@ -2746,6 +2745,8 @@
     "node-releases": ["node-releases@2.0.50", "", {}, "sha512-J6l92tKHX6w8Jy5nO1Vuc01NoIiRGi/d6qBKVxh+IQ8Cr3b6HbVNfKiF8ZpFKufTwpwxMmce2W3iQZ861ZRyTg=="],
 
     "normalize-path": ["normalize-path@3.0.0", "", {}, "sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA=="],
+
+    "notification-worker": ["notification-worker@workspace:apps/notification-worker"],
 
     "npm-package-arg": ["npm-package-arg@11.0.3", "", { "dependencies": { "hosted-git-info": "^7.0.0", "proc-log": "^4.0.0", "semver": "^7.3.5", "validate-npm-package-name": "^5.0.0" } }, "sha512-sHGJy8sOC1YraBywpzQlIKBE4pBbGbiF95U6Auspzyem956E0+FtDtsx1ZxlOJkQCZ1AFXAY/yuvtFYrOxF+Bw=="],
 

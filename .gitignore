@@ -14,7 +14,7 @@ node_modules
 !.env.example
 !**/.env.example
 !apps/gig-workers/.env.staging
-!packages/e2e/.env.test
+!tests/e2e/.env.test
 
 # OTP debug files (written by SMS provider in dev)
 latest-otp.txt

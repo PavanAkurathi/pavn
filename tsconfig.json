@@ -44,7 +44,7 @@
             "path": "./packages/geofence"
         },
         {
-            "path": "./packages/notification-worker"
+            "path": "./apps/notification-worker"
         },
         {
             "path": "./packages/notifications"

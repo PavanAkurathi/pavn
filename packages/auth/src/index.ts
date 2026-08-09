@@ -1,6 +1,7 @@
 export { auth } from "./auth";
 export {
     getWorkerPhoneAccess,
+    syncWorkerMembershipsForPhone,
     type WorkerPhoneAccess,
 } from "./worker-access";
 export {

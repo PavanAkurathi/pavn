@@ -4,7 +4,7 @@
         "builder": "RAILPACK",
         "buildCommand": "bun run build --filter=@repo/notification-worker",
         "watchPatterns": [
-            "packages/notification-worker/**",
+            "apps/notification-worker/**",
             "packages/database/**",
             "packages/notifications/**",
             "bun.lock",

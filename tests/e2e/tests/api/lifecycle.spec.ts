@@ -1,8 +1,10 @@
 import { test, expect, request as playwrightRequest, type APIRequestContext } from "@playwright/test";
 import { db, and, desc, eq, toLatLng } from "@repo/database";
 import { invitation, location, member, rosterEntry, session, shift, shiftAssignment, timeCorrectionRequest, user, workerRole } from "@repo/database/schema";
-import { getWorkerPhoneAccess, syncWorkerMembershipsForPhone } from "../../../auth/src/worker-access";
-import { normalizePhoneNumber } from "../../../auth/src/providers/sms";
+// Package imports, not relative reaches into packages/auth/src. The old paths
+// only resolved because this suite happened to live under packages/, and broke
+// the moment it moved. @repo/auth re-exports both from its index.
+import { getWorkerPhoneAccess, syncWorkerMembershipsForPhone, normalizePhoneNumber } from "@repo/auth";
 
 async function createSignedInContext(
     baseURL: string,

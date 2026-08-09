@@ -82,7 +82,7 @@ if (!explicitApiUrl || !(await isHealthy(baseUrl))) {
   }
 }
 
-const result = spawnSync("npm", ["run", "test:api:lifecycle", "--workspace=packages/e2e"], {
+const result = spawnSync("npm", ["run", "test:api:lifecycle", "--workspace=tests/e2e"], {
   cwd: repoRoot,
   env: {
     ...process.env,

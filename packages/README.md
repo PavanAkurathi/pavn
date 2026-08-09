@@ -35,9 +35,9 @@ The practical split is:
 - `@repo/ui`
 - `@repo/eslint-config`
 - `@repo/typescript-config`
-- `@repo/e2e`
+- `e2e (now tests/)`
 - `@repo/dub`
-- `@repo/notification-worker`
+- `notification-worker (now apps/)`
   - worker wrapper that runs the canonical notification dispatcher from `@repo/notifications`
 
 ## Dependency Direction
