@@ -9,7 +9,7 @@ import {
     SortingState,
     FilterFn,
 } from "@tanstack/react-table";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -142,18 +142,28 @@ export function TimesheetTable({
     const [pendingConfirmation, setPendingConfirmation] = useState<PendingTimesheetConfirmation | null>(null);
     const [isSaving, startSavingTransition] = useTransition();
 
-    // Columns are needed for sorting, even if we render custom rows
-    const columns: ColumnDef<TimesheetViewModel>[] = [
-        { accessorKey: "name", header: "Name" },
-        { accessorKey: "clockIn", header: "Clock In" },
-        { accessorKey: "clockOut", header: "Clock Out" },
-        // Custom column for Status filtering
-        {
-            id: "status",
-            accessorFn: (row) => row, // Access whole row for complex logic
-            filterFn: issueFilter
-        }
-    ];
+    // Columns are needed for sorting, even if we render custom rows.
+    // Must keep a stable identity — a fresh array each render makes the table
+    // rebuild its state and re-render without end.
+    const columns = useMemo<ColumnDef<TimesheetViewModel>[]>(
+        () => [
+            { accessorKey: "name", header: "Name" },
+            { accessorKey: "clockIn", header: "Clock In" },
+            { accessorKey: "clockOut", header: "Clock Out" },
+            // Custom column for Status filtering
+            {
+                id: "status",
+                accessorFn: (row) => row, // Access whole row for complex logic
+                filterFn: issueFilter
+            }
+        ],
+        [],
+    );
+
+    const columnFilters = useMemo(
+        () => (showIssuesOnly ? [{ id: "status", value: true }] : []),
+        [showIssuesOnly],
+    );
 
     const table = useReactTable({
         data,
@@ -166,7 +176,7 @@ export function TimesheetTable({
         state: {
             sorting,
             globalFilter,
-            columnFilters: showIssuesOnly ? [{ id: "status", value: true }] : [],
+            columnFilters,
         },
     });
 

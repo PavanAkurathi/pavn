@@ -10,7 +10,7 @@ import {
     SortingState,
     getFilteredRowModel,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { WorkerDetails } from "./worker-details-sheet";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
@@ -40,12 +40,17 @@ export function RosterTable({ data }: RosterTableProps) {
     // Since we are rendering Custom Cards, we don't strictly *need* columns for display,
     // but they are required for the table engine to know what data exists for sorting/filtering.
     // We define them but mostly just use the row.original data for the card.
-    const columns: ColumnDef<WorkerDetails>[] = [
-        { accessorKey: "name", header: "Name" },
-        { accessorKey: "email", header: "Email" },
-        { accessorKey: "role", header: "Role" },
-        { accessorKey: "status", header: "Status" },
-    ];
+    // Must keep a stable identity — a fresh array each render makes the table
+    // rebuild its state and re-render without end.
+    const columns = useMemo<ColumnDef<WorkerDetails>[]>(
+        () => [
+            { accessorKey: "name", header: "Name" },
+            { accessorKey: "email", header: "Email" },
+            { accessorKey: "role", header: "Role" },
+            { accessorKey: "status", header: "Status" },
+        ],
+        [],
+    );
 
     const table = useReactTable({
         data,
