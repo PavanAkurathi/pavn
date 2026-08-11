@@ -63,6 +63,10 @@ export const OrganizationSummarySchema = z.object({
     id: z.string(),
     name: z.string(),
     logo: z.string().nullable().optional(),
+    // Workspace chrome shows a trial countdown; the layout already fetches this
+    // summary on every page, so carrying the two fields here costs no extra call.
+    createdAt: z.union([z.string(), z.date()]).nullable().optional(),
+    subscriptionStatus: z.string().nullable().optional(),
 });
 
 export const OrganizationProfileSchema = z.object({

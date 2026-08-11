@@ -4,6 +4,7 @@ import { NavHeader } from "../../components/nav-header";
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { getOrganizationSummary } from "@/lib/api/organizations";
+import { getTrialState } from "@/lib/trial";
 
 export default async function ProtectedLayout({
     children,
@@ -25,6 +26,7 @@ export default async function ProtectedLayout({
         <div className="min-h-screen bg-slate-50">
             <NavHeader
                 activeOrg={activeOrg}
+                trial={getTrialState(activeOrg)}
                 user={{
                     name: sessionResponse.user.name,
                     email: sessionResponse.user.email,

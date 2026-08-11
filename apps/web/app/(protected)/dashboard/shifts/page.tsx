@@ -3,13 +3,10 @@
 import { ShiftsView } from "./_components/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { DraftBanner } from "@/components/dashboard/draft-banner";
-import { PostLaunchChecklist } from "@/components/dashboard/post-launch-checklist";
 import { getOrganizationLocations } from "@/lib/api/organizations";
 import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api/shifts";
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
-import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
-import { cn } from "@repo/ui/lib/utils";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -26,19 +23,13 @@ export default async function ShiftsPage(props: {
         getSessionActiveOrganizationId(session),
     );
 
-    const [shifts, pendingCount, draftCount, locations, onboardingState] = await Promise.all([
+    const [shifts, pendingCount, draftCount, locations] = await Promise.all([
         getShifts({ view, orgId: orgId ?? undefined }),
         orgId ? getPendingShiftsCount(orgId) : Promise.resolve(0),
         orgId ? getDraftShiftsCount(orgId) : Promise.resolve(0),
         orgId ? getOrganizationLocations(orgId) : Promise.resolve([]),
-        getCurrentBusinessOnboardingState(),
     ]);
 
-    // Only surface follow-up tasks that are still open, and only once onboarding
-    // itself is out of the way — the wizard owns the blocking steps.
-    const outstandingSteps = onboardingState.onboarding?.isComplete
-        ? onboardingState.onboarding.deferredSteps.filter((step) => !step.complete)
-        : [];
 
     const mappedLocations = locations.map((l) => ({
         id: l.id,
@@ -59,25 +50,14 @@ export default async function ShiftsPage(props: {
                 </div>
             </div>
 
-            <div
-                className={cn(
-                    "grid gap-6 lg:items-start",
-                    outstandingSteps.length > 0 && "lg:grid-cols-[minmax(0,1fr)_320px]",
-                )}
-            >
-                <div className="min-w-0">
-                    <ShiftsView
-                        key={view}
-                        initialShifts={shifts}
-                        availableLocations={mappedLocations}
-                        defaultTab={view}
-                        pendingCount={pendingCount}
-                        initialLayoutParam={layoutParam}
-                    />
-                </div>
-
-                <PostLaunchChecklist steps={outstandingSteps} />
-            </div>
+            <ShiftsView
+                key={view}
+                initialShifts={shifts}
+                availableLocations={mappedLocations}
+                defaultTab={view}
+                pendingCount={pendingCount}
+                initialLayoutParam={layoutParam}
+            />
         </div>
     );
 }

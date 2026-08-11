@@ -91,6 +91,8 @@ export async function getOrganizationSummary(orgId: string) {
                 id: true,
                 name: true,
                 logo: true,
+                createdAt: true,
+                subscriptionStatus: true,
             },
         })) ?? null
     );
