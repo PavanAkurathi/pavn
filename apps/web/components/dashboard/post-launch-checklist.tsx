@@ -1,16 +1,20 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, CircleDashed, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Badge } from "@repo/ui/components/ui/badge";
-import { Button } from "@repo/ui/components/ui/button";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import type { OnboardingStep } from "@repo/contracts/onboarding";
 
+/**
+ * Outstanding post-go-live admin tasks, rendered as a side rail so they sit
+ * beside the shift list instead of pushing it around. Only steps that are
+ * genuinely still open appear — finished ones drop out rather than lingering
+ * as "Done" rows.
+ */
 export function PostLaunchChecklist({
     steps,
 }: {
@@ -23,65 +27,36 @@ export function PostLaunchChecklist({
     }
 
     return (
-        <Card className="border-border/70 bg-slate-50/80 shadow-sm">
-            <CardHeader className="gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="secondary">
-                        Go-live follow-up
-                    </Badge>
-                    <Badge variant="outline">
-                        Optional next steps
-                    </Badge>
-                </div>
-                <div className="flex flex-col gap-2">
-                    <CardTitle className="flex items-center gap-2">
-                        <Sparkles className="h-5 w-5 text-red-600" />
-                        Your first live shift is out. Keep refining the workspace.
-                    </CardTitle>
-                    <CardDescription className="max-w-3xl text-sm leading-6">
-                        Onboarding is no longer blocking you. These are the remaining admin tasks worth tightening after the business is already live.
-                    </CardDescription>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {steps.map((step) => (
-                    <div
-                        key={step.id}
-                        className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-background p-4 sm:flex-row sm:items-start sm:justify-between"
-                    >
-                        <div className="flex items-start gap-3">
-                            <div className="mt-0.5">
-                                {step.complete ? (
-                                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                                ) : (
-                                    <CircleDashed className="h-5 w-5 text-slate-400" />
-                                )}
-                            </div>
-                            <div>
-                                <p className="text-sm font-semibold text-foreground">{step.title}</p>
-                                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                                    {step.description}
-                                </p>
-                                <p className="mt-1 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-                                    {step.supportingText}
-                                </p>
-                            </div>
-                        </div>
-                        {!step.complete ? (
-                            <Button asChild variant="outline" size="sm" className="shrink-0">
-                                <Link href={step.href}>
-                                    Open
-                                    <ArrowRight data-icon="inline-end" />
-                                </Link>
-                            </Button>
-                        ) : (
-                            <Badge variant="outline" className="shrink-0 border-emerald-200 text-emerald-700">
-                                Done
-                            </Badge>
-                        )}
-                    </div>
-                ))}
-            </CardContent>
-        </Card>
+        <aside className="flex flex-col gap-4" aria-label="Remaining setup tasks">
+            <div className="flex flex-col gap-1">
+                <Badge variant="secondary" className="w-fit">
+                    Go-live follow-up
+                </Badge>
+                <p className="text-sm leading-6 text-muted-foreground">
+                    Not blocking you — worth tightening now the business is live.
+                </p>
+            </div>
+
+            {remainingSteps.map((step) => (
+                <Card key={step.id} className="border-border/70 shadow-sm">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base">{step.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-3">
+                        <p className="text-sm leading-6 text-muted-foreground">
+                            {step.description}
+                        </p>
+                        <Link
+                            href={step.href}
+                            className="inline-flex w-fit items-center gap-1 text-sm font-medium text-primary hover:underline"
+                        >
+                            Open
+                            <span className="sr-only"> {step.title}</span>
+                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                        </Link>
+                    </CardContent>
+                </Card>
+            ))}
+        </aside>
     );
 }

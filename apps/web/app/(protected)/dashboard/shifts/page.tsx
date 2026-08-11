@@ -9,6 +9,7 @@ import { getShifts, getPendingShiftsCount, getDraftShiftsCount } from "@/lib/api
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
+import { cn } from "@repo/ui/lib/utils";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -33,6 +34,12 @@ export default async function ShiftsPage(props: {
         getCurrentBusinessOnboardingState(),
     ]);
 
+    // Only surface follow-up tasks that are still open, and only once onboarding
+    // itself is out of the way — the wizard owns the blocking steps.
+    const outstandingSteps = onboardingState.onboarding?.isComplete
+        ? onboardingState.onboarding.deferredSteps.filter((step) => !step.complete)
+        : [];
+
     const mappedLocations = locations.map((l) => ({
         id: l.id,
         name: l.name,
@@ -52,18 +59,25 @@ export default async function ShiftsPage(props: {
                 </div>
             </div>
 
-            <ShiftsView
-                key={view}
-                initialShifts={shifts}
-                availableLocations={mappedLocations}
-                defaultTab={view}
-                pendingCount={pendingCount}
-                initialLayoutParam={layoutParam}
-            />
+            <div
+                className={cn(
+                    "grid gap-6 lg:items-start",
+                    outstandingSteps.length > 0 && "lg:grid-cols-[minmax(0,1fr)_320px]",
+                )}
+            >
+                <div className="min-w-0">
+                    <ShiftsView
+                        key={view}
+                        initialShifts={shifts}
+                        availableLocations={mappedLocations}
+                        defaultTab={view}
+                        pendingCount={pendingCount}
+                        initialLayoutParam={layoutParam}
+                    />
+                </div>
 
-            {onboardingState.onboarding?.isComplete ? (
-                <PostLaunchChecklist steps={onboardingState.onboarding.deferredSteps} />
-            ) : null}
+                <PostLaunchChecklist steps={outstandingSteps} />
+            </div>
         </div>
     );
 }

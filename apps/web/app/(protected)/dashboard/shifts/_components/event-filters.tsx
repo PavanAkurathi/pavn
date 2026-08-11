@@ -96,10 +96,12 @@ export function EventFilters({
     ].filter((option) => availableLayouts.includes(option.value));
 
     return (
-        <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        // Wraps rather than overflowing: this row also renders in the narrower
+        // column used when the follow-up rail is present.
+        <div className="flex w-full flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
 
             {/* LEFT SIDE: DATA FILTERS */}
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
 
                 {/* Location Filter */}
                 <Select
