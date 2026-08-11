@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "node ../../scripts/run-package-tests.mjs",
-    "dev": "next dev --port 3000",
+    "dev": "bun --env-file=../../.env next dev --port 3000",
     "build": "next build --webpack",
     "start": "next start -p ${PORT:-3000} -H 0.0.0.0",
     "lint": "eslint --max-warnings 135",
