@@ -1,4 +1,5 @@
 import type { Shift } from "@/lib/types";
+import { groupConcurrentShifts } from "@/lib/shifts/view-list";
 
 const SETTLED_STATUSES = ["completed", "approved", "cancelled"];
 
@@ -19,6 +20,7 @@ export function ScheduleSummary({ shifts }: { shifts: Shift[] }) {
 
     let plannedHours = 0;
     let unfilled = 0;
+    let unassignedHours = 0;
 
     for (const shift of shifts) {
         const total = shift.capacity?.total ?? 0;
@@ -31,7 +33,9 @@ export function ScheduleSummary({ shifts }: { shifts: Shift[] }) {
         }
 
         if (!SETTLED_STATUSES.includes(shift.status)) {
-            unfilled += Math.max(total - filled, 0);
+            const open = Math.max(total - filled, 0);
+            unfilled += open;
+            if (durationHours > 0) unassignedHours += durationHours * open;
         }
     }
 
@@ -41,21 +45,32 @@ export function ScheduleSummary({ shifts }: { shifts: Shift[] }) {
         <dl className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-border/70 bg-muted/30 px-4 py-2.5 text-sm">
             <div className="flex items-baseline gap-1.5">
                 <dt className="text-muted-foreground">Shifts</dt>
-                <dd className="font-semibold tabular-nums text-foreground">{shifts.length}</dd>
+                {/* Count blocks, not position rows — the list shows one card per
+                    block, and the day headers count the same way. */}
+                <dd className="font-semibold tabular-nums text-foreground">
+                    {groupConcurrentShifts(shifts).length}
+                </dd>
             </div>
 
             <div className="flex items-baseline gap-1.5">
-                <dt className="text-muted-foreground">Planned hours</dt>
-                <dd className="font-semibold tabular-nums text-foreground">{roundedHours}h</dd>
+                <dt className="text-muted-foreground">Scheduled hours</dt>
+                <dd className="font-semibold tabular-nums text-foreground">{roundedHours}</dd>
             </div>
 
             <div className="flex items-baseline gap-1.5">
-                <dt className="text-muted-foreground">Needs cover</dt>
+                <dt className={unfilled > 0 ? "text-destructive" : "text-muted-foreground"}>
+                    Open slots
+                </dt>
                 <dd
                     className={`font-semibold tabular-nums ${unfilled > 0 ? "text-destructive" : "text-foreground"}`}
                 >
                     {unfilled}
                 </dd>
+                {unfilled > 0 ? (
+                    <dd className="text-xs tabular-nums text-destructive/80">
+                        {Math.round(unassignedHours)} h unassigned
+                    </dd>
+                ) : null}
             </div>
         </dl>
     );

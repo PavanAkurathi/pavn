@@ -9,6 +9,26 @@ import {
     groupConcurrentShifts,
 } from "@/lib/shifts/view-list";
 
+const SETTLED_STATUSES = ["completed", "approved", "cancelled"];
+
+/** Per-day totals shown beside the date, so gaps are visible before scrolling. */
+function summariseDay(dayShifts: Shift[]) {
+    let hours = 0;
+    let openSlots = 0;
+
+    for (const shift of dayShifts) {
+        const total = shift.capacity?.total ?? 0;
+        const filled = shift.capacity?.filled ?? shift.assignedWorkers?.length ?? 0;
+        const duration =
+            (new Date(shift.endTime).getTime() - new Date(shift.startTime).getTime()) / 3_600_000;
+
+        if (duration > 0) hours += duration * Math.max(total, 1);
+        if (!SETTLED_STATUSES.includes(shift.status)) openSlots += Math.max(total - filled, 0);
+    }
+
+    return { hours: Math.round(hours), openSlots };
+}
+
 interface ShiftListProps {
     shifts: Shift[];
     isLoading: boolean;
@@ -42,11 +62,27 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
                     <span className="sr-only">Loading shifts…</span>
                 </div>
             ) : (
-                sortedDates.map((date) => (
+                sortedDates.map((date) => {
+                    const dayShifts = groupedShifts[date] || [];
+                    const blocks = groupConcurrentShifts(dayShifts).length;
+                    const { hours, openSlots } = summariseDay(dayShifts);
+
+                    return (
                     <div key={date}>
-                        <h3 className="mb-4 text-lg font-semibold text-zinc-500">
-                            {formatShiftDateLabel(date)}
-                        </h3>
+                        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                            <h3 className="text-sm font-semibold text-foreground">
+                                {formatShiftDateLabel(date)}
+                            </h3>
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                                {blocks} {blocks === 1 ? "shift" : "shifts"} · {hours} h
+                            </span>
+                            {openSlots > 0 ? (
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-destructive">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                                    {openSlots} open {openSlots === 1 ? "slot" : "slots"}
+                                </span>
+                            ) : null}
+                        </div>
                         <div className="space-y-3">
 
                             {groupConcurrentShifts(groupedShifts[date] || [])
@@ -70,7 +106,8 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
                                 })}
                         </div>
                     </div>
-                ))
+                    );
+                })
             )}
         </div>
     );
