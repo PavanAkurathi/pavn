@@ -41,14 +41,17 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
         (s.assignedWorkers || []).map(w => ({ ...w, role: s.title }))
     );
 
-    // Calculate Role Breakdown for vertical display
-    const roleCounts: Record<string, number> = {};
-    shifts.forEach(s => {
-        const count = s.capacity?.total || 0;
-        roleCounts[s.title] = (roleCounts[s.title] || 0) + count;
+    // Role breakdown carries filled *and* total: "Forklift Operator 1/2" says
+    // something a bare capacity number does not.
+    const roleCounts: Record<string, { filled: number; total: number }> = {};
+    shifts.forEach((s) => {
+        const total = s.capacity?.total ?? 0;
+        const filled = s.capacity?.filled ?? s.assignedWorkers?.length ?? 0;
+        const entry = roleCounts[s.title] ?? { filled: 0, total: 0 };
+        roleCounts[s.title] = { filled: entry.filled + filled, total: entry.total + total };
     });
 
-    const roleBreakdown = Object.entries(roleCounts).map(([role, count]) => ({ role, count }));
+    const roleBreakdown = Object.entries(roleCounts).map(([role, counts]) => ({ role, ...counts }));
 
     const handleClick = (e?: React.MouseEvent | React.KeyboardEvent) => {
         e?.stopPropagation();
@@ -75,15 +78,19 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
             }}
         >
             {/* Main Content Area: Flex Row for Side-by-Side Layout */}
-            <div className="p-5 flex justify-between items-start gap-4">
+            <div className="flex items-start justify-between gap-4 p-4">
 
                 {/* LEFT COLUMN: Event Details */}
-                <div className="flex flex-col gap-1 flex-1">
-                    <div className="flex justify-between items-start">
-                        <h3 className="text-lg font-bold leading-tight text-foreground">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base font-semibold leading-tight text-foreground">
                             {locationName || "Event"}
                         </h3>
-                        {/* Optional: Status Badges */}
+                        {isUnderstaffed && (
+                            <span className="rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-semibold text-destructive">
+                                {openSlotCount} needs cover
+                            </span>
+                        )}
                         {isUrgent && (
                             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
                                 ACTION REQUIRED
@@ -91,24 +98,30 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
                         )}
                     </div>
 
-                    <div className="mt-1 text-sm font-medium text-muted-foreground">
+                    <div className="text-sm font-medium text-muted-foreground">
                         {format(startTime, "h:mm a")} – {format(endTime, "h:mm a")}
                         {timeZoneLabel ? ` (${timeZoneLabel})` : ""}
                     </div>
 
-                    <div className="mt-1 max-w-xl truncate text-sm text-muted-foreground opacity-90">
+                    <div className="truncate text-xs text-muted-foreground/90">
                         {primaryShift.locationAddress || locationName}
                     </div>
                 </div>
 
                 {/* RIGHT COLUMN: Roles List with Colors */}
-                <div className="flex flex-col items-end gap-1 shrink-0 pt-1">
+                <div className="flex shrink-0 flex-col items-end gap-1">
                     {roleBreakdown.map((item) => {
                         const color = getShiftRoleTone(item.role);
+                        const short = item.total > item.filled;
                         return (
                             <div key={item.role} className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                <span className={`w-2 h-2 rounded-full ${color.dot}`} />
-                                <span>{item.role}: {item.count}</span>
+                                <span className={`h-2 w-2 rounded-full ${color.dot}`} />
+                                <span>
+                                    {item.role}{" "}
+                                    <span className={short ? "font-semibold text-destructive" : "text-foreground"}>
+                                        {item.filled}/{item.total}
+                                    </span>
+                                </span>
                             </div>
                         );
                     })}
@@ -116,30 +129,37 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
             </div>
 
             {/* Footer: Workers & Action */}
-            <div className="flex items-center justify-between border-t border-border/70 bg-muted/40 px-5 py-3">
+            <div className="flex items-center justify-between border-t border-border/70 bg-muted/40 px-4 py-2">
 
                 {/* Left: Avatars - Styled with rings matching their role */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {allAssignedWorkers.length > 0 ? (
-                        <div className="flex -space-x-2">
-                            {allAssignedWorkers.slice(0, 5).map((worker, i) => {
-                                // Add index to key to avoid duplicates if same worker assigned multiple times (edge case)
-                                const color = getShiftRoleTone(worker.role);
-                                return (
-                                    <Avatar key={`${worker.id}-${i}`} className={`w-8 h-8 border-2 border-background ring-2 ${color.ring} ring-offset-0`}>
-                                        <AvatarImage src={worker.avatarUrl} />
-                                        <AvatarFallback className="border border-border bg-muted text-[9px] font-bold text-muted-foreground">
-                                            {worker.initials}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                );
-                            })}
-                            {allAssignedWorkers.length > 5 && (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-background text-[9px] font-bold text-muted-foreground ring-2 ring-border">
-                                    +{allAssignedWorkers.length - 5}
-                                </div>
+                        <>
+                            <div className="flex -space-x-2">
+                                {allAssignedWorkers.slice(0, 5).map((worker, i) => {
+                                    // Add index to key to avoid duplicates if same worker assigned multiple times (edge case)
+                                    const color = getShiftRoleTone(worker.role);
+                                    return (
+                                        <Avatar key={`${worker.id}-${i}`} className={`h-7 w-7 border-2 border-background ring-2 ${color.ring} ring-offset-0`}>
+                                            <AvatarImage src={worker.avatarUrl} />
+                                            <AvatarFallback className="border border-border bg-muted text-[9px] font-bold text-muted-foreground">
+                                                {worker.initials}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    );
+                                })}
+                                {allAssignedWorkers.length > 5 && (
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-background text-[9px] font-bold text-muted-foreground ring-2 ring-border">
+                                        +{allAssignedWorkers.length - 5}
+                                    </div>
+                                )}
+                            </div>
+                            {isUnderstaffed && (
+                                <span className="text-xs font-medium text-destructive">
+                                    {openSlotCount} open
+                                </span>
                             )}
-                        </div>
+                        </>
                     ) : (
                         <span className={`text-sm font-medium ${isUnderstaffed ? "text-destructive" : "text-muted-foreground"}`}>
                             {(() => {

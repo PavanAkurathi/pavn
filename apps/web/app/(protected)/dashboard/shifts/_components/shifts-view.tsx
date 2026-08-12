@@ -7,6 +7,7 @@ import { addDays, addWeeks, format, startOfWeek } from "date-fns";
 import { ShiftList } from "./shift-list";
 import { EventFilters } from "./event-filters";
 import { WeeklyGridView } from "./weekly-grid-view";
+import { ScheduleSummary } from "./schedule-summary";
 import { SHIFT_LAYOUTS, SHIFT_STATUS, LOCATIONS } from "@/lib/constants";
 import { useCrewData } from "@/hooks/use-crew-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
@@ -273,7 +274,9 @@ function ShiftsDashboardContent({
                 availableWorkers={availableWorkers}
             />
 
-            <div className="mt-6">
+            <div className="mt-6 space-y-4">
+                <ScheduleSummary shifts={activeShifts} />
+
                 {currentLayout === SHIFT_LAYOUTS.WEEKLY ? (
                     <WeeklyGridView
                         shifts={activeShifts}
