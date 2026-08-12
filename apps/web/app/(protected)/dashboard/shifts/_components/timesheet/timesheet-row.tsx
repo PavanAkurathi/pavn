@@ -11,7 +11,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@repo/ui/components/ui/select";
-import { Check, Pencil, Phone, RotateCcw, Trash2 } from "lucide-react";
+import {
+    Check,
+    Hourglass,
+    MapPin,
+    Pencil,
+    Phone,
+    RotateCcw,
+    Trash2,
+} from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
 import {
@@ -71,7 +79,7 @@ const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) =>
     String(index).padStart(2, "0"),
 );
 const PERIOD_OPTIONS: Array<TimeFieldParts["period"]> = ["AM", "PM"];
-const BREAK_OPTIONS = ["0 min", "15 min", "30 min"] as const;
+const BREAK_OPTIONS = ["0 min", "15 min", "30 min", "45 min", "60 min", "90 min", "120 min"] as const;
 const EMPTY_SELECT_VALUE = "__empty__";
 
 const getVariantClass = (variant: StatusVariant = "default") => {
@@ -84,6 +92,8 @@ const getVariantClass = (variant: StatusVariant = "default") => {
             return "border-input bg-background";
     }
 };
+
+
 
 function TimeSelectField({
     label,
@@ -212,11 +222,12 @@ function BreakSelectField({
             </FieldLabel>
             <div
                 className={cn(
-                    "rounded-lg border px-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-1 focus-within:ring-ring",
+                    "flex items-center rounded-lg border px-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-1 focus-within:ring-ring bg-muted/30",
                     getVariantClass(variant),
                     disabled && "opacity-60",
                 )}
             >
+                <Hourglass className="ml-1 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <Select value={value} onValueChange={onChange} disabled={disabled}>
                     <SelectTrigger
                         aria-label={label}
@@ -484,8 +495,16 @@ export function TimesheetRow({
                 />
             </Field>
 
-            <div className="flex flex-wrap items-center justify-end gap-2">
-                {hasDirtyEdits ? <Badge variant="secondary">Unsaved</Badge> : null}
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+                {phone ? (
+                    <Button asChild size="icon" variant="outline" className="size-8 text-muted-foreground hover:text-foreground" aria-label={`Call ${workerName}`}>
+                        <a href={`tel:${phone}`}><Phone className="size-3.5" /></a>
+                    </Button>
+                ) : null}
+                <Button size="icon" variant="outline" className="size-8 text-muted-foreground hover:text-foreground" aria-label="View worker location" title="Worker Geofence / Location">
+                    <MapPin className="size-3.5" />
+                </Button>
+                {hasDirtyEdits ? <Badge variant="secondary" className="mr-1">Unsaved</Badge> : null}
                 {hasDirtyEdits ? (
                     <>
                         <Button
@@ -494,7 +513,7 @@ export function TimesheetRow({
                             onClick={resetDraftValues}
                             disabled={fieldsDisabled}
                         >
-                            <RotateCcw data-icon="inline-start" />
+                            <RotateCcw data-icon="inline-start" className="size-3.5" />
                             Reset
                         </Button>
                         <Button
@@ -508,13 +527,14 @@ export function TimesheetRow({
                 ) : null}
                 <Button
                     variant="outline"
-                    size="sm"
-                    className="text-muted-foreground hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:border-destructive/20 hover:bg-destructive/5 hover:text-destructive"
                     onClick={onRemoveFromShift}
                     disabled={disabled}
+                    title="Remove worker from shift"
+                    aria-label="Remove worker from shift"
                 >
-                    <Trash2 data-icon="inline-start" />
-                    Remove
+                    <Trash2 className="size-3.5" />
                 </Button>
             </div>
         </div>
