@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { format, parseISO } from "date-fns";
 import type { Shift } from "@/lib/types";
 import { getShiftRoleTone } from "@/lib/shifts/role-theme";
+import { getShiftClock } from "@/lib/shifts/shift-time";
 
 interface ShiftCardProps {
     shifts: Shift[];
@@ -13,6 +14,17 @@ interface ShiftCardProps {
 const SETTLED_STATUSES = ["completed", "approved", "cancelled"];
 /** Open slots are listed individually, up to this many, then summarised. */
 const MAX_OPEN_CHIPS = 3;
+
+/**
+ * Chips are typed because the three kinds behave differently on the day: a
+ * roster worker clocks themselves in, an invited one may never turn up because
+ * they never accepted, and an agency worker is tracked entirely by the manager.
+ */
+const WORKER_KIND_STYLES = {
+    roster: { chip: "border-border bg-muted/40", label: undefined },
+    invited: { chip: "border-amber-300 bg-amber-50/60", label: "Invited" },
+    agency: { chip: "border-violet-200 bg-violet-50/60", label: "Agency" },
+} as const;
 
 function filledOf(shift: Shift) {
     return shift.capacity?.filled ?? shift.assignedWorkers?.length ?? 0;
@@ -50,12 +62,7 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
     );
     const isPublished = ["published", "assigned", "in-progress"].includes(primaryShift.status);
 
-    // Viewer's timezone abbreviation. The design shows the *location's* zone;
-    // shift.timezone is not yet populated, so this stays honest about whose
-    // clock is being shown until it is.
-    const timeZoneLabel = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
-        .formatToParts(startTime)
-        .find((part) => part.type === "timeZoneName")?.value;
+    const clock = getShiftClock(startTime, endTime, primaryShift.timezone);
 
     const handleClick = (e?: React.MouseEvent | React.KeyboardEvent) => {
         e?.stopPropagation();
@@ -84,10 +91,18 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
             {/* WHEN */}
             <div className="min-w-0">
                 <div className="text-sm font-semibold tabular-nums leading-tight text-foreground">
-                    {format(startTime, "h:mm a")} – {format(endTime, "h:mm a")}
+                    {clock.start} – {clock.end}
                 </div>
                 <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {timeZoneLabel ? <span className="font-semibold">{timeZoneLabel}</span> : null}
+                    {clock.zoneLabel ? (
+                        <span
+                            className="font-semibold"
+                            title={clock.isViewerZone ? "Your timezone — this shift has none recorded" : primaryShift.timezone ?? undefined}
+                        >
+                            {clock.zoneLabel}
+                            {clock.isViewerZone ? "*" : ""}
+                        </span>
+                    ) : null}
                     <span aria-hidden="true" className="text-muted-foreground/50">·</span>
                     <span className="tabular-nums">{durationHours.toFixed(1)} h</span>
                 </div>
@@ -129,22 +144,31 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
                                 </span>
 
                                 <div className="col-span-2 flex flex-wrap gap-1.5 md:col-span-1">
-                                    {workers.map((worker, index) => (
-                                        <span
-                                            key={`${worker.id}-${index}`}
-                                            className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 py-0.5 pl-0.5 pr-2.5"
-                                        >
-                                            <Avatar className="h-[18px] w-[18px]">
-                                                <AvatarImage src={worker.avatarUrl} />
-                                                <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
-                                                    {worker.initials}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-xs text-foreground/80">
-                                                {worker.name ?? worker.initials}
+                                    {workers.map((worker, index) => {
+                                        const kindStyle =
+                                            WORKER_KIND_STYLES[worker.kind ?? "roster"] ?? WORKER_KIND_STYLES.roster;
+                                        return (
+                                            <span
+                                                key={`${worker.id}-${index}`}
+                                                className={`inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 ${kindStyle.chip}`}
+                                            >
+                                                <Avatar className="h-[18px] w-[18px]">
+                                                    <AvatarImage src={worker.avatarUrl} />
+                                                    <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
+                                                        {worker.initials}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <span className="text-xs text-foreground/80">
+                                                    {worker.name ?? worker.initials}
+                                                </span>
+                                                {kindStyle.label ? (
+                                                    <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                        {kindStyle.label}
+                                                    </span>
+                                                ) : null}
                                             </span>
-                                        </span>
-                                    ))}
+                                        );
+                                    })}
 
                                     {!isSettled &&
                                         Array.from({ length: Math.min(open, MAX_OPEN_CHIPS) }).map((_, index) => (
