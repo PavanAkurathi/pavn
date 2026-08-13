@@ -72,15 +72,10 @@ interface TimesheetRowProps {
     onRenameTemp?: (name: string) => void;
 }
 
-const HOUR_OPTIONS = Array.from({ length: 12 }, (_, index) =>
-    String(index + 1).padStart(2, "0"),
-);
-const MINUTE_OPTIONS = Array.from({ length: 60 }, (_, index) =>
-    String(index).padStart(2, "0"),
-);
-const PERIOD_OPTIONS: Array<TimeFieldParts["period"]> = ["AM", "PM"];
+// Instawork's timesheet uses a native <input type="time">, and it is the right
+// call: one field, the platform's own keyboard and validation, and no bespoke
+// hour/minute/period select stack to keep in sync.
 const BREAK_OPTIONS = ["0 min", "15 min", "30 min", "45 min", "60 min", "90 min", "120 min"] as const;
-const EMPTY_SELECT_VALUE = "__empty__";
 
 const getVariantClass = (variant: StatusVariant = "default") => {
     switch (variant) {
@@ -93,9 +88,25 @@ const getVariantClass = (variant: StatusVariant = "default") => {
     }
 };
 
+function timePartsTo24h(parts: TimeFieldParts): string {
+    if (!parts.hour || !parts.minute || !parts.period) return "";
+    let h = parseInt(parts.hour, 10);
+    if (parts.period === "PM" && h < 12) h += 12;
+    if (parts.period === "AM" && h === 12) h = 0;
+    return `${String(h).padStart(2, "0")}:${parts.minute}`;
+}
 
+function time24hToParts(val: string): TimeFieldParts {
+    if (!val) return { hour: "", minute: "", period: "AM" };
+    const [hStr, mStr] = val.split(":");
+    let h = parseInt(hStr || "0", 10);
+    const period: TimeFieldParts["period"] = h >= 12 ? "PM" : "AM";
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    return { hour: String(h).padStart(2, "0"), minute: mStr || "00", period };
+}
 
-function TimeSelectField({
+function TimeInputField({
     label,
     value,
     onChange,
@@ -113,92 +124,19 @@ function TimeSelectField({
             <FieldLabel className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground md:hidden">
                 {label}
             </FieldLabel>
-            <div
+            <input
+                type="time"
+                aria-label={label}
+                value={timePartsTo24h(value)}
+                onChange={(event) => onChange(time24hToParts(event.target.value))}
+                disabled={disabled}
                 className={cn(
-                    "flex h-10 items-center gap-1.5 rounded-lg border px-1.5 shadow-sm transition-[border-color,box-shadow] focus-within:ring-1 focus-within:ring-ring",
+                    "h-10 w-full rounded-lg border px-2.5 text-sm font-medium shadow-sm transition-[border-color,box-shadow] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                     getVariantClass(variant),
                     disabled && "opacity-60",
                 )}
-            >
-                <TimePartSelect
-                    ariaLabel={`${label} hour`}
-                    value={value.hour}
-                    placeholder="hh"
-                    options={HOUR_OPTIONS}
-                    onChange={(hour) => onChange({ ...value, hour })}
-                    disabled={disabled}
-                    triggerClassName="w-[4.1rem]"
-                    contentClassName="min-w-[4.1rem]"
-                />
-                <span className="text-sm font-semibold text-muted-foreground">:</span>
-                <TimePartSelect
-                    ariaLabel={`${label} minute`}
-                    value={value.minute}
-                    placeholder="mm"
-                    options={MINUTE_OPTIONS}
-                    onChange={(minute) => onChange({ ...value, minute })}
-                    disabled={disabled}
-                    triggerClassName="w-[4.1rem]"
-                    contentClassName="min-w-[4.1rem]"
-                />
-                <TimePartSelect
-                    ariaLabel={`${label} period`}
-                    value={value.period}
-                    placeholder="AM/PM"
-                    options={PERIOD_OPTIONS}
-                    onChange={(period) => onChange({ ...value, period: period as TimeFieldParts["period"] })}
-                    disabled={disabled}
-                    triggerClassName="ml-auto w-[5.25rem]"
-                    contentClassName="min-w-[5.25rem]"
-                />
-            </div>
+            />
         </Field>
-    );
-}
-
-function TimePartSelect({
-    ariaLabel,
-    value,
-    placeholder,
-    options,
-    onChange,
-    disabled,
-    triggerClassName,
-    contentClassName,
-}: {
-    ariaLabel: string;
-    value: string;
-    placeholder: string;
-    options: readonly string[];
-    onChange: (value: string) => void;
-    disabled?: boolean;
-    triggerClassName?: string;
-    contentClassName?: string;
-}) {
-    return (
-        <Select
-            value={value || EMPTY_SELECT_VALUE}
-            onValueChange={(nextValue) => onChange(nextValue === EMPTY_SELECT_VALUE ? "" : nextValue)}
-            disabled={disabled}
-        >
-            <SelectTrigger
-                aria-label={ariaLabel}
-                className={cn(
-                    "h-8 rounded-md border-0 bg-transparent px-2 text-sm font-medium shadow-none focus-visible:border-transparent focus-visible:ring-0",
-                    triggerClassName,
-                )}
-            >
-                <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent position="popper" align="start" className={contentClassName}>
-                <SelectItem value={EMPTY_SELECT_VALUE}>{placeholder}</SelectItem>
-                {options.map((option) => (
-                    <SelectItem key={option} value={option}>
-                        {option}
-                    </SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
     );
 }
 
@@ -450,7 +388,7 @@ export function TimesheetRow({
                 </div>
             </div>
 
-            <TimeSelectField
+            <TimeInputField
                 label="Clock-in"
                 value={draftClockIn}
                 onChange={setDraftClockIn}
@@ -458,7 +396,7 @@ export function TimesheetRow({
                 disabled={fieldsDisabled}
             />
 
-            <TimeSelectField
+            <TimeInputField
                 label="Clock-out"
                 value={draftClockOut}
                 onChange={setDraftClockOut}
