@@ -14,6 +14,15 @@ interface ShiftCardProps {
 const SETTLED_STATUSES = ["completed", "approved", "cancelled"];
 /** Open slots are listed individually, up to this many, then summarised. */
 const MAX_OPEN_CHIPS = 3;
+/**
+ * Named chips are worth their space on a small position and unreadable on a
+ * large one — a 30-slot Loader line would bury the shift itself. Past this
+ * count the line collapses to an avatar stack and a tally; the role and
+ * filled/total still say what matters, and the detail page has the names.
+ */
+const MAX_NAMED_CHIPS = 4;
+/** Faces shown in the collapsed stack before "+N". */
+const MAX_STACKED_AVATARS = 5;
 
 /**
  * Chips are typed because the three kinds behave differently on the day: a
@@ -143,47 +152,73 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
                                     {filled}/{total}
                                 </span>
 
-                                <div className="col-span-2 flex flex-wrap gap-1.5 md:col-span-1">
-                                    {workers.map((worker, index) => {
-                                        const kindStyle =
-                                            WORKER_KIND_STYLES[worker.kind ?? "roster"] ?? WORKER_KIND_STYLES.roster;
-                                        return (
-                                            <span
-                                                key={`${worker.id}-${index}`}
-                                                className={`inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 ${kindStyle.chip}`}
-                                            >
-                                                <Avatar className="h-[18px] w-[18px]">
-                                                    <AvatarImage src={worker.avatarUrl} />
-                                                    <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
-                                                        {worker.initials}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <span className="text-xs text-foreground/80">
-                                                    {worker.name ?? worker.initials}
+                                <div className="col-span-2 flex flex-wrap items-center gap-1.5 md:col-span-1">
+                                    {workers.length > MAX_NAMED_CHIPS ? (
+                                        <span className="flex items-center gap-2">
+                                            <span className="flex -space-x-1.5">
+                                                {workers.slice(0, MAX_STACKED_AVATARS).map((worker, index) => (
+                                                    <Avatar
+                                                        key={`${worker.id}-${index}`}
+                                                        className="h-[22px] w-[22px] border-2 border-card"
+                                                        title={worker.name ?? worker.initials}
+                                                    >
+                                                        <AvatarImage src={worker.avatarUrl} />
+                                                        <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
+                                                            {worker.initials}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                ))}
+                                            </span>
+                                            {workers.length > MAX_STACKED_AVATARS ? (
+                                                <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                                                    +{workers.length - MAX_STACKED_AVATARS}
                                                 </span>
-                                                {kindStyle.label ? (
-                                                    <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                                        {kindStyle.label}
-                                                    </span>
-                                                ) : null}
-                                            </span>
-                                        );
-                                    })}
-
-                                    {!isSettled &&
-                                        Array.from({ length: Math.min(open, MAX_OPEN_CHIPS) }).map((_, index) => (
-                                            <span
-                                                key={`open-${index}`}
-                                                className="inline-flex items-center gap-1 rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2.5 py-0.5 text-xs font-semibold text-destructive"
-                                            >
-                                                Open slot
-                                            </span>
-                                        ))}
-
-                                    {!isSettled && open > MAX_OPEN_CHIPS ? (
-                                        <span className="inline-flex items-center px-1 text-xs font-semibold text-destructive">
-                                            +{open - MAX_OPEN_CHIPS} more
+                                            ) : null}
                                         </span>
+                                    ) : (
+                                        workers.map((worker, index) => {
+                                            const kindStyle =
+                                                WORKER_KIND_STYLES[worker.kind ?? "roster"] ?? WORKER_KIND_STYLES.roster;
+                                            return (
+                                                <span
+                                                    key={`${worker.id}-${index}`}
+                                                    className={`inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 ${kindStyle.chip}`}
+                                                >
+                                                    <Avatar className="h-[18px] w-[18px]">
+                                                        <AvatarImage src={worker.avatarUrl} />
+                                                        <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
+                                                            {worker.initials}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-xs text-foreground/80">
+                                                        {worker.name ?? worker.initials}
+                                                    </span>
+                                                    {kindStyle.label ? (
+                                                        <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                            {kindStyle.label}
+                                                        </span>
+                                                    ) : null}
+                                                </span>
+                                            );
+                                        })
+                                    )}
+
+                                    {/* On a big position one tally beats a row of identical chips. */}
+                                    {!isSettled && open > 0 ? (
+                                        workers.length > MAX_NAMED_CHIPS || open > MAX_OPEN_CHIPS ? (
+                                            <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2.5 py-0.5 text-xs font-semibold text-destructive">
+                                                {open} open
+                                            </span>
+                                        ) : (
+                                            Array.from({ length: open }).map((_, index) => (
+                                                <span
+                                                    key={`open-${index}`}
+                                                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2.5 py-0.5 text-xs font-semibold text-destructive"
+                                                >
+                                                    Open slot
+                                                </span>
+                                            ))
+                                        )
                                     ) : null}
                                 </div>
                             </div>
