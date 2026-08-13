@@ -1,5 +1,5 @@
 import { db, TxOrDb } from "@repo/database";
-import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences, rosterEntry, tempWorker, member, user } from "@repo/database/schema";
+import { shift, shiftAssignment, rateLimitState, idempotencyKey as idempotencyKeyTable, workerAvailability, scheduledNotification, location, workerNotificationPreferences, rosterEntry, tempWorker, member, user, organization } from "@repo/database/schema";
 import { eq, and, lt, gt, inArray, like, sql, or } from "drizzle-orm";
 import { addMinutes, addDays } from "date-fns";
 import { z } from "zod";
@@ -96,7 +96,7 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
         throw new AppError("Validation Failed", "VALIDATION_ERROR", 400, parseResult.error.flatten());
     }
 
-    const { idempotencyKey, locationId, contactId, organizationId, timezone, status, schedules, recurrence } = parseResult.data;
+    const { idempotencyKey, locationId, contactId, organizationId, timezone: clientTimezone, status, schedules, recurrence } = parseResult.data;
 
 
 
@@ -114,11 +114,31 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
             eq(location.id, locationId),
             eq(location.organizationId, activeOrgId)
         ),
-        columns: { id: true, name: true }
+        columns: { id: true, name: true, timezone: true }
     });
 
     if (!locationRecord) {
         throw new AppError("Location not found", "NOT_FOUND", 404);
+    }
+
+    // HARD RULE: a shift happens where the location is, so the location's zone
+    // decides what "9:00 AM" means. The client sends its own browser zone; that
+    // is only a fallback for a location with none recorded, never an override.
+    // Without this, a manager in California scheduling a Boston site books the
+    // crew for 6am.
+    const organizationRecord = await db.query.organization.findFirst({
+        where: eq(organization.id, activeOrgId),
+        columns: { timezone: true },
+    });
+
+    const timezone = locationRecord.timezone || organizationRecord?.timezone || clientTimezone;
+
+    if (!timezone) {
+        throw new AppError(
+            "This location has no timezone set, so shift times cannot be anchored.",
+            "VALIDATION_ERROR",
+            400,
+        );
     }
 
 
@@ -388,6 +408,9 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
                     description: block.scheduleName,
                     startTime: startDateTime,
                     endTime: endDateTime,
+                    // Stamped so a later edit to the location cannot silently
+                    // move the wall-clock time of shifts already published.
+                    timezone,
                     capacityTotal: capacityTotal,
                     status: initialStatus,
                     scheduleGroupId: scheduleIntentId
