@@ -114,6 +114,7 @@ import {
 } from "@/actions/invites";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "@/components/ui/use-confirm";
 
 function TeamActions({
     entryId,
@@ -129,6 +130,7 @@ function TeamActions({
     status?: string;
 }) {
     const router = useRouter();
+    const { confirm, confirmDialog } = useConfirm();
 
     const handleResend = async () => {
         toast.promise(resendTeamInvite(entryId), {
@@ -139,7 +141,13 @@ function TeamActions({
     };
 
     const handleRemoveMember = async () => {
-        if (!confirm("Are you sure you want to remove this member? They will lose access immediately.")) return;
+        const ok = await confirm({
+            title: "Remove this member?",
+            description: "They lose access to the workspace immediately.",
+            confirmLabel: "Remove member",
+            destructive: true,
+        });
+        if (!ok) return;
 
         toast.promise(deleteMemberAction(entryId), {
             loading: "Removing member...",
@@ -152,7 +160,13 @@ function TeamActions({
     };
 
     const handleCancelInvitation = async () => {
-        if (!confirm("Cancel this invitation? The recipient will need a new invite link to join later.")) return;
+        const ok = await confirm({
+            title: "Cancel this invitation?",
+            description: "They will need a new invite link to join later.",
+            confirmLabel: "Cancel invitation",
+            destructive: true,
+        });
+        if (!ok) return;
 
         toast.promise(cancelTeamInvite(entryId), {
             loading: "Canceling invitation...",
@@ -198,6 +212,7 @@ function TeamActions({
                     </DropdownMenuItem>
                 ) : null}
             </DropdownMenuContent>
+            {confirmDialog}
         </DropdownMenu>
     );
 }

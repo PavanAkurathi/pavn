@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, Row } from "@tanstack/react-table"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
@@ -10,6 +10,7 @@ import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { removeWorker, inviteWorker } from "@/actions/workers"
+import { useConfirm } from "@/components/ui/use-confirm"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -123,6 +124,89 @@ function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
     )
 }
 
+/**
+ * Row actions live in their own component so they can use hooks. A column
+ * `cell` callback is not a component boundary React will honour, and the
+ * confirm dialog needs state.
+ */
+function WorkerRowActions({ row }: { row: Row<WorkerDetails> }) {
+    const { confirm, confirmDialog } = useConfirm();
+    const worker = row.original;
+    const isPureInvitation = worker.name === worker.email && worker.status === "invited";
+
+    return (
+        <>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild disabled={isPureInvitation}>
+                    {isPureInvitation ? (
+                        <span>No Profile Yet</span>
+                    ) : (
+                        <Link href={`/workers/${worker.id}`}>View details</Link>
+                    )}
+                </DropdownMenuItem>
+                {worker.status !== "active" && (
+                    <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => {
+                            toast.promise(inviteWorker({
+                                name: worker.name,
+                                email: worker.email,
+                                phoneNumber: worker.phone || undefined,
+                                role: (worker.role as "admin" | "member") || "member",
+                                jobTitle: worker.jobTitle || undefined,
+                                hourlyRate: worker.hourlyRate || undefined,
+                                invites: { email: true, sms: !!worker.phone }
+                            }), {
+                                loading: "Resending invite...",
+                                success: (result) => {
+                                    if (result.error) throw new Error(result.error);
+                                    return "Invite resent successfully";
+                                },
+                                error: (err) => err.message || "Failed to resend invite"
+                            });
+                        }}
+                    >
+                        Resend Invite
+                    </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                    className="text-red-600 font-medium cursor-pointer"
+                    onClick={async () => {
+                        const ok = await confirm({
+                            title: `Remove ${worker.name}?`,
+                            description: "They stay on any shift they are already assigned to.",
+                            confirmLabel: "Remove worker",
+                            destructive: true,
+                        });
+                        if (!ok) return;
+                        toast.promise(removeWorker(worker.email), {
+                            loading: "Removing worker...",
+                            success: (result) => {
+                                if (result.error) throw new Error(result.error);
+                                return "Worker removed successfully";
+                            },
+                            error: (err) => err.message || "Failed to remove worker"
+                        });
+                    }}
+                >
+                    Remove Worker
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+        {confirmDialog}
+        </>
+    )
+}
+
 export const columns: ColumnDef<WorkerDetails>[] = [
     {
         id: "select",
@@ -231,72 +315,6 @@ export const columns: ColumnDef<WorkerDetails>[] = [
     },
     {
         id: "actions",
-        cell: ({ row }) => {
-            const worker = row.original;
-            const isPureInvitation = worker.name === worker.email && worker.status === "invited";
-
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild disabled={isPureInvitation}>
-                            {isPureInvitation ? (
-                                <span>No Profile Yet</span>
-                            ) : (
-                                <Link href={`/workers/${worker.id}`}>View details</Link>
-                            )}
-                        </DropdownMenuItem>
-                        {worker.status !== "active" && (
-                            <DropdownMenuItem
-                                className="cursor-pointer"
-                                onClick={() => {
-                                    toast.promise(inviteWorker({
-                                        name: worker.name,
-                                        email: worker.email,
-                                        phoneNumber: worker.phone || undefined,
-                                        role: (worker.role as "admin" | "member") || "member",
-                                        jobTitle: worker.jobTitle || undefined,
-                                        hourlyRate: worker.hourlyRate || undefined,
-                                        invites: { email: true, sms: !!worker.phone }
-                                    }), {
-                                        loading: "Resending invite...",
-                                        success: (result) => {
-                                            if (result.error) throw new Error(result.error);
-                                            return "Invite resent successfully";
-                                        },
-                                        error: (err) => err.message || "Failed to resend invite"
-                                    });
-                                }}
-                            >
-                                Resend Invite
-                            </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                            className="text-red-600 font-medium cursor-pointer"
-                            onClick={() => {
-                                if (!confirm(`Are you sure you want to remove ${worker.name}?`)) return;
-                                toast.promise(removeWorker(worker.email), {
-                                    loading: "Removing worker...",
-                                    success: (result) => {
-                                        if (result.error) throw new Error(result.error);
-                                        return "Worker removed successfully";
-                                    },
-                                    error: (err) => err.message || "Failed to remove worker"
-                                });
-                            }}
-                        >
-                            Remove Worker
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            )
-        },
+        cell: ({ row }) => <WorkerRowActions row={row} />,
     },
 ]
