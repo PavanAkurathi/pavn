@@ -7,6 +7,7 @@ import { cn } from "@repo/ui/lib/utils";
 import { Button } from "@repo/ui/components/ui/button";
 import { Plus, Building2 } from "lucide-react";
 import { NavUser } from "./nav-user";
+import type { TrialState } from "@/lib/trial";
 import { NotificationsPopover } from "./notifications/notifications-popover";
 import {
     getCreateScheduleHref,
@@ -19,7 +20,6 @@ const NAV_ITEMS = [
     { label: "Shifts", href: getDashboardShiftsHref() },
     { label: "Roster", href: "/rosters" },
     { label: "Reports", href: "/reports" },
-    { label: "Availability", href: "/dashboard/availability" }, // [AVL-006]
 ];
 
 interface NavHeaderProps {
@@ -33,9 +33,10 @@ interface NavHeaderProps {
         email?: string | null;
         image?: string | null;
     } | null;
+    trial?: TrialState | null;
 }
 
-export function NavHeader({ activeOrg: serverOrg, user }: NavHeaderProps) {
+export function NavHeader({ activeOrg: serverOrg, user, trial }: NavHeaderProps) {
     const pathname = usePathname();
     const activeOrg = serverOrg;
 
@@ -97,6 +98,20 @@ export function NavHeader({ activeOrg: serverOrg, user }: NavHeaderProps) {
 
                 {/* Right: CTA & User */}
                 <div className="flex items-center gap-4">
+                    {trial ? (
+                        <Link
+                            href="/settings/billing"
+                            className={cn(
+                                "hidden items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors lg:inline-flex",
+                                trial.isExpiring
+                                    ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                            )}
+                        >
+                            Trial · {trial.daysLeft} {trial.daysLeft === 1 ? "day" : "days"} left
+                        </Link>
+                    ) : null}
+
                     <Link href={getCreateScheduleHref()}>
                         <Button className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white gap-2 font-medium" size="sm" data-testid="create-shift">
                             <Plus className="w-4 h-4" />

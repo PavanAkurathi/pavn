@@ -36,6 +36,7 @@
         "@repo/observability": "workspace:*",
         "drizzle-orm": "0.45.2",
         "nanoid": "^5.1.16",
+        "tz-lookup": "^6.1.25",
         "zod": "^4.4.3"
     },
     "devDependencies": {

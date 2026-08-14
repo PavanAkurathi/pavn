@@ -14,10 +14,19 @@ import {
 
 type ProxySession = {
     user: {
+        id: string;
         email: string;
         emailVerified: boolean;
     };
 } | null;
+
+// Onboarding completion only ever moves forward, so once we have seen a user
+// finish we can stop paying for the status round trip on every navigation.
+// Keyed by user id and short-lived so a wrong skip heals itself. This is a
+// latency hint on a soft gate, not a security boundary — the onboarding pages
+// still check real state server-side.
+const ONBOARDING_COMPLETE_COOKIE = "wh_onboarding_complete";
+const ONBOARDING_COMPLETE_MAX_AGE = 60 * 60 * 24;
 
 type OnboardingStatus = {
     hasOnboarding: boolean;
@@ -123,7 +132,19 @@ export default async function proxy(request: NextRequest) {
     }
 
     try {
-        const session = await fetchProxySession(request);
+        const enforceOnboarding = shouldEnforceOnboardingForRequest(request);
+        const completedForUserId = request.cookies.get(ONBOARDING_COMPLETE_COOKIE)?.value;
+
+        // The status endpoint authenticates from the same cookie, so it does not
+        // need the session result — starting both together removes a full round
+        // trip from every navigation that still has to check.
+        const sessionPromise = fetchProxySession(request);
+        const statusPromise =
+            enforceOnboarding && !completedForUserId
+                ? fetchOnboardingStatus(request).catch(() => null)
+                : null;
+
+        const session = await sessionPromise;
 
         if (!session) {
             return redirectToLogin(request);
@@ -133,19 +154,42 @@ export default async function proxy(request: NextRequest) {
             return redirectToVerifyEmail(request, session.user.email);
         }
 
-        if (shouldEnforceOnboardingForRequest(request)) {
-            const onboardingStatus = await fetchOnboardingStatus(request);
-
-            if (
-                onboardingStatus?.hasOnboarding &&
-                onboardingStatus.requiresOnboarding &&
-                !onboardingStatus.isComplete
-            ) {
-                return redirectToOnboarding(request);
-            }
+        if (!enforceOnboarding) {
+            return NextResponse.next();
         }
 
-        return NextResponse.next();
+        // A cookie from a different user tells us nothing; fall back to asking.
+        const alreadyComplete = completedForUserId === session.user.id;
+        const onboardingStatus = alreadyComplete
+            ? null
+            : await (statusPromise ?? fetchOnboardingStatus(request).catch(() => null));
+
+        if (alreadyComplete) {
+            return NextResponse.next();
+        }
+
+        if (
+            onboardingStatus?.hasOnboarding &&
+            onboardingStatus.requiresOnboarding &&
+            !onboardingStatus.isComplete
+        ) {
+            return redirectToOnboarding(request);
+        }
+
+        const response = NextResponse.next();
+
+        if (onboardingStatus?.isComplete) {
+            response.cookies.set(ONBOARDING_COMPLETE_COOKIE, session.user.id, {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                maxAge: ONBOARDING_COMPLETE_MAX_AGE,
+            });
+        } else if (completedForUserId) {
+            response.cookies.delete(ONBOARDING_COMPLETE_COOKIE);
+        }
+
+        return response;
     } catch (error) {
         console.error("[Proxy] Protected route check failed:", error);
         return redirectToLogin(request);

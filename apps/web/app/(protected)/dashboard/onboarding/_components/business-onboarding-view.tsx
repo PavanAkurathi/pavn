@@ -93,7 +93,7 @@ export function BusinessOnboardingView({
         <div className="-mx-4 -my-8 bg-muted/40 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
             <div className="mx-auto max-w-[1180px]">
                 <div className="grid min-h-[calc(100dvh-4rem)] overflow-hidden rounded-[36px] border border-border/70 bg-background shadow-[0_30px_80px_-40px_rgba(15,23,42,0.45)] lg:h-[calc(100dvh-4rem)] lg:min-h-0 lg:grid-cols-[320px_minmax(0,1fr)]">
-                    <aside className="flex flex-col gap-6 bg-slate-950 px-6 py-6 text-white sm:px-8">
+                    <aside className="flex flex-col gap-6 overflow-y-auto bg-slate-950 px-6 py-6 text-white sm:px-8">
                         <div className="flex items-start justify-between gap-4">
                             <div className="flex flex-col gap-1">
                                 <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/50">
@@ -207,8 +207,9 @@ export function BusinessOnboardingView({
                         </div>
                     </aside>
 
-                    <section className="flex items-center justify-center px-5 py-6 sm:px-10 lg:px-12">
-                        <div className="flex w-full max-w-[640px] flex-col gap-6">
+                    <section className="flex items-start justify-center overflow-y-auto px-5 py-6 sm:px-10 lg:px-12">
+                        {/* my-auto keeps the step centred when it fits and lets it scroll when it does not */}
+                        <div className="my-auto flex w-full max-w-[640px] flex-col gap-6">
                             <div className="flex flex-col gap-4">
                                 <Badge variant="outline" className="w-fit">
                                     {activeStep

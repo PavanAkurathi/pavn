@@ -1,8 +1,8 @@
-import { Card } from "@repo/ui/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { format, parseISO } from "date-fns";
 import type { Shift } from "@/lib/types";
 import { getShiftRoleTone } from "@/lib/shifts/role-theme";
+import { getShiftClock } from "@/lib/shifts/shift-time";
 
 interface ShiftCardProps {
     shifts: Shift[];
@@ -11,6 +11,42 @@ interface ShiftCardProps {
     actionLabel?: string;
 }
 
+const SETTLED_STATUSES = ["completed", "approved", "cancelled"];
+/** Open slots are listed individually, up to this many, then summarised. */
+const MAX_OPEN_CHIPS = 3;
+/**
+ * Named chips are worth their space on a small position and unreadable on a
+ * large one — a 30-slot Loader line would bury the shift itself. Past this
+ * count the line collapses to an avatar stack and a tally; the role and
+ * filled/total still say what matters, and the detail page has the names.
+ */
+const MAX_NAMED_CHIPS = 4;
+/** Faces shown in the collapsed stack before "+N". */
+const MAX_STACKED_AVATARS = 5;
+
+/**
+ * Chips are typed because the three kinds behave differently on the day: a
+ * roster worker clocks themselves in, an invited one may never turn up because
+ * they never accepted, and an agency worker is tracked entirely by the manager.
+ */
+const WORKER_KIND_STYLES = {
+    roster: { chip: "border-border bg-muted/40", label: undefined },
+    invited: { chip: "border-amber-300 bg-amber-50/60", label: "Invited" },
+    agency: { chip: "border-violet-200 bg-violet-50/60", label: "Agency" },
+} as const;
+
+function filledOf(shift: Shift) {
+    return shift.capacity?.filled ?? shift.assignedWorkers?.length ?? 0;
+}
+
+/**
+ * One scheduled block, rendered as a row: when on the left, who on the right of
+ * that, and where it stands on the far right.
+ *
+ * Each entry in `shifts` is a position within the same block — same time, same
+ * location, different role — so the middle column lists them as
+ * "role · filled/total · the people in it".
+ */
 export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift" }: ShiftCardProps) {
     if (!shifts || shifts.length === 0) return null;
 
@@ -19,36 +55,23 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
 
     const startTime = parseISO(primaryShift.startTime);
     const endTime = parseISO(primaryShift.endTime);
+    const durationHours = (endTime.getTime() - startTime.getTime()) / 3_600_000;
 
-    // Understaffed shifts get the red bulb: open slots on a shift that can
-    // still be staffed. Settled shifts (approved/cancelled/completed) stay calm.
-    const openSlotCount = shifts.reduce((sum, s) => {
-        const total = s.capacity?.total ?? 0;
-        const filled = s.capacity?.filled ?? s.assignedWorkers?.length ?? 0;
-        return sum + Math.max(total - filled, 0);
-    }, 0);
-    const isSettled = ["completed", "approved", "cancelled"].includes(primaryShift.status);
-    const isUnderstaffed = openSlotCount > 0 && !isSettled;
-    // Viewer's timezone abbreviation (e.g. "PDT") — honest until shifts are
-    // anchored to the location's timezone.
-    const timeZoneLabel = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
-        .formatToParts(startTime)
-        .find((part) => part.type === "timeZoneName")?.value;
-
-    // Workers with Role Context for coloring
-    // We map over shifts to get workers and assign them the role of that shift
-    const allAssignedWorkers = shifts.flatMap(s =>
-        (s.assignedWorkers || []).map(w => ({ ...w, role: s.title }))
+    const isSettled = SETTLED_STATUSES.includes(primaryShift.status);
+    const openSlotCount = shifts.reduce(
+        (sum, s) => sum + Math.max((s.capacity?.total ?? 0) - filledOf(s), 0),
+        0,
     );
+    const isUnderstaffed = openSlotCount > 0 && !isSettled;
+    // More people assigned than the block has slots for. Nothing enforces
+    // capacity server-side yet, so say so rather than calling it fully staffed.
+    const overCapacityBy = shifts.reduce(
+        (sum, s) => sum + Math.max(filledOf(s) - (s.capacity?.total ?? 0), 0),
+        0,
+    );
+    const isPublished = ["published", "assigned", "in-progress"].includes(primaryShift.status);
 
-    // Calculate Role Breakdown for vertical display
-    const roleCounts: Record<string, number> = {};
-    shifts.forEach(s => {
-        const count = s.capacity?.total || 0;
-        roleCounts[s.title] = (roleCounts[s.title] || 0) + count;
-    });
-
-    const roleBreakdown = Object.entries(roleCounts).map(([role, count]) => ({ role, count }));
+    const clock = getShiftClock(startTime, endTime, primaryShift.timezone);
 
     const handleClick = (e?: React.MouseEvent | React.KeyboardEvent) => {
         e?.stopPropagation();
@@ -56,15 +79,15 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
     };
 
     return (
-        <Card
+        <div
             role="button"
             tabIndex={0}
             aria-label={`View shift at ${locationName || "location"} on ${format(startTime, "EEEE, MMMM d")}`}
-            className={`group cursor-pointer overflow-hidden transition-[box-shadow,border-color] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isUrgent
+            className={`group grid cursor-pointer grid-cols-1 items-start gap-4 rounded-xl border bg-card p-3.5 shadow-sm transition-[box-shadow,border-color] hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid-cols-[9.5rem_minmax(0,1fr)_11rem] ${isUrgent
                 ? "border-l-4 border-l-primary bg-primary/5"
                 : isUnderstaffed
-                    ? "border-destructive/50 bg-card hover:border-destructive/70"
-                    : "border-border bg-card hover:border-border/90"
+                    ? "border-destructive/40 hover:border-destructive/60"
+                    : "border-border hover:border-border/90"
                 }`}
             onClick={handleClick}
             onKeyDown={(e) => {
@@ -74,90 +97,172 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
                 }
             }}
         >
-            {/* Main Content Area: Flex Row for Side-by-Side Layout */}
-            <div className="p-5 flex justify-between items-start gap-4">
+            {/* WHEN */}
+            <div className="min-w-0">
+                <div className="text-sm font-semibold tabular-nums leading-tight text-foreground">
+                    {clock.start} – {clock.end}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {clock.zoneLabel ? (
+                        <span
+                            className="font-semibold"
+                            title={clock.isViewerZone ? "Your timezone — this shift has none recorded" : primaryShift.timezone ?? undefined}
+                        >
+                            {clock.zoneLabel}
+                            {clock.isViewerZone ? "*" : ""}
+                        </span>
+                    ) : null}
+                    <span aria-hidden="true" className="text-muted-foreground/50">·</span>
+                    <span className="tabular-nums">{durationHours.toFixed(1)} h</span>
+                </div>
+            </div>
 
-                {/* LEFT COLUMN: Event Details */}
-                <div className="flex flex-col gap-1 flex-1">
-                    <div className="flex justify-between items-start">
-                        <h3 className="text-lg font-bold leading-tight text-foreground">
-                            {locationName || "Event"}
-                        </h3>
-                        {/* Optional: Status Badges */}
-                        {isUrgent && (
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold tracking-wide text-primary">
-                                ACTION REQUIRED
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="mt-1 text-sm font-medium text-muted-foreground">
-                        {format(startTime, "h:mm a")} – {format(endTime, "h:mm a")}
-                        {timeZoneLabel ? ` (${timeZoneLabel})` : ""}
-                    </div>
-
-                    <div className="mt-1 max-w-xl truncate text-sm text-muted-foreground opacity-90">
-                        {primaryShift.locationAddress || locationName}
-                    </div>
+            {/* WHO */}
+            <div className="flex min-w-0 flex-col gap-2">
+                <div className="flex flex-wrap items-baseline gap-2">
+                    <span className="text-sm font-semibold leading-tight text-foreground">
+                        {locationName || "Event"}
+                    </span>
+                    <span className="truncate text-xs text-muted-foreground/80">
+                        {primaryShift.locationAddress}
+                    </span>
                 </div>
 
-                {/* RIGHT COLUMN: Roles List with Colors */}
-                <div className="flex flex-col items-end gap-1 shrink-0 pt-1">
-                    {roleBreakdown.map((item) => {
-                        const color = getShiftRoleTone(item.role);
+                <div className="flex flex-col gap-1.5">
+                    {shifts.map((shift) => {
+                        const total = shift.capacity?.total ?? 0;
+                        const filled = filledOf(shift);
+                        const open = Math.max(total - filled, 0);
+                        const tone = getShiftRoleTone(shift.title);
+                        const workers = shift.assignedWorkers ?? [];
+
                         return (
-                            <div key={item.role} className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                <span className={`w-2 h-2 rounded-full ${color.dot}`} />
-                                <span>{item.role}: {item.count}</span>
+                            <div
+                                key={shift.id}
+                                className="grid grid-cols-[minmax(0,1fr)_2.5rem] items-center gap-2.5 md:grid-cols-[8.5rem_2.5rem_minmax(0,1fr)]"
+                            >
+                                <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                                    <span className={`h-2 w-2 shrink-0 rounded-full ${tone.dot}`} />
+                                    <span className="truncate">{shift.title}</span>
+                                </span>
+
+                                <span
+                                    className={`text-xs font-semibold tabular-nums ${open > 0 && !isSettled ? "text-destructive" : "text-foreground"}`}
+                                >
+                                    {filled}/{total}
+                                </span>
+
+                                <div className="col-span-2 flex flex-wrap items-center gap-1.5 md:col-span-1">
+                                    {workers.length > MAX_NAMED_CHIPS ? (
+                                        <span className="flex items-center gap-2">
+                                            <span className="flex -space-x-1.5">
+                                                {workers.slice(0, MAX_STACKED_AVATARS).map((worker, index) => (
+                                                    <Avatar
+                                                        key={`${worker.id}-${index}`}
+                                                        className="h-[22px] w-[22px] border-2 border-card"
+                                                        title={worker.name ?? worker.initials}
+                                                    >
+                                                        <AvatarImage src={worker.avatarUrl} />
+                                                        <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
+                                                            {worker.initials}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                ))}
+                                            </span>
+                                            {workers.length > MAX_STACKED_AVATARS ? (
+                                                <span className="text-xs font-medium tabular-nums text-muted-foreground">
+                                                    +{workers.length - MAX_STACKED_AVATARS}
+                                                </span>
+                                            ) : null}
+                                        </span>
+                                    ) : (
+                                        workers.map((worker, index) => {
+                                            const kindStyle =
+                                                WORKER_KIND_STYLES[worker.kind ?? "roster"] ?? WORKER_KIND_STYLES.roster;
+                                            return (
+                                                <span
+                                                    key={`${worker.id}-${index}`}
+                                                    className={`inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 ${kindStyle.chip}`}
+                                                >
+                                                    <Avatar className="h-[18px] w-[18px]">
+                                                        <AvatarImage src={worker.avatarUrl} />
+                                                        <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
+                                                            {worker.initials}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-xs text-foreground/80">
+                                                        {worker.name ?? worker.initials}
+                                                    </span>
+                                                    {kindStyle.label ? (
+                                                        <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                                            {kindStyle.label}
+                                                        </span>
+                                                    ) : null}
+                                                </span>
+                                            );
+                                        })
+                                    )}
+
+                                    {/* On a big position one tally beats a row of identical chips. */}
+                                    {!isSettled && open > 0 ? (
+                                        workers.length > MAX_NAMED_CHIPS || open > MAX_OPEN_CHIPS ? (
+                                            <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2.5 py-0.5 text-xs font-semibold text-destructive">
+                                                {open} open
+                                            </span>
+                                        ) : (
+                                            Array.from({ length: open }).map((_, index) => (
+                                                <span
+                                                    key={`open-${index}`}
+                                                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2.5 py-0.5 text-xs font-semibold text-destructive"
+                                                >
+                                                    Open slot
+                                                </span>
+                                            ))
+                                        )
+                                    ) : null}
+                                </div>
                             </div>
                         );
                     })}
                 </div>
             </div>
 
-            {/* Footer: Workers & Action */}
-            <div className="flex items-center justify-between border-t border-border/70 bg-muted/40 px-5 py-3">
+            {/* WHERE IT STANDS */}
+            <div className="flex flex-row flex-wrap items-center gap-1.5 md:flex-col md:items-end">
+                {isUnderstaffed ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-2 py-1 text-[11px] font-semibold text-destructive">
+                        <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
+                        Needs cover · {openSlotCount}
+                    </span>
+                ) : overCapacityBy > 0 ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        Over capacity · {overCapacityBy}
+                    </span>
+                ) : (
+                    <span className="rounded-md border border-border bg-muted/50 px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                        Fully staffed
+                    </span>
+                )}
 
-                {/* Left: Avatars - Styled with rings matching their role */}
-                <div className="flex items-center gap-3">
-                    {allAssignedWorkers.length > 0 ? (
-                        <div className="flex -space-x-2">
-                            {allAssignedWorkers.slice(0, 5).map((worker, i) => {
-                                // Add index to key to avoid duplicates if same worker assigned multiple times (edge case)
-                                const color = getShiftRoleTone(worker.role);
-                                return (
-                                    <Avatar key={`${worker.id}-${i}`} className={`w-8 h-8 border-2 border-background ring-2 ${color.ring} ring-offset-0`}>
-                                        <AvatarImage src={worker.avatarUrl} />
-                                        <AvatarFallback className="border border-border bg-muted text-[9px] font-bold text-muted-foreground">
-                                            {worker.initials}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                );
-                            })}
-                            {allAssignedWorkers.length > 5 && (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-background text-[9px] font-bold text-muted-foreground ring-2 ring-border">
-                                    +{allAssignedWorkers.length - 5}
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <span className={`text-sm font-medium ${isUnderstaffed ? "text-destructive" : "text-muted-foreground"}`}>
-                            {(() => {
-                                const totalCap = shifts.reduce((sum, s) => sum + (s.capacity?.total ?? 0), 0);
-                                return totalCap > 0 ? `0 of ${totalCap} filled` : "No workers assigned";
-                            })()}
-                        </span>
-                    )}
-                </div>
+                {isPublished ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        Published
+                    </span>
+                ) : (
+                    <span className="rounded-md border border-dashed border-border px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                        {primaryShift.status === "draft" ? "Draft" : primaryShift.status}
+                    </span>
+                )}
 
-                {/* Right: Action Link (Neutral Theme) */}
                 <span
                     aria-hidden="true"
-                    className="flex items-center gap-1 text-sm font-bold text-foreground transition-colors group-hover:text-primary group-hover:underline"
+                    className="text-[11px] font-semibold text-muted-foreground transition-colors group-hover:text-primary group-hover:underline md:mt-0.5"
                 >
                     {actionLabel}
                 </span>
             </div>
-        </Card>
+        </div>
     );
 }

@@ -12,8 +12,19 @@ import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalBanner } from "./timesheet/shift-approval-banner";
 import { TimesheetTable } from "./timesheet/timesheet-table";
 import { AddWorkerDialog, type AddWorkerSelection } from "./add-worker-dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@repo/ui/components/ui/alert-dialog";
 
 import { Shift, TimesheetWorker } from "@/lib/types";
+import { getShiftClock, zoneMatchesViewer } from "@/lib/shifts/shift-time";
 import { useOrganizationId } from "@/hooks/use-schedule-data";
 import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
@@ -119,9 +130,18 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         };
     }, [scheduledDurationLabel, scheduledMinutes, shift.title]);
 
+    // The headline time is the location's. The viewer's own clock is shown
+    // beneath it only when the two disagree.
+    const shiftStart = new Date(shift.startTime);
+    const shiftEnd = new Date(shift.endTime);
+    const shiftClock = getShiftClock(shiftStart, shiftEnd, shift.timezone);
+    const viewerClock = getShiftClock(shiftStart, shiftEnd, undefined);
+    const showViewerClock = !shiftClock.isViewerZone && !zoneMatchesViewer(shiftStart, shift.timezone);
+
     const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(() => getWorkersFromProps());
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
+    const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
 
     const updateWorkerNotes = React.useCallback((id: string, value: string) => {
         setWorkers((prev) =>
@@ -274,11 +294,11 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         }
     }, [shift.id, shift.startTime, workers]);
 
-    const handleCancelShift = async () => {
-        if (!window.confirm("Cancel this shift and notify assigned workers?")) {
-            return;
-        }
-
+    // window.confirm halts the renderer until it is dismissed — the tab stops
+    // responding to anything, including its own scripts. Use the AlertDialog
+    // this app already uses for timesheet confirmations instead.
+    const confirmCancelShift = async () => {
+        setIsCancelDialogOpen(false);
         setIsCancelling(true);
         try {
             const result = await cancelShiftAction(shift.id);
@@ -350,7 +370,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         <Button
                             variant="ghost"
                             className="px-3 text-muted-foreground hover:text-destructive"
-                            onClick={handleCancelShift}
+                            onClick={() => setIsCancelDialogOpen(true)}
                             disabled={isCancelling}
                         >
                             <X data-icon="inline-start" />
@@ -366,7 +386,9 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                         role={roleLabel}
                         date={format(new Date(shift.startTime), "EEE, MMM d, yyyy")}
                         location={shift.locationName}
-                        timeRange={`${format(new Date(shift.startTime), "h:mm a")} - ${format(new Date(shift.endTime), "h:mm a")}`}
+                        timeRange={`${shiftClock.start} - ${shiftClock.end}${shiftClock.zoneLabel ? ` ${shiftClock.zoneLabel}` : ""}`}
+                        viewerTimeRange={showViewerClock ? `${viewerClock.start} – ${viewerClock.end}` : undefined}
+                        viewerZoneLabel={showViewerClock ? viewerClock.zoneLabel : undefined}
                         breakDuration={summaryBreakLabel}
                         createdAt={shift.createdAt ? format(new Date(shift.createdAt), "MMM d, h:mm a") : undefined}
                     />
@@ -436,6 +458,25 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     existingWorkerIds={workers.map((worker) => worker.id)}
                 />
             ) : null}
+
+            <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Cancel this shift?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {workers.length > 0
+                                ? `${workers.length} assigned ${workers.length === 1 ? "worker" : "workers"} will be notified that it is no longer happening.`
+                                : "No one is assigned yet, so nobody will be notified."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isCancelling}>Keep shift</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmCancelShift} disabled={isCancelling}>
+                            {isCancelling ? "Cancelling…" : "Cancel shift"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -17,11 +17,19 @@ export const ShiftCapacitySchema = z.object({
     total: z.number(),
 });
 
+/**
+ * How a person came to be on the shift. The three are operationally different:
+ * a roster worker has an account and clocks themselves in, an invited worker has
+ * not accepted yet, and an agency worker never logs in at all.
+ */
+export const AssignedWorkerKindSchema = z.enum(["roster", "invited", "agency"]);
+
 export const AssignedWorkerSummarySchema = z.object({
     id: z.string(),
     name: z.string().optional(),
     avatarUrl: z.string().optional(),
     initials: z.string(),
+    kind: AssignedWorkerKindSchema.optional(),
 });
 
 export const ShiftSchema = z.object({
@@ -36,6 +44,8 @@ export const ShiftSchema = z.object({
     contactId: z.string().nullable().optional(),
     startTime: z.string().datetime(),
     endTime: z.string().datetime(),
+    /** IANA zone the shift is anchored to — the location's, not the viewer's. */
+    timezone: z.string().nullable().optional(),
     status: ShiftStatusSchema,
     workerId: z.string().optional(),
     capacity: ShiftCapacitySchema.optional(),

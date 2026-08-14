@@ -71,17 +71,21 @@ function DayRow({
                         const { filled, total } = getFillSummary(event.shift);
                         const statusStyle = getShiftRoleTone(event.shift.title);
                         const isUnderstaffed = total > 0 && filled < total;
+                        // A draft is on the calendar but not announced. Dashed
+                        // edges say "not real yet" without hiding it.
+                        const isDraft = event.shift.status === "draft";
 
                         return (
                             <button
                                 key={event.id}
                                 type="button"
                                 onClick={() => onShiftClick?.(event.shift)}
-                                aria-label={`${event.shift.title}, ${event.timeLabel}, ${filled} of ${total} filled${isUnderstaffed ? `, ${total - filled} open` : ""}`}
+                                aria-label={`${isDraft ? "Draft: " : ""}${event.shift.title}, ${event.timeLabel}, ${filled} of ${total} filled${isUnderstaffed ? `, ${total - filled} open` : ""}`}
                                 className={cn(
                                     "group flex w-[172px] flex-col gap-0.5 rounded-lg px-2 py-1.5 text-left ring-1 transition hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                     statusStyle.surface,
                                     isUnderstaffed ? "ring-destructive/50" : "ring-border/40",
+                                    isDraft && "border border-dashed border-amber-400 opacity-90 ring-0",
                                 )}
                             >
                                 <span className="flex items-center justify-between gap-1.5">
@@ -98,8 +102,13 @@ function DayRow({
                                         {filled}/{total}
                                     </span>
                                 </span>
-                                <span className="pl-3.5 text-[11px] tabular-nums opacity-75">
+                                <span className="flex items-center gap-1.5 pl-3.5 text-[11px] tabular-nums opacity-75">
                                     {event.timeLabel}
+                                    {isDraft ? (
+                                        <span className="rounded-sm bg-amber-100 px-1 text-[9px] font-bold uppercase tracking-wide text-amber-800">
+                                            Draft
+                                        </span>
+                                    ) : null}
                                 </span>
                             </button>
                         );

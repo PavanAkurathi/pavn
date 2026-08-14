@@ -43,6 +43,10 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
         // Convert Date objects to ISO Strings
         startTime: dbShift.startTime.toISOString(),
         endTime: dbShift.endTime.toISOString(),
+        // Prefer the shift's own zone, falling back to where it happens. Only
+        // null when neither is set, and the client then has to say so rather
+        // than silently using the viewer's clock.
+        timezone: dbShift.timezone || dbShift.location?.timezone || undefined,
         createdAt: dbShift.createdAt ? dbShift.createdAt.toISOString() : undefined,
         status: dbShift.status as ApiShift['status'],
         // price: dbShift.price || 0, // REMOVED per TICKET-005
@@ -61,7 +65,10 @@ export const mapShiftToDto = (dbShift: ShiftWithRelations): ApiShift => {
                 id: (a.workerId ?? a.tempWorkerId ?? a.rosterEntryId)!,
                 name,
                 initials: getInitials(name),
-                avatarUrl: a.worker?.image || undefined
+                avatarUrl: a.worker?.image || undefined,
+                kind: a.tempWorkerId ? "agency" as const
+                    : a.rosterEntryId ? "invited" as const
+                        : "roster" as const,
             };
         })
     };

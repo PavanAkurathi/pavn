@@ -10,7 +10,7 @@ import {
     SortingState,
     getFilteredRowModel,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { WorkerDetails } from "./worker-details-sheet";
 import { Input } from "@repo/ui/components/ui/input";
 import { Button } from "@repo/ui/components/ui/button";
@@ -26,6 +26,7 @@ import { resendInvite, deleteMemberAction } from "@/actions/invites";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { WorkerDetailsSheet } from "./worker-details-sheet";
+import { useConfirm } from "@/components/ui/use-confirm";
 
 interface RosterTableProps {
     data: WorkerDetails[];
@@ -36,16 +37,22 @@ export function RosterTable({ data }: RosterTableProps) {
     const [globalFilter, setGlobalFilter] = useState("");
     const [selectedWorker, setSelectedWorker] = useState<WorkerDetails | null>(null);
     const router = useRouter();
+    const { confirm, confirmDialog } = useConfirm();
 
     // Since we are rendering Custom Cards, we don't strictly *need* columns for display,
     // but they are required for the table engine to know what data exists for sorting/filtering.
     // We define them but mostly just use the row.original data for the card.
-    const columns: ColumnDef<WorkerDetails>[] = [
-        { accessorKey: "name", header: "Name" },
-        { accessorKey: "email", header: "Email" },
-        { accessorKey: "role", header: "Role" },
-        { accessorKey: "status", header: "Status" },
-    ];
+    // Must keep a stable identity — a fresh array each render makes the table
+    // rebuild its state and re-render without end.
+    const columns = useMemo<ColumnDef<WorkerDetails>[]>(
+        () => [
+            { accessorKey: "name", header: "Name" },
+            { accessorKey: "email", header: "Email" },
+            { accessorKey: "role", header: "Role" },
+            { accessorKey: "status", header: "Status" },
+        ],
+        [],
+    );
 
     const table = useReactTable({
         data,
@@ -73,16 +80,22 @@ export function RosterTable({ data }: RosterTableProps) {
 
     const handleDelete = async (e: React.MouseEvent, memberId: string) => {
         e.stopPropagation();
-        if (confirm("Are you sure you want to remove this worker from your roster?")) {
-            toast.promise(deleteMemberAction(memberId), {
-                loading: "Removing worker...",
-                success: () => {
-                    router.refresh();
-                    return "Worker removed successfully";
-                },
-                error: "Failed to remove worker"
-            });
-        }
+        const ok = await confirm({
+            title: "Remove this worker from your roster?",
+            description: "They stay on any shift they are already assigned to.",
+            confirmLabel: "Remove worker",
+            destructive: true,
+        });
+        if (!ok) return;
+
+        toast.promise(deleteMemberAction(memberId), {
+            loading: "Removing worker...",
+            success: () => {
+                router.refresh();
+                return "Worker removed successfully";
+            },
+            error: "Failed to remove worker"
+        });
     };
 
     return (
@@ -205,6 +218,7 @@ export function RosterTable({ data }: RosterTableProps) {
                 isOpen={!!selectedWorker}
                 onClose={() => setSelectedWorker(null)}
             />
+            {confirmDialog}
         </div>
     );
 }

@@ -4,6 +4,7 @@ import { AppError } from "@repo/observability";
 import { geocodeAddress } from "./geocoding";
 import { newId } from "../../utils/ids";
 import { createLocationSchema } from "../../schemas";
+import { timezoneFromCoords } from "./tz-from-coords";
 
 export const createLocation = async (body: unknown, orgId: string) => {
     const parsed = createLocationSchema.safeParse(body);
@@ -24,6 +25,14 @@ export const createLocation = async (body: unknown, orgId: string) => {
         console.warn(`[GEOCODE] Low confidence for "${address}"`);
     }
 
+    // HARD RULE: the location's timezone is where the location is, not where
+    // the manager happens to be sitting. Derived from the geocoded coordinates,
+    // so a manager in California creating a Boston site gets America/New_York
+    // without being asked. The submitted value is only a fallback for an address
+    // we could not place.
+    const resolvedTimezone =
+        (coords ? timezoneFromCoords(Number(coords.latitude), Number(coords.longitude)) : null) ?? timezone;
+
     const locationId = newId("loc");
     const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
     const slug = `${baseSlug}-${locationId.slice(-6)}`;
@@ -33,7 +42,7 @@ export const createLocation = async (body: unknown, orgId: string) => {
         organizationId: orgId,
         name,
         slug,
-        timezone,
+        timezone: resolvedTimezone,
         address: coords?.formattedAddress ?? address,
         position: coords ? toLatLng(Number(coords.latitude), Number(coords.longitude)) : null,
         geofenceRadius: finalRadius,
@@ -52,6 +61,7 @@ export const createLocation = async (body: unknown, orgId: string) => {
             latitude: coords?.latitude ?? null,
             longitude: coords?.longitude ?? null,
             geofenceRadius: finalRadius,
+            timezone: resolvedTimezone,
             confidence: coords?.confidence ?? null
         },
         warning: coords

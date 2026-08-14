@@ -19,6 +19,17 @@ export function filterActiveShifts(shifts: Shift[]): Shift[] {
     return shifts.filter((shift) => isActiveShiftStatus(shift.status) && !isPastShift(shift, now));
 }
 
+/**
+ * Drafts that still have a future to be published into. A draft whose end time
+ * has passed is dead weight — publishing it would announce work already missed —
+ * so it never joins the schedule the manager is looking at.
+ */
+export function filterDraftShifts(shifts: Shift[]): Shift[] {
+    const now = new Date();
+
+    return shifts.filter((shift) => shift.status === 'draft' && !isPastShift(shift, now));
+}
+
 export function filterNeedsApprovalShifts(shifts: Shift[]): Shift[] {
     const now = new Date();
 

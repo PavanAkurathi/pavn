@@ -11,6 +11,9 @@ interface ShiftSummaryHeaderProps {
     date: string;
     location: string;
     timeRange: string;
+    /** The reader's own clock, when it differs from the shift's zone. */
+    viewerTimeRange?: string;
+    viewerZoneLabel?: string;
     breakDuration: string;
     createdBy?: string;
     createdAt?: string;
@@ -22,6 +25,8 @@ export function ShiftSummaryHeader({
     date,
     location,
     timeRange,
+    viewerTimeRange,
+    viewerZoneLabel,
     breakDuration,
     createdBy,
     createdAt,
@@ -50,6 +55,15 @@ export function ShiftSummaryHeader({
                     </span>
                 ) : null}
             </div>
+
+            {/* Only shown when the two differ — otherwise it is noise. The shift
+                time above is the location's; this is the reader's own clock, so
+                a manager scheduling across zones is never guessing which. */}
+            {viewerTimeRange ? (
+                <div className="text-sm text-muted-foreground">
+                    Your time{viewerZoneLabel ? ` (${viewerZoneLabel})` : ""}: {viewerTimeRange}
+                </div>
+            ) : null}
         </div>
     );
 }

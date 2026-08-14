@@ -58,6 +58,8 @@ mock.module("@repo/scheduling-timekeeping", () => {
         getShiftTimesheets: noop,
         updateTimesheet: mockUpdateTimesheet,
         publishSchedule: noopObject,
+        publishDrafts: noopObject,
+        copyWeek: noopObject,
         editShift: noopObject,
         duplicateShift: noopObject,
         getOpenShifts: noop,

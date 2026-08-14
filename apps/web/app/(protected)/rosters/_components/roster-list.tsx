@@ -21,6 +21,7 @@ import {
     DropdownMenuSeparator
 } from "@repo/ui/components/ui/dropdown-menu";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@repo/ui/components/ui/empty";
+import { useConfirm } from "@/components/ui/use-confirm";
 
 interface RosterListProps {
     workers: WorkerDetails[];
@@ -29,6 +30,7 @@ interface RosterListProps {
 export function RosterList({ workers }: RosterListProps) {
     const [selectedWorker, setSelectedWorker] = useState<WorkerDetails | null>(null);
     const router = useRouter();
+    const { confirm, confirmDialog } = useConfirm();
 
     const handleResend = async (e: React.MouseEvent, memberId: string) => {
         e.stopPropagation();
@@ -41,16 +43,22 @@ export function RosterList({ workers }: RosterListProps) {
 
     const handleDelete = async (e: React.MouseEvent, memberId: string) => {
         e.stopPropagation();
-        if (confirm("Are you sure you want to remove this worker from your roster?")) {
-            toast.promise(deleteMemberAction(memberId), {
-                loading: "Removing worker...",
-                success: () => {
-                    router.refresh();
-                    return "Worker removed successfully";
-                },
-                error: "Failed to remove worker"
-            });
-        }
+        const ok = await confirm({
+            title: "Remove this worker from your roster?",
+            description: "They stay on any shift they are already assigned to.",
+            confirmLabel: "Remove worker",
+            destructive: true,
+        });
+        if (!ok) return;
+
+        toast.promise(deleteMemberAction(memberId), {
+            loading: "Removing worker...",
+            success: () => {
+                router.refresh();
+                return "Worker removed successfully";
+            },
+            error: "Failed to remove worker"
+        });
     };
 
     return (
@@ -177,6 +185,7 @@ export function RosterList({ workers }: RosterListProps) {
                 isOpen={!!selectedWorker}
                 onClose={() => setSelectedWorker(null)}
             />
+            {confirmDialog}
         </Card>
     );
 }

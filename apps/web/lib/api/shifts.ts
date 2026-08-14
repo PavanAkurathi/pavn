@@ -92,6 +92,25 @@ export async function getDraftShiftsCount(orgId?: string) {
     }
 }
 
+export async function getDraftShifts(orgId?: string): Promise<Shift[]> {
+    try {
+        return await getShiftCollection("draft", orgId);
+    } catch (error) {
+        console.error("Error fetching drafts:", error);
+        return [];
+    }
+}
+
+export async function publishDraftShifts(shiftIds: string[], orgId?: string) {
+    return mutateShift<{ success: boolean; published: number; notified: number; expired: number }>(
+        "/shifts/publish-drafts",
+        {
+            body: { shiftIds },
+            organizationId: orgId,
+        },
+    );
+}
+
 export async function deleteDrafts(orgId?: string) {
     return mutateShift("/shifts/drafts", {
         method: "DELETE",
@@ -101,6 +120,16 @@ export async function deleteDrafts(orgId?: string) {
 
 export async function publishSchedule(payload: unknown, orgId?: string) {
     return mutateShift("/shifts/publish", {
+        body: payload,
+        organizationId: orgId,
+    });
+}
+
+export async function copyWeek(
+    payload: { locationId: string; targetWeekStart: string },
+    orgId?: string,
+) {
+    return mutateShift("/shifts/copy-week", {
         body: payload,
         organizationId: orgId,
     });

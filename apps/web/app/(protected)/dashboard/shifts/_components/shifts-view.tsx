@@ -7,10 +7,20 @@ import { addDays, addWeeks, format, startOfWeek } from "date-fns";
 import { ShiftList } from "./shift-list";
 import { EventFilters } from "./event-filters";
 import { WeeklyGridView } from "./weekly-grid-view";
+import { ScheduleSummary } from "./schedule-summary";
+import { copyLastWeekAction } from "../_actions/copy-week";
+import { publishDraftsAction } from "../_actions/publish-drafts";
+import { DraftPublishBar } from "./draft-publish-bar";
+import { toast } from "sonner";
 import { SHIFT_LAYOUTS, SHIFT_STATUS, LOCATIONS } from "@/lib/constants";
 import { useCrewData } from "@/hooks/use-crew-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
-import { filterActiveShifts, filterNeedsApprovalShifts, filterHistoryShifts } from "@/lib/shifts/view-list";
+import {
+    filterActiveShifts,
+    filterDraftShifts,
+    filterNeedsApprovalShifts,
+    filterHistoryShifts,
+} from "@/lib/shifts/view-list";
 import type { Shift, Location, ShiftLayout } from "@/lib/types";
 import { getDashboardShiftsHref, getShiftTimesheetHref } from "@/lib/routes";
 import {
@@ -22,28 +32,35 @@ import {
 
 interface ShiftsViewProps {
     initialShifts: Shift[];
+    /** Unpublished shifts, kept separate so they can be shown and announced as a set. */
+    draftShifts?: Shift[];
     availableLocations: Location[];
     defaultTab?: ShiftDashboardTab;
     pendingCount: number;
     initialLayoutParam?: string;
+    initialWeekParam?: string;
 }
 
 interface ShiftsDashboardContentProps {
     initialShifts: Shift[];
+    draftShifts: Shift[];
     availableLocations: Location[];
     defaultTab: ShiftDashboardTab;
     pendingCount: number;
     currentLayout: ShiftLayout;
     availableLayouts: ShiftLayout[];
     onLayoutChange: (layout: ShiftLayout) => void;
+    initialWeekParam?: string;
 }
 
 export function ShiftsView({
     initialShifts,
+    draftShifts = [],
     availableLocations,
     defaultTab = "upcoming",
     pendingCount,
     initialLayoutParam,
+    initialWeekParam,
 }: ShiftsViewProps) {
     const availableLayouts = getAvailableShiftLayouts(defaultTab);
     const resolvedInitialLayout = useMemo(
@@ -65,24 +82,28 @@ export function ShiftsView({
     return (
         <ShiftsDashboardContent
             initialShifts={initialShifts}
+            draftShifts={draftShifts}
             availableLocations={availableLocations}
             defaultTab={defaultTab}
             pendingCount={pendingCount}
             currentLayout={currentLayout}
             availableLayouts={availableLayouts}
             onLayoutChange={handleLayoutChange}
+            initialWeekParam={initialWeekParam}
         />
     );
 }
 
 function ShiftsDashboardContent({
     initialShifts,
+    draftShifts,
     availableLocations,
     defaultTab,
     pendingCount,
     currentLayout,
     availableLayouts,
     onLayoutChange,
+    initialWeekParam,
 }: ShiftsDashboardContentProps) {
     const router = useRouter();
     const { crew } = useCrewData();
@@ -125,7 +146,9 @@ function ShiftsDashboardContent({
         endDate: null,
         workerId: null,
     });
-    const [selectedWeekStart, setSelectedWeekStart] = useState(() => getInitialWeekStart(initialShifts));
+    const [selectedWeekStart, setSelectedWeekStart] = useState(() =>
+        getInitialWeekStart(initialShifts, new Date(), initialWeekParam),
+    );
     const syncDashboardUrl = useCallback(
         (tab: ShiftDashboardTab, layout: ShiftLayout) => {
             if (typeof window === "undefined") {
@@ -152,8 +175,17 @@ function ShiftsDashboardContent({
         );
     };
 
+    // Drafts sit in the same pool as everything else so the filters, the week
+    // navigation and the grid all treat them as part of the schedule. They only
+    // diverge where it matters: they are marked as drafts, and they can be
+    // published.
+    const schedulePool = useMemo(
+        () => (draftShifts.length > 0 ? [...initialShifts, ...draftShifts] : initialShifts),
+        [draftShifts, initialShifts],
+    );
+
     const filteredShifts = useMemo(() => {
-        return initialShifts.filter((shift) => {
+        return schedulePool.filter((shift) => {
             if (filters.location !== LOCATIONS.ALL && shift.locationName !== filters.location) {
                 return false;
             }
@@ -188,12 +220,12 @@ function ShiftsDashboardContent({
         filters.startDate,
         filters.status,
         filters.workerId,
-        initialShifts,
+        schedulePool,
     ]);
 
     const activeShifts = useMemo(
         () =>
-            filterActiveShifts(filteredShifts).sort(
+            [...filterActiveShifts(filteredShifts), ...filterDraftShifts(filteredShifts)].sort(
                 (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
             ),
         [filteredShifts],
@@ -220,6 +252,105 @@ function ShiftsDashboardContent({
     };
 
     const weekRangeLabel = `${format(selectedWeekStart, "MMM d")} - ${format(addDays(selectedWeekStart, 6), "MMM d")}`;
+
+    // Copying needs one location to copy: with "All locations" selected there is
+    // no single week to duplicate, so the button only appears once a location
+    // is chosen (or the org only has one).
+    const copyTargetLocation = useMemo(() => {
+        if (filters.location && filters.location !== LOCATIONS.ALL) {
+            return availableLocations.find((loc) => loc.name === filters.location) ?? null;
+        }
+        return availableLocations.length === 1 ? availableLocations[0]! : null;
+    }, [availableLocations, filters.location]);
+
+    const [isCopyingWeek, setIsCopyingWeek] = useState(false);
+
+    const handleCopyLastWeek = useCallback(async () => {
+        if (!copyTargetLocation) return;
+        setIsCopyingWeek(true);
+        try {
+            const result = await copyLastWeekAction(
+                copyTargetLocation.id,
+                format(selectedWeekStart, "yyyy-MM-dd"),
+            );
+
+            if ("error" in result) {
+                toast.error(result.error);
+                return;
+            }
+
+            if (result.copied === 0) {
+                toast.info(result.message ?? "Nothing to copy into this week.");
+                return;
+            }
+
+            const skipped = result.skippedDays.length
+                ? `, skipped ${result.skippedDays.length} day${result.skippedDays.length === 1 ? "" : "s"} that already had shifts`
+                : "";
+            toast.success(
+                `Copied ${result.copied} shift${result.copied === 1 ? "" : "s"} as drafts${skipped}. Review and publish when ready.`,
+            );
+            // Pull the new drafts down so they appear in the week that was just
+            // filled, rather than leaving the manager staring at an empty grid.
+            router.refresh();
+        } finally {
+            setIsCopyingWeek(false);
+        }
+    }, [copyTargetLocation, router, selectedWeekStart]);
+
+    // What the manager is actually looking at. The weekly grid shows one week;
+    // the list shows whatever the filters left standing. The summary and the
+    // publish action both work off this, so neither can claim more than the
+    // screen shows.
+    const shiftsInView = useMemo(() => {
+        if (currentLayout !== SHIFT_LAYOUTS.WEEKLY) {
+            return activeShifts;
+        }
+
+        const weekStart = selectedWeekStart.getTime();
+        const weekEnd = addDays(selectedWeekStart, 7).getTime();
+        return activeShifts.filter((shift) => {
+            // Same overlap test the grid uses, so an overnight shift starting
+            // Saturday still counts for the week it began in.
+            return new Date(shift.endTime).getTime() > weekStart
+                && new Date(shift.startTime).getTime() < weekEnd;
+        });
+    }, [activeShifts, currentLayout, selectedWeekStart]);
+
+    const visibleDrafts = useMemo(() => filterDraftShifts(shiftsInView), [shiftsInView]);
+
+    const [isPublishingDrafts, setIsPublishingDrafts] = useState(false);
+
+    const handlePublishDrafts = useCallback(async () => {
+        if (visibleDrafts.length === 0) return;
+        // Counted before the refresh wipes the drafts out from under us.
+        const assignedBefore = visibleDrafts.reduce(
+            (sum, shift) => sum + (shift.capacity?.filled ?? shift.assignedWorkers?.length ?? 0),
+            0,
+        );
+        setIsPublishingDrafts(true);
+        try {
+            const result = await publishDraftsAction(visibleDrafts.map((shift) => shift.id));
+
+            if ("error" in result) {
+                toast.error(result.error);
+                return;
+            }
+
+            const notified = result.notified > 0
+                ? ` ${result.notified} worker${result.notified === 1 ? "" : "s"} notified.`
+                : assignedBefore > 0
+                    ? " The assigned workers are invited or agency — tell them yourself."
+                    : " Nobody is assigned yet, so these are open for anyone to claim.";
+            toast.success(
+                `Published ${result.published} shift${result.published === 1 ? "" : "s"}.${notified}`,
+            );
+            router.refresh();
+        } finally {
+            setIsPublishingDrafts(false);
+        }
+    }, [router, visibleDrafts]);
+
     const buildShiftTimesheetHref = useCallback((shiftId: string) => {
         const returnTo = getDashboardShiftsHref({
             view: defaultTab,
@@ -268,12 +399,34 @@ function ShiftsDashboardContent({
                 weekRangeLabel={weekRangeLabel}
                 onPreviousWeek={() => setSelectedWeekStart((current) => addWeeks(current, -1))}
                 onTodayWeek={() => setSelectedWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
+                onCopyLastWeek={copyTargetLocation ? handleCopyLastWeek : undefined}
+                isCopyingWeek={isCopyingWeek}
                 onNextWeek={() => setSelectedWeekStart((current) => addWeeks(current, 1))}
                 availableLocations={availableLocations}
                 availableWorkers={availableWorkers}
             />
 
-            <div className="mt-6">
+            <div className="mt-6 space-y-4">
+                <ScheduleSummary
+                    shifts={shiftsInView}
+                    countMode={currentLayout === SHIFT_LAYOUTS.WEEKLY ? "positions" : "blocks"}
+                />
+
+                {defaultTab === "upcoming" ? (
+                    <div className="max-w-4xl">
+                        <DraftPublishBar
+                            drafts={visibleDrafts}
+                            scopeLabel={
+                                currentLayout === SHIFT_LAYOUTS.WEEKLY
+                                    ? `in ${weekRangeLabel}`
+                                    : "on your schedule"
+                            }
+                            isPublishing={isPublishingDrafts}
+                            onPublish={handlePublishDrafts}
+                        />
+                    </div>
+                ) : null}
+
                 {currentLayout === SHIFT_LAYOUTS.WEEKLY ? (
                     <WeeklyGridView
                         shifts={activeShifts}

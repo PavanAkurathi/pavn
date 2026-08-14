@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./schemas";
 export { publishSchedule } from "./modules/shifts/publish";
+export { publishDrafts } from "./modules/shifts/publish-drafts";
 export { getDraftShifts } from "./modules/shifts/drafts";
 export { getUpcomingShifts } from "./modules/shifts/upcoming";
 export { getHistoryShifts } from "./modules/shifts/history";
@@ -26,3 +27,4 @@ export { getWorkerAllShifts } from "./modules/time-tracking/worker-all-shifts";
 export { exportTimesheets } from "./modules/reporting/export-timesheets";
 export { getTimesheetsReport } from "./modules/reporting/get-timesheets-report";
 export { getReportFilters } from "./modules/reporting/get-report-filters";
+export { copyWeek } from "./modules/shifts/copy-week";
