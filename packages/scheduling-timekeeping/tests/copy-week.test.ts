@@ -42,6 +42,7 @@ const shiftRow = (over: Record<string, unknown> = {}) => ({
     contactId: null,
     title: "Loader",
     description: null,
+    status: "published",
     capacityTotal: 3,
     startTime: new Date("2026-08-13T13:00:00Z"), // Thu 09:00 EDT
     endTime: new Date("2026-08-13T21:00:00Z"),
@@ -113,6 +114,27 @@ describe("copyWeek", () => {
         expect(result.copied).toBe(0);
         expect(result.skippedDays).toEqual(["2026-08-20"]);
         expect(insertedRows.shift.length).toBe(0);
+    });
+
+    test("does not resurrect a shift that was cancelled", async () => {
+        sourceShifts = [
+            shiftRow({ id: "shf_live", title: "Supervisor" }),
+            shiftRow({ id: "shf_dead", title: "Forklift Operator", status: "cancelled" }),
+        ];
+
+        const result = await copyWeek({ locationId: "loc_1", targetWeekStart: "2026-08-16" }, ORG);
+
+        expect(result.copied).toBe(1);
+        expect(insertedRows.shift.map((s) => (s as { title: string }).title)).toEqual(["Supervisor"]);
+    });
+
+    test("a week of nothing but cancellations reads as nothing to copy", async () => {
+        sourceShifts = [shiftRow({ status: "cancelled" })];
+
+        const result = await copyWeek({ locationId: "loc_1", targetWeekStart: "2026-08-16" }, ORG);
+
+        expect(result.copied).toBe(0);
+        expect(result.message).toContain("Nothing scheduled");
     });
 
     test("says so when there is nothing to copy", async () => {

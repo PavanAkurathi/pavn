@@ -13,7 +13,19 @@ const SETTLED_STATUSES = ["completed", "approved", "cancelled"];
  * Wage cost deliberately absent: the shift payload carries no rate, so it
  * cannot be computed here without inventing a number.
  */
-export function ScheduleSummary({ shifts }: { shifts: Shift[] }) {
+export function ScheduleSummary({
+    shifts,
+    countMode = "blocks",
+}: {
+    shifts: Shift[];
+    /**
+     * What the view below calls "a shift". The list groups concurrent positions
+     * into one card, the weekly grid gives each its own strip — so the same word
+     * has to mean whichever the manager is looking at, or the header contradicts
+     * the thing it sits on top of.
+     */
+    countMode?: "blocks" | "positions";
+}) {
     if (!shifts || shifts.length === 0) {
         return null;
     }
@@ -45,10 +57,8 @@ export function ScheduleSummary({ shifts }: { shifts: Shift[] }) {
         <dl className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-lg border border-border/70 bg-muted/30 px-4 py-2.5 text-sm">
             <div className="flex items-baseline gap-1.5">
                 <dt className="text-muted-foreground">Shifts</dt>
-                {/* Count blocks, not position rows — the list shows one card per
-                    block, and the day headers count the same way. */}
                 <dd className="font-semibold tabular-nums text-foreground">
-                    {groupConcurrentShifts(shifts).length}
+                    {countMode === "positions" ? shifts.length : groupConcurrentShifts(shifts).length}
                 </dd>
             </div>
 

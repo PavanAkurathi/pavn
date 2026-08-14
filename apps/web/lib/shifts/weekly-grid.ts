@@ -82,7 +82,23 @@ export function resolveShiftLayout(tab: ShiftDashboardTab, layout: string | null
     return SHIFT_LAYOUTS.LIST;
 }
 
-export function getInitialWeekStart(_shifts: Shift[], now = new Date()): Date {
+/**
+ * `weekParam` lets a link land on a specific week — the drafts banner uses it to
+ * open the week those drafts are actually in. Anything unparseable falls back to
+ * the current week rather than throwing the page away.
+ */
+export function getInitialWeekStart(
+    _shifts: Shift[],
+    now = new Date(),
+    weekParam?: string,
+): Date {
+    if (weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam)) {
+        const parsed = parseISO(weekParam);
+        if (!Number.isNaN(parsed.getTime())) {
+            return startOfWeek(parsed, { weekStartsOn: 0 });
+        }
+    }
+
     return startOfWeek(now, { weekStartsOn: 0 });
 }
 

@@ -105,6 +105,10 @@ export const copyWeek = async (body: unknown, orgId: string) => {
     const skippedDays = new Set<string>();
 
     for (const source of sourceShifts) {
+        // A shift that was called off is not part of the week's shape. Copying
+        // it would quietly put back work the manager already cancelled.
+        if (source.status === "cancelled") continue;
+
         const sourceDate = localDateInZone(source.startTime, timezone);
         const targetDate = addDaysToLocalDate(sourceDate, DAYS_IN_WEEK);
 
@@ -157,7 +161,11 @@ export const copyWeek = async (body: unknown, orgId: string) => {
             copied: 0,
             skippedDays: [...skippedDays].sort(),
             sourceWeekStart,
-            message: "Every day of that week already has shifts.",
+            // Nothing skipped means the source week held nothing worth copying —
+            // cancelled shifts, most likely — not that the target is full.
+            message: skippedDays.size > 0
+                ? "Every day of that week already has shifts."
+                : "Nothing scheduled last week to copy.",
         };
     }
 

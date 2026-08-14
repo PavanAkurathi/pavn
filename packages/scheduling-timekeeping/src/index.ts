@@ -1,6 +1,7 @@
 export * from "./types";
 export * from "./schemas";
 export { publishSchedule } from "./modules/shifts/publish";
+export { publishDrafts } from "./modules/shifts/publish-drafts";
 export { getDraftShifts } from "./modules/shifts/drafts";
 export { getUpcomingShifts } from "./modules/shifts/upcoming";
 export { getHistoryShifts } from "./modules/shifts/history";
