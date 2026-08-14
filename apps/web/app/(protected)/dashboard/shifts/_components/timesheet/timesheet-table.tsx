@@ -58,7 +58,7 @@ function PlaceholderPill({ text }: { text: string }) {
 function OpenSlotRow({ onAddWorker, disabled }: { onAddWorker?: () => void; disabled: boolean }) {
     const actionable = !disabled && Boolean(onAddWorker);
     return (
-        <div className="grid gap-3 border-b border-border/60 py-3 last:border-0 md:grid-cols-[minmax(220px,1.45fr)_148px_148px_116px_116px_minmax(160px,1fr)_148px] md:items-center md:gap-3.5">
+        <div className="grid gap-3 border-b border-border/60 py-3 last:border-0 md:grid-cols-[minmax(240px,1.5fr)_140px_140px_160px_160px_auto] md:items-center md:gap-3.5">
             <button
                 type="button"
                 onClick={onAddWorker}
@@ -74,7 +74,6 @@ function OpenSlotRow({ onAddWorker, disabled }: { onAddWorker?: () => void; disa
             </button>
             <PlaceholderPill text="hh : mm --" />
             <PlaceholderPill text="hh : mm --" />
-            <PlaceholderPill text="0 min" />
             <PlaceholderPill text="0 min" />
             <div className="hidden md:block" />
             <div className="hidden md:block" />
@@ -259,7 +258,7 @@ export function TimesheetTable({
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-                <div className="hidden border-b bg-muted/30 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground md:grid md:grid-cols-[minmax(220px,1.45fr)_148px_148px_116px_116px_minmax(160px,1fr)_132px] md:items-center md:gap-3.5">
+                <div className="hidden border-b bg-muted/30 px-5 py-3 text-xs font-semibold text-muted-foreground md:grid md:grid-cols-[minmax(240px,1.5fr)_140px_140px_160px_160px_auto] md:items-center md:gap-3.5">
                     <div
                         className="cursor-pointer pl-2 transition-colors hover:text-foreground"
                         onClick={() => table.getColumn("name")?.toggleSorting()}
@@ -268,10 +267,9 @@ export function TimesheetTable({
                     </div>
                     <div className="text-center">Clock-in</div>
                     <div className="text-center">Clock-out</div>
-                    <div className="text-center">Break 1</div>
-                    <div className="text-center">Break 2</div>
+                    <div className="text-center">Total unpaid break</div>
                     <div className="text-center">Notes</div>
-                    <div className="text-right">Actions</div>
+                    <div className="text-right pr-2">Actions</div>
                 </div>
 
                 <div className="flex flex-col bg-white px-5">
