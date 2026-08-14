@@ -126,12 +126,16 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
     // is only a fallback for a location with none recorded, never an override.
     // Without this, a manager in California scheduling a Boston site books the
     // crew for 6am.
-    const organizationRecord = await db.query.organization.findFirst({
-        where: eq(organization.id, activeOrgId),
-        columns: { timezone: true },
-    });
+    // Only reach for the organization when the location cannot answer, so a
+    // properly configured location costs no extra round trip.
+    const fallbackTimezone = locationRecord.timezone
+        ? null
+        : (await db.query.organization.findFirst({
+            where: eq(organization.id, activeOrgId),
+            columns: { timezone: true },
+        }))?.timezone;
 
-    const timezone = locationRecord.timezone || organizationRecord?.timezone || clientTimezone;
+    const timezone = locationRecord.timezone || fallbackTimezone || clientTimezone;
 
     if (!timezone) {
         throw new AppError(

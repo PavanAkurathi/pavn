@@ -31,7 +31,9 @@ const mockBuilder: any = {
     query: {
         shift: { findFirst: mock(() => Promise.resolve(null)) },
         workerAvailability: { findMany: mock(() => Promise.resolve([])) },
-        location: { findFirst: mock(() => Promise.resolve({ name: 'Test Venue' })) },
+        // A location always carries a timezone now: it is derived from its
+        // coordinates at creation, and publish anchors shift times to it.
+        location: { findFirst: mock(() => Promise.resolve({ name: 'Test Venue', timezone: 'America/New_York' })) },
         workerNotificationPreferences: { findMany: mock(() => Promise.resolve([])) },
         idempotencyKey: { findFirst: mock(() => Promise.resolve(null)) },
         member: { findMany: mock(() => Promise.resolve([])) }

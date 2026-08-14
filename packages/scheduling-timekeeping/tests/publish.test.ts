@@ -59,7 +59,9 @@ const mockBuilder: any = {
     query: {
         shift: { findFirst: mock(() => Promise.resolve(null)) },
         workerAvailability: { findMany: mock(() => Promise.resolve([])) },
-        location: { findFirst: mock(() => Promise.resolve({ name: 'Test Venue' })) },
+        // A location always carries a timezone now: it is derived from its
+        // coordinates at creation, and publish anchors shift times to it.
+        location: { findFirst: mock(() => Promise.resolve({ name: 'Test Venue', timezone: 'America/New_York' })) },
         workerNotificationPreferences: { findMany: mock(() => Promise.resolve([])) },
         idempotencyKey: { findFirst: mock(() => Promise.resolve(null)) },
         member: { findMany: mock(() => Promise.resolve([])) }
@@ -345,6 +347,43 @@ describe("Publish  (WH-131 Fix)", () => {
         const res = await publishSchedule(body, orgId);
         expect(res.count).toBe(2); // June 5, June 12
     });
+    test("anchors shift times to the location's timezone, not the client's", async () => {
+        // The scenario this rule exists for: a manager sitting in California
+        // schedules 09:00 at a Boston site. The crew must be booked for 9am
+        // Boston (13:00Z), not 9am Pacific (16:00Z).
+        const orgId = "org_123";
+        mockInsertValues.mockClear();
+
+        const body = {
+            locationId: "loc_boston",
+            organizationId: orgId,
+            timezone: "America/Los_Angeles", // the manager's browser
+            schedules: [{
+                startTime: "09:00",
+                endTime: "17:00",
+                dates: ["2026-08-20"],
+                scheduleName: "Timezone Test",
+                positions: [{ roleName: "Loader", workerIds: [null] }]
+            }]
+        };
+
+        await publishSchedule(body, orgId);
+
+        type InsertedShift = { capacityTotal?: number; startTime: Date; timezone?: string };
+        const inserted = (mockInsertValues.mock.calls as unknown[][])
+            .filter((args) => Array.isArray(args[0]))
+            .flatMap((call) => call[0] as InsertedShift[])
+            .filter((row) => row.capacityTotal !== undefined);
+
+        expect(inserted.length).toBe(1);
+        const shiftRow = inserted[0]!;
+        // 09:00 America/New_York on 2026-08-20 (EDT, UTC-4) is 13:00Z.
+        expect(shiftRow.startTime.toISOString()).toBe("2026-08-20T13:00:00.000Z");
+        // and the zone is recorded on the shift so a later location edit
+        // cannot move it.
+        expect(shiftRow.timezone).toBe("America/New_York");
+    });
+
     test("captures silent hourly rate snapshot (WOR-26)", async () => {
         const orgId = "org_123";
         const workerId = "worker_rate_test";
