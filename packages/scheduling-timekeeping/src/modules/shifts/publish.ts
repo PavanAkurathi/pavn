@@ -6,9 +6,9 @@ import { z } from "zod";
 
 
 
-import { fromZonedTime } from "date-fns-tz";
 import { AppError } from "@repo/observability";
 import { newId } from "../../utils/ids";
+import { combineDateTimeTz } from "../../utils/zoned-time";
 import { expandRecurringDates, RecurrenceConfig } from "../../utils/recurrence";
 import { createHash } from "crypto";
 import { buildNotificationSchedule } from "@repo/notifications";
@@ -660,10 +660,3 @@ export const publishSchedule = async (body: any, headerOrgId: string, tx?: TxOrD
 
 // --- Helper Utilities ---
 
-function combineDateTimeTz(dateStr: string, timeStr: string, timeZone: string): Date {
-    // Construct local ISO string: "2025-12-30T09:00:00"
-    // Note: timeStr must be "HH:mm"
-    const localIso = `${dateStr}T${timeStr}:00`;
-    // Convert to UTC Date object based on the timezone
-    return fromZonedTime(localIso, timeZone);
-}

@@ -106,6 +106,16 @@ export async function publishSchedule(payload: unknown, orgId?: string) {
     });
 }
 
+export async function copyWeek(
+    payload: { locationId: string; targetWeekStart: string },
+    orgId?: string,
+) {
+    return mutateShift("/shifts/copy-week", {
+        body: payload,
+        organizationId: orgId,
+    });
+}
+
 export async function approveShift(shiftId: string, orgId?: string) {
     return mutateShift(`/shifts/${shiftId}/approve`, {
         organizationId: orgId,

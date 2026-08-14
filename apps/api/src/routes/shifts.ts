@@ -38,6 +38,7 @@ import {
     getShiftTimesheets,
     updateTimesheet,
     publishSchedule,
+    copyWeek,
     editShift,
     duplicateShift,
     getOpenShifts,
@@ -359,6 +360,26 @@ const publishRoute = createRoute({
         200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Schedule published' },
         403: { description: 'Forbidden' }
     }
+});
+
+const copyWeekRoute = createRoute({
+    method: 'post',
+    path: '/copy-week',
+    summary: 'Copy Last Week',
+    description: "Refill a week from the one before it. Creates drafts; publishing stays a separate, explicit step.",
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Week copied' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.use('/copy-week', rateLimit(RATE_LIMITS.publish));
+shiftsRouter.openapi(copyWeekRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const result = await copyWeek(await c.req.json(), c.get("orgId"));
+    return jsonOk(c, result);
 });
 
 shiftsRouter.use('/publish', rateLimit(RATE_LIMITS.publish));

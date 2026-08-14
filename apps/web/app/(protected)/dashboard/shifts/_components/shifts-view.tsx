@@ -8,6 +8,8 @@ import { ShiftList } from "./shift-list";
 import { EventFilters } from "./event-filters";
 import { WeeklyGridView } from "./weekly-grid-view";
 import { ScheduleSummary } from "./schedule-summary";
+import { copyLastWeekAction } from "../_actions/copy-week";
+import { toast } from "sonner";
 import { SHIFT_LAYOUTS, SHIFT_STATUS, LOCATIONS } from "@/lib/constants";
 import { useCrewData } from "@/hooks/use-crew-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
@@ -221,6 +223,48 @@ function ShiftsDashboardContent({
     };
 
     const weekRangeLabel = `${format(selectedWeekStart, "MMM d")} - ${format(addDays(selectedWeekStart, 6), "MMM d")}`;
+
+    // Copying needs one location to copy: with "All locations" selected there is
+    // no single week to duplicate, so the button only appears once a location
+    // is chosen (or the org only has one).
+    const copyTargetLocation = useMemo(() => {
+        if (filters.location && filters.location !== LOCATIONS.ALL) {
+            return availableLocations.find((loc) => loc.name === filters.location) ?? null;
+        }
+        return availableLocations.length === 1 ? availableLocations[0]! : null;
+    }, [availableLocations, filters.location]);
+
+    const [isCopyingWeek, setIsCopyingWeek] = useState(false);
+
+    const handleCopyLastWeek = useCallback(async () => {
+        if (!copyTargetLocation) return;
+        setIsCopyingWeek(true);
+        try {
+            const result = await copyLastWeekAction(
+                copyTargetLocation.id,
+                format(selectedWeekStart, "yyyy-MM-dd"),
+            );
+
+            if ("error" in result) {
+                toast.error(result.error);
+                return;
+            }
+
+            if (result.copied === 0) {
+                toast.info(result.message ?? "Nothing to copy into this week.");
+                return;
+            }
+
+            const skipped = result.skippedDays.length
+                ? `, skipped ${result.skippedDays.length} day${result.skippedDays.length === 1 ? "" : "s"} that already had shifts`
+                : "";
+            toast.success(
+                `Copied ${result.copied} shift${result.copied === 1 ? "" : "s"} as drafts${skipped}. Review and publish when ready.`,
+            );
+        } finally {
+            setIsCopyingWeek(false);
+        }
+    }, [copyTargetLocation, selectedWeekStart]);
     const buildShiftTimesheetHref = useCallback((shiftId: string) => {
         const returnTo = getDashboardShiftsHref({
             view: defaultTab,
@@ -269,6 +313,8 @@ function ShiftsDashboardContent({
                 weekRangeLabel={weekRangeLabel}
                 onPreviousWeek={() => setSelectedWeekStart((current) => addWeeks(current, -1))}
                 onTodayWeek={() => setSelectedWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
+                onCopyLastWeek={copyTargetLocation ? handleCopyLastWeek : undefined}
+                isCopyingWeek={isCopyingWeek}
                 onNextWeek={() => setSelectedWeekStart((current) => addWeeks(current, 1))}
                 availableLocations={availableLocations}
                 availableWorkers={availableWorkers}

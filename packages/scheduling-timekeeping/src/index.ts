@@ -26,3 +26,4 @@ export { getWorkerAllShifts } from "./modules/time-tracking/worker-all-shifts";
 export { exportTimesheets } from "./modules/reporting/export-timesheets";
 export { getTimesheetsReport } from "./modules/reporting/get-timesheets-report";
 export { getReportFilters } from "./modules/reporting/get-report-filters";
+export { copyWeek } from "./modules/shifts/copy-week";
