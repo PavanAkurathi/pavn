@@ -12,14 +12,41 @@ type ShiftActionResult =
     | { success: true }
     | { error: string };
 
+type AssignActionResult =
+    | { success: true }
+    | {
+        /** A soft gate, not a failure — the manager can go ahead once asked. */
+        needsConfirmation: true;
+        message: string;
+        overBy: number;
+    }
+    | { error: string };
+
 export async function assignWorkersToShiftAction(
     shiftId: string,
     workerIds: string[],
     tempWorkerIds: string[] = [],
     rosterEntryIds: string[] = [],
-): Promise<ShiftActionResult> {
+    force = false,
+): Promise<AssignActionResult> {
     try {
-        await assignWorkers(shiftId, workerIds, undefined, tempWorkerIds, rosterEntryIds);
+        const result = await assignWorkers(
+            shiftId,
+            workerIds,
+            undefined,
+            tempWorkerIds,
+            rosterEntryIds,
+            force,
+        );
+
+        if (result?.warning && result.capacityConflict) {
+            return {
+                needsConfirmation: true,
+                message: result.message ?? "This puts the shift over capacity.",
+                overBy: result.capacityConflict.overBy,
+            };
+        }
+
         return { success: true };
     } catch (error: any) {
         console.error("Failed to assign workers:", error);

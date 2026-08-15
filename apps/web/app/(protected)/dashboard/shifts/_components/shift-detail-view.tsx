@@ -30,6 +30,7 @@ import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
 import { SaveAsTemplateDialog } from "./save-as-template-dialog";
 import { EditShiftDialog } from "./edit-shift-dialog";
+import { useConfirm } from "@/components/ui/use-confirm";
 import {
     calculateTrackedMinutes,
     combineBreakDurations,
@@ -145,6 +146,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
+    const { confirm, confirmDialog } = useConfirm();
 
     const updateWorkerNotes = React.useCallback((id: string, value: string) => {
         setWorkers((prev) =>
@@ -165,7 +167,27 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         const newWorkerIds = newWorkers.map((worker) => worker.id);
 
         try {
-            const result = await assignWorkersToShiftAction(shift.id, rosterIds, tempIds, pendingEntryIds);
+            let result = await assignWorkersToShiftAction(shift.id, rosterIds, tempIds, pendingEntryIds);
+
+            // Over capacity is a question, not a refusal. The manager usually has
+            // a reason; going ahead is recorded rather than blocked.
+            if ("needsConfirmation" in result) {
+                const ok = await confirm({
+                    title: `Put this shift ${result.overBy} over capacity?`,
+                    description: `${result.message} You can go ahead — the shift will show as over capacity and the override is recorded.`,
+                    confirmLabel: "Add them anyway",
+                });
+                if (!ok) return;
+
+                result = await assignWorkersToShiftAction(
+                    shift.id,
+                    rosterIds,
+                    tempIds,
+                    pendingEntryIds,
+                    true,
+                );
+            }
+
             if ("error" in result) {
                 throw new Error(result.error);
             }
@@ -485,6 +507,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            {confirmDialog}
         </div>
     );
 }

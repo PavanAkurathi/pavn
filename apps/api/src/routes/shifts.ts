@@ -386,7 +386,14 @@ shiftsRouter.openapi(assignWorkerRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
 
-    const result = await assignWorker(body, id, orgId, undefined, c.req.query("force") === "true");
+    const result = await assignWorker(
+        body,
+        id,
+        orgId,
+        undefined,
+        c.req.query("force") === "true",
+        c.get("user")?.id,
+    );
     return jsonOk(c, result);
 });
 

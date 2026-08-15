@@ -254,17 +254,34 @@ export async function cancelShift(shiftId: string, orgId?: string) {
     });
 }
 
+export type AssignResult = {
+    success: boolean;
+    warning?: boolean;
+    message?: string;
+    capacityConflict?: {
+        capacityTotal: number;
+        filled: number;
+        adding: number;
+        overBy: number;
+    };
+};
+
 export async function assignWorkers(
     shiftId: string,
     workerIds: string[],
     orgId?: string,
     tempWorkerIds: string[] = [],
     rosterEntryIds: string[] = [],
+    /** Go ahead past a soft gate the manager has already been shown. */
+    force = false,
 ) {
-    return mutateShift(`/shifts/${shiftId}/assign`, {
-        body: { workerIds, tempWorkerIds, rosterEntryIds },
-        organizationId: orgId,
-    });
+    return mutateShift<AssignResult>(
+        `/shifts/${shiftId}/assign${force ? "?force=true" : ""}`,
+        {
+            body: { workerIds, tempWorkerIds, rosterEntryIds },
+            organizationId: orgId,
+        },
+    );
 }
 
 export async function unassignWorker(shiftId: string, workerId: string, orgId?: string) {
