@@ -29,6 +29,8 @@ import { useOrganizationId } from "@/hooks/use-schedule-data";
 import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
 import { SaveAsTemplateDialog } from "./save-as-template-dialog";
+import { EditShiftDialog } from "./edit-shift-dialog";
+import { useConfirm } from "@/components/ui/use-confirm";
 import {
     calculateTrackedMinutes,
     combineBreakDurations,
@@ -144,6 +146,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
+    const { confirm, confirmDialog } = useConfirm();
 
     const updateWorkerNotes = React.useCallback((id: string, value: string) => {
         setWorkers((prev) =>
@@ -164,7 +167,27 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
         const newWorkerIds = newWorkers.map((worker) => worker.id);
 
         try {
-            const result = await assignWorkersToShiftAction(shift.id, rosterIds, tempIds, pendingEntryIds);
+            let result = await assignWorkersToShiftAction(shift.id, rosterIds, tempIds, pendingEntryIds);
+
+            // Over capacity is a question, not a refusal. The manager usually has
+            // a reason; going ahead is recorded rather than blocked.
+            if ("needsConfirmation" in result) {
+                const ok = await confirm({
+                    title: `Put this shift ${result.overBy} over capacity?`,
+                    description: `${result.message} You can go ahead — the shift will show as over capacity and the override is recorded.`,
+                    confirmLabel: "Add them anyway",
+                });
+                if (!ok) return;
+
+                result = await assignWorkersToShiftAction(
+                    shift.id,
+                    rosterIds,
+                    tempIds,
+                    pendingEntryIds,
+                    true,
+                );
+            }
+
             if ("error" in result) {
                 throw new Error(result.error);
             }
@@ -358,7 +381,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </div>
                 </div>
                 {!isApproved && !isCancelled && (
-                    <div className="flex items-center gap-2 self-start">
+                    // Wraps: five actions do not fit a phone on one line, and
+                    // pushing Cancel shift off the edge is the worst of the
+                    // available failures.
+                    <div className="flex flex-wrap items-center gap-2 self-start">
                         <Button asChild variant="outline">
                             <Link href={`/dashboard/shifts/${shift.id}/timesheet/print`}>
                                 <Printer data-icon="inline-start" aria-hidden="true" />
@@ -369,6 +395,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             <UserPlus data-icon="inline-start" />
                             Add worker
                         </Button>
+                        <EditShiftDialog shift={shift} assignedCount={workers.length} />
                         <SaveAsTemplateDialog
                             shiftId={shift.id}
                             suggestedName={shift.locationName || shift.title}
@@ -483,6 +510,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            {confirmDialog}
         </div>
     );
 }

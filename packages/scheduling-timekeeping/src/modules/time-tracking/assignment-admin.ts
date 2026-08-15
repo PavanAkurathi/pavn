@@ -162,22 +162,6 @@ export async function applyManagerTimesheetUpdate(
         const now = new Date();
         const isOverride = actorRole === "manager";
 
-        await transaction.update(shiftAssignment)
-            .set({
-                actualClockIn: nextActualClockIn ?? null,
-                effectiveClockIn,
-                actualClockOut: nextActualClockOut ?? null,
-                effectiveClockOut: nextActualClockOut ?? null,
-                breakMinutes: nextBreakMinutes,
-                totalDurationMinutes: totalWorkedMinutes,
-                payoutAmountCents: null,
-                status: nextStatus,
-                updatedAt: now,
-                // Who last touched this by hand, so the timesheet can say so.
-                ...(isOverride ? { adjustedBy: actorId, adjustedAt: now } : {}),
-            })
-            .where(eq(shiftAssignment.id, assignment.id));
-
         // A manager changing someone's hours is the whole reason an audit trail
         // exists, and the status often does not move when they do it — correcting
         // 9:00 to 8:30 leaves a completed shift completed. Recording only on a
@@ -191,6 +175,31 @@ export async function applyManagerTimesheetUpdate(
         const clockOutChanged = changed(assignment.actualClockOut, nextActualClockOut ?? null);
         const breakChanged = (assignment.breakMinutes ?? 0) !== nextBreakMinutes;
         const statusChanged = assignment.status !== nextStatus;
+
+        await transaction.update(shiftAssignment)
+            .set({
+                actualClockIn: nextActualClockIn ?? null,
+                effectiveClockIn,
+                actualClockOut: nextActualClockOut ?? null,
+                effectiveClockOut: nextActualClockOut ?? null,
+                breakMinutes: nextBreakMinutes,
+                totalDurationMinutes: totalWorkedMinutes,
+                payoutAmountCents: null,
+                status: nextStatus,
+                updatedAt: now,
+                // Who last touched this by hand, so the timesheet can say so.
+                ...(isOverride ? { adjustedBy: actorId, adjustedAt: now } : {}),
+                // A time a manager typed is not a time the geofence saw. Marking
+                // it verified would let a hand-entered figure pass for evidence
+                // in exactly the dispute where the difference matters.
+                ...(isOverride && clockInChanged
+                    ? { clockInMethod: "manual_override", clockInVerified: false }
+                    : {}),
+                ...(isOverride && clockOutChanged
+                    ? { clockOutMethod: "manual_override", clockOutVerified: false }
+                    : {}),
+            })
+            .where(eq(shiftAssignment.id, assignment.id));
 
         if (clockInChanged || clockOutChanged || breakChanged || statusChanged) {
             await transaction.insert(assignmentAuditEvent).values({

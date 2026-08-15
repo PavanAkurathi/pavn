@@ -227,11 +227,44 @@ export async function updateTimesheet(
     });
 }
 
+export type EditShiftPayload = {
+    title?: string;
+    capacityTotal?: number;
+    /** Wall-clock at the site; the server turns it into an instant. */
+    local?: { date: string; startTime: string; endTime: string };
+};
+
+export async function editShift(shiftId: string, payload: EditShiftPayload, orgId?: string) {
+    return mutateShift<{
+        success: boolean;
+        timeChanged: boolean;
+        locationChanged: boolean;
+        notified: number;
+        unreachable: number;
+    }>(`/shifts/${shiftId}`, {
+        method: "PATCH",
+        body: payload,
+        organizationId: orgId,
+    });
+}
+
 export async function cancelShift(shiftId: string, orgId?: string) {
     return mutateShift(`/shifts/${shiftId}/cancel`, {
         organizationId: orgId,
     });
 }
+
+export type AssignResult = {
+    success: boolean;
+    warning?: boolean;
+    message?: string;
+    capacityConflict?: {
+        capacityTotal: number;
+        filled: number;
+        adding: number;
+        overBy: number;
+    };
+};
 
 export async function assignWorkers(
     shiftId: string,
@@ -239,11 +272,16 @@ export async function assignWorkers(
     orgId?: string,
     tempWorkerIds: string[] = [],
     rosterEntryIds: string[] = [],
+    /** Go ahead past a soft gate the manager has already been shown. */
+    force = false,
 ) {
-    return mutateShift(`/shifts/${shiftId}/assign`, {
-        body: { workerIds, tempWorkerIds, rosterEntryIds },
-        organizationId: orgId,
-    });
+    return mutateShift<AssignResult>(
+        `/shifts/${shiftId}/assign${force ? "?force=true" : ""}`,
+        {
+            body: { workerIds, tempWorkerIds, rosterEntryIds },
+            organizationId: orgId,
+        },
+    );
 }
 
 export async function unassignWorker(shiftId: string, workerId: string, orgId?: string) {

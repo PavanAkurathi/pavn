@@ -1,4 +1,4 @@
-import { db, TxOrDb } from "@repo/database";
+import { db, TxOrDb, logAudit } from "@repo/database";
 import { rosterEntry, shift, shiftAssignment, tempWorker } from "@repo/database/schema";
 import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import { AppError } from "@repo/observability";
@@ -17,7 +17,15 @@ const AssignSchema = z
         error: "Provide at least one worker",
     });
 
-export const assignWorker = async (body: any, shiftId: string, orgId: string, tx: TxOrDb = db, force: boolean = false) => {
+export const assignWorker = async (
+    body: any,
+    shiftId: string,
+    orgId: string,
+    tx: TxOrDb = db,
+    force: boolean = false,
+    /** Who is doing it — recorded when they override a limit. */
+    actorId?: string,
+) => {
     const parseResult = AssignSchema.safeParse(body);
 
     if (!parseResult.success) {
@@ -35,7 +43,8 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string, tx
             startTime: true,
             endTime: true,
             title: true,
-            price: true
+            price: true,
+            capacityTotal: true
         }
     });
 
@@ -110,7 +119,40 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string, tx
         return { success: true, message: "All workers already assigned" };
     }
 
-    // 3. Check for Overlaps (Privacy Safe)
+    // 3. Check capacity.
+    //
+    // A soft gate, deliberately. A manager who needs a thirty-first body on a
+    // thirty-slot shift usually has a reason, and blocking them outright just
+    // gets worked around by editing the headcount first. So it asks, allows the
+    // override, and records it — the same shape as the overlap check below.
+    const incomingCount = workersToAssign.length + tempsToAssign.length + rosterEntriesToAssign.length;
+    const capacityTotal = existingShift.capacityTotal ?? 0;
+
+    const activeNow = await tx.select({ id: shiftAssignment.id })
+        .from(shiftAssignment)
+        .where(and(
+            eq(shiftAssignment.shiftId, shiftId),
+            eq(shiftAssignment.status, "active"),
+        ));
+
+    const filledAfter = activeNow.length + incomingCount;
+    const overBy = capacityTotal > 0 ? filledAfter - capacityTotal : 0;
+
+    if (overBy > 0 && !force) {
+        return {
+            success: false,
+            warning: true,
+            capacityConflict: {
+                capacityTotal,
+                filled: activeNow.length,
+                adding: incomingCount,
+                overBy,
+            },
+            message: `This shift has ${capacityTotal} slot${capacityTotal === 1 ? "" : "s"} and ${activeNow.length} filled. Adding ${incomingCount} puts it ${overBy} over.`,
+        };
+    }
+
+    // 4. Check for Overlaps (Privacy Safe)
     const warnings: Array<{ workerId: string; type: string; message: string }> = [];
     for (const workerId of workersToAssign) {
         const result = await OverlapService.findOverlappingAssignment(
@@ -177,6 +219,24 @@ export const assignWorker = async (body: any, shiftId: string, orgId: string, tx
     ];
 
     await tx.insert(shiftAssignment).values(values);
+
+    // Overstaffing on purpose is allowed, but it does not go unrecorded — the
+    // shift shows "Over capacity" and this is the reason behind it.
+    if (overBy > 0) {
+        await logAudit({
+            action: "shift.capacity_override",
+            entityType: "shift",
+            entityId: shiftId,
+            actorId: actorId ?? "system",
+            organizationId: orgId,
+            metadata: {
+                capacityTotal,
+                filledBefore: activeNow.length,
+                added: incomingCount,
+                overBy,
+            },
+        });
+    }
 
     await notifyWorkersOfCrossOrgConflicts(
         workersToAssign.map(workerId => ({
