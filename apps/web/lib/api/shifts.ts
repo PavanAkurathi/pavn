@@ -227,6 +227,27 @@ export async function updateTimesheet(
     });
 }
 
+export type EditShiftPayload = {
+    title?: string;
+    capacityTotal?: number;
+    /** Wall-clock at the site; the server turns it into an instant. */
+    local?: { date: string; startTime: string; endTime: string };
+};
+
+export async function editShift(shiftId: string, payload: EditShiftPayload, orgId?: string) {
+    return mutateShift<{
+        success: boolean;
+        timeChanged: boolean;
+        locationChanged: boolean;
+        notified: number;
+        unreachable: number;
+    }>(`/shifts/${shiftId}`, {
+        method: "PATCH",
+        body: payload,
+        organizationId: orgId,
+    });
+}
+
 export async function cancelShift(shiftId: string, orgId?: string) {
     return mutateShift(`/shifts/${shiftId}/cancel`, {
         organizationId: orgId,

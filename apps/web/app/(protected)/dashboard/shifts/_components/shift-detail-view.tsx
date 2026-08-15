@@ -29,6 +29,7 @@ import { useOrganizationId } from "@/hooks/use-schedule-data";
 import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
 import { SaveAsTemplateDialog } from "./save-as-template-dialog";
+import { EditShiftDialog } from "./edit-shift-dialog";
 import {
     calculateTrackedMinutes,
     combineBreakDurations,
@@ -369,6 +370,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             <UserPlus data-icon="inline-start" />
                             Add worker
                         </Button>
+                        <EditShiftDialog shift={shift} assignedCount={workers.length} />
                         <SaveAsTemplateDialog
                             shiftId={shift.id}
                             suggestedName={shift.locationName || shift.title}
