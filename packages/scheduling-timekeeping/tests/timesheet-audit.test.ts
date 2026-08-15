@@ -71,6 +71,22 @@ describe("manager edits to a timesheet", () => {
         expect(auditRows[0]!.actorId).toBe(MANAGER);
     });
 
+    test("a time the manager typed is not marked as verified by the geofence", async () => {
+        await applyManagerTimesheetUpdate(
+            MANAGER,
+            ORG,
+            "shf_1",
+            "worker_1",
+            { clockIn: new Date("2026-08-20T12:30:00Z") },
+            "manager",
+        );
+
+        expect(assignmentUpdate.clockInMethod).toBe("manual_override");
+        expect(assignmentUpdate.clockInVerified).toBe(false);
+        // Untouched, so its provenance is left alone.
+        expect(assignmentUpdate.clockOutMethod).toBeUndefined();
+    });
+
     test("stamps who adjusted it and when", async () => {
         await applyManagerTimesheetUpdate(
             MANAGER,
