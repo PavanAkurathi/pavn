@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { AppError } from "@repo/observability";
 import { LocationSchema } from "../../schemas";
 import { geocodeAddress } from "./geocoding";
+import { timezoneFromCoords } from "./tz-from-coords";
 
 export const updateLocation = async (data: unknown, id: string, orgId: string) => {
     const validatedData = LocationSchema.partial().parse(data);
@@ -21,6 +22,7 @@ export const updateLocation = async (data: unknown, id: string, orgId: string) =
 
     let positionUpdate = {};
     let addressUpdate = {};
+    let timezoneUpdate = {};
 
     if (validatedData.address && validatedData.address !== existing.address) {
         const geocodeResult = await geocodeAddress(validatedData.address);
@@ -37,6 +39,15 @@ export const updateLocation = async (data: unknown, id: string, orgId: string) =
             addressUpdate = {
                 address: coords.formattedAddress
             };
+
+            // HARD RULE, same as on create: the timezone follows the address.
+            // Moving a site from Boston to Phoenix has to move its clock too,
+            // or every shift published afterwards is stamped with the old zone.
+            // Shifts already published keep their own stamped timezone.
+            const derived = timezoneFromCoords(Number(coords.latitude), Number(coords.longitude));
+            if (derived) {
+                timezoneUpdate = { timezone: derived };
+            }
         }
     }
 
@@ -46,6 +57,8 @@ export const updateLocation = async (data: unknown, id: string, orgId: string) =
             ...validatedData,
             ...addressUpdate,
             ...positionUpdate,
+            // After the spread, so a derived zone beats a stale submitted one.
+            ...timezoneUpdate,
             updatedAt: new Date(),
         })
         .where(eq(location.id, id))
