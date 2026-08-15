@@ -125,7 +125,12 @@ export default function ScheduleScreen() {
             setShifts(result.shifts);
             setConflicts(result.conflicts);
             setOrganizations(result.organizations);
-            await registerGeofences(result.shifts);
+            // Background monitoring is a nice-to-have; the list is the point.
+            // It cannot be allowed to take the screen down with it — on a
+            // simulator it never works at all.
+            registerGeofences(result.shifts).catch((error) => {
+                console.warn("[GEOFENCE] Could not update monitored regions:", error);
+            });
         } catch (error) {
             if (!(error instanceof SessionExpiredError)) {
                 console.error("Failed to load worker shifts:", error);
