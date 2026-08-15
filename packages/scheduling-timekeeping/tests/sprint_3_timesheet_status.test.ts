@@ -12,6 +12,10 @@ mock.module("../src/modules/time-tracking/reconcile-overdue-shifts", () => ({
     reconcileOverdueShiftState: mock(() => Promise.resolve()),
 }));
 
+// The audit-trail lookup that decorates each row with its last hand edit.
+// Empty here: these tests are about status mapping.
+const mockAuditEvents = mock(() => Promise.resolve([] as unknown[]));
+
 mock.module("@repo/database", () => ({
     db: {
         query: {
@@ -21,7 +25,16 @@ mock.module("@repo/database", () => ({
             shiftAssignment: {
                 findMany: mockFindMany
             }
-        }
+        },
+        select: () => ({
+            from: () => ({
+                leftJoin: () => ({
+                    where: () => ({
+                        orderBy: mockAuditEvents,
+                    }),
+                }),
+            }),
+        }),
     }
 }));
 

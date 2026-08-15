@@ -87,6 +87,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     ...splitBreaks,
                     notes: "",
                     jobTitle: ts.role || roleLabel,
+                    edited: ts.edited,
                 };
             }
 

@@ -1,8 +1,8 @@
 // packages/scheduling-timekeeping/src/modules/time-tracking/get-timesheets.ts
 
 import { db } from "@repo/database";
-import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and, ne } from "drizzle-orm";
+import { shift, shiftAssignment, assignmentAuditEvent, user } from "@repo/database/schema";
+import { eq, and, ne, inArray, desc } from "drizzle-orm";
 import { TimesheetWorker } from "../../types";
 import { getInitials } from "../../utils/formatting";
 import { AppError } from "@repo/observability";
@@ -36,6 +36,44 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
 
     const visibleAssignments = assignments.filter((assignment) => assignment.status !== "removed");
 
+    // The most recent hand edit per assignment, with the name of whoever made
+    // it. A manager can change anything; this is what stops the change being
+    // silent.
+    const editsByAssignment = new Map<string, TimesheetWorker["edited"]>();
+    const assignmentIds = visibleAssignments.map((a) => a.id);
+
+    if (assignmentIds.length > 0) {
+        const events = await db
+            .select({
+                assignmentId: assignmentAuditEvent.assignmentId,
+                actorId: assignmentAuditEvent.actorId,
+                actorName: user.name,
+                metadata: assignmentAuditEvent.metadata,
+                timestamp: assignmentAuditEvent.timestamp,
+            })
+            .from(assignmentAuditEvent)
+            .leftJoin(user, eq(user.id, assignmentAuditEvent.actorId))
+            .where(inArray(assignmentAuditEvent.assignmentId, assignmentIds))
+            .orderBy(desc(assignmentAuditEvent.timestamp));
+
+        for (const event of events) {
+            // Ordered newest first, so the first one seen for an assignment wins.
+            if (editsByAssignment.has(event.assignmentId)) continue;
+
+            const meta = (event.metadata ?? {}) as Record<string, unknown>;
+            const action = meta.action;
+            if (action !== "manager_override" && action !== "timesheet_update") continue;
+
+            editsByAssignment.set(event.assignmentId, {
+                by: event.actorName ?? "A manager",
+                at: event.timestamp.toISOString(),
+                previousClockIn: (meta.previousClockIn as string | null) ?? undefined,
+                previousClockOut: (meta.previousClockOut as string | null) ?? undefined,
+                previousBreakMinutes: (meta.previousBreakMinutes as number | null) ?? undefined,
+            });
+        }
+    }
+
     const timesheets: TimesheetWorker[] = visibleAssignments.map(a => {
         const isTemp = !!a.tempWorkerId;
         const isPendingInvite = !!a.rosterEntryId;
@@ -61,7 +99,8 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
             clockIn: (a.effectiveClockIn || a.actualClockIn) ? (a.effectiveClockIn || a.actualClockIn)!.toISOString() : undefined,
             clockOut: (a.effectiveClockOut || a.actualClockOut) ? (a.effectiveClockOut || a.actualClockOut)!.toISOString() : undefined,
             breakMinutes: a.breakMinutes || 0,
-            status: mapAssignmentStatus(a.status as string)
+            status: mapAssignmentStatus(a.status as string),
+            edited: editsByAssignment.get(a.id),
         };
     });
 

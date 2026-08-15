@@ -99,6 +99,20 @@ export const TimesheetWorkerSchema = z.object({
         "no-show",
         "cancelled",
     ]),
+    /**
+     * Set when a manager has changed these hours by hand. A manager may override
+     * anything, but the record of what it was before travels with the row so the
+     * change is never silent.
+     */
+    edited: z
+        .object({
+            by: z.string(),
+            at: z.string(),
+            previousClockIn: z.string().optional(),
+            previousClockOut: z.string().optional(),
+            previousBreakMinutes: z.number().optional(),
+        })
+        .optional(),
 });
 
 export type ShiftStatus = z.infer<typeof ShiftStatusSchema>;

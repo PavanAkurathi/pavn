@@ -159,6 +159,9 @@ export async function applyManagerTimesheetUpdate(
             Boolean(nextActualClockOut),
         );
 
+        const now = new Date();
+        const isOverride = actorRole === "manager";
+
         await transaction.update(shiftAssignment)
             .set({
                 actualClockIn: nextActualClockIn ?? null,
@@ -169,19 +172,47 @@ export async function applyManagerTimesheetUpdate(
                 totalDurationMinutes: totalWorkedMinutes,
                 payoutAmountCents: null,
                 status: nextStatus,
-                updatedAt: new Date()
+                updatedAt: now,
+                // Who last touched this by hand, so the timesheet can say so.
+                ...(isOverride ? { adjustedBy: actorId, adjustedAt: now } : {}),
             })
             .where(eq(shiftAssignment.id, assignment.id));
 
-        if (assignment.status !== nextStatus) {
+        // A manager changing someone's hours is the whole reason an audit trail
+        // exists, and the status often does not move when they do it — correcting
+        // 9:00 to 8:30 leaves a completed shift completed. Recording only on a
+        // status change meant the edits that matter most left no trace, so the
+        // comparison is against the values themselves.
+        const changed = (before: unknown, after: unknown) =>
+            (before instanceof Date ? before.getTime() : before) !==
+            (after instanceof Date ? after.getTime() : after);
+
+        const clockInChanged = changed(assignment.actualClockIn, nextActualClockIn ?? null);
+        const clockOutChanged = changed(assignment.actualClockOut, nextActualClockOut ?? null);
+        const breakChanged = (assignment.breakMinutes ?? 0) !== nextBreakMinutes;
+        const statusChanged = assignment.status !== nextStatus;
+
+        if (clockInChanged || clockOutChanged || breakChanged || statusChanged) {
             await transaction.insert(assignmentAuditEvent).values({
                 id: nanoid(),
                 assignmentId: assignment.id,
                 actorId,
                 previousStatus: assignment.status,
                 newStatus: nextStatus,
-                metadata: { reason: "Manual Timesheet Update", totalMinutes: totalWorkedMinutes },
-                timestamp: new Date()
+                metadata: {
+                    action: isOverride ? "manager_override" : "timesheet_update",
+                    reason: "Manual Timesheet Update",
+                    totalMinutes: totalWorkedMinutes,
+                    // Both sides of every field that moved, so the trail can be
+                    // read back without replaying the whole history.
+                    previousClockIn: assignment.actualClockIn?.toISOString() ?? null,
+                    clockIn: nextActualClockIn?.toISOString() ?? null,
+                    previousClockOut: assignment.actualClockOut?.toISOString() ?? null,
+                    clockOut: nextActualClockOut?.toISOString() ?? null,
+                    previousBreakMinutes: assignment.breakMinutes ?? 0,
+                    breakMinutes: nextBreakMinutes,
+                },
+                timestamp: now,
             });
         }
 
