@@ -381,7 +381,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     </div>
                 </div>
                 {!isApproved && !isCancelled && (
-                    <div className="flex items-center gap-2 self-start">
+                    // Wraps: five actions do not fit a phone on one line, and
+                    // pushing Cancel shift off the edge is the worst of the
+                    // available failures.
+                    <div className="flex flex-wrap items-center gap-2 self-start">
                         <Button asChild variant="outline">
                             <Link href={`/dashboard/shifts/${shift.id}/timesheet/print`}>
                                 <Printer data-icon="inline-start" aria-hidden="true" />
