@@ -62,6 +62,23 @@ function getShiftHref(shift: WorkerShift) {
     };
 }
 
+/**
+ * Names how many businesses could schedule this worker, because "one of your
+ * four businesses" tells them something "an organization" does not — and a
+ * worker with no orgs yet is in a different situation entirely.
+ */
+function emptyScheduleDescription(orgCount: number) {
+    const tail = "You do not need to check — reminders come to you.";
+
+    if (orgCount === 0) {
+        return `Once a business adds you to their roster, your shifts land here. ${tail}`;
+    }
+    if (orgCount === 1) {
+        return `When your business schedules you, it lands here. ${tail}`;
+    }
+    return `When one of your ${orgCount} businesses schedules you, it lands here. ${tail}`;
+}
+
 function FilterChip({
     label,
     active = false,
@@ -148,7 +165,6 @@ export default function ScheduleScreen() {
     const shiftsToRender = viewMode === "history" ? historyShifts : futureShifts;
     const sections = buildSections(shiftsToRender);
     const totalConflicts = conflicts.length;
-    const selectedOrganization = organizations.find((organization) => organization.id === selectedOrgId);
 
     if (loading && !refreshing) {
         return <LoadingScreen label="Loading your shifts" />;
@@ -158,11 +174,11 @@ export default function ScheduleScreen() {
         <Screen>
             <PageHeader
                 title="My shifts"
-                subtitle={
-                    selectedOrganization
-                        ? `Showing ${selectedOrganization.name}`
-                        : `Showing all orgs${organizations.length ? ` · ${organizations.length}` : ""}`
-                }
+                // The org filter is spelled out in the chips directly below, so
+                // this line is free to carry the thing a worker cannot infer and
+                // will otherwise get wrong: these are the site's hours, not their
+                // phone's.
+                subtitle="All times are site local"
                 actions={[
                     {
                         icon: "notifications-outline",
@@ -199,14 +215,19 @@ export default function ScheduleScreen() {
 
             {sections.length === 0 ? (
                 <View className="flex-1 px-5 pt-4">
+                    {/* An empty list invites the question "should I keep checking?".
+                        Answering it here is the difference between a worker who
+                        refreshes all evening and one who gets on with their day. */}
                     <EmptyState
                         icon="calendar-clear-outline"
-                        title={viewMode === "history" ? "No shift history yet" : "No upcoming shifts"}
+                        title={viewMode === "history" ? "No shift history yet" : "No shifts booked"}
                         description={
                             viewMode === "history"
-                                ? "Completed and past shifts will show here."
-                                : "New shifts will appear here across all organizations."
+                                ? "Shifts you have worked will show here once they are done."
+                                : emptyScheduleDescription(organizations.length)
                         }
+                        actionLabel={viewMode === "history" ? undefined : "Check your availability is right"}
+                        onAction={viewMode === "history" ? undefined : () => router.push("/availability")}
                     />
                 </View>
             ) : (
