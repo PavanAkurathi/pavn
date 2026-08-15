@@ -344,6 +344,18 @@ export const shift = pgTable("shift", {
     // -- Grouping --
     scheduleGroupId: text("schedule_group_id"), // "int_..." for batched operations
 
+    /**
+     * Last-resort clock-in for a worker the geofence will not let through —
+     * bad GPS, a site whose coordinates are slightly off, a steel warehouse.
+     * Four digits the supervisor at the gate reads out.
+     *
+     * Scoped to one shift on purpose: a code overheard in a yard is useless
+     * tomorrow. A clock-in through it is recorded as unverified and flagged for
+     * review, so the convenience never costs the manager visibility.
+     */
+    siteCode: text("site_code"),
+    siteCodeIssuedAt: timestamp("site_code_issued_at", { withTimezone: true, mode: 'date' }),
+
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({

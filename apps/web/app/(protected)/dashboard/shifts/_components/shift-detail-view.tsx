@@ -30,6 +30,7 @@ import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
 import { SaveAsTemplateDialog } from "./save-as-template-dialog";
 import { EditShiftDialog } from "./edit-shift-dialog";
+import { SiteCodeButton } from "./site-code-button";
 import { useConfirm } from "@/components/ui/use-confirm";
 import {
     calculateTrackedMinutes,
@@ -396,6 +397,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             Add worker
                         </Button>
                         <EditShiftDialog shift={shift} assignedCount={workers.length} />
+                        <SiteCodeButton shiftId={shift.id} />
                         <SaveAsTemplateDialog
                             shiftId={shift.id}
                             suggestedName={shift.locationName || shift.title}

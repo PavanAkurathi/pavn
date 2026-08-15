@@ -16,6 +16,7 @@ import { Screen } from "../../../components/ui/screen";
 import { Icon } from "../../../components/ui/icon";
 import { SectionTitle } from "../../../components/ui/section-title";
 import { WaysForward } from "../../../components/ui/ways-forward";
+import { SiteCodeEntry } from "../../../components/site-code-entry";
 import { api, WorkerShift } from "../../../lib/api";
 import { useGeofence } from "../../../hooks/useGeofence";
 
@@ -128,6 +129,8 @@ export default function ShiftDetailScreen() {
     const [loading, setLoading] = useState(true);
     const { clockIn, clockOut, loading: geoLoading } = useGeofence();
     const [locStatus, setLocStatus] = useState<LocationStatus>("checking");
+    // Kept behind a tap: the code is the exception, not the way in.
+    const [showSiteCode, setShowSiteCode] = useState(false);
 
     const isClockedIn = !!shift?.timesheet.clockIn;
     const isClockedOut = !!shift?.timesheet.clockOut;
@@ -500,7 +503,7 @@ export default function ShiftDetailScreen() {
                                         steps={[
                                             "Walk to the entrance — it unlocks as soon as you are inside.",
                                             "Open directions below if you are at the wrong gate.",
-                                            "Still stuck: call your supervisor and they can start you manually.",
+                                            "Still stuck: ask your supervisor for the site code.",
                                         ]}
                                     />
                                 </View>
@@ -522,7 +525,7 @@ export default function ShiftDetailScreen() {
                                         steps={[
                                             "Step outside, away from metal doors, and wait ten seconds.",
                                             "Check again below.",
-                                            "Still stuck: call your supervisor and they can start you manually.",
+                                            "Still stuck: ask your supervisor for the site code.",
                                         ]}
                                     />
                                 </View>
@@ -543,6 +546,20 @@ export default function ShiftDetailScreen() {
                                             <Button.Label>Get directions</Button.Label>
                                         </Button>
                                     ) : null}
+                                    {showSiteCode ? (
+                                        <SiteCodeEntry
+                                            shiftId={shift.id}
+                                            orgId={shift.organization?.id}
+                                            onClockedIn={() => {
+                                                setShowSiteCode(false);
+                                                void loadShift();
+                                            }}
+                                        />
+                                    ) : (
+                                        <Button variant="secondary" onPress={() => setShowSiteCode(true)}>
+                                            <Button.Label>I have a site code</Button.Label>
+                                        </Button>
+                                    )}
                                     {/* Said plainly, where it is being asked for. A worker
                                         blocked by a location check deserves to know the
                                         limit of what is being collected. */}

@@ -24,6 +24,8 @@ import {
     getPendingCorrections,
     reviewCorrection,
     managerOverride,
+    getSiteCode,
+    clockInWithSiteCode,
     getFlaggedTimesheets,
     ingestLocation,
     ClockActionResponseSchema,
@@ -45,6 +47,52 @@ const clockInRoute = createRoute({
         200: { content: { 'application/json': { schema: ClockActionResponseSchema } }, description: 'Clock in result' },
         401: { description: 'Unauthorized' }
     }
+});
+
+const siteCodeRoute = createRoute({
+    method: 'post',
+    path: '/site-code',
+    summary: 'Issue Site Code',
+    description: "The four digits a supervisor reads out when the geofence will not let a worker clock in. Manager only.",
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Site code' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Shift not found' }
+    }
+});
+
+geofenceRouter.use('/site-code', rateLimit(RATE_LIMITS.strict));
+geofenceRouter.openapi(siteCodeRoute, async (c) => {
+    const user = c.get("user");
+    const userRole = c.get("userRole");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    if (!isManagerRole(userRole)) return c.json({ error: "Manager role required" }, 403);
+
+    const { shiftId } = await c.req.json();
+    const result = await getSiteCode(shiftId, c.get("orgId"), user.id);
+    return jsonOk(c, result);
+});
+
+const clockInWithCodeRoute = createRoute({
+    method: 'post',
+    path: '/clock-in-with-code',
+    summary: 'Clock In With Site Code',
+    description: 'Clock in using the supervisor-issued code when location cannot be verified. Recorded as unverified and flagged for review.',
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Clock in result' },
+        401: { description: 'Unauthorized' },
+        403: { description: 'Wrong code, or not on this shift' },
+        429: { description: 'Too many attempts' }
+    }
+});
+
+geofenceRouter.use('/clock-in-with-code', rateLimit(RATE_LIMITS.clockAction));
+geofenceRouter.openapi(clockInWithCodeRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+    const result = await clockInWithSiteCode(await c.req.json(), user.id, c.get("orgId"));
+    return jsonOk(c, result);
 });
 
 geofenceRouter.use('/clock-in', rateLimit(RATE_LIMITS.clockAction));

@@ -325,6 +325,14 @@ export const api = {
                 method: 'POST', headers, body: JSON.stringify(data),
             });
         },
+
+        /** Last resort when location cannot be proved — the supervisor's four digits. */
+        clockInWithCode: async (data: { shiftId: string; code: string }, orgId?: string) => {
+            const headers = await getAuthHeaders(true, orgId);
+            return fetchJson(`${CONFIG.API_URL}/geofence/clock-in-with-code`, {
+                method: 'POST', headers, body: JSON.stringify(data),
+            });
+        },
     },
 
     // -------------------------------------------------------------------------
