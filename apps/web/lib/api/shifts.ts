@@ -248,6 +248,18 @@ export async function editShift(shiftId: string, payload: EditShiftPayload, orgI
     });
 }
 
+export async function getSiteCode(shiftId: string, orgId?: string) {
+    return apiJsonRequest<{ code: string; issuedAt: string | null; reused: boolean }>(
+        "/geofence/site-code",
+        {
+            method: "POST",
+            body: { shiftId },
+            organizationScoped: true,
+            organizationId: orgId,
+        },
+    );
+}
+
 export async function cancelShift(shiftId: string, orgId?: string) {
     return mutateShift(`/shifts/${shiftId}/cancel`, {
         organizationId: orgId,

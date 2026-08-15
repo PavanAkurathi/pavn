@@ -15,6 +15,13 @@
       "when": 1786757253486,
       "tag": "0001_confused_ben_urich",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786806497379,
+      "tag": "0002_vengeful_wolfsbane",
+      "breakpoints": true
     }
   ]
 }

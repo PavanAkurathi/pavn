@@ -3,6 +3,7 @@ export { clockOut } from "./services/clock-out";
 export { requestCorrection } from "./services/request-correction";
 export { getPendingCorrections, reviewCorrection } from "./services/review-correction";
 export { managerOverride } from "./services/manager-override";
+export { getSiteCode, clockInWithSiteCode } from "./services/site-code";
 export { getFlaggedTimesheets } from "./services/flagged-timesheets";
 export { getWorkerCorrections } from "./services/get-worker-corrections";
 export { ingestLocation } from "./services/ingest-location";

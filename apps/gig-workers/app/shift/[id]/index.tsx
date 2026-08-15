@@ -15,10 +15,24 @@ import { PageHeader } from "../../../components/ui/page-header";
 import { Screen } from "../../../components/ui/screen";
 import { Icon } from "../../../components/ui/icon";
 import { SectionTitle } from "../../../components/ui/section-title";
+import { WaysForward } from "../../../components/ui/ways-forward";
+import { SiteCodeEntry } from "../../../components/site-code-entry";
 import { api, WorkerShift } from "../../../lib/api";
 import { useGeofence } from "../../../hooks/useGeofence";
 
-type LocationStatus = "checking" | "verified" | "failed" | "optional" | "not_required";
+/**
+ * The two ways a location check fails are not the same problem and do not have
+ * the same way out. "You are half a mile away" is solved by walking; "your phone
+ * cannot see the sky" is solved by standing somewhere else. Collapsing both into
+ * one "failed" left a worker at a locked door with nothing to try.
+ */
+type LocationStatus =
+    | "checking"
+    | "verified"
+    | "too_far"
+    | "no_fix"
+    | "optional"
+    | "not_required";
 
 const fmt = (iso: string) =>
     new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -115,6 +129,8 @@ export default function ShiftDetailScreen() {
     const [loading, setLoading] = useState(true);
     const { clockIn, clockOut, loading: geoLoading } = useGeofence();
     const [locStatus, setLocStatus] = useState<LocationStatus>("checking");
+    // Kept behind a tap: the code is the exception, not the way in.
+    const [showSiteCode, setShowSiteCode] = useState(false);
 
     const isClockedIn = !!shift?.timesheet.clockIn;
     const isClockedOut = !!shift?.timesheet.clockOut;
@@ -165,7 +181,10 @@ export default function ShiftDetailScreen() {
             const { LocationService } = require("../../../services/location");
             const loc = await LocationService.getCurrentLocation();
             if (!loc || !shift?.location.latitude || !shift?.location.longitude) {
-                setLocStatus(policy === "strict_geofence" ? "failed" : "optional");
+                // No usable fix — the phone could not place itself, or the site
+                // has no coordinates. Either way the distance is unknown, which
+                // is a different dead end from being genuinely too far.
+                setLocStatus(policy === "strict_geofence" ? "no_fix" : "optional");
                 return;
             }
 
@@ -181,10 +200,10 @@ export default function ShiftDetailScreen() {
             if (dist <= (shift.location.geofenceRadius || 150)) {
                 setLocStatus("verified");
             } else {
-                setLocStatus(policy === "strict_geofence" ? "failed" : "optional");
+                setLocStatus(policy === "strict_geofence" ? "too_far" : "optional");
             }
         } catch {
-            setLocStatus(policy === "strict_geofence" ? "failed" : "optional");
+            setLocStatus(policy === "strict_geofence" ? "no_fix" : "optional");
         }
     };
 
@@ -250,6 +269,8 @@ export default function ShiftDetailScreen() {
         );
     }
 
+    const isBlockedByLocation =
+        requiresOnSite && (locStatus === "too_far" || locStatus === "no_fix");
     const canClockIn = !isClockedIn && !isClockedOut && (!requiresOnSite || locStatus === "verified");
 
     return (
@@ -467,14 +488,47 @@ export default function ShiftDetailScreen() {
                                 </HeroAlert>
                             ) : null}
 
-                            {locStatus === "failed" ? (
-                                <HeroAlert status="danger">
-                                    <HeroAlert.Indicator />
-                                    <HeroAlert.Content>
-                                        <HeroAlert.Title>On-site required</HeroAlert.Title>
-                                        <HeroAlert.Description>You must be at the venue to clock in.</HeroAlert.Description>
-                                    </HeroAlert.Content>
-                                </HeroAlert>
+                            {locStatus === "too_far" ? (
+                                <View className="gap-3">
+                                    <HeroAlert status="danger">
+                                        <HeroAlert.Indicator />
+                                        <HeroAlert.Content>
+                                            <HeroAlert.Title>You are not at the site yet</HeroAlert.Title>
+                                            <HeroAlert.Description>
+                                                Clock-in unlocks inside the site boundary.
+                                            </HeroAlert.Description>
+                                        </HeroAlert.Content>
+                                    </HeroAlert>
+                                    <WaysForward
+                                        steps={[
+                                            "Walk to the entrance — it unlocks as soon as you are inside.",
+                                            "Open directions below if you are at the wrong gate.",
+                                            "Still stuck: ask your supervisor for the site code.",
+                                        ]}
+                                    />
+                                </View>
+                            ) : null}
+
+                            {locStatus === "no_fix" ? (
+                                <View className="gap-3">
+                                    <HeroAlert status="danger">
+                                        <HeroAlert.Indicator />
+                                        <HeroAlert.Content>
+                                            <HeroAlert.Title>Your phone is not sure where it is</HeroAlert.Title>
+                                            <HeroAlert.Description>
+                                                Signal is too rough to place you. This happens inside steel buildings
+                                                and under loading canopies.
+                                            </HeroAlert.Description>
+                                        </HeroAlert.Content>
+                                    </HeroAlert>
+                                    <WaysForward
+                                        steps={[
+                                            "Step outside, away from metal doors, and wait ten seconds.",
+                                            "Check again below.",
+                                            "Still stuck: ask your supervisor for the site code.",
+                                        ]}
+                                    />
+                                </View>
                             ) : null}
 
                             <Button onPress={handleClockIn} isDisabled={!canClockIn || geoLoading}>
@@ -482,10 +536,37 @@ export default function ShiftDetailScreen() {
                                 <Button.Label>Clock in</Button.Label>
                             </Button>
 
-                            {locStatus === "failed" && requiresOnSite ? (
-                                <Button variant="secondary" onPress={() => void verifyLocation()}>
-                                    <Button.Label>Retry location check</Button.Label>
-                                </Button>
+                            {isBlockedByLocation ? (
+                                <>
+                                    <Button variant="secondary" onPress={() => void verifyLocation()}>
+                                        <Button.Label>Check my location again</Button.Label>
+                                    </Button>
+                                    {shift?.location.latitude ? (
+                                        <Button variant="secondary" onPress={openDirections}>
+                                            <Button.Label>Get directions</Button.Label>
+                                        </Button>
+                                    ) : null}
+                                    {showSiteCode ? (
+                                        <SiteCodeEntry
+                                            shiftId={shift.id}
+                                            orgId={shift.organization?.id}
+                                            onClockedIn={() => {
+                                                setShowSiteCode(false);
+                                                void loadShift();
+                                            }}
+                                        />
+                                    ) : (
+                                        <Button variant="secondary" onPress={() => setShowSiteCode(true)}>
+                                            <Button.Label>I have a site code</Button.Label>
+                                        </Button>
+                                    )}
+                                    {/* Said plainly, where it is being asked for. A worker
+                                        blocked by a location check deserves to know the
+                                        limit of what is being collected. */}
+                                    <Text className="text-xs text-muted">
+                                        This app never shows how far away you are, and never tracks you outside a shift.
+                                    </Text>
+                                </>
                             ) : null}
                         </View>
                     ) : null}
