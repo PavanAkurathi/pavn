@@ -12,27 +12,40 @@ interface ShiftCardProps {
 }
 
 const SETTLED_STATUSES = ["completed", "approved", "cancelled"];
-/** Open slots are listed individually, up to this many, then summarised. */
-const MAX_OPEN_CHIPS = 3;
 /**
- * Named chips are worth their space on a small position and unreadable on a
- * large one — a 30-slot Loader line would bury the shift itself. Past this
- * count the line collapses to an avatar stack and a tally; the role and
- * filled/total still say what matters, and the detail page has the names.
+ * How many faces the avatar lane holds without growing.
+ *
+ * The card is a fixed size. A shift with six workers and a shift with sixty
+ * have to occupy exactly the same space, or a busy week turns into a wall of
+ * different-sized cards you cannot scan. This many avatars fit the lane; past
+ * it the lane ends in an ellipsis and the rest of the story is one click away.
  */
-const MAX_NAMED_CHIPS = 4;
-/** Faces shown in the collapsed stack before "+N". */
-const MAX_STACKED_AVATARS = 5;
+const AVATAR_LANE_CAPACITY = 6;
 
 /**
- * Chips are typed because the three kinds behave differently on the day: a
- * roster worker clocks themselves in, an invited one may never turn up because
- * they never accepted, and an agency worker is tracked entirely by the manager.
+ * Same rule vertically. A block with fifteen roles in it would otherwise grow
+ * a card fifteen rows tall; past this the card says how many roles are left
+ * rather than listing them.
  */
-const WORKER_KIND_STYLES = {
-    roster: { chip: "border-border bg-muted/40", label: undefined },
-    invited: { chip: "border-amber-300 bg-amber-50/60", label: "Invited" },
-    agency: { chip: "border-violet-200 bg-violet-50/60", label: "Agency" },
+const MAX_POSITION_ROWS = 4;
+
+/**
+ * The three kinds behave differently on the day: a roster worker clocks
+ * themselves in, an invited one may never turn up because they never accepted,
+ * and an agency worker is tracked entirely by the manager. Carried as a ring
+ * colour rather than a text label, because text changes the card's width and
+ * a ring does not.
+ */
+const WORKER_KIND_RING = {
+    roster: "ring-border",
+    invited: "ring-amber-400",
+    agency: "ring-violet-400",
+} as const;
+
+const WORKER_KIND_NOUN = {
+    roster: "on the roster",
+    invited: "invited, not accepted yet",
+    agency: "agency",
 } as const;
 
 function filledOf(shift: Shift) {
@@ -129,7 +142,7 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                    {shifts.map((shift) => {
+                    {shifts.slice(0, MAX_POSITION_ROWS).map((shift) => {
                         const total = shift.capacity?.total ?? 0;
                         const filled = filledOf(shift);
                         const open = Math.max(total - filled, 0);
@@ -152,78 +165,58 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel = "View Shift
                                     {filled}/{total}
                                 </span>
 
-                                <div className="col-span-2 flex flex-wrap items-center gap-1.5 md:col-span-1">
-                                    {workers.length > MAX_NAMED_CHIPS ? (
-                                        <span className="flex items-center gap-2">
-                                            <span className="flex -space-x-1.5">
-                                                {workers.slice(0, MAX_STACKED_AVATARS).map((worker, index) => (
+                                {/* Fixed-height lane: the faces that fit, then an
+                                    ellipsis. Never wraps, never grows. The faces
+                                    are the part that yields when space runs out —
+                                    the open-slot count must never be the thing
+                                    that gets clipped off the end. */}
+                                <div className="col-span-2 flex h-[22px] min-w-0 items-center gap-2 md:col-span-1">
+                                    {workers.length > 0 ? (
+                                        <span className="flex min-w-0 shrink -space-x-1.5 overflow-hidden">
+                                            {workers.slice(0, AVATAR_LANE_CAPACITY).map((worker, index) => {
+                                                const kind = worker.kind ?? "roster";
+                                                return (
                                                     <Avatar
                                                         key={`${worker.id}-${index}`}
-                                                        className="h-[22px] w-[22px] border-2 border-card"
-                                                        title={worker.name ?? worker.initials}
+                                                        className={`h-[22px] w-[22px] shrink-0 ring-2 ${WORKER_KIND_RING[kind] ?? WORKER_KIND_RING.roster}`}
+                                                        title={`${worker.name ?? worker.initials} — ${WORKER_KIND_NOUN[kind] ?? WORKER_KIND_NOUN.roster}`}
                                                     >
                                                         <AvatarImage src={worker.avatarUrl} />
                                                         <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
                                                             {worker.initials}
                                                         </AvatarFallback>
                                                     </Avatar>
-                                                ))}
-                                            </span>
-                                            {workers.length > MAX_STACKED_AVATARS ? (
-                                                <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                                                    +{workers.length - MAX_STACKED_AVATARS}
-                                                </span>
-                                            ) : null}
+                                                );
+                                            })}
                                         </span>
-                                    ) : (
-                                        workers.map((worker, index) => {
-                                            const kindStyle =
-                                                WORKER_KIND_STYLES[worker.kind ?? "roster"] ?? WORKER_KIND_STYLES.roster;
-                                            return (
-                                                <span
-                                                    key={`${worker.id}-${index}`}
-                                                    className={`inline-flex items-center gap-1.5 rounded-full border py-0.5 pl-0.5 pr-2.5 ${kindStyle.chip}`}
-                                                >
-                                                    <Avatar className="h-[18px] w-[18px]">
-                                                        <AvatarImage src={worker.avatarUrl} />
-                                                        <AvatarFallback className="bg-muted text-[8px] font-semibold text-muted-foreground">
-                                                            {worker.initials}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="text-xs text-foreground/80">
-                                                        {worker.name ?? worker.initials}
-                                                    </span>
-                                                    {kindStyle.label ? (
-                                                        <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                                            {kindStyle.label}
-                                                        </span>
-                                                    ) : null}
-                                                </span>
-                                            );
-                                        })
-                                    )}
+                                    ) : null}
 
-                                    {/* On a big position one tally beats a row of identical chips. */}
+                                    {workers.length > AVATAR_LANE_CAPACITY ? (
+                                        <span
+                                            aria-label={`and ${workers.length - AVATAR_LANE_CAPACITY} more — open the shift to see everyone`}
+                                            className="shrink-0 text-sm font-bold leading-none text-muted-foreground"
+                                        >
+                                            …
+                                        </span>
+                                    ) : null}
+
                                     {!isSettled && open > 0 ? (
-                                        workers.length > MAX_NAMED_CHIPS || open > MAX_OPEN_CHIPS ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2.5 py-0.5 text-xs font-semibold text-destructive">
-                                                {open} open
-                                            </span>
-                                        ) : (
-                                            Array.from({ length: open }).map((_, index) => (
-                                                <span
-                                                    key={`open-${index}`}
-                                                    className="inline-flex items-center gap-1 rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2.5 py-0.5 text-xs font-semibold text-destructive"
-                                                >
-                                                    Open slot
-                                                </span>
-                                            ))
-                                        )
+                                        <span className="shrink-0 whitespace-nowrap rounded-full border border-dashed border-destructive/50 bg-destructive/5 px-2 py-0.5 text-[11px] font-semibold text-destructive">
+                                            {open} open
+                                        </span>
                                     ) : null}
                                 </div>
                             </div>
                         );
                     })}
+
+                    {shifts.length > MAX_POSITION_ROWS ? (
+                        <span className="flex h-[22px] items-center gap-1.5 text-xs text-muted-foreground">
+                            <span aria-hidden="true" className="text-sm font-bold leading-none">…</span>
+                            {shifts.length - MAX_POSITION_ROWS} more role
+                            {shifts.length - MAX_POSITION_ROWS === 1 ? "" : "s"}
+                        </span>
+                    ) : null}
                 </div>
             </div>
 
