@@ -6,7 +6,10 @@
 @source "./hooks";
 @source "./lib";
 @source "./screens";
-@source "./node_modules/heroui-native/lib/module";
+/* Hoisted to the workspace root by bun — "./node_modules" here is a directory
+   that does not exist, so Tailwind scanned nothing and heroui-native's classes
+   and variants went missing. */
+@source "../../node_modules/heroui-native/lib/module";
 
 @theme {
   --radius: 0.875rem;
