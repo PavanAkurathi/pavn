@@ -1,15 +1,19 @@
 import { db } from "@repo/database";
 import { member, rosterEntry, user, workerRole } from "@repo/database/schema";
-import { eq, notInArray, and, ilike, inArray } from "drizzle-orm";
+import { eq, and, ilike, inArray } from "drizzle-orm";
 import { getInitials } from "../../utils/formatting";
 import { deriveCrewRoles } from "../../utils/crew-roles";
 
 export const getCrew = async (orgId: string, options: { search?: string, limit?: number, offset?: number } = {}) => {
     const { search, limit = 50, offset = 0 } = options;
 
+    // Managers work shifts. In a small staffing operation the owner is often the
+    // one covering a gap at 5am, and excluding them from their own crew pool
+    // meant the business could not schedule the person most likely to turn up.
+    // Whether someone can be scheduled is about being in the organisation, not
+    // about their permissions inside it.
     const whereClause = and(
         eq(member.organizationId, orgId),
-        notInArray(member.role, ["admin", "manager", "owner"]),
         search ? ilike(user.name, `%${search}%`) : undefined
     );
 
