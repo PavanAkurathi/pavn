@@ -28,3 +28,10 @@ export { exportTimesheets } from "./modules/reporting/export-timesheets";
 export { getTimesheetsReport } from "./modules/reporting/get-timesheets-report";
 export { getReportFilters } from "./modules/reporting/get-report-filters";
 export { copyWeek } from "./modules/shifts/copy-week";
+export {
+    createShiftTemplate,
+    createTemplateFromShift,
+    listShiftTemplates,
+    deleteShiftTemplate,
+    applyShiftTemplate,
+} from "./modules/shifts/templates";

@@ -34,6 +34,14 @@ export interface TimesheetViewModel {
     invitePending?: boolean;
     agency?: string;
     phone?: string;
+    /** Carried from the audit trail: the last time a manager changed these hours. */
+    edited?: {
+        by: string;
+        at: string;
+        previousClockIn?: string;
+        previousClockOut?: string;
+        previousBreakMinutes?: number;
+    };
 }
 
 export function parseBreakMinutes(value?: string | null) {

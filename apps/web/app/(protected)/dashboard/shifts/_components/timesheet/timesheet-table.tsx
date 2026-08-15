@@ -316,6 +316,7 @@ export function TimesheetTable({
                                     agency={worker.agency}
                                     phone={worker.phone}
                                     invitePending={worker.invitePending}
+                                    edited={worker.edited}
                                     onNotesChange={(val) => onUpdateWorkerNotes(worker.id, val)}
                                     onRequestConfirmation={(request) => setPendingConfirmation(request)}
                                     onRemoveFromShift={() => onRemoveWorker(worker.id)}

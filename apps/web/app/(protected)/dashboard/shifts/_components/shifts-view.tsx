@@ -11,6 +11,7 @@ import { ScheduleSummary } from "./schedule-summary";
 import { copyLastWeekAction } from "../_actions/copy-week";
 import { publishDraftsAction } from "../_actions/publish-drafts";
 import { DraftPublishBar } from "./draft-publish-bar";
+import { TemplatePicker } from "./template-picker";
 import { toast } from "sonner";
 import { SHIFT_LAYOUTS, SHIFT_STATUS, LOCATIONS } from "@/lib/constants";
 import { useCrewData } from "@/hooks/use-crew-data";
@@ -401,6 +402,9 @@ function ShiftsDashboardContent({
                 onTodayWeek={() => setSelectedWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))}
                 onCopyLastWeek={copyTargetLocation ? handleCopyLastWeek : undefined}
                 isCopyingWeek={isCopyingWeek}
+                templateSlot={
+                    <TemplatePicker weekStart={selectedWeekStart} onApplied={() => router.refresh()} />
+                }
                 onNextWeek={() => setSelectedWeekStart((current) => addWeeks(current, 1))}
                 availableLocations={availableLocations}
                 availableWorkers={availableWorkers}

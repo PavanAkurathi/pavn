@@ -92,6 +92,51 @@ export async function getDraftShiftsCount(orgId?: string) {
     }
 }
 
+export type ShiftTemplateSummary = {
+    id: string;
+    name: string;
+    locationId: string;
+    locationName: string;
+    timezone?: string;
+    startTime: string;
+    endTime: string;
+    positions: { roleName: string; headcount: number }[];
+    headcount: number;
+};
+
+export async function getShiftTemplates(orgId?: string): Promise<ShiftTemplateSummary[]> {
+    try {
+        return await apiJsonRequest<ShiftTemplateSummary[]>("/shifts/templates", {
+            organizationScoped: true,
+            organizationId: orgId,
+        });
+    } catch (error) {
+        console.error("Error fetching templates:", error);
+        return [];
+    }
+}
+
+export async function saveShiftAsTemplate(shiftId: string, name: string, orgId?: string) {
+    return mutateShift<{ success: boolean; id: string; name: string }>("/shifts/templates", {
+        body: { fromShiftId: shiftId, name },
+        organizationId: orgId,
+    });
+}
+
+export async function applyShiftTemplate(templateId: string, dates: string[], orgId?: string) {
+    return mutateShift<{ created: number; days?: number; skippedDays: string[]; message?: string }>(
+        `/shifts/templates/${templateId}/apply`,
+        { body: { dates }, organizationId: orgId },
+    );
+}
+
+export async function deleteShiftTemplate(templateId: string, orgId?: string) {
+    return mutateShift<{ success: boolean }>(`/shifts/templates/${templateId}`, {
+        method: "DELETE",
+        organizationId: orgId,
+    });
+}
+
 export async function getDraftShifts(orgId?: string): Promise<Shift[]> {
     try {
         return await getShiftCollection("draft", orgId);

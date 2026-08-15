@@ -16,6 +16,7 @@ import {
     Hourglass,
     MapPin,
     Pencil,
+    PencilLine,
     Phone,
     RotateCcw,
     Trash2,
@@ -66,6 +67,14 @@ interface TimesheetRowProps {
     agency?: string;
     phone?: string;
     invitePending?: boolean;
+    /** Set once a manager has changed these hours by hand. */
+    edited?: {
+        by: string;
+        at: string;
+        previousClockIn?: string;
+        previousClockOut?: string;
+        previousBreakMinutes?: number;
+    };
     onNotesChange?: (value: string) => void;
     onRequestConfirmation?: (request: PendingTimesheetConfirmation) => void;
     onRemoveFromShift?: () => void;
@@ -104,6 +113,30 @@ function time24hToParts(val: string): TimeFieldParts {
     if (h > 12) h -= 12;
     if (h === 0) h = 12;
     return { hour: String(h).padStart(2, "0"), minute: mStr || "00", period };
+}
+
+/**
+ * The audit trail in one line, for the tooltip on the Edited badge. Says who,
+ * when, and what the values were before — the manager keeps the right to change
+ * anything, and the record of what they changed travels with it.
+ */
+function describeEdit(edited: NonNullable<TimesheetRowProps["edited"]>) {
+    const when = new Date(edited.at);
+    const clock = (iso?: string) =>
+        iso
+            ? new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+            : "empty";
+
+    const parts: string[] = [];
+    if (edited.previousClockIn !== undefined) parts.push(`in was ${clock(edited.previousClockIn)}`);
+    if (edited.previousClockOut !== undefined) parts.push(`out was ${clock(edited.previousClockOut)}`);
+    if (edited.previousBreakMinutes !== undefined) parts.push(`break was ${edited.previousBreakMinutes} min`);
+
+    const stamp = Number.isNaN(when.getTime())
+        ? ""
+        : ` on ${when.toLocaleDateString(undefined, { month: "short", day: "numeric" })} at ${when.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+
+    return `Edited by ${edited.by}${stamp}${parts.length ? ` — ${parts.join(", ")}` : ""}`;
 }
 
 function TimeInputField({
@@ -206,6 +239,7 @@ export function TimesheetRow({
     agency,
     phone,
     invitePending = false,
+    edited,
     onNotesChange,
     onRequestConfirmation,
     onRemoveFromShift,
@@ -442,6 +476,18 @@ export function TimesheetRow({
                 <Button size="icon" variant="outline" className="size-8 text-muted-foreground hover:text-foreground" aria-label="View worker location" title="Worker Geofence / Location">
                     <MapPin className="size-3.5" />
                 </Button>
+                {/* A manager may change anything here, but never quietly. This
+                    is the standing record of the last hand edit. */}
+                {edited && !hasDirtyEdits ? (
+                    <Badge
+                        variant="outline"
+                        className="mr-1 gap-1 border-amber-300 bg-amber-50 font-normal text-amber-900"
+                        title={describeEdit(edited)}
+                    >
+                        <PencilLine className="size-3" />
+                        Edited
+                    </Badge>
+                ) : null}
                 {hasDirtyEdits ? <Badge variant="secondary" className="mr-1">Unsaved</Badge> : null}
                 {hasDirtyEdits ? (
                     <>

@@ -357,6 +357,44 @@ export const shift = pgTable("shift", {
     shiftLocationIdx: index("shift_location_idx").on(table.locationId),
 }));
 
+/**
+ * A shift shape worth keeping: the roles, the headcount, the hours, the place.
+ *
+ * Deliberately holds no dates and no people. A template that remembers who
+ * worked it ages badly — someone leaves in March and is still being scheduled
+ * in September, precisely when a manager is moving fast and not looking. So a
+ * template lays out the work and staffing stays a separate, deliberate act.
+ */
+export const shiftTemplate = pgTable("shift_template", {
+    id: text("id").primaryKey(),
+
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+
+    locationId: text("location_id")
+        .notNull()
+        .references(() => location.id, { onDelete: "cascade" }),
+
+    name: text("name").notNull(),
+
+    // Wall-clock times (HH:MM). Stored as local time, not an instant, because a
+    // template says "we start at 6pm" — the date it lands on decides the rest,
+    // and the location's timezone turns it into a real moment.
+    startTime: text("start_time").notNull(),
+    endTime: text("end_time").notNull(),
+
+    positions: jsonb("positions")
+        .$type<{ roleName: string; headcount: number }[]>()
+        .notNull()
+        .default(sql`'[]'::jsonb`),
+
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+    shiftTemplateOrgIdx: index("shift_template_org_idx").on(table.organizationId),
+}));
+
 export const shiftAssignment = pgTable("shift_assignment", {
     id: text("id").primaryKey(),
 
@@ -461,6 +499,17 @@ export const shiftRelations = relations(shift, ({ one, many }) => ({
         references: [location.id],
     }),
     assignments: many(shiftAssignment),
+}));
+
+export const shiftTemplateRelations = relations(shiftTemplate, ({ one }) => ({
+    organization: one(organization, {
+        fields: [shiftTemplate.organizationId],
+        references: [organization.id],
+    }),
+    location: one(location, {
+        fields: [shiftTemplate.locationId],
+        references: [location.id],
+    }),
 }));
 
 export const shiftAssignmentRelations = relations(shiftAssignment, ({ one }) => ({

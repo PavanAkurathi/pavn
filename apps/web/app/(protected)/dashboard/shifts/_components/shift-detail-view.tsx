@@ -28,6 +28,7 @@ import { getShiftClock, zoneMatchesViewer } from "@/lib/shifts/shift-time";
 import { useOrganizationId } from "@/hooks/use-schedule-data";
 import { addDays, differenceInMinutes, format } from "date-fns";
 import { toast } from "sonner";
+import { SaveAsTemplateDialog } from "./save-as-template-dialog";
 import {
     calculateTrackedMinutes,
     combineBreakDurations,
@@ -87,6 +88,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     ...splitBreaks,
                     notes: "",
                     jobTitle: ts.role || roleLabel,
+                    edited: ts.edited,
                 };
             }
 
@@ -367,6 +369,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             <UserPlus data-icon="inline-start" />
                             Add worker
                         </Button>
+                        <SaveAsTemplateDialog
+                            shiftId={shift.id}
+                            suggestedName={shift.locationName || shift.title}
+                        />
                         <Button
                             variant="ghost"
                             className="px-3 text-muted-foreground hover:text-destructive"
