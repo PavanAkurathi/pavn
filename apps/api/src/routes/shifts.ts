@@ -40,6 +40,11 @@ import {
     publishSchedule,
     publishDrafts,
     copyWeek,
+    createShiftTemplate,
+    createTemplateFromShift,
+    listShiftTemplates,
+    deleteShiftTemplate,
+    applyShiftTemplate,
     editShift,
     duplicateShift,
     getOpenShifts,
@@ -198,6 +203,98 @@ shiftsRouter.openapi(getGroupRoute, async (c) => {
 // =============================================================================
 // SINGLE SHIFT OPERATIONS
 // =============================================================================
+
+// =============================================================================
+// SHIFT TEMPLATES
+// =============================================================================
+
+const listTemplatesRoute = createRoute({
+    method: 'get',
+    path: '/templates',
+    summary: 'List Shift Templates',
+    description: 'Saved shift shapes: roles, headcount, hours, place. No dates, no people.',
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseArraySchema } }, description: 'Templates' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(listTemplatesRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    return jsonOk(c, await listShiftTemplates(c.get("orgId")));
+});
+
+const createTemplateRoute = createRoute({
+    method: 'post',
+    path: '/templates',
+    summary: 'Create Shift Template',
+    description: 'Save a shift shape for reuse. Pass fromShiftId to lift the shape off an existing shift.',
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Template created' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+shiftsRouter.openapi(createTemplateRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const orgId = c.get("orgId");
+    const body = await c.req.json();
+
+    const result = body?.fromShiftId
+        ? await createTemplateFromShift(body.fromShiftId, body.name, orgId)
+        : await createShiftTemplate(body, orgId);
+
+    return jsonOk(c, result);
+});
+
+const deleteTemplateRoute = createRoute({
+    method: 'delete',
+    path: '/templates/{templateId}',
+    summary: 'Delete Shift Template',
+    request: { params: z.object({ templateId: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Template deleted' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Not found' }
+    }
+});
+
+shiftsRouter.openapi(deleteTemplateRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    return jsonOk(c, await deleteShiftTemplate(c.req.param("templateId"), c.get("orgId")));
+});
+
+const applyTemplateRoute = createRoute({
+    method: 'post',
+    path: '/templates/{templateId}/apply',
+    summary: 'Apply Shift Template',
+    description: 'Lay a template onto dates. Creates drafts; publishing stays a separate, explicit step.',
+    request: { params: z.object({ templateId: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Template applied' },
+        403: { description: 'Forbidden' },
+        404: { description: 'Not found' }
+    }
+});
+
+shiftsRouter.use('/templates/*', rateLimit(RATE_LIMITS.publish));
+shiftsRouter.openapi(applyTemplateRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const result = await applyShiftTemplate(
+        c.req.param("templateId"),
+        await c.req.json(),
+        c.get("orgId"),
+    );
+    return jsonOk(c, result);
+});
 
 const getShiftRoute = createRoute({
     method: 'get',

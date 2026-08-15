@@ -44,6 +44,8 @@ interface EventFiltersProps {
     onTodayWeek: () => void;
     onCopyLastWeek?: () => void;
     isCopyingWeek?: boolean;
+    /** The template picker, passed in so this stays a presentational toolbar. */
+    templateSlot?: React.ReactNode;
     onNextWeek: () => void;
     availableLocations: any[];
     availableWorkers: { id: string; name: string; initials: string }[];
@@ -60,6 +62,7 @@ export function EventFilters({
     onTodayWeek,
     onCopyLastWeek,
     isCopyingWeek = false,
+    templateSlot,
     onNextWeek,
     availableLocations,
     availableWorkers,
@@ -167,6 +170,7 @@ export function EventFilters({
                                 {isCopyingWeek ? "Copying…" : "Copy last week"}
                             </Button>
                         ) : null}
+                        {templateSlot}
                     </div>
                 ) : (
                     <Popover>
