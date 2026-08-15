@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Declares the light/dark custom variants heroui-native's variables.css opens
+   with. Without it the stylesheet fails to compile and takes the bundle with
+   it. Bare specifier, as heroui-native's own example app does — a relative path
+   to the same file does not register the variants. */
+@import "uniwind";
 @import "heroui-native/styles";
 
 @source "./app";
