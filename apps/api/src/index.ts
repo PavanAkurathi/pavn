@@ -60,6 +60,7 @@ import { initSentry, logMessage } from "@repo/observability";
 // Import route modules
 // Import route modules
 import { shiftsRouter } from "./routes/shifts.js";
+import { schedulerRouter } from "./routes/scheduler.js";
 import { workerRouter } from "./routes/worker.js";
 import { timesheetsRouter } from "./routes/timesheets.js";
 import { billingRouter } from "./routes/billing.js";
@@ -361,6 +362,7 @@ import { managerPreferencesRouter } from "./routes/manager-preferences.js";
 import { notificationsRouter } from "./routes/notifications.js";
 
 app.route("/shifts", shiftsRouter);
+app.route("/scheduler", schedulerRouter);
 app.route("/worker", workerRouter);
 app.use("/timesheets/*", requireManager());
 app.route("/timesheets", timesheetsRouter);

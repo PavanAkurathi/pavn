@@ -35,3 +35,13 @@ export {
     deleteShiftTemplate,
     applyShiftTemplate,
 } from "./modules/shifts/templates";
+
+// Scheduler (manager's weekly grid) and the rules it shares with every
+// scheduling action.
+export { getSchedulerWeek } from "./modules/scheduler/get-week";
+export type { GetSchedulerWeekInput } from "./modules/scheduler/get-week";
+export { evaluateConflicts, hasBlockingConflict, overlaps } from "./domain/conflicts";
+export type { ConflictCandidate, ConflictContext } from "./domain/conflicts";
+export { summarizeWeek, addedOvertimeMinutes, paidMinutes, WEEKLY_OVERTIME_THRESHOLD_MINUTES } from "./domain/hours";
+export type { OvertimePolicy, WorkInterval, WeekHours } from "./domain/hours";
+export { startOfLocalWeek, weekBounds, weekDates, dayIndexOf, splitIntoDaySpans, isLocalDate } from "./domain/week";

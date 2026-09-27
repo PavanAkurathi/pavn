@@ -7,6 +7,7 @@
  * 
  * Available Routers:
  * - shiftsRouter: Shift scheduling and management
+ * - schedulerRouter: The manager's weekly Scheduler grid
  * - workerRouter: Worker-facing endpoints
  * - timesheetsRouter: Timesheet reports and exports
  * - billingRouter: Billing overview and Stripe-backed read access
@@ -22,6 +23,7 @@
  */
 
 export { shiftsRouter } from "./shifts";
+export { schedulerRouter } from "./scheduler";
 export { workerRouter } from "./worker";
 export { timesheetsRouter } from "./timesheets";
 export { billingRouter } from "./billing";

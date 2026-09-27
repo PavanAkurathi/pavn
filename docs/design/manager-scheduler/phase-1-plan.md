@@ -536,7 +536,7 @@ Follow the existing `Screen` / `PageHeader` / `EmptyState` / heroui-native patte
 
 | Milestone | Work |
 |---|---|
-| **M0 — Design sign-off** | v1 prototype published and reviewed. **Next: prototype v2** with the clean grid (§2.1), the same URL republished (https://claude.ai/artifact/FYrErrVCSuL2deWSRpB4K3), and the repo copy in `docs/design/manager-scheduler/` updated. Owner approves v2 before code. |
+| **M0 — Design sign-off** | v1 reviewed. v2 published at the same URL (https://claude.ai/artifact/FYrErrVCSuL2deWSRpB4K3). The plan and a standalone prototype are in `docs/design/manager-scheduler/` on PR https://github.com/PavanAkurathi/pavn/pull/18 (docs only). Owner approves v2 before code. |
 | **M1 — Foundations** | Migration · contracts · domain (`conflicts`, `hours`) with unit tests · `get-week` + `GET /scheduler/week`. |
 | **M1b — Setup presets** | Business-type presets, departments, onboarding "How you schedule" step, Settings → Scheduling tab. Existing orgs get Restaurant defaults. |
 | **M2 — Read-only grid** | `/schedule` page, clean-grid layout, department chips + collapsible sections, compact rows, People/Positions view (default from `scheduleStyle`), week nav, location tz, scheduled hours/overtime, time off, availability, nav change. Checked with a 60-person seed. |
@@ -545,6 +545,140 @@ Follow the existing `Screen` / `PageHeader` / `EmptyState` / heroui-native patte
 | **M5 — Events** | Event panel, day-header event tag with fill status, ◆ on event chips. |
 | **M6 — Requests** | Worker endpoints, mobile Open/Requests/Drop/Swap/Time off, manager Requests panel + nav badge, pushes, org policy settings in Settings. |
 | **M7 — Remove old** | Delete the create flow, weekly grid and old endpoints; migrate the e2e tests. |
+
+### M1 in detail (next PR, after #18 merges)
+The owner approved prototype v2 as the design and chose one PR per milestone.
+
+**Branch.**
+- Work starts locally on `claude/festive-hopper-q1odvq`, rebased onto
+  `origin/master` once #18 merges. Nothing is pushed while #18 is open: a push
+  would land M1 on the docs PR.
+- If #18 is still open when M1 is ready, ask the owner to merge it.
+- Then push, and open "Scheduler M1: data model, rules and week view API".
+
+**1. Migration.**
+- Edit `packages/database/src/schema.ts`, then run
+  `bun run --filter @repo/database db:generate`, which emits `drizzle/0003_*.sql`
+  plus its snapshot. Run it a second time; the second run must emit nothing.
+- Follow `packages/database/MIGRATIONS.md`: never edit the baseline, never
+  hand-apply.
+- `organization`:
+  - `week_starts_on` smallint default 0, check 0–6.
+  - `open_shift_claim_policy` text default `'approval'`, check `('approval','auto')`.
+  - `swap_approval_required` boolean default true.
+  - `business_type` text null, check `('restaurant','retail','events','other')`.
+  - `schedule_style` text default `'steady'`, check `('steady','events')`.
+- `shift`:
+  - `break_minutes` int not null default 0.
+  - `event_id` → `schedule_event.id`, on delete set null.
+  - `pending_patch` jsonb.
+  - `manager_note` text.
+  - `published_at` timestamptz.
+- `shift_assignment`: `pending_state` text null, check `('add','remove')`.
+- New tables:
+  - `department`: id, organization_id, name, roles jsonb string[], sort_order,
+    timestamps. Unique (org, name).
+  - `schedule_event`: id, organization_id, location_id, name, start_time,
+    end_time, notes, created_by, timestamps.
+  - `shift_request`: id, organization_id, type, shift_id, requester_worker_id,
+    target_worker_id, status, note, decided_by, decided_at, timestamps. Partial
+    unique index on (shift_id, requester_worker_id, type) where status is pending.
+  - `time_off_request`: id, organization_id, worker_id, start_time, end_time,
+    all_day, reason, status, decided_by, decided_at, manager_note, timestamps.
+  - Each gets org/time indexes and `relations(...)`, following
+    `shiftTemplate`/`workerAvailability`.
+- `IdPrefix` in `packages/scheduling-timekeeping/src/utils/ids.ts` gains `dep`,
+  `evt`, `req`, `tor`.
+
+**2. Contracts.** New file `packages/contracts/src/scheduler.ts`, exported from
+`src/index.ts` and as `./scheduler` in `package.json` `exports`:
+- `SchedulerWeekQuerySchema` (`locationId`, `weekStart` as YYYY-MM-DD).
+- `ConflictWarningSchema` (`type`, `severity: block|warn`, `message`).
+- `SchedulerPersonSchema`: id, kind, name, roles, departmentId, scheduled
+  minutes, overtime minutes, time off[], unavailable[].
+- `SchedulerShiftSchema`: id, dayIndex, startLocal/endLocal "HH:mm", ISO
+  instants, role, breakMinutes, capacity, status, hasUnpublishedEdits,
+  pendingRemoval, eventId, assignees[{personId, kind, pendingState, warnings[]}].
+- `SchedulerEventSchema`, `SchedulerDepartmentSchema`.
+- `SchedulerWeekSchema`: location (id, name, tz), weekStart, weekStartsOn,
+  days[{index, localDate}], departments, people, shifts, events, openSlots,
+  pendingChangeCount, pendingRequestCount, overtimePolicy.
+- The API sends location wall-clock fields, so the web client does no timezone
+  math.
+
+**3. Domain (pure functions, no database)** in
+`packages/scheduling-timekeeping/src/domain/`:
+- `week.ts`: `startOfLocalWeek(localDate, weekStartsOn)`, `weekBounds(weekStart,
+  tz)` built on `combineDateTimeTz` / `addDaysToLocalDate`
+  (`utils/zoned-time.ts`), and `dayIndexOf(instant, weekStart, tz)`.
+- `hours.ts`:
+  - `paidMinutes(shift)` = duration minus `break_minutes`.
+  - `summarizeWeek(intervals, policy)` → `{ scheduled, regular, overtime }` for
+    `weekly_40`. For `daily_8` it uses `calculateDailyOvertimeMinutes`
+    (`@repo/config` → `time-rules.ts`).
+  - Minutes count across all the org's locations.
+- `conflicts.ts`: `evaluateConflicts(candidate, context)` → `ConflictWarning[]`.
+  - `context` holds the person's other assignments (excluding removed and
+    cancelled), approved and pending time off, unavailability, roles and
+    scheduled minutes.
+  - It flags overlap and approved time off as `block`; pending time off,
+    unavailable, overtime and role mismatch as `warn`.
+  - It is the single engine every later milestone calls.
+
+**4. Use case** `modules/scheduler/get-week.ts`, exported from
+`src/index.ts`: `getSchedulerWeek({ orgId, locationId, weekStart })`.
+- Loads the org (overtime policy, week start) and the location (timezone), and
+  checks the location belongs to the org.
+- **People:**
+  - Non-admin members with roles from `workerRole`, using the same filters as
+    `packages/gig-workers/src/modules/directory/get-crew.ts` and
+    `canonicalizeWorkerRole`.
+  - Invited `rosterEntry` rows.
+  - Agency `tempWorker`s, only those assigned this week.
+- **Shifts:**
+  - The org's shifts overlapping the week at every location, used for hours and
+    overlap.
+  - Only this location's shifts are returned for the grid.
+- Time off comes from `time_off_request` plus `worker_availability` rows marked
+  `unavailable`.
+- Also loads events and departments.
+- Computes hours, per-assignee warnings, open slots, the pending-change count
+  (drafts + `pending_patch` + `pending_state`) and the pending-request count.
+- Worker kinds are derived as `utils/mapper.ts` does.
+- If the org has no departments yet (they're seeded in M1b), it returns one "Team"
+  department with every role.
+
+**5. API** `apps/api/src/routes/scheduler.ts`:
+- `GET /scheduler/week` in the `createRoute` OpenAPI style of `routes/shifts.ts`,
+  validated with the contract schema.
+- Mounted in `apps/api/src/index.ts` as `app.route("/scheduler", schedulerRouter)`
+  behind `requireManager()` (the `/timesheets` pattern).
+- Errors: 400 for a bad date, 404 for a location outside the org.
+
+**6. Tests** (Bun, the existing `mock.module("@repo/database")` pattern from
+`tests/copy-week.test.ts`):
+- `tests/scheduler-week.test.ts`:
+  - Week bounds across a DST change.
+  - `weekly_40` and `daily_8` hours, including breaks.
+  - Conflicts: an overnight overlap, back-to-back shifts that must not count as
+    overlapping, approved vs pending time off, and role mismatch.
+- `tests/get-week.test.ts`: the view model from mocked rows (hours across
+  locations, only this location's shifts returned, open-slot and pending
+  counts).
+- `apps/api/src/routes/scheduler.test.ts`: manager gate, 400 and 404, response
+  shape.
+
+**Nothing user-visible changes in M1.** Existing pages keep working because every
+new column has a default or allows nulls.
+
+**How milestones ship.**
+- https://github.com/PavanAkurathi/pavn/pull/18 is the design record (plan and
+  prototype, docs only).
+- Recommended: merge #18 once v2 is approved. Then each milestone (M1, M1b, M2 …)
+  lands as its own PR from `claude/festive-hopper-q1odvq`, restarted from `master`
+  after each merge. That keeps each review small, and every milestone ships green
+  on its own.
+- If the owner prefers one PR, later milestones are pushed onto #18 instead.
 
 Later, not in Phase 1: day timeline with hourly headcount strip, auto-assign, recurring
 availability, compliance rules (minors, rest periods, predictability pay),
@@ -561,6 +695,13 @@ cross-location view. Labor cost is not planned; pay stays with HR/payroll.
   used, so a worker session sees empty dashboards instead of a redirect.
 
 ## 8. Verification
+- **M1 gate, before pushing:**
+  - `bun install --frozen-lockfile`.
+  - `bun run --filter @repo/database db:generate` twice; the second run makes no
+    changes, which mirrors the blocking `schema-drift.yml` check.
+  - `bun run check-types`, `bun run lint`, `bun run test`.
+  - After pushing, read the PR's check runs (`Build & Test`, `check-drift`, Neon
+    branch migrate) and fix anything red before calling M1 done.
 - **Unit (`bun run test`):**
   - Conflicts: overlap edges, overnight shifts, cross-location, time off vs
     unavailable.

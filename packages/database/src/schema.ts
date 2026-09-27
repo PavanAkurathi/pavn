@@ -130,11 +130,29 @@ export const organization = pgTable("organization", {
     breakThresholdMinutes: integer("break_threshold_minutes"), // Custom rule override
     regionalOvertimePolicy: text("regional_overtime_policy").notNull().default("weekly_40"), // 'weekly_40' | 'daily_8'
     attendanceVerificationPolicy: text("attendance_verification_policy").notNull().default("strict_geofence"),
+
+    // Scheduler setup. The onboarding "How you schedule" step fills these in;
+    // until then an org gets the defaults below.
+    weekStartsOn: integer("week_starts_on").notNull().default(0), // 0 = Sunday … 6 = Saturday
+    openShiftClaimPolicy: text("open_shift_claim_policy").notNull().default("approval"), // 'approval' | 'auto'
+    swapApprovalRequired: boolean("swap_approval_required").notNull().default(true),
+    businessType: text("business_type"), // 'restaurant' | 'retail' | 'events' | 'other', null until answered
+    scheduleStyle: text("schedule_style").notNull().default("steady"), // 'steady' | 'events': picks the default view
 }, (table) => ({
     attendanceVerificationPolicyCheck: check(
         "check_attendance_verification_policy",
         sql`${table.attendanceVerificationPolicy} in ('strict_geofence', 'soft_geofence', 'none')`
     ),
+    weekStartsOnCheck: check("check_week_starts_on", sql`${table.weekStartsOn} between 0 and 6`),
+    openShiftClaimPolicyCheck: check(
+        "check_open_shift_claim_policy",
+        sql`${table.openShiftClaimPolicy} in ('approval', 'auto')`
+    ),
+    businessTypeCheck: check(
+        "check_business_type",
+        sql`${table.businessType} is null or ${table.businessType} in ('restaurant', 'retail', 'events', 'other')`
+    ),
+    scheduleStyleCheck: check("check_schedule_style", sql`${table.scheduleStyle} in ('steady', 'events')`),
 }));
 
 export const location = pgTable("location", {
@@ -306,6 +324,23 @@ export const tempWorker = pgTable("temp_worker", {
     tempWorkerOrgIdx: index("temp_worker_org_idx").on(table.organizationId),
 }));
 
+/**
+ * An edit to a published shift that staff should not see yet. The scheduler
+ * keeps the live columns as the last published version and stages changes
+ * here until the week is published. Instants are ISO strings.
+ */
+export type ShiftPendingPatch = {
+    startTime?: string;
+    endTime?: string;
+    title?: string;
+    breakMinutes?: number;
+    capacityTotal?: number;
+    description?: string | null;
+    eventId?: string | null;
+    /** Remove the shift when the week is published. */
+    cancel?: boolean;
+};
+
 export const shift = pgTable("shift", {
     id: text("id").primaryKey(),
 
@@ -356,9 +391,17 @@ export const shift = pgTable("shift", {
     siteCode: text("site_code"),
     siteCodeIssuedAt: timestamp("site_code_issued_at", { withTimezone: true, mode: 'date' }),
 
+    // -- Scheduler --
+    breakMinutes: integer("break_minutes").notNull().default(0), // planned unpaid break
+    eventId: text("event_id").references(() => scheduleEvent.id, { onDelete: "set null" }),
+    pendingPatch: jsonb("pending_patch").$type<ShiftPendingPatch>(),
+    managerNote: text("manager_note"), // managers only; `description` is the note to staff
+    publishedAt: timestamp("published_at", { withTimezone: true, mode: 'date' }),
+
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
+    shiftEventIdx: index("shift_event_idx").on(table.eventId),
     shiftOrgIdx: index("shift_org_idx").on(table.organizationId),
     shiftStatusIdx: index("shift_status_idx").on(table.status),
     shiftTimeIdx: index("shift_time_idx").on(table.startTime),
@@ -483,9 +526,17 @@ export const shiftAssignment = pgTable("shift_assignment", {
     // Values: 'active', 'no_show', 'removed'
     status: text("status").notNull().default("active"),
 
+    // Staged by the scheduler until the week is published. 'add' is not yet
+    // visible to the worker; 'remove' still is. Null means live.
+    pendingState: text("pending_state"),
+
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
+    pendingStateCheck: check(
+        "check_assignment_pending_state",
+        sql`${table.pendingState} is null or ${table.pendingState} in ('add', 'remove')`
+    ),
     assignmentShiftIdx: index("assignment_shift_idx").on(table.shiftId),
     assignmentWorkerIdx: index("assignment_worker_idx").on(table.workerId),
     assignmentStatusIdx: index("assignment_status_idx").on(table.status),
@@ -509,6 +560,10 @@ export const shiftRelations = relations(shift, ({ one, many }) => ({
     location: one(location, {
         fields: [shift.locationId],
         references: [location.id],
+    }),
+    event: one(scheduleEvent, {
+        fields: [shift.eventId],
+        references: [scheduleEvent.id],
     }),
     assignments: many(shiftAssignment),
 }));
@@ -540,6 +595,179 @@ export const shiftAssignmentRelations = relations(shiftAssignment, ({ one }) => 
     rosterEntry: one(rosterEntry, {
         fields: [shiftAssignment.rosterEntryId],
         references: [rosterEntry.id],
+    }),
+}));
+
+// ============================================================================
+// 4b. SCHEDULER (departments, events, requests)
+// ============================================================================
+
+/**
+ * A group of roles scheduled together, e.g. Kitchen = Line cook, Prep,
+ * Dishwasher. People belong through their roles, so nobody is added to a
+ * department by hand. Seeded from the business type chosen at onboarding.
+ */
+export const department = pgTable("department", {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    // Canonical role names (see canonicalizeWorkerRole).
+    roles: jsonb("roles").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+    departmentOrgIdx: index("department_org_idx").on(table.organizationId),
+    departmentOrgName: unique("department_org_name").on(table.organizationId, table.name),
+}));
+
+/**
+ * A one-off with its own headcount per role, e.g. a wedding. Its shifts point
+ * back here through `shift.event_id`, one shift per role.
+ */
+export const scheduleEvent = pgTable("schedule_event", {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+    locationId: text("location_id")
+        .notNull()
+        .references(() => location.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    startTime: timestamp("start_time", { withTimezone: true, mode: 'date' }).notNull(),
+    endTime: timestamp("end_time", { withTimezone: true, mode: 'date' }).notNull(),
+    notes: text("notes"),
+    createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+    scheduleEventOrgIdx: index("schedule_event_org_idx").on(table.organizationId),
+    scheduleEventLocationTimeIdx: index("schedule_event_location_time_idx").on(table.locationId, table.startTime),
+    scheduleEventTimeCheck: check("check_schedule_event_time", sql`${table.endTime} > ${table.startTime}`),
+}));
+
+/**
+ * A worker asking to change their part in a shift, from the mobile app:
+ * claim an open slot, drop a shift, or hand it to a coworker (swap).
+ * A swap waits on the coworker first (`pending_peer`), then the manager.
+ */
+export const shiftRequest = pgTable("shift_request", {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+    type: text("type").notNull(), // 'claim' | 'drop' | 'swap'
+    shiftId: text("shift_id")
+        .notNull()
+        .references(() => shift.id, { onDelete: "cascade" }),
+    requesterWorkerId: text("requester_worker_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    // Swap only: the coworker who would take the shift.
+    targetWorkerId: text("target_worker_id").references(() => user.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("pending_manager"),
+    note: text("note"),
+    decidedBy: text("decided_by").references(() => user.id, { onDelete: "set null" }),
+    decidedAt: timestamp("decided_at", { withTimezone: true, mode: 'date' }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+    shiftRequestOrgStatusIdx: index("shift_request_org_status_idx").on(table.organizationId, table.status),
+    shiftRequestShiftIdx: index("shift_request_shift_idx").on(table.shiftId),
+    // One open request per person, shift and kind; a decided one can be retried.
+    shiftRequestOneOpen: uniqueIndex("shift_request_one_open_idx")
+        .on(table.shiftId, table.requesterWorkerId, table.type)
+        .where(sql`status in ('pending_peer', 'pending_manager')`),
+    shiftRequestTypeCheck: check("check_shift_request_type", sql`${table.type} in ('claim', 'drop', 'swap')`),
+    shiftRequestStatusCheck: check(
+        "check_shift_request_status",
+        sql`${table.status} in ('pending_peer', 'pending_manager', 'approved', 'declined', 'cancelled', 'expired')`
+    ),
+}));
+
+/**
+ * Time off a worker asks for, which a manager approves or declines. Approved
+ * time off blocks scheduling; `worker_availability` stays the worker's own,
+ * softer "I'd rather not" windows.
+ */
+export const timeOffRequest = pgTable("time_off_request", {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+        .notNull()
+        .references(() => organization.id, { onDelete: "cascade" }),
+    workerId: text("worker_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    startTime: timestamp("start_time", { withTimezone: true, mode: 'date' }).notNull(),
+    endTime: timestamp("end_time", { withTimezone: true, mode: 'date' }).notNull(),
+    allDay: boolean("all_day").notNull().default(false),
+    reason: text("reason"),
+    status: text("status").notNull().default("pending"),
+    decidedBy: text("decided_by").references(() => user.id, { onDelete: "set null" }),
+    decidedAt: timestamp("decided_at", { withTimezone: true, mode: 'date' }),
+    managerNote: text("manager_note"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+}, (table) => ({
+    timeOffOrgStatusIdx: index("time_off_org_status_idx").on(table.organizationId, table.status),
+    timeOffWorkerTimeIdx: index("time_off_worker_time_idx").on(table.workerId, table.startTime),
+    timeOffStatusCheck: check(
+        "check_time_off_status",
+        sql`${table.status} in ('pending', 'approved', 'declined', 'cancelled')`
+    ),
+    timeOffTimeCheck: check("check_time_off_time", sql`${table.endTime} > ${table.startTime}`),
+}));
+
+export const departmentRelations = relations(department, ({ one }) => ({
+    organization: one(organization, {
+        fields: [department.organizationId],
+        references: [organization.id],
+    }),
+}));
+
+export const scheduleEventRelations = relations(scheduleEvent, ({ one, many }) => ({
+    organization: one(organization, {
+        fields: [scheduleEvent.organizationId],
+        references: [organization.id],
+    }),
+    location: one(location, {
+        fields: [scheduleEvent.locationId],
+        references: [location.id],
+    }),
+    shifts: many(shift),
+}));
+
+export const shiftRequestRelations = relations(shiftRequest, ({ one }) => ({
+    organization: one(organization, {
+        fields: [shiftRequest.organizationId],
+        references: [organization.id],
+    }),
+    shift: one(shift, {
+        fields: [shiftRequest.shiftId],
+        references: [shift.id],
+    }),
+    requester: one(user, {
+        fields: [shiftRequest.requesterWorkerId],
+        references: [user.id],
+        relationName: "shift_request_requester",
+    }),
+    target: one(user, {
+        fields: [shiftRequest.targetWorkerId],
+        references: [user.id],
+        relationName: "shift_request_target",
+    }),
+}));
+
+export const timeOffRequestRelations = relations(timeOffRequest, ({ one }) => ({
+    organization: one(organization, {
+        fields: [timeOffRequest.organizationId],
+        references: [organization.id],
+    }),
+    worker: one(user, {
+        fields: [timeOffRequest.workerId],
+        references: [user.id],
     }),
 }));
 

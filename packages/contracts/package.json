@@ -42,6 +42,12 @@
             "import": "./src/preferences.ts",
             "default": "./src/preferences.ts"
         },
+        "./scheduler": {
+            "types": "./src/scheduler.ts",
+            "bun": "./src/scheduler.ts",
+            "import": "./src/scheduler.ts",
+            "default": "./src/scheduler.ts"
+        },
         "./shifts": {
             "types": "./src/shifts.ts",
             "bun": "./src/shifts.ts",
