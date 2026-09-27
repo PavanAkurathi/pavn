@@ -180,6 +180,143 @@ export const SchedulerWeekSchema = z.object({
     }),
 });
 
+// ---------------------------------------------------------------------------
+// Setup: the three onboarding answers, the settings they seed, departments
+// ---------------------------------------------------------------------------
+
+export const WeekdaySchema = z.number().int().min(0).max(6);
+
+const nonEmpty = (value: object) => Object.keys(value).length > 0;
+
+export const DepartmentNameSchema = z.string().trim().min(1, "Name the department").max(60);
+export const DepartmentRolesSchema = z.array(z.string().trim().min(1).max(60)).max(40);
+
+export const SchedulingDepartmentSchema = SchedulerDepartmentSchema.extend({
+    sortOrder: z.number().int(),
+});
+
+export const SchedulingSettingsSchema = z.object({
+    /** Null until the owner answers the setup questions. */
+    businessType: BusinessTypeSchema.nullable(),
+    scheduleStyle: ScheduleStyleSchema,
+    openShiftClaimPolicy: OpenShiftClaimPolicySchema,
+    swapApprovalRequired: z.boolean(),
+    weekStartsOn: WeekdaySchema,
+    overtimePolicy: OvertimePolicySchema,
+    departments: z.array(SchedulingDepartmentSchema),
+});
+
+/** The onboarding step's three answers. */
+export const SchedulingSetupInputSchema = z.object({
+    businessType: BusinessTypeSchema,
+    scheduleStyle: ScheduleStyleSchema,
+    openShiftClaimPolicy: OpenShiftClaimPolicySchema,
+}).strict();
+
+export const UpdateSchedulingSettingsSchema = z.object({
+    businessType: BusinessTypeSchema.optional(),
+    scheduleStyle: ScheduleStyleSchema.optional(),
+    openShiftClaimPolicy: OpenShiftClaimPolicySchema.optional(),
+    swapApprovalRequired: z.boolean().optional(),
+    weekStartsOn: WeekdaySchema.optional(),
+    overtimePolicy: OvertimePolicySchema.optional(),
+}).strict().refine(nonEmpty, { message: "Change at least one setting." });
+
+export const DepartmentInputSchema = z.object({
+    name: DepartmentNameSchema,
+    roles: DepartmentRolesSchema.default([]),
+}).strict();
+
+export const DepartmentUpdateSchema = z.object({
+    name: DepartmentNameSchema.optional(),
+    roles: DepartmentRolesSchema.optional(),
+    sortOrder: z.number().int().min(0).optional(),
+}).strict().refine(nonEmpty, { message: "Change at least one field." });
+
+export const DepartmentIdParamSchema = z.object({ id: z.string().min(1) });
+
+export interface BusinessTypePreset {
+    label: string;
+    /** One line under the choice: what picking it sets up. */
+    summary: string;
+    /**
+     * Starter departments. Roles use the canonical spelling
+     * (canonicalizeWorkerRole) so they match the roster without translation.
+     * A department with no roles takes everyone no other department claims.
+     */
+    departments: { name: string; roles: string[] }[];
+}
+
+export const BUSINESS_TYPE_PRESETS: Record<z.infer<typeof BusinessTypeSchema>, BusinessTypePreset> = {
+    restaurant: {
+        label: "Restaurant or bar",
+        summary: "Front of house and Kitchen, with servers, hosts, bartenders and cooks.",
+        departments: [
+            { name: "Front of house", roles: ["Server", "Host", "Bartender", "Busser"] },
+            { name: "Kitchen", roles: ["Line Cook", "Prep Cook", "Dishwasher"] },
+        ],
+    },
+    retail: {
+        label: "Retail store",
+        summary: "Sales floor, Stock and Leads, with cashiers and associates.",
+        departments: [
+            { name: "Sales floor", roles: ["Cashier", "Sales Associate"] },
+            { name: "Stock", roles: ["Stock Associate"] },
+            { name: "Leads", roles: ["Shift Lead"] },
+        ],
+    },
+    events: {
+        label: "Events & catering",
+        summary: "Service, Kitchen and Setup crews staffed around each booking.",
+        departments: [
+            { name: "Service", roles: ["Server", "Bartender"] },
+            { name: "Kitchen", roles: ["Cook", "Prep Cook"] },
+            { name: "Setup", roles: ["Setup Crew"] },
+        ],
+    },
+    other: {
+        label: "Something else",
+        summary: "One Team to start. Add departments whenever you need them.",
+        departments: [{ name: "Team", roles: [] }],
+    },
+};
+
+export const SCHEDULE_STYLE_OPTIONS: Record<z.infer<typeof ScheduleStyleSchema>, { label: string; summary: string }> = {
+    steady: {
+        label: "Mostly the same every week",
+        summary: "Schedule by person, and start a new week by copying the last one.",
+    },
+    events: {
+        label: "It changes around events and bookings",
+        summary: "Schedule by position, with events one click away.",
+    },
+};
+
+export const OPEN_SHIFT_CLAIM_OPTIONS: Record<z.infer<typeof OpenShiftClaimPolicySchema>, { label: string; summary: string }> = {
+    approval: {
+        label: "I approve it first",
+        summary: "Claims wait in your requests until you say yes.",
+    },
+    auto: {
+        label: "First to claim gets it",
+        summary: "The shift is theirs straight away. You can still change it.",
+    },
+};
+
+/** What "Skip for now" picks. */
+export const DEFAULT_SCHEDULING_SETUP: z.infer<typeof SchedulingSetupInputSchema> = {
+    businessType: "restaurant",
+    scheduleStyle: "steady",
+    openShiftClaimPolicy: "approval",
+};
+
+export type SchedulingDepartment = z.infer<typeof SchedulingDepartmentSchema>;
+export type SchedulingSettings = z.infer<typeof SchedulingSettingsSchema>;
+export type SchedulingSetupInput = z.infer<typeof SchedulingSetupInputSchema>;
+export type UpdateSchedulingSettings = z.infer<typeof UpdateSchedulingSettingsSchema>;
+export type DepartmentInput = z.input<typeof DepartmentInputSchema>;
+export type DepartmentUpdate = z.infer<typeof DepartmentUpdateSchema>;
+
 export type OvertimePolicy = z.infer<typeof OvertimePolicySchema>;
 export type ScheduleStyle = z.infer<typeof ScheduleStyleSchema>;
 export type OpenShiftClaimPolicy = z.infer<typeof OpenShiftClaimPolicySchema>;

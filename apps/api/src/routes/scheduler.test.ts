@@ -20,7 +20,31 @@ const week = {
 
 const mockGetSchedulerWeek = mock((_input: { orgId: string; locationId: string; weekStart?: string }) => Promise.resolve(week));
 
-mock.module("@repo/scheduling-timekeeping", () => ({ getSchedulerWeek: mockGetSchedulerWeek }));
+const settings = {
+    businessType: "restaurant",
+    scheduleStyle: "steady",
+    openShiftClaimPolicy: "approval",
+    swapApprovalRequired: true,
+    weekStartsOn: 0,
+    overtimePolicy: "weekly_40",
+    departments: [{ id: "dep_1", name: "Kitchen", roles: ["Line Cook"], sortOrder: 0 }],
+};
+const settingsCalls: { fn: string; args: unknown[] }[] = [];
+const record = (fn: string, result: unknown) => (...args: unknown[]) => {
+    settingsCalls.push({ fn, args });
+    return Promise.resolve(result);
+};
+
+mock.module("@repo/scheduling-timekeeping", () => ({
+    getSchedulerWeek: mockGetSchedulerWeek,
+    getSchedulingSettings: record("getSchedulingSettings", settings),
+    updateSchedulingSettings: record("updateSchedulingSettings", settings),
+    applySchedulingSetup: record("applySchedulingSetup", settings),
+    listDepartments: record("listDepartments", settings.departments),
+    createDepartment: record("createDepartment", settings.departments[0]),
+    updateDepartment: record("updateDepartment", settings.departments[0]),
+    deleteDepartment: record("deleteDepartment", { id: "dep_1" }),
+}));
 
 const { schedulerRouter } = await import("./scheduler");
 const { errorHandler } = await import("../lib/error-handler");
@@ -71,5 +95,61 @@ describe("GET /scheduler/week", () => {
         const response = await appAs("owner").request("/scheduler/week?locationId=loc_other");
         expect(response.status).toBe(404);
         expect(await response.json()).toMatchObject({ code: "LOCATION_NOT_FOUND" });
+    });
+});
+
+describe("scheduling settings and departments", () => {
+    beforeEach(() => {
+        settingsCalls.length = 0;
+    });
+
+    const send = (role: string, method: string, path: string, body?: unknown) =>
+        appAs(role).request(path, {
+            method,
+            headers: { "content-type": "application/json" },
+            body: body === undefined ? undefined : JSON.stringify(body),
+        });
+
+    test("managers can read settings and departments", async () => {
+        expect((await send("manager", "GET", "/scheduler/settings")).status).toBe(200);
+        expect((await send("manager", "GET", "/scheduler/departments")).status).toBe(200);
+        expect(settingsCalls.map((c) => c.args)).toEqual([["org_1"], ["org_1"]]);
+    });
+
+    test("only admins change them", async () => {
+        const denied = await send("manager", "PATCH", "/scheduler/settings", { weekStartsOn: 1 });
+        expect(denied.status).toBe(403);
+        expect(await denied.json()).toMatchObject({ code: "ADMIN_REQUIRED" });
+        expect((await send("manager", "POST", "/scheduler/departments", { name: "Bar" })).status).toBe(403);
+        expect((await send("member", "GET", "/scheduler/settings")).status).toBe(403);
+        expect(settingsCalls).toHaveLength(0);
+
+        expect((await send("owner", "PATCH", "/scheduler/settings", { weekStartsOn: 1 })).status).toBe(200);
+        expect(settingsCalls[0]).toEqual({ fn: "updateSchedulingSettings", args: ["org_1", { weekStartsOn: 1 }] });
+    });
+
+    test("setup answers are checked before they reach the service", async () => {
+        expect((await send("admin", "POST", "/scheduler/setup", { businessType: "zoo" })).status).toBe(400);
+        expect(settingsCalls).toHaveLength(0);
+
+        const answers = { businessType: "events", scheduleStyle: "events", openShiftClaimPolicy: "auto" };
+        const ok = await send("admin", "POST", "/scheduler/setup", answers);
+        expect(ok.status).toBe(200);
+        expect(settingsCalls[0]).toEqual({ fn: "applySchedulingSetup", args: ["org_1", answers] });
+    });
+
+    test("departments are created, changed and deleted by id", async () => {
+        expect((await send("admin", "POST", "/scheduler/departments", { name: "Bar", roles: ["Bartender"] })).status).toBe(200);
+        expect((await send("admin", "PATCH", "/scheduler/departments/dep_1", { sortOrder: 2 })).status).toBe(200);
+        expect((await send("admin", "DELETE", "/scheduler/departments/dep_1")).status).toBe(200);
+        expect(settingsCalls.map((c) => [c.fn, c.args])).toEqual([
+            ["createDepartment", ["org_1", { name: "Bar", roles: ["Bartender"] }]],
+            ["updateDepartment", ["org_1", "dep_1", { sortOrder: 2 }]],
+            ["deleteDepartment", ["org_1", "dep_1"]],
+        ]);
+    });
+
+    test("an empty department change is rejected", async () => {
+        expect((await send("admin", "PATCH", "/scheduler/departments/dep_1", {})).status).toBe(400);
     });
 });

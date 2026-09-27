@@ -80,6 +80,9 @@ export async function getLiveBusinessOnboardingState(_options?: {
                 name: true,
                 timezone: true,
                 attendanceVerificationPolicy: true,
+                businessType: true,
+                scheduleStyle: true,
+                openShiftClaimPolicy: true,
                 metadata: true,
                 subscriptionStatus: true,
             },
@@ -178,6 +181,9 @@ export async function getLiveBusinessOnboardingState(_options?: {
     const hasPublishedShift = Boolean(firstPublishedShift);
     const hasDraftShift = Boolean(firstDraftShift);
     const hasManagerSupport = Boolean(firstManagerMember) || Boolean(firstManagerInvite);
+    // A business that already published a shift finished onboarding before this
+    // step existed; it keeps the defaults rather than being sent back through.
+    const schedulingAnswered = Boolean(org.businessType) || hasPublishedShift;
 
     const steps: OnboardingStep[] = [
         {
@@ -207,6 +213,16 @@ export async function getLiveBusinessOnboardingState(_options?: {
             supportingText: firstLocation
                 ? `Location ready: ${firstLocation.name}`
                 : "Choose the main address",
+        },
+        {
+            id: "scheduling",
+            title: "How you schedule",
+            description: "Three quick answers that set up departments, the default view and open-shift approvals.",
+            href: getOnboardingHref({ step: "scheduling" }),
+            complete: schedulingAnswered,
+            supportingText: schedulingAnswered
+                ? "Scheduling defaults are set"
+                : "Business type, weekly rhythm, open shifts",
         },
         {
             id: "workforce",
@@ -276,6 +292,11 @@ export async function getLiveBusinessOnboardingState(_options?: {
             hasWorkforceAccess,
             hasPublishedShift,
             hasDraftShift,
+            scheduling: {
+                businessType: (org.businessType ?? null) as BusinessOnboardingState["scheduling"]["businessType"],
+                scheduleStyle: org.scheduleStyle === "events" ? "events" : "steady",
+                openShiftClaimPolicy: org.openShiftClaimPolicy === "auto" ? "auto" : "approval",
+            },
             registrationSummary: [
                 "Your admin account is created",
                 "Your business workspace is created",

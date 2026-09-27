@@ -408,17 +408,22 @@ availability.
 **Requests module** — `…/modules/requests/`: open shifts, claim, drop, swap,
 time off, approve/decline. It enforces the org policies.
 
-**Setup presets** — `packages/organizations`:
-- `presets.ts`: roles and departments per business type (pure data).
-- `apply-scheduling-setup.ts`: saves the 3 answers, seeds departments and roles
-  once, and never overwrites edits.
-- `departments.ts` (CRUD).
-- Routes:
-  - `POST /organizations/onboarding/scheduling`
-  - `GET/PATCH /organizations/scheduling-settings`
-  - `GET/POST/PATCH/DELETE /organizations/departments`
-- Onboarding completion state in the existing onboarding module learns about the
-  new step.
+**Setup presets** (as built in M1b):
+- Presets are pure data in `@repo/contracts/scheduler` (`BUSINESS_TYPE_PRESETS`),
+  so the web app previews them without a round trip.
+- `packages/scheduling-timekeeping/src/modules/scheduler/settings.ts`:
+  - `applySchedulingSetup` saves the 3 answers and seeds departments only while
+    the org has none, so it never overwrites edits.
+  - Settings read/update, plus department CRUD.
+- Routes live on the Scheduler router, so one manager gate covers them; writes
+  also need admin:
+  - `POST /scheduler/setup`
+  - `GET/PATCH /scheduler/settings`
+  - `GET/POST /scheduler/departments`, `PATCH/DELETE /scheduler/departments/{id}`
+- People join a department by main role, then any role they hold, then a
+  department with no roles (the catch-all).
+- Onboarding gains a "How you schedule" step after the location step. An org
+  that already published a shift counts it as done.
 
 **Contracts** — `packages/contracts/src/scheduler.ts`: `SchedulerWeek`,
 `SchedulerShift`, `SchedulerPerson`, `ConflictWarning`, `PublishPreview`,

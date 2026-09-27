@@ -39,6 +39,16 @@ export {
 // Scheduler (manager's weekly grid) and the rules it shares with every
 // scheduling action.
 export { getSchedulerWeek } from "./modules/scheduler/get-week";
+export {
+    applySchedulingSetup,
+    canonicalDepartmentRoles,
+    createDepartment,
+    deleteDepartment,
+    getSchedulingSettings,
+    listDepartments,
+    updateDepartment,
+    updateSchedulingSettings,
+} from "./modules/scheduler/settings";
 export type { GetSchedulerWeekInput } from "./modules/scheduler/get-week";
 export { evaluateConflicts, hasBlockingConflict, overlaps } from "./domain/conflicts";
 export type { ConflictCandidate, ConflictContext } from "./domain/conflicts";

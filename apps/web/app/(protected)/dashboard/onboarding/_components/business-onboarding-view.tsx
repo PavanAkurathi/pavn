@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
     ArrowLeft,
+    CalendarRange,
     CheckCircle2,
     ClipboardList,
     MapPin,
@@ -19,16 +20,18 @@ import type {
 } from "@repo/contracts/onboarding";
 import { BusinessBasicsStep } from "./business-basics-step";
 import { LocationBasicsStep } from "./location-basics-step";
+import { SchedulingSetupStep } from "./scheduling-setup-step";
 import { WorkforceSetupStep } from "./workforce-setup-step";
 import { FirstShiftStep } from "./first-shift-step";
 import { getDashboardShiftsHref, getOnboardingHref } from "@/lib/routes";
 
-type ActiveStepId = "business" | "location" | "workforce" | "first_shift";
+type ActiveStepId = "business" | "location" | "scheduling" | "workforce" | "first_shift";
 
 const stepIcons = {
     account: CheckCircle2,
     business: Settings2,
     location: MapPin,
+    scheduling: CalendarRange,
     workforce: Users,
     first_shift: ClipboardList,
 } as const;
@@ -40,7 +43,7 @@ function resolveActiveStep({
     steps: OnboardingStep[];
     requestedStepId?: string;
 }): ActiveStepId {
-    const orderedStepIds: ActiveStepId[] = ["business", "location", "workforce", "first_shift"];
+    const orderedStepIds: ActiveStepId[] = ["business", "location", "scheduling", "workforce", "first_shift"];
     const firstIncomplete = orderedStepIds.find((stepId) => {
         const matchingStep = steps.find((step) => step.id === stepId);
         return matchingStep ? !matchingStep.complete : false;
@@ -136,6 +139,8 @@ export function BusinessOnboardingView({
                                             ? buildOnboardingHref("business")
                                             : step.id === "location"
                                                 ? buildOnboardingHref("location")
+                                                : step.id === "scheduling"
+                                                    ? buildOnboardingHref("scheduling")
                                                 : step.id === "workforce"
                                                     ? buildOnboardingHref("workforce")
                                                     : step.id === "first_shift"
@@ -222,6 +227,8 @@ export function BusinessOnboardingView({
                                             ? "Let’s set up your business profile"
                                             : activeStepId === "location"
                                                 ? "Add your first location"
+                                                : activeStepId === "scheduling"
+                                                    ? "How do you schedule?"
                                                 : activeStepId === "workforce"
                                                     ? "Add your first workers"
                                                     : "Publish your first live shift"}
@@ -231,6 +238,8 @@ export function BusinessOnboardingView({
                                             ? "We’ll start with the essentials that shape how scheduling and clock-ins work."
                                             : activeStepId === "location"
                                                 ? "Pick the main place where schedules are created and workers usually clock in."
+                                                : activeStepId === "scheduling"
+                                                    ? "Three quick answers set up your departments, the default schedule view and who approves open shifts. Everything stays editable in Settings."
                                                 : activeStepId === "workforce"
                                                     ? "Worker access is the gate for the mobile experience. Start your roster here before you publish the first live shift."
                                                     : "Drafts are useful, but publishing the first live shift is the actual onboarding finish line."}
@@ -251,6 +260,14 @@ export function BusinessOnboardingView({
                                 <LocationBasicsStep
                                     timezone={onboarding.organizationTimezone}
                                     backHref={buildOnboardingHref("business")}
+                                    nextHref={buildOnboardingHref("scheduling")}
+                                />
+                            )}
+
+                            {activeStepId === "scheduling" && (
+                                <SchedulingSetupStep
+                                    initial={onboarding.scheduling}
+                                    backHref={buildOnboardingHref("location")}
                                     nextHref={buildOnboardingHref("workforce")}
                                 />
                             )}

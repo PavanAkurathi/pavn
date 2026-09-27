@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AttendanceVerificationPolicySchema } from "./shared";
+import { BusinessTypeSchema, OpenShiftClaimPolicySchema, ScheduleStyleSchema } from "./scheduler";
 
 export const OnboardingStepSchema = z.object({
     id: z.string(),
@@ -20,6 +21,12 @@ export const BusinessOnboardingStateSchema = z.object({
     hasWorkforceAccess: z.boolean(),
     hasPublishedShift: z.boolean(),
     hasDraftShift: z.boolean(),
+    /** The "How you schedule" answers so far; businessType is null until answered. */
+    scheduling: z.object({
+        businessType: BusinessTypeSchema.nullable(),
+        scheduleStyle: ScheduleStyleSchema,
+        openShiftClaimPolicy: OpenShiftClaimPolicySchema,
+    }),
     registrationSummary: z.array(z.string()),
     steps: z.array(OnboardingStepSchema),
     deferredSteps: z.array(OnboardingStepSchema),

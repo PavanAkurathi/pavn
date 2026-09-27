@@ -298,8 +298,14 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
             if (!departmentOfRole.has(role.toLowerCase())) departmentOfRole.set(role.toLowerCase(), d.id);
         }
     }
+    // Main role first, then any role they hold, then a department with no roles
+    // (it takes whoever nobody else claims).
+    const catchAll = departments.find((d) => d.roles.length === 0)?.id ?? null;
     for (const p of people.values()) {
-        p.departmentId = p.primaryRole ? departmentOfRole.get(p.primaryRole.toLowerCase()) ?? null : null;
+        const byRole = [p.primaryRole, ...p.roles]
+            .map((role) => (role ? departmentOfRole.get(role.toLowerCase()) : undefined))
+            .find(Boolean);
+        p.departmentId = byRole ?? catchAll;
     }
 
     // ---- Hours, across every location ----------------------------------------

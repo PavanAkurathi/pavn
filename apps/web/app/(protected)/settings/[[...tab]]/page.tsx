@@ -6,9 +6,10 @@ import {
     getSecurityOverview,
     getWorkspaceSettings,
 } from "@/lib/api/organizations";
+import { getSchedulingSettings } from "@/lib/api/scheduler";
 import { getOnboardingHref } from "@/lib/routes";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
-import { isAdminOrganizationRole } from "@/lib/server/organization-roles";
+import { isAdminOrganizationRole, isManagerOrganizationRole } from "@/lib/server/organization-roles";
 
 export default async function SettingsPage(props: {
     params: Promise<{ tab?: string[] }>;
@@ -35,6 +36,12 @@ export default async function SettingsPage(props: {
               ])
             : [{ status: "inactive" }, []];
 
+    const canManageScheduling = isManagerOrganizationRole(role);
+    const schedulingSettings =
+        canManageScheduling && activeTab === "scheduling"
+            ? await getSchedulingSettings(activeOrgId).catch(() => null)
+            : null;
+
     return (
         <SettingsView
             activeTab={activeTab}
@@ -60,6 +67,8 @@ export default async function SettingsPage(props: {
                     : undefined,
             }}
             invoices={invoices}
+            schedulingSettings={schedulingSettings}
+            canManageScheduling={canManageScheduling}
         />
     );
 }

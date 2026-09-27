@@ -249,6 +249,21 @@ describe("getSchedulerWeek", () => {
         expect(week.people.find((p) => p.id === "ana")!.departmentId).toBe("dep_foh");
     });
 
+    test("places people by any role they hold, then in the department with no roles", async () => {
+        rows.department = [
+            { id: "dep_bar", name: "Bar", roles: ["Bartender"], sortOrder: 0 },
+            { id: "dep_team", name: "Team", roles: [], sortOrder: 1 },
+        ];
+        rows.workerRole = [
+            { workerId: "ana", role: "Server" },
+            { workerId: "ana", role: "Bartender" },
+        ];
+        const week = await getSchedulerWeek({ orgId: ORG, locationId: DOWNTOWN, now: NOW });
+        const dept = (id: string) => week.people.find((p) => p.id === id)!.departmentId;
+        expect(dept("ana")).toBe("dep_bar"); // Server matches nothing, Bartender does
+        expect(dept("ben")).toBe("dep_team"); // nothing matches: the catch-all
+    });
+
     test("rejects a malformed week and a location outside the organization", async () => {
         await expect(getSchedulerWeek({ orgId: ORG, locationId: DOWNTOWN, weekStart: "2026-13-01", now: NOW }))
             .rejects.toMatchObject({ code: "INVALID_WEEK_START", statusCode: 400 });

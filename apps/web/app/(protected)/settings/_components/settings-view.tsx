@@ -5,7 +5,8 @@
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { Separator } from "@repo/ui/components/ui/separator";
-import { User, Building, MapPin, Users, CreditCard, Shield, Bell } from "lucide-react";
+import { User, Building, MapPin, Users, CreditCard, Shield, Bell, CalendarRange } from "lucide-react";
+import type { SchedulingSettings } from "@repo/contracts/scheduler";
 import { cn } from "@repo/ui/lib/utils";
 
 import { ProfileForm } from "./profile-form";
@@ -15,6 +16,7 @@ import { SecurityForm } from "./security-form";
 import { TeamList } from "./team-list";
 import { BillingView } from "./billing/billing-view";
 import { NotificationsView } from "./notifications-view";
+import { SchedulingSettingsView } from "./scheduling-settings";
 import { deleteLocation, createLocation, updateLocation } from "@/actions/locations";
 
 interface SettingsViewProps {
@@ -29,6 +31,9 @@ interface SettingsViewProps {
     canManageWorkspace: boolean;
     subscription: { status: string; currentPeriodEnd?: Date };
     invoices: any[];
+    /** Loaded only while the Scheduling tab is open. */
+    schedulingSettings: SchedulingSettings | null;
+    canManageScheduling: boolean;
 }
 
 export function SettingsView({
@@ -42,7 +47,9 @@ export function SettingsView({
     activeTab,
     canManageWorkspace,
     subscription,
-    invoices
+    invoices,
+    schedulingSettings,
+    canManageScheduling,
 }: SettingsViewProps) {
     const router = useRouter();
 
@@ -73,6 +80,9 @@ export function SettingsView({
                             <TabItem value="business" icon={<Building className="size-4" />} label="Business" />
                             <TabItem value="notifications" icon={<Bell className="size-4" />} label="Notifications" />
                             <TabItem value="locations" icon={<MapPin className="size-4" />} label="Locations" />
+                            {canManageScheduling && (
+                                <TabItem value="scheduling" icon={<CalendarRange className="size-4" />} label="Scheduling" />
+                            )}
                             <TabItem value="team" icon={<Users className="size-4" />} label="Team" />
                             {canManageWorkspace && (
                                 <TabItem value="billing" icon={<CreditCard className="size-4" />} label="Billing" />
@@ -102,6 +112,12 @@ export function SettingsView({
                                 onUpdate={updateLocation}
                             />
                         </TabsContent>
+
+                        {canManageScheduling && (
+                            <TabsContent value="scheduling" className="mt-0">
+                                <SchedulingSettingsView settings={schedulingSettings} canManage={canManageWorkspace} />
+                            </TabsContent>
+                        )}
 
                         <TabsContent value="team" className="mt-0">
                             <TeamList members={members} currentUserId={user.id} />
