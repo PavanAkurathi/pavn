@@ -354,6 +354,11 @@ describe("Publish  (WH-131 Fix)", () => {
         const orgId = "org_123";
         mockInsertValues.mockClear();
 
+        // Next year's Aug 20: always in the future, so publish's past-date guard
+        // never rejects it, and always inside US daylight time, so the offset
+        // below stays UTC-4. A fixed date expired once the calendar passed it.
+        const shiftDate = `${new Date().getUTCFullYear() + 1}-08-20`;
+
         const body = {
             locationId: "loc_boston",
             organizationId: orgId,
@@ -361,7 +366,7 @@ describe("Publish  (WH-131 Fix)", () => {
             schedules: [{
                 startTime: "09:00",
                 endTime: "17:00",
-                dates: ["2026-08-20"],
+                dates: [shiftDate],
                 scheduleName: "Timezone Test",
                 positions: [{ roleName: "Loader", workerIds: [null] }]
             }]
@@ -377,8 +382,8 @@ describe("Publish  (WH-131 Fix)", () => {
 
         expect(inserted.length).toBe(1);
         const shiftRow = inserted[0]!;
-        // 09:00 America/New_York on 2026-08-20 (EDT, UTC-4) is 13:00Z.
-        expect(shiftRow.startTime.toISOString()).toBe("2026-08-20T13:00:00.000Z");
+        // 09:00 America/New_York on Aug 20 (EDT, UTC-4) is 13:00Z.
+        expect(shiftRow.startTime.toISOString()).toBe(`${shiftDate}T13:00:00.000Z`);
         // and the zone is recorded on the shift so a later location edit
         // cannot move it.
         expect(shiftRow.timezone).toBe("America/New_York");
