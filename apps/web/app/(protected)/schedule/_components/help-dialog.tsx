@@ -49,6 +49,17 @@ const MARKINGS: { sample: React.ReactNode; text: string }[] = [
         ),
         text: "Dashed: open slots nobody has taken yet.",
     },
+    {
+        sample: (
+            <Sample>
+                <span className="text-[10px]" aria-hidden>
+                    ◆
+                </span>
+                <span className={styles.time}>4p–11p</span>
+            </Sample>
+        ),
+        text: "◆: part of an event. Click the event's name above the day to staff it.",
+    },
     { sample: <span className={cn(styles.off, "w-24 shrink-0 text-center")}>Off</span>, text: "Approved time off. Off? means it's still a request." },
     {
         sample: <span className={cn(styles.unavailable, "h-7 w-24 shrink-0 rounded-md border")} />,

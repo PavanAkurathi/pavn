@@ -42,7 +42,7 @@ import {
     type SchedulerPersonRef,
     type SchedulerShiftPatch,
 } from "@repo/contracts/scheduler";
-import { and, eq, gt, inArray, lt, ne } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, ne, sql } from "drizzle-orm";
 import type { ZodType } from "zod";
 
 import { evaluateConflicts } from "../../domain/conflicts";
@@ -177,8 +177,8 @@ export async function applySchedulerChanges(input: ApplySchedulerChangesInput): 
 
     await db.transaction(async (tx) => {
         for (const change of changes) {
-            const inverse = await applyOne(tx, orgId, change, { locationById, tzOf, added, names });
-            if (inverse) undo.unshift(inverse);
+            const inverse = await applyOne(tx, orgId, change, { locationById, tzOf, added, names, actorId: input.actorId });
+            if (inverse) undo.unshift(...(Array.isArray(inverse) ? inverse : [inverse]));
         }
 
         const conflicts = await findBlockingConflicts(tx, orgId, added, { locationById, tzOf, names });
@@ -210,6 +210,7 @@ export async function applySchedulerChanges(input: ApplySchedulerChangesInput): 
 }
 
 export interface Ctx {
+    actorId?: string;
     locationById: Map<string, { id: string; name: string; timezone: string | null }>;
     tzOf: (row: { timezone: string | null; locationId: string | null }) => string;
     added: { shiftId: string; ref: SchedulerPersonRef }[];
@@ -284,8 +285,94 @@ async function insertAssignments(tx: Tx, shiftId: string, refs: SchedulerPersonR
     );
 }
 
-async function applyOne(tx: Tx, orgId: string, change: SchedulerChange, ctx: Ctx): Promise<SchedulerChange | null> {
+async function loadEvent(tx: Tx, orgId: string, eventId: string) {
+    const event = await tx.query.scheduleEvent.findFirst({
+        where: and(eq(scheduleEvent.id, eventId), eq(scheduleEvent.organizationId, orgId)),
+    });
+    if (!event) throw new AppError("Event not found", "EVENT_NOT_FOUND", 404);
+    return event;
+}
+
+async function applyOne(tx: Tx, orgId: string, change: SchedulerChange, ctx: Ctx): Promise<SchedulerChange | SchedulerChange[] | null> {
     switch (change.op) {
+        case "createEvent": {
+            const f = change.event;
+            const loc = ctx.locationById.get(f.locationId);
+            if (!loc) throw new AppError("Location not found", "LOCATION_NOT_FOUND", 404);
+            const tz = ctx.tzOf({ timezone: loc.timezone, locationId: loc.id });
+            const { start, end } = shiftInstants(f.localDate, f.startLocal, f.endLocal, tz);
+            const taken = await tx.query.scheduleEvent.findFirst({ where: eq(scheduleEvent.id, change.eventId), columns: { id: true } });
+            if (taken) throw new AppError("That event already exists", "EVENT_EXISTS", 409);
+            await tx.insert(scheduleEvent).values({
+                id: change.eventId,
+                organizationId: orgId,
+                locationId: loc.id,
+                name: f.name,
+                startTime: start,
+                endTime: end,
+                notes: f.notes ?? null,
+                createdBy: ctx.actorId && ctx.actorId !== "unknown" ? ctx.actorId : null,
+            });
+            return { op: "deleteEvent", eventId: change.eventId };
+        }
+
+        case "updateEvent": {
+            const event = await loadEvent(tx, orgId, change.eventId);
+            const tz = ctx.tzOf({ timezone: null, locationId: event.locationId });
+            const current = localFields(event.startTime, event.endTime, tz);
+            const p = change.patch;
+            const { start, end } =
+                p.localDate !== undefined || p.startLocal !== undefined || p.endLocal !== undefined
+                    ? shiftInstants(p.localDate ?? current.localDate, p.startLocal ?? current.startLocal, p.endLocal ?? current.endLocal, tz)
+                    : { start: event.startTime, end: event.endTime };
+            await tx
+                .update(scheduleEvent)
+                .set({
+                    name: p.name ?? event.name,
+                    notes: p.notes !== undefined ? p.notes : event.notes,
+                    startTime: start,
+                    endTime: end,
+                    updatedAt: new Date(),
+                })
+                .where(eq(scheduleEvent.id, event.id));
+            const previous: Record<string, unknown> = {};
+            if (p.name !== undefined) previous.name = event.name;
+            if (p.notes !== undefined) previous.notes = event.notes;
+            if (p.localDate !== undefined) previous.localDate = current.localDate;
+            if (p.startLocal !== undefined) previous.startLocal = current.startLocal;
+            if (p.endLocal !== undefined) previous.endLocal = current.endLocal;
+            return { op: "updateEvent", eventId: event.id, patch: previous };
+        }
+
+        case "deleteEvent": {
+            const event = await loadEvent(tx, orgId, change.eventId);
+            const tz = ctx.tzOf({ timezone: null, locationId: event.locationId });
+            // Shifts keep existing; they just stop pointing at the event. Staged
+            // links go too, so publishing later can't point at a deleted event.
+            const linked = await tx.query.shift.findMany({
+                where: and(eq(shift.organizationId, orgId), eq(shift.eventId, event.id)),
+                columns: { id: true },
+            });
+            const staged = await tx.query.shift.findMany({
+                where: and(eq(shift.organizationId, orgId), sql`${shift.pendingPatch}->>'eventId' = ${event.id}`),
+                columns: { id: true, pendingPatch: true },
+            });
+            for (const row of staged) {
+                const patch = { ...(row.pendingPatch ?? {}) };
+                delete patch.eventId;
+                await tx.update(shift).set({ pendingPatch: Object.keys(patch).length ? patch : null }).where(eq(shift.id, row.id));
+            }
+            await tx.delete(scheduleEvent).where(eq(scheduleEvent.id, event.id));
+            return [
+                {
+                    op: "createEvent",
+                    eventId: event.id,
+                    event: { locationId: event.locationId, ...localFields(event.startTime, event.endTime, tz), name: event.name, notes: event.notes },
+                },
+                ...[...linked, ...staged].map((row) => ({ op: "update" as const, shiftId: row.id, patch: { eventId: event.id } })),
+            ];
+        }
+
         case "create": {
             const f = change.shift;
             const loc = ctx.locationById.get(f.locationId);

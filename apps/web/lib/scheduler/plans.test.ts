@@ -199,3 +199,44 @@ describe("rankCandidates", () => {
         ]);
     });
 });
+
+describe("events", () => {
+    const withEvent = (shifts: SchedulerShift[]) => ({
+        ...week(shifts),
+        events: [{ id: "evt", name: "Wedding", dayIndex: 6, localDate: "2026-10-03", startLocal: "15:00", endLocal: "23:00", startsAt: "", endsAt: "", notes: null, needed: 8, filled: 0 }],
+    });
+
+    test("an event comes with one open shift per role", async () => {
+        const { planCreateEvent } = await import("./plans");
+        const plan = planCreateEvent(week([]), { name: "Wedding", dayIndex: 6, startLocal: "15:00", endLocal: "23:00", notes: null }, [
+            { role: "Server", count: 8 },
+            { role: "Bartender", count: 2 },
+            { role: " ", count: 3 },
+        ]);
+        expect(plan.changes.map((c) => c.op)).toEqual(["createEvent", "create", "create"]);
+        const eventId = (plan.changes[0] as { eventId: string }).eventId;
+        expect(eventId).toMatch(/^evt_[0-9A-Za-z]{16}$/);
+        expect(plan.changes[1]).toMatchObject({ shift: { role: "Server", capacity: 8, eventId, localDate: "2026-10-03" } });
+    });
+
+    test("moving an event moves its shifts; ones with their own hours keep them", async () => {
+        const { planUpdateEvent } = await import("./plans");
+        const w = withEvent([
+            shift({ id: "srv", dayIndex: 6, localDate: "2026-10-03", startLocal: "15:00", endLocal: "23:00", eventId: "evt" }),
+            shift({ id: "setup", dayIndex: 6, localDate: "2026-10-03", startLocal: "12:00", endLocal: "15:00", eventId: "evt" }),
+        ]);
+        const plan = planUpdateEvent(w, "evt", { name: "Wedding", dayIndex: 5, startLocal: "16:00", endLocal: "23:00", notes: null });
+        expect(plan!.changes).toEqual([
+            { op: "updateEvent", eventId: "evt", patch: { localDate: "2026-10-02", startLocal: "16:00" } },
+            { op: "update", shiftId: "srv", patch: { localDate: "2026-10-02", startLocal: "16:00" } },
+            { op: "update", shiftId: "setup", patch: { localDate: "2026-10-02" } },
+        ]);
+    });
+
+    test("deleting an event can take its shifts with it", async () => {
+        const { planDeleteEvent } = await import("./plans");
+        const w = withEvent([shift({ id: "srv", dayIndex: 6, eventId: "evt" })]);
+        expect(planDeleteEvent(w, "evt", true)!.changes.map((c) => c.op)).toEqual(["delete", "deleteEvent"]);
+        expect(planDeleteEvent(w, "evt", false)!.changes.map((c) => c.op)).toEqual(["deleteEvent"]);
+    });
+});

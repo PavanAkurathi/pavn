@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Redo2, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Redo2, Undo2 } from "lucide-react";
 import type { SchedulerWeek } from "@repo/contracts/scheduler";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -51,12 +51,14 @@ export function SchedulerToolbar({
     onHelp: () => void;
     busy: boolean;
     history: { canUndo: boolean; canRedo: boolean; undoLabel?: string; onUndo: () => void; onRedo: () => void };
-    tools: { onCopyWeek: () => void; onTemplate: () => void; onDiscard: () => void };
+    tools: { onCopyWeek: () => void; onTemplate: () => void; onAddEvent: () => void; onDiscard: () => void };
     onPublish: () => void;
 }) {
     const isThisWeek = week.days.some((d) => d.isToday);
     const today = week.days.find((d) => d.isToday)?.localDate;
     const { openSlots, pendingChangeCount, pendingRequestCount } = week.summary;
+    // Businesses that schedule around bookings get "Add event" on the toolbar itself.
+    const eventsFirst = week.settings.scheduleStyle === "events";
 
     return (
         <div className="flex flex-wrap items-center gap-2.5">
@@ -163,6 +165,12 @@ export function SchedulerToolbar({
                         {pendingRequestCount} {pendingRequestCount === 1 ? "request" : "requests"}
                     </span>
                 ) : null}
+                {eventsFirst ? (
+                    <Button variant="outline" className="h-9" onClick={tools.onAddEvent}>
+                        <Plus data-icon="inline-start" />
+                        Event
+                    </Button>
+                ) : null}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="icon" className="size-9" aria-label="More">
@@ -172,6 +180,7 @@ export function SchedulerToolbar({
                     <DropdownMenuContent align="end" className="w-60">
                         <DropdownMenuItem onSelect={tools.onCopyWeek}>Copy last week…</DropdownMenuItem>
                         <DropdownMenuItem onSelect={tools.onTemplate}>Use a template…</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={tools.onAddEvent}>Add event…</DropdownMenuItem>
                         <DropdownMenuItem
                             onSelect={tools.onDiscard}
                             disabled={pendingChangeCount === 0}

@@ -6,6 +6,7 @@ import {
     member,
     organization,
     rosterEntry,
+    scheduleEvent,
     shift,
     shiftAssignment,
     tempWorker,
@@ -248,6 +249,29 @@ describeDb("Scheduler changes (database)", () => {
     test("a shift that has started can't be changed here", async () => {
         await db.update(shift).set({ status: "in-progress" }).where(eq(shift.id, PUBLISHED));
         await expect(apply([{ op: "update", shiftId: PUBLISHED, patch: { role: "Host" } }])).rejects.toMatchObject({ code: "SHIFT_LOCKED" });
+    });
+
+    test("an event and its shifts are made together, and deleting the event can be undone", async () => {
+        const eventId = `evt_${nanoid(16).replace(/[^0-9A-Za-z]/g, "x")}`;
+        const servers = newShiftId();
+        const { undo: undoCreate } = await apply([
+            { op: "createEvent", eventId, event: { locationId: LOC, localDate: "2027-02-06", startLocal: "15:00", endLocal: "23:00", name: "Smith Wedding" } },
+            { op: "create", shiftId: servers, shift: draftFields({ localDate: "2027-02-06", startLocal: "15:00", endLocal: "23:00", capacity: 8, eventId }) },
+        ]);
+        expect(undoCreate.map((c) => c.op)).toEqual(["delete", "deleteEvent"]);
+        const event = await db.query.scheduleEvent.findFirst({ where: eq(scheduleEvent.id, eventId) });
+        expect(event).toMatchObject({ name: "Smith Wedding", locationId: LOC, createdBy: ANA });
+        expect(event!.startTime.toISOString()).toBe("2027-02-06T20:00:00.000Z");
+        expect((await loadShift(servers))!.eventId).toBe(eventId);
+
+        const { undo: undoRename } = await apply([{ op: "updateEvent", eventId, patch: { name: "Smith–Lee Wedding", startLocal: "16:00" } }]);
+        expect(undoRename).toEqual([{ op: "updateEvent", eventId, patch: { name: "Smith Wedding", startLocal: "15:00" } }]);
+
+        const { undo: undoDelete } = await apply([{ op: "deleteEvent", eventId }]);
+        expect((await loadShift(servers))!.eventId).toBeNull(); // the shift stays, unlinked
+        await apply(undoDelete);
+        expect((await db.query.scheduleEvent.findFirst({ where: eq(scheduleEvent.id, eventId) }))?.name).toBe("Smith–Lee Wedding");
+        expect((await loadShift(servers))!.eventId).toBe(eventId);
     });
 
     test("discard clears drafts and staging for one week at one location only", async () => {

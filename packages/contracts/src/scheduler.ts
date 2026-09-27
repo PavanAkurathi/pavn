@@ -230,6 +230,25 @@ export const SchedulerShiftPatchSchema = z.object({
     cancel: z.boolean().optional(),
 }).strict();
 
+export const NewEventIdSchema = z.string().regex(/^evt_[0-9A-Za-z]{16}$/, "Expected an event id like evt_0123456789abcdef");
+
+export const SchedulerEventFieldsSchema = z.object({
+    locationId: z.string().min(1),
+    localDate: LocalDateSchema,
+    startLocal: LocalTimeSchema,
+    endLocal: LocalTimeSchema,
+    name: z.string().trim().min(1, "Name the event").max(120),
+    notes: NoteSchema.optional(),
+});
+
+export const SchedulerEventPatchSchema = z.object({
+    name: z.string().trim().min(1).max(120).optional(),
+    localDate: LocalDateSchema.optional(),
+    startLocal: LocalTimeSchema.optional(),
+    endLocal: LocalTimeSchema.optional(),
+    notes: NoteSchema.optional(),
+}).strict();
+
 export const SchedulerChangeSchema = z.discriminatedUnion("op", [
     z.object({
         op: z.literal("create"),
@@ -242,6 +261,11 @@ export const SchedulerChangeSchema = z.discriminatedUnion("op", [
     z.object({ op: z.literal("delete"), shiftId: z.string().min(1) }),
     /** Sets exactly who is on the shift. On a published shift the difference is staged. */
     z.object({ op: z.literal("assign"), shiftId: z.string().min(1), assignees: z.array(SchedulerPersonRefSchema) }),
+    /** An event is a label and a time; its staffing is the shifts that point at it. */
+    z.object({ op: z.literal("createEvent"), eventId: NewEventIdSchema, event: SchedulerEventFieldsSchema }),
+    z.object({ op: z.literal("updateEvent"), eventId: z.string().min(1), patch: SchedulerEventPatchSchema }),
+    /** Its shifts stay and stop pointing at it; delete them in the same batch to remove them too. */
+    z.object({ op: z.literal("deleteEvent"), eventId: z.string().min(1) }),
 ]);
 
 export const SchedulerChangesInputSchema = z.object({
@@ -326,6 +350,8 @@ export type SchedulerPublishResult = z.infer<typeof SchedulerPublishResultSchema
 export type SchedulerPersonRef = z.infer<typeof SchedulerPersonRefSchema>;
 export type SchedulerShiftFields = z.input<typeof SchedulerShiftFieldsSchema>;
 export type SchedulerShiftPatch = z.infer<typeof SchedulerShiftPatchSchema>;
+export type SchedulerEventFields = z.infer<typeof SchedulerEventFieldsSchema>;
+export type SchedulerEventPatch = z.infer<typeof SchedulerEventPatchSchema>;
 export type SchedulerChange = z.input<typeof SchedulerChangeSchema>;
 export type SchedulerChangesInput = z.input<typeof SchedulerChangesInputSchema>;
 export type SchedulerBlockingConflict = z.infer<typeof SchedulerBlockingConflictSchema>;

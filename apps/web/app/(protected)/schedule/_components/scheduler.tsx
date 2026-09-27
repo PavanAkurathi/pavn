@@ -34,6 +34,7 @@ import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
 import { ALL_DEPARTMENTS, buildPeopleView, buildPositionsView, type ViewMode } from "@/lib/scheduler/view-model";
 import { getSchedulerHref } from "@/lib/routes";
 import { ConflictDialog } from "./conflict-dialog";
+import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
 import { PublishDialog } from "./publish-dialog";
 import { QuickCreate, type QuickCreateTarget } from "./quick-create";
@@ -77,6 +78,7 @@ export function Scheduler({
     const [templateOpen, setTemplateOpen] = useState(false);
     const [discardOpen, setDiscardOpen] = useState(false);
     const [publishOpen, setPublishOpen] = useState(false);
+    const [eventTarget, setEventTarget] = useState<EventEditTarget | null>(null);
     const openRowRef = useRef<HTMLDivElement | null>(null);
 
     const key = weekKey(locationId, weekParam);
@@ -213,7 +215,10 @@ export function Scheduler({
         },
         hintFor,
         dragging: dragging !== null,
+        onOpenEvent: (eventId) => setEventTarget({ mode: "edit", eventId }),
     };
+
+    const addEvent = () => setEventTarget({ mode: "new", dayIndex: week.days.find((d) => d.isToday)?.index ?? 0 });
 
     // ---- Keyboard ---------------------------------------------------------------
     const { undo, redo } = edits;
@@ -280,6 +285,7 @@ export function Scheduler({
                 tools={{
                     onCopyWeek: () => setCopyWeekOpen(true),
                     onTemplate: () => setTemplateOpen(true),
+                    onAddEvent: addEvent,
                     onDiscard: () => setDiscardOpen(true),
                 }}
                 onPublish={() => setPublishOpen(true)}
@@ -350,7 +356,26 @@ export function Scheduler({
                     runPlan(plan);
                 }}
             />
-            <ShiftDrawer week={week} shiftId={openShiftId} onClose={() => setOpenShiftId(null)} run={(plan) => edits.run(plan)} />
+            <ShiftDrawer
+                week={week}
+                shiftId={openShiftId}
+                onClose={() => setOpenShiftId(null)}
+                run={(plan) => edits.run(plan)}
+                onOpenEvent={(eventId) => {
+                    setOpenShiftId(null);
+                    setEventTarget({ mode: "edit", eventId });
+                }}
+            />
+            <EventDrawer
+                week={week}
+                target={eventTarget}
+                onClose={() => setEventTarget(null)}
+                run={(plan) => edits.run(plan)}
+                onStaff={(shiftId) => {
+                    setEventTarget(null);
+                    setOpenShiftId(shiftId);
+                }}
+            />
             <ConflictDialog conflict={edits.conflict} />
             <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
             <PublishDialog

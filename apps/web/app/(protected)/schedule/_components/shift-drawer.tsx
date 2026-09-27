@@ -32,17 +32,19 @@ export function ShiftDrawer({
     shiftId,
     onClose,
     run,
+    onOpenEvent,
 }: {
     week: SchedulerWeek;
     shiftId: string | null;
     onClose: () => void;
     run: (plan: Plan) => Promise<boolean>;
+    onOpenEvent: (eventId: string) => void;
 }) {
     const shift = shiftId ? week.shifts.find((s) => s.id === shiftId) ?? null : null;
     return (
         <Sheet open={shift !== null} onOpenChange={(open) => !open && onClose()}>
             <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
-                {shift ? <ShiftPanel key={`${shift.id}:${shift.startsAt}:${shift.role}:${shift.capacity}`} week={week} shift={shift} run={run} onClose={onClose} /> : null}
+                {shift ? <ShiftPanel key={`${shift.id}:${shift.startsAt}:${shift.role}:${shift.capacity}`} week={week} shift={shift} run={run} onClose={onClose} onOpenEvent={onOpenEvent} /> : null}
             </SheetContent>
         </Sheet>
     );
@@ -53,11 +55,13 @@ function ShiftPanel({
     shift,
     run,
     onClose,
+    onOpenEvent,
 }: {
     week: SchedulerWeek;
     shift: SchedulerShift;
     run: (plan: Plan) => Promise<boolean>;
     onClose: () => void;
+    onOpenEvent: (eventId: string) => void;
 }) {
     const people = useMemo(() => new Map(week.people.map((p) => [p.id, p])), [week.people]);
     const roles = useMemo(() => knownRoles(week), [week]);
@@ -76,6 +80,7 @@ function ShiftPanel({
     const refs = staying(shift);
     const candidates = useMemo(() => rankCandidates(week, shift), [week, shift]);
     const locked = shift.pendingRemoval;
+    const event = shift.eventId ? week.events.find((e) => e.id === shift.eventId) ?? null : null;
 
     const patch: SchedulerShiftPatch = {};
     const newDate = week.days[Number(dayIndex)]!.localDate;
@@ -124,6 +129,16 @@ function ShiftPanel({
                     </Badge>
                 </SheetTitle>
                 <SheetDescription>{statusText(shift)}</SheetDescription>
+                {event ? (
+                    <button
+                        type="button"
+                        onClick={() => onOpenEvent(event.id)}
+                        className="w-fit text-sm font-medium text-primary underline-offset-2 hover:underline"
+                    >
+                        <span aria-hidden>◆ </span>
+                        {event.name}
+                    </button>
+                ) : null}
             </SheetHeader>
 
             <div className="flex flex-col gap-6 p-5">

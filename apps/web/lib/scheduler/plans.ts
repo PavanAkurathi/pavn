@@ -287,3 +287,85 @@ export function withoutPeople(changes: SchedulerChange[], drop: { shiftId: strin
             : c,
     );
 }
+
+// ---- Events -----------------------------------------------------------------------
+
+export function newEventId(): string {
+    return newShiftId().replace(/^shf_/, "evt_");
+}
+
+export interface EventDraft {
+    name: string;
+    dayIndex: number;
+    startLocal: string;
+    endLocal: string;
+    notes: string | null;
+}
+
+/** An event and one open shift per role it needs, in one step. */
+export function planCreateEvent(week: SchedulerWeek, draft: EventDraft, roles: { role: string; count: number }[]): Plan {
+    const eventId = newEventId();
+    const localDate = week.days[draft.dayIndex]!.localDate;
+    return {
+        changes: [
+            {
+                op: "createEvent",
+                eventId,
+                event: { locationId: week.location.id, localDate, startLocal: draft.startLocal, endLocal: draft.endLocal, name: draft.name, notes: draft.notes },
+            },
+            ...roles
+                .filter((r) => r.role.trim() && r.count > 0)
+                .map((r) => ({
+                    op: "create" as const,
+                    shiftId: newShiftId(),
+                    shift: {
+                        locationId: week.location.id,
+                        localDate,
+                        startLocal: draft.startLocal,
+                        endLocal: draft.endLocal,
+                        role: r.role.trim(),
+                        capacity: r.count,
+                        eventId,
+                    },
+                    assignees: [],
+                })),
+        ],
+        label: `Added ${draft.name}`,
+    };
+}
+
+/** Moving an event moves its shifts: all of them to the new day, and those that kept the event's hours to the new hours. */
+export function planUpdateEvent(week: SchedulerWeek, eventId: string, next: EventDraft): Plan | null {
+    const event = week.events.find((e) => e.id === eventId);
+    if (!event) return null;
+    const localDate = week.days[next.dayIndex]!.localDate;
+    const patch: Record<string, string | null> = {};
+    if (next.name !== event.name) patch.name = next.name;
+    if ((next.notes ?? null) !== (event.notes ?? null)) patch.notes = next.notes;
+    if (localDate !== event.localDate) patch.localDate = localDate;
+    if (next.startLocal !== event.startLocal) patch.startLocal = next.startLocal;
+    if (next.endLocal !== event.endLocal) patch.endLocal = next.endLocal;
+    if (Object.keys(patch).length === 0) return null;
+
+    const changes: SchedulerChange[] = [{ op: "updateEvent", eventId, patch }];
+    for (const s of week.shifts.filter((s) => s.eventId === eventId && !s.pendingRemoval)) {
+        const shiftPatch: Record<string, string> = {};
+        if (patch.localDate) shiftPatch.localDate = localDate;
+        if (s.startLocal === event.startLocal && s.endLocal === event.endLocal) {
+            if (patch.startLocal) shiftPatch.startLocal = next.startLocal;
+            if (patch.endLocal) shiftPatch.endLocal = next.endLocal;
+        }
+        if (Object.keys(shiftPatch).length) changes.push({ op: "update", shiftId: s.id, patch: shiftPatch });
+    }
+    return { changes, label: `Changed ${next.name}` };
+}
+
+export function planDeleteEvent(week: SchedulerWeek, eventId: string, withShifts: boolean): Plan | null {
+    const event = week.events.find((e) => e.id === eventId);
+    if (!event) return null;
+    const shifts = withShifts ? week.shifts.filter((s) => s.eventId === eventId && !s.pendingRemoval) : [];
+    return {
+        changes: [...shifts.map((s) => ({ op: "delete" as const, shiftId: s.id })), { op: "deleteEvent", eventId }],
+        label: withShifts ? `Deleted ${event.name} and its shifts` : `Deleted ${event.name}`,
+    };
+}

@@ -36,6 +36,8 @@ export interface GridEditing {
     /** While dragging: what dropping here would mean. */
     hintFor: (target: DropTarget) => DropHint | null;
     dragging: boolean;
+    /** Click on a day header's event tag. */
+    onOpenEvent: (eventId: string) => void;
 }
 
 function eventTone(e: SchedulerEvent) {
@@ -66,7 +68,17 @@ export function moveCellFocus(event: React.KeyboardEvent<HTMLElement>) {
     }
 }
 
-function Header({ week, corner, endLabel = "Hours" }: { week: SchedulerWeek; corner: React.ReactNode; endLabel?: string }) {
+function Header({
+    week,
+    corner,
+    endLabel = "Hours",
+    onOpenEvent,
+}: {
+    week: SchedulerWeek;
+    corner: React.ReactNode;
+    endLabel?: string;
+    onOpenEvent: (eventId: string) => void;
+}) {
     return (
         <div role="row" className="contents">
             <div role="columnheader" className={cn(headerCell, "left-0 z-30")}>
@@ -90,11 +102,13 @@ function Header({ week, corner, endLabel = "Hours" }: { week: SchedulerWeek; cor
                             </span>
                         </div>
                         {events.map((e) => (
-                            <span
+                            <button
+                                type="button"
                                 key={e.id}
+                                onClick={() => onOpenEvent(e.id)}
                                 title={`${e.name}, ${compactRange(e.startLocal, e.endLocal)}: ${e.filled} of ${e.needed} filled`}
                                 className={cn(
-                                    "flex max-w-full items-center gap-1 rounded-full border bg-card px-2 py-px text-[11px] font-semibold leading-4",
+                                    "flex max-w-full items-center gap-1 rounded-full border bg-card px-2 py-px text-left text-[11px] font-semibold leading-4 hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary",
                                     eventTone(e),
                                 )}
                             >
@@ -103,7 +117,7 @@ function Header({ week, corner, endLabel = "Hours" }: { week: SchedulerWeek; cor
                                 <span className="ml-auto tabular-nums">
                                     {e.filled}/{e.needed}
                                 </span>
-                            </span>
+                            </button>
                         ))}
                     </div>
                 );
@@ -331,6 +345,7 @@ export function PeopleGrid({
         <div role="table" aria-label={`Schedule for ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
             <Header
                 week={week}
+                onOpenEvent={editing.onOpenEvent}
                 corner={
                     <input
                         type="search"
@@ -430,6 +445,7 @@ export function PositionsGrid({
         <div role="table" aria-label={`Positions at ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
             <Header
                 week={week}
+                onOpenEvent={editing.onOpenEvent}
                 corner={<span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Position</span>}
                 endLabel="Filled"
             />
