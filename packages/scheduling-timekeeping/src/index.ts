@@ -40,6 +40,12 @@ export {
 // scheduling action.
 export { getSchedulerWeek } from "./modules/scheduler/get-week";
 export {
+    applySchedulerChanges,
+    defaultBreakMinutes,
+    discardSchedulerWeek,
+    shiftInstants,
+} from "./modules/scheduler/changes";
+export {
     applySchedulingSetup,
     canonicalDepartmentRoles,
     createDepartment,

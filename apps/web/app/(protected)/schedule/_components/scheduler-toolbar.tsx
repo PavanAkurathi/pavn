@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal, Redo2, Undo2 } from "lucide-react";
 import type { SchedulerWeek } from "@repo/contracts/scheduler";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -34,6 +34,8 @@ export function SchedulerToolbar({
     onOpenCounter,
     onHelp,
     busy,
+    history,
+    tools,
 }: {
     week: SchedulerWeek;
     locations: { id: string; name: string }[];
@@ -48,6 +50,8 @@ export function SchedulerToolbar({
     onOpenCounter: () => void;
     onHelp: () => void;
     busy: boolean;
+    history: { canUndo: boolean; canRedo: boolean; undoLabel?: string; onUndo: () => void; onRedo: () => void };
+    tools: { onCopyWeek: () => void; onTemplate: () => void; onDiscard: () => void };
 }) {
     const isThisWeek = week.days.some((d) => d.isToday);
     const today = week.days.find((d) => d.isToday)?.localDate;
@@ -119,6 +123,30 @@ export function SchedulerToolbar({
             ) : null}
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
+                <div className="flex items-center">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-9"
+                        aria-label={history.undoLabel ? `Undo: ${history.undoLabel}` : "Undo"}
+                        title={history.undoLabel ? `Undo: ${history.undoLabel} (z)` : "Undo (z)"}
+                        disabled={!history.canUndo}
+                        onClick={history.onUndo}
+                    >
+                        <Undo2 />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-9"
+                        aria-label="Redo"
+                        title="Redo (Shift+z)"
+                        disabled={!history.canRedo}
+                        onClick={history.onRedo}
+                    >
+                        <Redo2 />
+                    </Button>
+                </div>
                 {openSlots > 0 ? (
                     <button
                         type="button"
@@ -148,7 +176,17 @@ export function SchedulerToolbar({
                             <MoreHorizontal />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuContent align="end" className="w-60">
+                        <DropdownMenuItem onSelect={tools.onCopyWeek}>Copy last week…</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={tools.onTemplate}>Use a template…</DropdownMenuItem>
+                        <DropdownMenuItem
+                            onSelect={tools.onDiscard}
+                            disabled={pendingChangeCount === 0}
+                            className="text-destructive focus:text-destructive"
+                        >
+                            Discard unpublished changes…
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuLabel>View by</DropdownMenuLabel>
                         <DropdownMenuRadioGroup value={viewMode} onValueChange={(v) => onViewMode(v as ViewMode)}>
                             <DropdownMenuRadioItem value="people">People</DropdownMenuRadioItem>
@@ -158,7 +196,7 @@ export function SchedulerToolbar({
                         <DropdownMenuItem asChild>
                             <Link href="/settings/scheduling">Scheduling settings</Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={onHelp}>What the markings mean</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={onHelp}>Help and shortcuts</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

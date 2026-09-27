@@ -44,6 +44,12 @@ mock.module("@repo/scheduling-timekeeping", () => ({
     createDepartment: record("createDepartment", settings.departments[0]),
     updateDepartment: record("updateDepartment", settings.departments[0]),
     deleteDepartment: record("deleteDepartment", { id: "dep_1" }),
+    applySchedulerChanges: record("applySchedulerChanges", { undo: [], overridden: [] }),
+    discardSchedulerWeek: record("discardSchedulerWeek", { deletedDrafts: 1, revertedShifts: 0, revertedAssignments: 0 }),
+    listShiftTemplates: record("listShiftTemplates", [
+        { id: "tpl_1", name: "Dinner", locationId: "loc_dt", locationName: "Downtown", startTime: "16:00", endTime: "23:00", positions: [{ roleName: "Server", headcount: 3 }], headcount: 3 },
+        { id: "tpl_2", name: "Brunch", locationId: "loc_rv", locationName: "Riverside", startTime: "09:00", endTime: "14:00", positions: [], headcount: 0 },
+    ]),
 }));
 
 const { schedulerRouter } = await import("./scheduler");
@@ -151,5 +157,49 @@ describe("scheduling settings and departments", () => {
 
     test("an empty department change is rejected", async () => {
         expect((await send("admin", "PATCH", "/scheduler/departments/dep_1", {})).status).toBe(400);
+    });
+});
+
+describe("editing", () => {
+    beforeEach(() => {
+        settingsCalls.length = 0;
+    });
+
+    const post = (role: string, path: string, body: unknown) =>
+        appAs(role).request(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+
+    const create = {
+        op: "create",
+        shiftId: "shf_0123456789abcdef",
+        shift: { locationId: "loc_dt", localDate: "2027-02-03", startLocal: "16:00", endLocal: "23:00", role: "Server" },
+    };
+
+    test("a batch reaches the engine with the acting manager, defaults filled in", async () => {
+        const response = await post("manager", "/scheduler/changes", { changes: [create] });
+        expect(response.status).toBe(200);
+        expect(settingsCalls[0]!.fn).toBe("applySchedulerChanges");
+        expect(settingsCalls[0]!.args[0]).toMatchObject({
+            orgId: "org_1",
+            actorId: "user_1",
+            body: { force: false, changes: [{ ...create, shift: { ...create.shift, capacity: 1 }, assignees: [] }] },
+        });
+    });
+
+    test("malformed batches never reach the engine", async () => {
+        expect((await post("manager", "/scheduler/changes", { changes: [] })).status).toBe(400);
+        expect((await post("manager", "/scheduler/changes", { changes: [{ ...create, shiftId: "bad" }] })).status).toBe(400);
+        expect((await post("member", "/scheduler/changes", { changes: [create] })).status).toBe(403);
+        expect(settingsCalls).toHaveLength(0);
+    });
+
+    test("discard is scoped to a location and week", async () => {
+        const response = await post("manager", "/scheduler/week/discard", { locationId: "loc_dt", weekStart: "2027-02-03" });
+        expect(await response.json()).toEqual({ deletedDrafts: 1, revertedShifts: 0, revertedAssignments: 0 });
+        expect(settingsCalls[0]!.args[0]).toEqual({ orgId: "org_1", body: { locationId: "loc_dt", weekStart: "2027-02-03" } });
+    });
+
+    test("templates are listed for the location in view", async () => {
+        const response = await appAs("manager").request("/scheduler/templates?locationId=loc_dt");
+        expect((await response.json()).map((t: { id: string }) => t.id)).toEqual(["tpl_1"]);
     });
 });

@@ -1,15 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import type { SchedulerAssignee, SchedulerPerson, SchedulerShift } from "@repo/contracts/scheduler";
-import { Popover, PopoverContent, PopoverTrigger } from "@repo/ui/components/ui/popover";
-import { Badge } from "@repo/ui/components/ui/badge";
-import { Button } from "@repo/ui/components/ui/button";
+import { useDraggable } from "@dnd-kit/core";
+import type { SchedulerAssignee, SchedulerShift } from "@repo/contracts/scheduler";
 import { cn } from "@repo/ui/lib/utils";
-import { compactRange, formatHours, weekdayShort } from "@/lib/scheduler/format";
+import { compactRange } from "@/lib/scheduler/format";
 import { roleColor } from "@/lib/scheduler/role-color";
+import type { DragSource } from "@/lib/scheduler/plans";
 import { isBlocking } from "@/lib/scheduler/view-model";
-import { getShiftTimesheetHref } from "@/lib/routes";
 import styles from "./scheduler.module.css";
 
 type ChipVariant =
@@ -20,22 +17,37 @@ type ChipVariant =
     /** On a position row: the whole shift with its fill. */
     | { kind: "position" };
 
-function statusLine(shift: SchedulerShift) {
-    if (shift.pendingRemoval) return "Removed when you publish";
-    if (shift.status === "draft") return "Draft, not visible to staff yet";
-    if (shift.hasUnpublishedEdits) return "Published, with changes staff can't see yet";
-    return "Published";
+export interface ChipActions {
+    onOpen: (shiftId: string) => void;
+    onRemove: (source: DragSource) => void;
+    onCopy: (source: DragSource) => void;
 }
 
 export function ShiftChip({
     shift,
     variant,
-    people,
+    actions,
+    dragId,
 }: {
     shift: SchedulerShift;
     variant: ChipVariant;
-    people: Map<string, SchedulerPerson>;
+    actions: ChipActions;
+    /** Unique per chip on screen; chips on the Positions view aren't dragged. */
+    dragId?: string;
 }) {
+    const source: DragSource | null =
+        variant.kind === "assignment"
+            ? { kind: "assignment", shiftId: shift.id, personId: variant.assignee.personId }
+            : variant.kind === "open"
+                ? { kind: "open", shiftId: shift.id }
+                : null;
+    const draggable = Boolean(dragId && source && !shift.pendingRemoval);
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: dragId ?? `static:${shift.id}`,
+        data: { source, shift, variant },
+        disabled: !draggable,
+    });
+
     const draft = shift.status === "draft" || (variant.kind === "assignment" && variant.assignee.pendingState === "add");
     const removed = shift.pendingRemoval || (variant.kind === "assignment" && variant.assignee.pendingState === "remove");
     const blocking = variant.kind === "assignment" ? isBlocking(variant.assignee) : shift.assignees.some(isBlocking);
@@ -55,98 +67,74 @@ export function ShiftChip({
         .join(", ");
 
     return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <button
-                    type="button"
-                    aria-label={label}
-                    title={[label, ...softWarnings.map((w) => w.message)].join("\n")}
-                    className={cn(
-                        styles.chip,
-                        variant.kind === "open" && styles.open,
-                        draft && styles.draft,
-                        removed && styles.removed,
-                    )}
-                    style={{ ["--rc" as string]: roleColor(shift.role) }}
-                >
-                    {shift.eventId ? <span aria-hidden className="text-[10px]">◆</span> : null}
-                    <span className={styles.time}>{range}</span>
-                    {variant.kind === "assignment" && variant.showRole ? <span className={styles.sub}>{shift.role}</span> : null}
-                    {variant.kind === "open" ? (
-                        <>
-                            <span className={styles.sub}>{shift.role}</span>
-                            <span className={cn(styles.fill, "text-destructive")}>{shift.open}</span>
-                        </>
-                    ) : null}
-                    {variant.kind === "position" ? (
-                        <span className={cn(styles.fill, shift.open > 0 && "text-destructive")}>
-                            {shift.filled}/{shift.capacity}
-                        </span>
-                    ) : null}
-                    {shift.hasUnpublishedEdits && !draft ? <span aria-hidden className={styles.edited} /> : null}
-                    {blocking ? (
-                        <span aria-hidden className={styles.flag}>
-                            !
-                        </span>
-                    ) : null}
-                </button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-80">
-                <ShiftDetails shift={shift} people={people} />
-            </PopoverContent>
-        </Popover>
+        <button
+            ref={setNodeRef}
+            type="button"
+            {...attributes}
+            {...listeners}
+            // dnd-kit's role/description are for keyboard dragging, which this grid does with c and v instead.
+            role="button"
+            aria-roledescription={undefined}
+            aria-describedby={undefined}
+            aria-label={label}
+            title={[label, ...softWarnings.map((w) => w.message)].join("\n")}
+            data-chip
+            onClick={(event) => {
+                event.stopPropagation();
+                actions.onOpen(shift.id);
+            }}
+            onKeyDown={(event) => {
+                if (!source || shift.pendingRemoval) return;
+                if (event.key === "Delete" || event.key === "Backspace") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    actions.onRemove(source);
+                } else if (event.key === "c" && !event.metaKey && !event.ctrlKey) {
+                    event.stopPropagation();
+                    actions.onCopy(source);
+                }
+            }}
+            className={cn(
+                styles.chip,
+                draggable && "cursor-grab active:cursor-grabbing",
+                variant.kind === "open" && styles.open,
+                draft && styles.draft,
+                removed && styles.removed,
+                isDragging && "opacity-40",
+            )}
+            style={{ ["--rc" as string]: roleColor(shift.role) }}
+        >
+            {shift.eventId ? <span aria-hidden className="text-[10px]">◆</span> : null}
+            <span className={styles.time}>{range}</span>
+            {variant.kind === "assignment" && variant.showRole ? <span className={styles.sub}>{shift.role}</span> : null}
+            {variant.kind === "open" ? (
+                <>
+                    <span className={styles.sub}>{shift.role}</span>
+                    <span className={cn(styles.fill, "text-destructive")}>{shift.open}</span>
+                </>
+            ) : null}
+            {variant.kind === "position" ? (
+                <span className={cn(styles.fill, shift.open > 0 && "text-destructive")}>
+                    {shift.filled}/{shift.capacity}
+                </span>
+            ) : null}
+            {shift.hasUnpublishedEdits && !draft ? <span aria-hidden className={styles.edited} /> : null}
+            {blocking ? (
+                <span aria-hidden className={styles.flag}>
+                    !
+                </span>
+            ) : null}
+        </button>
     );
 }
 
-function ShiftDetails({ shift, people }: { shift: SchedulerShift; people: Map<string, SchedulerPerson> }) {
+/** What follows the pointer while dragging. */
+export function ChipGhost({ shift, copy }: { shift: SchedulerShift; copy: boolean }) {
     return (
-        <div className="flex flex-col gap-3 text-sm">
-            <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-col gap-0.5">
-                    <p className="font-semibold">
-                        {weekdayShort(shift.localDate)} {compactRange(shift.startLocal, shift.endLocal)}
-                        {shift.overnight ? <span className="font-normal text-muted-foreground"> (ends next day)</span> : null}
-                    </p>
-                    <p className="text-muted-foreground">
-                        {shift.role} · {formatHours(shift.paidMinutes)} paid
-                        {shift.breakMinutes ? ` · ${shift.breakMinutes} min break` : ""}
-                    </p>
-                </div>
-                <Badge variant={shift.open > 0 ? "destructive" : "secondary"} className="shrink-0">
-                    {shift.filled}/{shift.capacity}
-                </Badge>
-            </div>
-
-            <p className="text-xs text-muted-foreground">{statusLine(shift)}</p>
-
-            {shift.assignees.length ? (
-                <ul className="flex flex-col gap-2">
-                    {shift.assignees.map((a) => (
-                        <li key={a.personId} className="flex flex-col gap-0.5">
-                            <span className={cn("font-medium", a.pendingState === "remove" && "line-through opacity-60")}>
-                                {people.get(a.personId)?.name ?? "Someone no longer on the team"}
-                                {a.pendingState === "add" ? <span className="font-normal text-muted-foreground"> · not published yet</span> : null}
-                            </span>
-                            {a.warnings.map((w) => (
-                                <span
-                                    key={w.message}
-                                    className={cn("text-xs", w.severity === "block" ? "text-destructive" : "text-amber-700")}
-                                >
-                                    {w.message}
-                                </span>
-                            ))}
-                        </li>
-                    ))}
-                </ul>
-            ) : (
-                <p className="text-muted-foreground">Nobody on it yet.</p>
-            )}
-
-            {shift.note ? <p className="rounded-md bg-muted px-2 py-1.5 text-xs">{shift.note}</p> : null}
-
-            <Button asChild size="sm" variant="outline" className="w-fit">
-                <Link href={getShiftTimesheetHref(shift.id)}>Open shift</Link>
-            </Button>
+        <div className={cn(styles.chip, "w-36 shadow-lg")} style={{ ["--rc" as string]: roleColor(shift.role) }}>
+            <span className={styles.time}>{compactRange(shift.startLocal, shift.endLocal)}</span>
+            <span className={styles.sub}>{shift.role}</span>
+            {copy ? <span className="ml-auto rounded bg-foreground px-1 text-[10px] font-bold text-background">+ copy</span> : null}
         </div>
     );
 }

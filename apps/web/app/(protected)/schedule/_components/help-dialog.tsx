@@ -56,12 +56,23 @@ const MARKINGS: { sample: React.ReactNode; text: string }[] = [
     },
 ];
 
+const SHORTCUTS: [string, string][] = [
+    ["Click a day", "Add a shift. Type times like 9-5, 4p-11p or 17-23."],
+    ["Drag a shift", "Move it to another day or person. Hold Alt (Option) to copy instead."],
+    ["Drag to Open", "Take the person off; the spot stays open to fill."],
+    ["Arrow keys", "Move between days and people. Enter adds or opens."],
+    ["c then v", "Copy the focused shift, paste it on the focused day."],
+    ["Delete", "Take the person off the focused shift."],
+    ["z  /  Shift+z", "Undo / redo."],
+    ["?", "This help."],
+];
+
 export function HelpDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>What the markings mean</DialogTitle>
+                    <DialogTitle>Help and shortcuts</DialogTitle>
                     <DialogDescription>
                         Softer warnings, like someone nearing overtime or not trained for a role, show when you hover or open a
                         shift, so the grid stays quiet.
@@ -79,6 +90,20 @@ export function HelpDialog({ open, onOpenChange }: { open: boolean; onOpenChange
                         <span>Hours turn amber in the last 4 before overtime and red once it starts.</span>
                     </li>
                 </ul>
+                <div className="flex flex-col gap-2 border-t pt-4">
+                    <h3 className="text-sm font-semibold">Working fast</h3>
+                    <dl className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-sm">
+                        {SHORTCUTS.map(([keys, what]) => (
+                            <div key={keys} className="contents">
+                                <dt className="font-medium">{keys}</dt>
+                                <dd className="text-muted-foreground">{what}</dd>
+                            </div>
+                        ))}
+                    </dl>
+                    <p className="text-xs text-muted-foreground">
+                        Everything you change is a draft until you publish; staff keep seeing the published week.
+                    </p>
+                </div>
             </DialogContent>
         </Dialog>
     );

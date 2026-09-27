@@ -1,20 +1,51 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
-import type { SchedulerWeek } from "@repo/contracts/scheduler";
+import { toast } from "sonner";
+import {
+    DndContext,
+    DragOverlay,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+    type DragStartEvent,
+} from "@dnd-kit/core";
+import type { SchedulerShift, SchedulerWeek } from "@repo/contracts/scheduler";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@repo/ui/components/ui/alert-dialog";
 import { Button } from "@repo/ui/components/ui/button";
 import { cn } from "@repo/ui/lib/utils";
-import { fetchSchedulerWeek, weekKey } from "@/lib/scheduler/client";
+import { checkPerson } from "@/lib/scheduler/candidates";
+import { discardWeek, fetchSchedulerWeek, weekKey } from "@/lib/scheduler/client";
 import { addDays } from "@/lib/scheduler/format";
+import { planMove, planRemove, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
+import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
 import { ALL_DEPARTMENTS, buildPeopleView, buildPositionsView, type ViewMode } from "@/lib/scheduler/view-model";
 import { getSchedulerHref } from "@/lib/routes";
+import { ConflictDialog } from "./conflict-dialog";
 import { HelpDialog } from "./help-dialog";
+import { QuickCreate, type QuickCreateTarget } from "./quick-create";
+import { ChipGhost } from "./shift-chip";
+import { ShiftDrawer } from "./shift-drawer";
 import { SchedulerToolbar } from "./scheduler-toolbar";
-import { PeopleGrid, PositionsGrid } from "./week-grid";
+import { CopyWeekDialog, TemplateDialog } from "./week-tools";
+import { PeopleGrid, PositionsGrid, type DropHint, type GridEditing } from "./week-grid";
 
 const isViewMode = (value: string): value is ViewMode => value === "people" || value === "positions";
+
+const typingIn = (target: EventTarget | null) =>
+    target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
 
 export function Scheduler({
     orgId,
@@ -35,6 +66,15 @@ export function Scheduler({
     const [search, setSearch] = useState("");
     const [helpOpen, setHelpOpen] = useState(false);
     const [flashOpen, setFlashOpen] = useState(false);
+    const [quickCreate, setQuickCreate] = useState<QuickCreateTarget | null>(null);
+    const [lastRange, setLastRange] = useState("9-5");
+    const [openShiftId, setOpenShiftId] = useState<string | null>(null);
+    const [clipboard, setClipboard] = useState<DragSource | null>(null);
+    const [dragging, setDragging] = useState<{ source: DragSource; shift: SchedulerShift } | null>(null);
+    const [copyMode, setCopyMode] = useState(false);
+    const [copyWeekOpen, setCopyWeekOpen] = useState(false);
+    const [templateOpen, setTemplateOpen] = useState(false);
+    const [discardOpen, setDiscardOpen] = useState(false);
     const openRowRef = useRef<HTMLDivElement | null>(null);
 
     const key = weekKey(locationId, weekParam);
@@ -45,6 +85,9 @@ export function Scheduler({
         revalidateOnFocus: true,
     });
     const week = data ?? initialWeek;
+
+    const refresh = useCallback(() => mutate(), [mutate]);
+    const edits = useSchedulerEdits(refresh);
 
     const [storedDepartment, setDepartment] = usePersistentState<string>(`wh.scheduler.${orgId}.department`, ALL_DEPARTMENTS);
     const department =
@@ -59,7 +102,6 @@ export function Scheduler({
     const [collapsedRaw, setCollapsedRaw] = usePersistentState<string>(`wh.scheduler.${orgId}.collapsed`, "");
     const collapsed = useMemo(() => new Set(collapsedRaw.split(",").filter(Boolean)), [collapsedRaw]);
 
-    const people = useMemo(() => new Map(week.people.map((p) => [p.id, p])), [week.people]);
     const peopleView = useMemo(() => buildPeopleView(week, { department, search }), [week, department, search]);
     const positionRows = useMemo(() => buildPositionsView(week, { department }), [week, department]);
 
@@ -83,6 +125,7 @@ export function Scheduler({
 
     const changeLocation = (next: string) => {
         setLocationId(next);
+        edits.reset();
         syncUrl({ location: next, week: weekParam });
     };
 
@@ -102,6 +145,113 @@ export function Scheduler({
         setCollapsedRaw([...next].join(","));
     };
 
+    const runPlan = (plan: Plan | null) => {
+        if (!plan) return;
+        void edits.run(plan);
+    };
+
+    // ---- Dragging -------------------------------------------------------------
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+    useEffect(() => {
+        if (!dragging) return;
+        const track = (event: KeyboardEvent | PointerEvent) => setCopyMode(event.altKey);
+        window.addEventListener("keydown", track);
+        window.addEventListener("keyup", track);
+        window.addEventListener("pointermove", track);
+        return () => {
+            window.removeEventListener("keydown", track);
+            window.removeEventListener("keyup", track);
+            window.removeEventListener("pointermove", track);
+        };
+    }, [dragging]);
+
+    const onDragStart = (event: DragStartEvent) => {
+        const payload = event.active.data.current as { source: DragSource | null; shift: SchedulerShift } | undefined;
+        if (!payload?.source) return;
+        setDragging({ source: payload.source, shift: payload.shift });
+        setCopyMode(Boolean((event.activatorEvent as PointerEvent | undefined)?.altKey));
+    };
+
+    const onDragEnd = (event: DragEndEvent) => {
+        const source = dragging?.source;
+        setDragging(null);
+        const target = (event.over?.data.current as { target?: DropTarget } | undefined)?.target;
+        if (!source || !target) return;
+        runPlan(planMove(week, source, target, { copy: copyMode }));
+    };
+
+    const hintFor = (target: DropTarget): DropHint | null => {
+        if (!dragging) return null;
+        const plan = planMove(week, dragging.source, target, { copy: copyMode });
+        if (!plan) return null;
+        if (!target.personId) return { tone: "ok", message: copyMode ? "Copy as open" : "Leave open" };
+        const check = checkPerson(week, dragging.shift, target.personId, target.dayIndex);
+        if (check.blocked) return { tone: "block", message: check.reasons[0] };
+        if (check.reasons.length) return { tone: "warn", message: check.reasons[0] };
+        return { tone: "ok" };
+    };
+
+    const editing: GridEditing = {
+        chips: {
+            onOpen: (shiftId) => setOpenShiftId(shiftId),
+            onRemove: (source) => runPlan(planRemove(week, source)),
+            onCopy: (source) => {
+                setClipboard(source);
+                toast("Copied. Focus a day and press v to paste.");
+            },
+        },
+        onCreateAt: (anchor, target, role) => {
+            const person = target.personId ? week.people.find((p) => p.id === target.personId) ?? null : null;
+            setQuickCreate({ anchor, dayIndex: target.dayIndex, person: person ?? null, role });
+        },
+        onPasteAt: (target) => {
+            if (!clipboard) return;
+            runPlan(planMove(week, clipboard, target, { copy: true }));
+        },
+        hintFor,
+        dragging: dragging !== null,
+    };
+
+    // ---- Keyboard ---------------------------------------------------------------
+    const { undo, redo } = edits;
+    useEffect(() => {
+        const onKey = (event: KeyboardEvent) => {
+            if (typingIn(event.target) || event.defaultPrevented) return;
+            const mod = event.metaKey || event.ctrlKey;
+            if (event.key.toLowerCase() === "z" && (mod || (!event.altKey && !mod))) {
+                event.preventDefault();
+                if (event.shiftKey) void redo();
+                else void undo();
+            } else if (event.key === "y" && mod) {
+                event.preventDefault();
+                void redo();
+            } else if (event.key === "?") {
+                setHelpOpen(true);
+            }
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [undo, redo]);
+
+    const discard = async () => {
+        setDiscardOpen(false);
+        try {
+            const result = await discardWeek(week.location.id, week.weekStart);
+            edits.reset();
+            await mutate();
+            const parts = [
+                result.deletedDrafts ? `${result.deletedDrafts} ${result.deletedDrafts === 1 ? "draft" : "drafts"} deleted` : null,
+                result.revertedShifts + result.revertedAssignments
+                    ? `${result.revertedShifts + result.revertedAssignments} changes reverted`
+                    : null,
+            ].filter(Boolean);
+            toast.success(parts.length ? parts.join(", ") : "Nothing to discard");
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Couldn't discard");
+        }
+    };
+
     return (
         <div className="flex flex-col gap-3">
             <SchedulerToolbar
@@ -117,7 +267,19 @@ export function Scheduler({
                 onViewMode={setViewMode}
                 onOpenCounter={showOpenRow}
                 onHelp={() => setHelpOpen(true)}
-                busy={isValidating && !isInitial}
+                busy={(isValidating && !isInitial) || edits.busy}
+                history={{
+                    canUndo: edits.canUndo,
+                    canRedo: edits.canRedo,
+                    undoLabel: edits.nextUndoLabel,
+                    onUndo: () => void edits.undo(),
+                    onRedo: () => void edits.redo(),
+                }}
+                tools={{
+                    onCopyWeek: () => setCopyWeekOpen(true),
+                    onTemplate: () => setTemplateOpen(true),
+                    onDiscard: () => setDiscardOpen(true),
+                }}
             />
 
             {error ? (
@@ -130,38 +292,81 @@ export function Scheduler({
             ) : null}
 
             {week.shifts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nothing scheduled this week yet.</p>
+                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    Nothing scheduled yet.
+                    <button type="button" className="font-medium text-primary hover:underline" onClick={() => setCopyWeekOpen(true)}>
+                        Copy last week
+                    </button>
+                    <button type="button" className="font-medium text-primary hover:underline" onClick={() => setTemplateOpen(true)}>
+                        Use a template
+                    </button>
+                    <span>or click any day to add a shift.</span>
+                </p>
             ) : null}
 
-            <div
-                aria-busy={isValidating}
-                className={cn(
-                    "max-h-[calc(100vh-12rem)] min-h-[360px] overflow-auto overscroll-contain rounded-xl border bg-card shadow-sm transition-opacity",
-                    isValidating && !data && "opacity-60",
-                )}
-            >
-                {viewMode === "people" ? (
-                    <PeopleGrid
-                        week={week}
-                        view={peopleView}
-                        people={people}
-                        search={search}
-                        onSearch={setSearch}
-                        collapsed={collapsed}
-                        onToggleSection={toggleSection}
-                        flashOpenRow={flashOpen}
-                        openRowRef={openRowRef}
-                    />
-                ) : (
-                    <PositionsGrid week={week} rows={positionRows} people={people} />
-                )}
-            </div>
+            <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+                <div
+                    aria-busy={isValidating || edits.busy}
+                    className={cn(
+                        "max-h-[calc(100vh-12rem)] min-h-[360px] overflow-auto overscroll-contain rounded-xl border bg-card shadow-sm transition-opacity",
+                        isValidating && !data && "opacity-60",
+                    )}
+                >
+                    {viewMode === "people" ? (
+                        <PeopleGrid
+                            week={week}
+                            view={peopleView}
+                            search={search}
+                            onSearch={setSearch}
+                            collapsed={collapsed}
+                            onToggleSection={toggleSection}
+                            flashOpenRow={flashOpen}
+                            openRowRef={openRowRef}
+                            editing={editing}
+                        />
+                    ) : (
+                        <PositionsGrid week={week} rows={positionRows} editing={editing} />
+                    )}
+                </div>
+                <DragOverlay dropAnimation={null}>{dragging ? <ChipGhost shift={dragging.shift} copy={copyMode} /> : null}</DragOverlay>
+            </DndContext>
 
             <p className="text-xs text-muted-foreground">
-                Times are {week.location.name}&apos;s local time ({week.location.timezone.replace(/_/g, " ")}).
+                Times are {week.location.name}&apos;s local time ({week.location.timezone.replace(/_/g, " ")}). Changes are drafts until
+                published. Press ? for shortcuts.
             </p>
 
+            <QuickCreate
+                week={week}
+                target={quickCreate}
+                lastRange={lastRange}
+                onClose={() => setQuickCreate(null)}
+                onCreate={(plan, typed) => {
+                    setQuickCreate(null);
+                    setLastRange(typed);
+                    runPlan(plan);
+                }}
+            />
+            <ShiftDrawer week={week} shiftId={openShiftId} onClose={() => setOpenShiftId(null)} run={(plan) => edits.run(plan)} />
+            <ConflictDialog conflict={edits.conflict} />
             <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
+            <CopyWeekDialog week={week} open={copyWeekOpen} onOpenChange={setCopyWeekOpen} run={(plan, options) => edits.run(plan, options)} />
+            <TemplateDialog week={week} open={templateOpen} onOpenChange={setTemplateOpen} run={(plan) => edits.run(plan)} />
+            <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Discard unpublished changes?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Deletes this week&apos;s drafts at {week.location.name} and puts published shifts back the way staff see them.
+                            Other weeks and locations aren&apos;t touched. This can&apos;t be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Keep them</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => void discard()}>Discard</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

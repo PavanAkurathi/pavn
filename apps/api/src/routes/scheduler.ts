@@ -8,6 +8,11 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import {
+    SchedulerChangesInputSchema,
+    SchedulerChangesResultSchema,
+    SchedulerDiscardResultSchema,
+    SchedulerTemplateSchema,
+    SchedulerWeekScopeSchema,
     DepartmentIdParamSchema,
     DepartmentInputSchema,
     DepartmentUpdateSchema,
@@ -19,6 +24,9 @@ import {
     UpdateSchedulingSettingsSchema,
 } from "@repo/contracts/scheduler";
 import {
+    applySchedulerChanges,
+    discardSchedulerWeek,
+    listShiftTemplates,
     applySchedulingSetup,
     createDepartment,
     deleteDepartment,
@@ -62,11 +70,78 @@ schedulerRouter.openapi(getWeekRoute, async (c) => {
     return jsonOk(c, week);
 });
 
+const json = <T extends z.ZodTypeAny>(schema: T) => ({ content: { "application/json": { schema } } });
+
+// =============================================================================
+// Editing: one endpoint for every grid action, so each is atomic and undoable.
+// =============================================================================
+
+const changesRoute = createRoute({
+    method: "post",
+    path: "/changes",
+    summary: "Apply Scheduler changes",
+    description:
+        "Create, update, delete and assign shifts in one transaction. New shifts are drafts; changes to published " +
+        "shifts are staged until the week is published. Answers with the changes that undo the batch. Putting someone " +
+        "where they are double-booked or on approved time off is a 409 unless `force` is set, which is audited.",
+    request: { body: { ...json(SchedulerChangesInputSchema), required: true } },
+    responses: {
+        200: { ...json(SchedulerChangesResultSchema), description: "Applied" },
+        400: { description: "Invalid change" },
+        403: { description: "Managers only" },
+        404: { description: "Shift, person, location or event not found in this organization" },
+        409: { description: "Blocking conflict, capacity, or a shift that has already started" },
+    },
+});
+
+schedulerRouter.openapi(changesRoute, async (c) => {
+    const result = await applySchedulerChanges({ orgId: c.get("orgId"), actorId: c.get("user")?.id ?? "unknown", body: c.req.valid("json") });
+    return jsonOk(c, result);
+});
+
+const discardRoute = createRoute({
+    method: "post",
+    path: "/week/discard",
+    summary: "Discard unpublished changes for one week at one location",
+    request: { body: { ...json(SchedulerWeekScopeSchema), required: true } },
+    responses: {
+        200: { ...json(SchedulerDiscardResultSchema), description: "What was thrown away" },
+        403: { description: "Managers only" },
+        404: { description: "Location not found" },
+    },
+});
+
+schedulerRouter.openapi(discardRoute, async (c) => {
+    return jsonOk(c, await discardSchedulerWeek({ orgId: c.get("orgId"), body: c.req.valid("json") }));
+});
+
+const templatesRoute = createRoute({
+    method: "get",
+    path: "/templates",
+    summary: "Shift templates for a location",
+    request: { query: z.object({ locationId: z.string().min(1) }) },
+    responses: {
+        200: { ...json(z.array(SchedulerTemplateSchema)), description: "Templates" },
+        403: { description: "Managers only" },
+    },
+});
+
+schedulerRouter.openapi(templatesRoute, async (c) => {
+    const { locationId } = c.req.valid("query");
+    const templates = await listShiftTemplates(c.get("orgId"));
+    return jsonOk(
+        c,
+        templates
+            .filter((t) => t.locationId === locationId)
+            .map(({ id, name, locationId: loc, startTime, endTime, positions, headcount }) => ({
+                id, name, locationId: loc, startTime, endTime, positions, headcount,
+            })),
+    );
+});
+
 // =============================================================================
 // Setup and settings. Managers read them; changing them is for admins.
 // =============================================================================
-
-const json = <T extends z.ZodTypeAny>(schema: T) => ({ content: { "application/json": { schema } } });
 
 const getSettingsRoute = createRoute({
     method: "get",

@@ -181,6 +181,122 @@ export const SchedulerWeekSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Editing: every grid action is a batch of small changes, applied atomically.
+// Each batch answers with the changes that undo it, so undo and redo work the
+// same way for every action.
+// ---------------------------------------------------------------------------
+
+/** Shift ids for new shifts are made by the client so later changes in the same batch can refer to them. */
+export const NewShiftIdSchema = z.string().regex(/^shf_[0-9A-Za-z]{16}$/, "Expected a shift id like shf_0123456789abcdef");
+
+export const SchedulerPersonRefSchema = z.object({
+    personId: z.string().min(1),
+    kind: AssignedWorkerKindSchema,
+});
+
+const RoleSchema = z.string().trim().min(1, "Pick a role").max(60);
+const CapacitySchema = z.number().int().min(1, "At least one person").max(200);
+const BreakSchema = z.number().int().min(0).max(240);
+const NoteSchema = z.string().trim().max(1000).nullable();
+
+export const SchedulerShiftFieldsSchema = z.object({
+    locationId: z.string().min(1),
+    localDate: LocalDateSchema,
+    /** Wall-clock start; an end at or before it means the next day. */
+    startLocal: LocalTimeSchema,
+    endLocal: LocalTimeSchema,
+    role: RoleSchema,
+    capacity: CapacitySchema.default(1),
+    /** Unpaid break. Defaults to 30 minutes for shifts over 6 hours. */
+    breakMinutes: BreakSchema.optional(),
+    /** Shown to staff. */
+    note: NoteSchema.optional(),
+    /** Only managers see it. */
+    managerNote: NoteSchema.optional(),
+    eventId: z.string().nullable().optional(),
+});
+
+export const SchedulerShiftPatchSchema = z.object({
+    localDate: LocalDateSchema.optional(),
+    startLocal: LocalTimeSchema.optional(),
+    endLocal: LocalTimeSchema.optional(),
+    role: RoleSchema.optional(),
+    capacity: CapacitySchema.optional(),
+    breakMinutes: BreakSchema.optional(),
+    note: NoteSchema.optional(),
+    managerNote: NoteSchema.optional(),
+    eventId: z.string().nullable().optional(),
+    /** Stage (true) or un-stage (false) the removal of a published shift. */
+    cancel: z.boolean().optional(),
+}).strict();
+
+export const SchedulerChangeSchema = z.discriminatedUnion("op", [
+    z.object({
+        op: z.literal("create"),
+        shiftId: NewShiftIdSchema,
+        shift: SchedulerShiftFieldsSchema,
+        assignees: z.array(SchedulerPersonRefSchema).default([]),
+    }),
+    z.object({ op: z.literal("update"), shiftId: z.string().min(1), patch: SchedulerShiftPatchSchema }),
+    /** A draft is deleted; a published shift is staged for removal until the week is published. */
+    z.object({ op: z.literal("delete"), shiftId: z.string().min(1) }),
+    /** Sets exactly who is on the shift. On a published shift the difference is staged. */
+    z.object({ op: z.literal("assign"), shiftId: z.string().min(1), assignees: z.array(SchedulerPersonRefSchema) }),
+]);
+
+export const SchedulerChangesInputSchema = z.object({
+    changes: z.array(SchedulerChangeSchema).min(1).max(300),
+    /** Save even if someone would be double-booked or on approved time off. Audited. */
+    force: z.boolean().default(false),
+});
+
+export const SchedulerBlockingConflictSchema = z.object({
+    shiftId: z.string(),
+    personId: z.string(),
+    personName: z.string(),
+    messages: z.array(z.string()),
+});
+
+export const SchedulerChangesResultSchema = z.object({
+    /** Apply these, in order, to undo the batch. */
+    undo: z.array(SchedulerChangeSchema),
+    /** Blocking conflicts saved anyway because `force` was set. */
+    overridden: z.array(SchedulerBlockingConflictSchema),
+});
+
+export const SchedulerWeekScopeSchema = z.object({
+    locationId: z.string().min(1),
+    /** Any date in the week. */
+    weekStart: LocalDateSchema,
+});
+
+export const SchedulerDiscardResultSchema = z.object({
+    deletedDrafts: z.number().int(),
+    revertedShifts: z.number().int(),
+    revertedAssignments: z.number().int(),
+});
+
+export const SchedulerTemplateSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    locationId: z.string(),
+    startTime: LocalTimeSchema,
+    endTime: LocalTimeSchema,
+    positions: z.array(z.object({ roleName: z.string(), headcount: z.number().int() })),
+    headcount: z.number().int(),
+});
+
+export type SchedulerPersonRef = z.infer<typeof SchedulerPersonRefSchema>;
+export type SchedulerShiftFields = z.input<typeof SchedulerShiftFieldsSchema>;
+export type SchedulerShiftPatch = z.infer<typeof SchedulerShiftPatchSchema>;
+export type SchedulerChange = z.input<typeof SchedulerChangeSchema>;
+export type SchedulerChangesInput = z.input<typeof SchedulerChangesInputSchema>;
+export type SchedulerBlockingConflict = z.infer<typeof SchedulerBlockingConflictSchema>;
+export type SchedulerChangesResult = z.input<typeof SchedulerChangesResultSchema>;
+export type SchedulerDiscardResult = z.infer<typeof SchedulerDiscardResultSchema>;
+export type SchedulerTemplate = z.infer<typeof SchedulerTemplateSchema>;
+
+// ---------------------------------------------------------------------------
 // Setup: the three onboarding answers, the settings they seed, departments
 // ---------------------------------------------------------------------------
 
