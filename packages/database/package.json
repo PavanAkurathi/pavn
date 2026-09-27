@@ -17,6 +17,12 @@
             "bun": "./src/schema.ts",
             "import": "./src/schema.ts",
             "default": "./src/schema.ts"
+        },
+        "./scheduling": {
+            "types": "./src/scheduling.ts",
+            "bun": "./src/scheduling.ts",
+            "import": "./src/scheduling.ts",
+            "default": "./src/scheduling.ts"
         }
     },
     "scripts": {

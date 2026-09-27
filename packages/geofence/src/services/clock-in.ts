@@ -1,6 +1,7 @@
 // packages/geofence/src/services/clock-in.ts
 
 import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
+import { visibleToStaff } from "@repo/database/scheduling";
 import { shift, shiftAssignment, workerLocation, organization, location } from "@repo/database/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -77,7 +78,7 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
         with: {
             location: true,
             assignments: {
-                where: eq(shiftAssignment.workerId, workerId),
+                where: and(eq(shiftAssignment.workerId, workerId), visibleToStaff()),
                 with: { worker: true }
             }
         }

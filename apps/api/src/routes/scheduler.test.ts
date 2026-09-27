@@ -45,6 +45,8 @@ mock.module("@repo/scheduling-timekeeping", () => ({
     updateDepartment: record("updateDepartment", settings.departments[0]),
     deleteDepartment: record("deleteDepartment", { id: "dep_1" }),
     applySchedulerChanges: record("applySchedulerChanges", { undo: [], overridden: [] }),
+    previewSchedulerPublish: record("previewSchedulerPublish", { newShifts: 1 }),
+    publishSchedulerWeek: record("publishSchedulerWeek", { newShifts: 1, publishedAt: "2027-02-01T00:00:00.000Z" }),
     discardSchedulerWeek: record("discardSchedulerWeek", { deletedDrafts: 1, revertedShifts: 0, revertedAssignments: 0 }),
     listShiftTemplates: record("listShiftTemplates", [
         { id: "tpl_1", name: "Dinner", locationId: "loc_dt", locationName: "Downtown", startTime: "16:00", endTime: "23:00", positions: [{ roleName: "Server", headcount: 3 }], headcount: 3 },
@@ -201,5 +203,40 @@ describe("editing", () => {
     test("templates are listed for the location in view", async () => {
         const response = await appAs("manager").request("/scheduler/templates?locationId=loc_dt");
         expect((await response.json()).map((t: { id: string }) => t.id)).toEqual(["tpl_1"]);
+    });
+});
+
+describe("publishing", () => {
+    beforeEach(() => {
+        settingsCalls.length = 0;
+    });
+
+    test("the preview reads one week at one location", async () => {
+        const response = await appAs("manager").request("/scheduler/week/publish-preview?locationId=loc_dt&weekStart=2027-02-03");
+        expect(response.status).toBe(200);
+        expect(settingsCalls[0]).toEqual({ fn: "previewSchedulerPublish", args: [{ orgId: "org_1", body: { locationId: "loc_dt", weekStart: "2027-02-03" } }] });
+    });
+
+    test("publishing passes the acting manager and defaults force to false", async () => {
+        const response = await appAs("manager").request("/scheduler/week/publish", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ locationId: "loc_dt", weekStart: "2027-02-03" }),
+        });
+        expect(response.status).toBe(200);
+        expect(settingsCalls[0]!.args[0]).toEqual({
+            orgId: "org_1",
+            actorId: "user_1",
+            body: { locationId: "loc_dt", weekStart: "2027-02-03", force: false },
+        });
+    });
+
+    test("staff can't publish", async () => {
+        const response = await appAs("member").request("/scheduler/week/publish", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ locationId: "loc_dt", weekStart: "2027-02-03" }),
+        });
+        expect(response.status).toBe(403);
     });
 });

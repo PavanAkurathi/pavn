@@ -1,6 +1,7 @@
 // packages/scheduling-timekeeping/src/modules/time-tracking/worker-all-shifts.ts
 
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
+import { visibleToStaff } from "@repo/database/scheduling";
 import { shift, shiftAssignment, location, organization, member } from "@repo/database/schema";
 import { eq, and, inArray, gt, lte, or, asc, desc, ne, sql } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
@@ -59,6 +60,7 @@ export const getWorkerAllShifts = async (
     const conditions: any[] = [
         eq(shiftAssignment.workerId, workerId),
         ne(shiftAssignment.status, 'removed'),
+        visibleToStaff(),
         inArray(shift.organizationId, orgIds),
     ];
 

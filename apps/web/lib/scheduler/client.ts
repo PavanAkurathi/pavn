@@ -3,6 +3,8 @@ import type {
     SchedulerChange,
     SchedulerChangesResult,
     SchedulerDiscardResult,
+    SchedulerPublishPreview,
+    SchedulerPublishResult,
     SchedulerTemplate,
     SchedulerWeek,
 } from "@repo/contracts/scheduler";
@@ -61,4 +63,12 @@ export function blockingConflictsOf(error: unknown): SchedulerBlockingConflict[]
     if (!(error instanceof SchedulerRequestError) || error.code !== "SCHEDULE_CONFLICT") return null;
     const conflicts = (error.details as { conflicts?: SchedulerBlockingConflict[] } | undefined)?.conflicts;
     return Array.isArray(conflicts) ? conflicts : null;
+}
+
+export function fetchPublishPreview([, locationId, weekStart]: readonly [string, string, string]): Promise<SchedulerPublishPreview> {
+    return request<SchedulerPublishPreview>(`week/publish-preview?${new URLSearchParams({ locationId, weekStart })}`);
+}
+
+export function publishWeek(locationId: string, weekStart: string, force: boolean): Promise<SchedulerPublishResult> {
+    return request<SchedulerPublishResult>("week/publish", { method: "POST", body: JSON.stringify({ locationId, weekStart, force }) });
 }

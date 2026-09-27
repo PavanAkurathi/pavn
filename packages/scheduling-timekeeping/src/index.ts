@@ -45,6 +45,7 @@ export {
     discardSchedulerWeek,
     shiftInstants,
 } from "./modules/scheduler/changes";
+export { previewSchedulerPublish, publishSchedulerWeek } from "./modules/scheduler/publish-week";
 export {
     applySchedulingSetup,
     canonicalDepartmentRoles,

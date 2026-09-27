@@ -35,6 +35,7 @@ import { ALL_DEPARTMENTS, buildPeopleView, buildPositionsView, type ViewMode } f
 import { getSchedulerHref } from "@/lib/routes";
 import { ConflictDialog } from "./conflict-dialog";
 import { HelpDialog } from "./help-dialog";
+import { PublishDialog } from "./publish-dialog";
 import { QuickCreate, type QuickCreateTarget } from "./quick-create";
 import { ChipGhost } from "./shift-chip";
 import { ShiftDrawer } from "./shift-drawer";
@@ -75,6 +76,7 @@ export function Scheduler({
     const [copyWeekOpen, setCopyWeekOpen] = useState(false);
     const [templateOpen, setTemplateOpen] = useState(false);
     const [discardOpen, setDiscardOpen] = useState(false);
+    const [publishOpen, setPublishOpen] = useState(false);
     const openRowRef = useRef<HTMLDivElement | null>(null);
 
     const key = weekKey(locationId, weekParam);
@@ -280,6 +282,7 @@ export function Scheduler({
                     onTemplate: () => setTemplateOpen(true),
                     onDiscard: () => setDiscardOpen(true),
                 }}
+                onPublish={() => setPublishOpen(true)}
             />
 
             {error ? (
@@ -332,8 +335,8 @@ export function Scheduler({
             </DndContext>
 
             <p className="text-xs text-muted-foreground">
-                Times are {week.location.name}&apos;s local time ({week.location.timezone.replace(/_/g, " ")}). Changes are drafts until
-                published. Press ? for shortcuts.
+                Times are {week.location.name}&apos;s local time ({week.location.timezone.replace(/_/g, " ")}). Changes stay drafts until you
+                publish. Press ? for shortcuts.
             </p>
 
             <QuickCreate
@@ -350,6 +353,17 @@ export function Scheduler({
             <ShiftDrawer week={week} shiftId={openShiftId} onClose={() => setOpenShiftId(null)} run={(plan) => edits.run(plan)} />
             <ConflictDialog conflict={edits.conflict} />
             <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
+            <PublishDialog
+                week={week}
+                open={publishOpen}
+                onOpenChange={setPublishOpen}
+                onPublished={async () => {
+                    // Undo can't reach past what staff have already been told.
+                    edits.reset();
+                    await mutate();
+                }}
+                onReview={(shiftId) => setOpenShiftId(shiftId)}
+            />
             <CopyWeekDialog week={week} open={copyWeekOpen} onOpenChange={setCopyWeekOpen} run={(plan, options) => edits.run(plan, options)} />
             <TemplateDialog week={week} open={templateOpen} onOpenChange={setTemplateOpen} run={(plan) => edits.run(plan)} />
             <AlertDialog open={discardOpen} onOpenChange={setDiscardOpen}>

@@ -1,6 +1,7 @@
 // packages/geofence/src/services/ingest-location.ts
 
 import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
+import { visibleToStaff } from "@repo/database/scheduling";
 import { workerLocation, shiftAssignment, shift, member, location, organization } from "@repo/database/schema";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
@@ -58,7 +59,8 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
         .where(and(
             eq(shiftAssignment.workerId, workerId),
             eq(shift.organizationId, orgId),
-            inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress'])
+            inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress']),
+            visibleToStaff(),
         ))
         .orderBy(desc(shift.startTime));
 

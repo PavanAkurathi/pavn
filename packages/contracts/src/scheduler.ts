@@ -286,6 +286,43 @@ export const SchedulerTemplateSchema = z.object({
     headcount: z.number().int(),
 });
 
+export const SchedulerPublishInputSchema = SchedulerWeekScopeSchema.extend({
+    /** Publish even with double-bookings or approved time off still in the week. Audited. */
+    force: z.boolean().default(false),
+});
+
+export const SchedulerPublishPersonSchema = z.object({
+    personId: z.string(),
+    kind: AssignedWorkerKindSchema,
+    name: z.string(),
+    added: z.number().int(),
+    changed: z.number().int(),
+    removed: z.number().int(),
+});
+
+/** What publishing this week at this location would do, and to whom. */
+export const SchedulerPublishPreviewSchema = z.object({
+    newShifts: z.number().int(),
+    changedShifts: z.number().int(),
+    removedShifts: z.number().int(),
+    /** App users who get one message each about their own changes. */
+    notify: z.array(SchedulerPublishPersonSchema),
+    /** Invited and agency people have no app to reach; the manager tells them. */
+    unreachable: z.array(SchedulerPublishPersonSchema),
+    /** Open spots staff can see (and, later, claim) once published. */
+    openSlots: z.number().int(),
+    conflicts: z.array(SchedulerBlockingConflictSchema),
+    /** Drafts that already ended; they stay drafts. */
+    expiredDrafts: z.number().int(),
+});
+
+export const SchedulerPublishResultSchema = SchedulerPublishPreviewSchema.extend({
+    publishedAt: z.string().datetime(),
+});
+
+export type SchedulerPublishPerson = z.infer<typeof SchedulerPublishPersonSchema>;
+export type SchedulerPublishPreview = z.infer<typeof SchedulerPublishPreviewSchema>;
+export type SchedulerPublishResult = z.infer<typeof SchedulerPublishResultSchema>;
 export type SchedulerPersonRef = z.infer<typeof SchedulerPersonRefSchema>;
 export type SchedulerShiftFields = z.input<typeof SchedulerShiftFieldsSchema>;
 export type SchedulerShiftPatch = z.infer<typeof SchedulerShiftPatchSchema>;

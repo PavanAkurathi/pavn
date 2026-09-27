@@ -14,7 +14,7 @@ import {
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import { SUBSCRIPTION } from "@repo/config";
-import { getCreateScheduleHref, getRosterHref } from "@/lib/routes";
+import { getSchedulerHref, getRosterHref } from "@/lib/routes";
 
 export function FirstShiftStep({
     hasDraftShift,
@@ -55,7 +55,7 @@ export function FirstShiftStep({
             </CardContent>
             <CardFooter className="flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                    <Link href={getCreateScheduleHref()}>
+                    <Link href={getSchedulerHref()}>
                         {hasDraftShift ? "Continue draft schedule" : "Create your first schedule"}
                         <ArrowRight data-icon="inline-end" />
                     </Link>

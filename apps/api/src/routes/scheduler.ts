@@ -8,6 +8,9 @@
 
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import {
+    SchedulerPublishInputSchema,
+    SchedulerPublishPreviewSchema,
+    SchedulerPublishResultSchema,
     SchedulerChangesInputSchema,
     SchedulerChangesResultSchema,
     SchedulerDiscardResultSchema,
@@ -24,6 +27,8 @@ import {
     UpdateSchedulingSettingsSchema,
 } from "@repo/contracts/scheduler";
 import {
+    previewSchedulerPublish,
+    publishSchedulerWeek,
     applySchedulerChanges,
     discardSchedulerWeek,
     listShiftTemplates,
@@ -113,6 +118,44 @@ const discardRoute = createRoute({
 
 schedulerRouter.openapi(discardRoute, async (c) => {
     return jsonOk(c, await discardSchedulerWeek({ orgId: c.get("orgId"), body: c.req.valid("json") }));
+});
+
+const publishPreviewRoute = createRoute({
+    method: "get",
+    path: "/week/publish-preview",
+    summary: "What publishing this week would do",
+    description: "New, changed and removed shifts; who gets a message; who can't be reached; open spots; conflicts left.",
+    request: { query: SchedulerWeekScopeSchema },
+    responses: {
+        200: { ...json(SchedulerPublishPreviewSchema), description: "Preview" },
+        403: { description: "Managers only" },
+        404: { description: "Location not found" },
+    },
+});
+
+schedulerRouter.openapi(publishPreviewRoute, async (c) => {
+    return jsonOk(c, await previewSchedulerPublish({ orgId: c.get("orgId"), body: c.req.valid("query") }));
+});
+
+const publishRoute = createRoute({
+    method: "post",
+    path: "/week/publish",
+    summary: "Publish one week at one location",
+    description:
+        "Drafts go live, staged edits and people changes apply, staged removals cancel, and each affected person gets " +
+        "one message. A 409 lists anyone still double-booked or on approved time off unless `force` is set (audited).",
+    request: { body: { ...json(SchedulerPublishInputSchema), required: true } },
+    responses: {
+        200: { ...json(SchedulerPublishResultSchema), description: "Published" },
+        403: { description: "Managers only" },
+        404: { description: "Location not found" },
+        409: { description: "Unresolved conflicts" },
+    },
+});
+
+schedulerRouter.openapi(publishRoute, async (c) => {
+    const result = await publishSchedulerWeek({ orgId: c.get("orgId"), actorId: c.get("user")?.id ?? "unknown", body: c.req.valid("json") });
+    return jsonOk(c, result);
 });
 
 const templatesRoute = createRoute({

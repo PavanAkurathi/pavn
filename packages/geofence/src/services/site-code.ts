@@ -1,4 +1,5 @@
 import { db } from "@repo/database";
+import { visibleToStaff } from "@repo/database/scheduling";
 import { shift, shiftAssignment, rateLimitState } from "@repo/database/schema";
 import { and, eq, or, sql } from "drizzle-orm";
 import { randomInt } from "crypto";
@@ -109,6 +110,7 @@ export const clockInWithSiteCode = async (data: unknown, workerId: string, orgId
         where: and(
             eq(shiftAssignment.shiftId, shiftId),
             or(eq(shiftAssignment.workerId, workerId), eq(shiftAssignment.rosterEntryId, workerId)),
+            visibleToStaff(),
         ),
     });
 

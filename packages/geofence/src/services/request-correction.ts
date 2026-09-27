@@ -1,6 +1,7 @@
 // packages/geofence/src/services/request-correction.ts
 
 import { db } from "@repo/database";
+import { visibleToStaff } from "@repo/database/scheduling";
 import { timeCorrectionRequest, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
@@ -33,7 +34,8 @@ export const requestCorrection = async (data: any, workerId: string, orgId: stri
     const assignment = await db.query.shiftAssignment.findFirst({
         where: and(
             eq(shiftAssignment.id, shiftAssignmentId),
-            eq(shiftAssignment.workerId, workerId)
+            eq(shiftAssignment.workerId, workerId),
+            visibleToStaff(),
         ),
         with: { shift: true }
     });

@@ -4,13 +4,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@repo/ui/lib/utils";
-import { Button } from "@repo/ui/components/ui/button";
-import { Plus, Building2 } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { NavUser } from "./nav-user";
 import type { TrialState } from "@/lib/trial";
 import { NotificationsPopover } from "./notifications/notifications-popover";
 import {
-    getCreateScheduleHref,
     getDashboardShiftsHref,
     getSchedulerHref,
     isCreateSchedulePath,
@@ -113,13 +111,6 @@ export function NavHeader({ activeOrg: serverOrg, user, trial }: NavHeaderProps)
                             Trial · {trial.daysLeft} {trial.daysLeft === 1 ? "day" : "days"} left
                         </Link>
                     ) : null}
-
-                    <Link href={getCreateScheduleHref()}>
-                        <Button className="hidden sm:flex bg-slate-900 hover:bg-slate-800 text-white gap-2 font-medium" size="sm" data-testid="create-shift">
-                            <Plus className="w-4 h-4" />
-                            Create a schedule
-                        </Button>
-                    </Link>
 
                     <div className="h-6 w-px bg-slate-200 hidden sm:block" />
 

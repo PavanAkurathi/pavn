@@ -45,10 +45,9 @@ function subpathAliases(pkgDir) {
 // Build aliases for workspace packages - point to TypeScript source
 const aliases = {
     ...subpathAliases('packages/contracts'),
+    ...subpathAliases('packages/database'),
     '@repo/auth': join(monorepoRoot, 'packages/auth/src/index.ts'),
     '@repo/auth/client': join(monorepoRoot, 'packages/auth/src/client.ts'),
-    '@repo/database': join(monorepoRoot, 'packages/database/src/index.ts'),
-    '@repo/database/schema': join(monorepoRoot, 'packages/database/src/schema.ts'),
     '@repo/config': join(monorepoRoot, 'packages/config/src/index.ts'),
     '@repo/config/cors': join(monorepoRoot, 'packages/config/src/cors.ts'),
     '@repo/contracts': join(monorepoRoot, 'packages/contracts/src/index.ts'),

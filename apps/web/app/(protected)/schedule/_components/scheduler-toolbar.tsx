@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@repo/ui/lib/utils";
 import { weekRangeLabel } from "@/lib/scheduler/format";
 import { ALL_DEPARTMENTS, type ViewMode } from "@/lib/scheduler/view-model";
-import { getDashboardShiftsHref } from "@/lib/routes";
 
 export function SchedulerToolbar({
     week,
@@ -36,6 +35,7 @@ export function SchedulerToolbar({
     busy,
     history,
     tools,
+    onPublish,
 }: {
     week: SchedulerWeek;
     locations: { id: string; name: string }[];
@@ -52,6 +52,7 @@ export function SchedulerToolbar({
     busy: boolean;
     history: { canUndo: boolean; canRedo: boolean; undoLabel?: string; onUndo: () => void; onRedo: () => void };
     tools: { onCopyWeek: () => void; onTemplate: () => void; onDiscard: () => void };
+    onPublish: () => void;
 }) {
     const isThisWeek = week.days.some((d) => d.isToday);
     const today = week.days.find((d) => d.isToday)?.localDate;
@@ -162,14 +163,6 @@ export function SchedulerToolbar({
                         {pendingRequestCount} {pendingRequestCount === 1 ? "request" : "requests"}
                     </span>
                 ) : null}
-                {pendingChangeCount > 0 ? (
-                    <Button asChild variant="outline" size="sm" className="h-9">
-                        <Link href={getDashboardShiftsHref()}>
-                            {pendingChangeCount} unpublished · Review
-                        </Link>
-                    </Button>
-                ) : null}
-
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" size="icon" className="size-9" aria-label="More">
@@ -199,6 +192,14 @@ export function SchedulerToolbar({
                         <DropdownMenuItem onSelect={onHelp}>Help and shortcuts</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+                <Button
+                    className="h-9"
+                    disabled={pendingChangeCount === 0}
+                    onClick={onPublish}
+                    title={pendingChangeCount === 0 ? "Nothing to publish" : undefined}
+                >
+                    Publish{pendingChangeCount > 0 ? ` ${pendingChangeCount}` : ""}
+                </Button>
             </div>
         </div>
     );

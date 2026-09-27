@@ -1,4 +1,5 @@
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
+import { visibleToStaff } from "@repo/database/scheduling";
 import { shift, shiftAssignment, location, organization } from "@repo/database/schema";
 import { eq, and, inArray, gt, lte, or, asc, desc, sql } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
@@ -27,7 +28,8 @@ export const getWorkerShifts = async (
 
     const conditions = [
         eq(shiftAssignment.workerId, workerId),
-        eq(shift.organizationId, orgId)
+        eq(shift.organizationId, orgId),
+        visibleToStaff(),
     ];
 
     if (status === 'upcoming') {
@@ -121,6 +123,7 @@ export const getWorkerShiftById = async (
             eq(shiftAssignment.workerId, workerId),
             eq(shift.id, shiftId),
             eq(shift.organizationId, orgId),
+            visibleToStaff(),
         ))
         .limit(1);
 

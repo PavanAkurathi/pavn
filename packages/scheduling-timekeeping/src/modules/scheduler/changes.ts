@@ -51,11 +51,11 @@ import { startOfLocalWeek, weekBounds } from "../../domain/week";
 import { newId } from "../../utils/ids";
 import { addDaysToLocalDate, combineDateTimeTz, localDateInZone, localTimeInZone } from "../../utils/zoned-time";
 
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 /** Statuses the Scheduler may change. Started or finished shifts belong to timesheets. */
-const EDITABLE = new Set(["draft", "published", "open", "assigned"]);
-const DEAD_ASSIGNMENT = new Set(["removed", "cancelled"]);
+export const EDITABLE = new Set(["draft", "published", "open", "assigned"]);
+export const DEAD_ASSIGNMENT = new Set(["removed", "cancelled"]);
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function parse<T>(schema: ZodType<T>, input: unknown): T {
@@ -68,7 +68,7 @@ function parse<T>(schema: ZodType<T>, input: unknown): T {
 
 // ---- Shapes -------------------------------------------------------------------
 
-type AssignmentRow = {
+export type AssignmentRow = {
     id: string;
     workerId: string | null;
     tempWorkerId: string | null;
@@ -77,7 +77,7 @@ type AssignmentRow = {
     pendingState: string | null;
 };
 
-type ShiftRow = {
+export type ShiftRow = {
     id: string;
     locationId: string | null;
     title: string;
@@ -95,7 +95,7 @@ type ShiftRow = {
 };
 
 /** A shift as the manager sees it: the published row with staged edits on top. */
-function workingCopy(row: ShiftRow) {
+export function workingCopy(row: ShiftRow) {
     const p = row.pendingPatch ?? {};
     return {
         start: p.startTime ? new Date(p.startTime) : row.startTime,
@@ -111,7 +111,7 @@ function workingCopy(row: ShiftRow) {
 
 const keyOf = (ref: SchedulerPersonRef) => `${ref.kind}:${ref.personId}`;
 
-function refOf(a: AssignmentRow): SchedulerPersonRef | null {
+export function refOf(a: AssignmentRow): SchedulerPersonRef | null {
     if (a.workerId) return { personId: a.workerId, kind: "roster" };
     if (a.rosterEntryId) return { personId: a.rosterEntryId, kind: "invited" };
     if (a.tempWorkerId) return { personId: a.tempWorkerId, kind: "agency" };
@@ -209,7 +209,7 @@ export async function applySchedulerChanges(input: ApplySchedulerChangesInput): 
     return { undo, overridden };
 }
 
-interface Ctx {
+export interface Ctx {
     locationById: Map<string, { id: string; name: string; timezone: string | null }>;
     tzOf: (row: { timezone: string | null; locationId: string | null }) => string;
     added: { shiftId: string; ref: SchedulerPersonRef }[];
@@ -494,7 +494,7 @@ async function applyOne(tx: Tx, orgId: string, change: SchedulerChange, ctx: Ctx
 
 // ---- Conflicts ------------------------------------------------------------------
 
-async function findBlockingConflicts(
+export async function findBlockingConflicts(
     tx: Tx,
     orgId: string,
     added: { shiftId: string; ref: SchedulerPersonRef }[],
