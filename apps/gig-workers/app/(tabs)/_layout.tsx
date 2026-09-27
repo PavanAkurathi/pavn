@@ -36,6 +36,24 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
+                name="open"
+                options={{
+                    title: "Open",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="flash-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
+                name="requests"
+                options={{
+                    title: "Requests",
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="swap-horizontal-outline" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen
                 name="profile"
                 options={{
                     title: "Profile",

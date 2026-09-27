@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, Linking, Platform, ScrollView, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -18,6 +19,7 @@ import { SectionTitle } from "../../../components/ui/section-title";
 import { WaysForward } from "../../../components/ui/ways-forward";
 import { SiteCodeEntry } from "../../../components/site-code-entry";
 import { api, WorkerShift } from "../../../lib/api";
+import { shiftWhen } from "../../../lib/request-format";
 import { useGeofence } from "../../../hooks/useGeofence";
 
 /**
@@ -239,6 +241,29 @@ export default function ShiftDetailScreen() {
         }
     };
 
+    const askToDrop = () => {
+        if (!shift) return;
+        Alert.alert(
+            "Ask to come off this shift?",
+            "Your manager decides. You're still on it until they say yes.",
+            [
+                { text: "Keep it", style: "cancel" },
+                {
+                    text: "Ask to drop",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const result = await api.requests.drop(shift.id);
+                            Toast.show({ type: "success", text1: result.message });
+                        } catch (error) {
+                            Toast.show({ type: "error", text1: error instanceof Error ? error.message : "Couldn't send that" });
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
     const openDirections = () => {
         if (!shift?.location.latitude || !shift?.location.longitude) return;
         const lat = shift.location.latitude;
@@ -423,6 +448,40 @@ export default function ShiftDetailScreen() {
                                 </Card.Body>
                             </Card>
                         </View>
+                    ) : null}
+
+                    {!isClockedIn && !isClockedOut && new Date(shift.startTime) > new Date() ? (
+                        <Card className="rounded-[28px]">
+                            <Card.Body className="gap-3 p-5">
+                                <Text className="text-sm font-semibold text-foreground">Can&apos;t make it?</Text>
+                                <Text className="text-sm leading-6 text-muted">
+                                    Offer it to a coworker, or ask your manager to take you off. You stay on it until someone says yes.
+                                </Text>
+                                <Button
+                                    variant="secondary"
+                                    onPress={() =>
+                                        router.push({
+                                            pathname: "/shift/[id]/swap",
+                                            params: {
+                                                id: shift.id,
+                                                title: shift.title,
+                                                when: shiftWhen({
+                                                    startTime: shift.startTime,
+                                                    endTime: shift.endTime,
+                                                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                                }),
+                                            },
+                                        })
+                                    }
+                                >
+                                    <Icon name="swap-horizontal-outline" size={16} className="text-foreground" />
+                                    <Button.Label>Offer to a coworker</Button.Label>
+                                </Button>
+                                <Button variant="secondary" onPress={askToDrop}>
+                                    <Button.Label>Ask to drop</Button.Label>
+                                </Button>
+                            </Card.Body>
+                        </Card>
                     ) : null}
 
                     {isClockedOut ? (

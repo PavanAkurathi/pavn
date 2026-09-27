@@ -3,6 +3,22 @@ import type {
     UpdateWorkerPreferences,
     WorkerPreferences,
 } from '@repo/contracts/preferences';
+import type {
+    OpenShiftsResponse,
+    SwapCandidatesResponse,
+    TimeOffCreated,
+    TimeOffInput,
+    WorkerRequestAction,
+    WorkerRequestResult,
+    WorkerRequestsResponse,
+} from '@repo/contracts/requests';
+
+export type {
+    OpenShift,
+    SwapCandidatesResponse,
+    WorkerRequest,
+    WorkerRequestResult,
+} from '@repo/contracts/requests';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -343,6 +359,62 @@ export const api = {
             const headers = await getAuthHeaders(true, orgId);
             return fetchJson(`${CONFIG.API_URL}/worker/adjustments`, {
                 method: 'POST', headers, body: JSON.stringify(data),
+            });
+        },
+    },
+
+    // -------------------------------------------------------------------------
+    // OPEN SHIFTS, REQUESTS, TIME OFF (cross-org: the server checks membership
+    // against each shift's own organization)
+    // -------------------------------------------------------------------------
+    requests: {
+        openShifts: async (): Promise<OpenShiftsResponse> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/open-shifts`, { headers });
+        },
+
+        list: async (): Promise<WorkerRequestsResponse> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/requests`, { headers });
+        },
+
+        claim: async (shiftId: string, note?: string): Promise<WorkerRequestResult> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/requests`, {
+                method: 'POST', headers, body: JSON.stringify({ type: 'claim', shiftId, note }),
+            });
+        },
+
+        drop: async (shiftId: string, note?: string): Promise<WorkerRequestResult> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/requests`, {
+                method: 'POST', headers, body: JSON.stringify({ type: 'drop', shiftId, note }),
+            });
+        },
+
+        swap: async (shiftId: string, targetWorkerId: string, note?: string): Promise<WorkerRequestResult> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/requests`, {
+                method: 'POST', headers, body: JSON.stringify({ type: 'swap', shiftId, targetWorkerId, note }),
+            });
+        },
+
+        act: async (id: string, action: WorkerRequestAction): Promise<WorkerRequestResult> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/requests/${encodeURIComponent(id)}/${action}`, {
+                method: 'POST', headers,
+            });
+        },
+
+        swapCandidates: async (shiftId: string): Promise<SwapCandidatesResponse> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/swap-candidates?${new URLSearchParams({ shiftId })}`, { headers });
+        },
+
+        timeOff: async (input: TimeOffInput): Promise<TimeOffCreated> => {
+            const headers = await getAuthHeaders(false);
+            return fetchJson(`${CONFIG.API_URL}/worker/time-off`, {
+                method: 'POST', headers, body: JSON.stringify(input),
             });
         },
     },
