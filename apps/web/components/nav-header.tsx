@@ -12,11 +12,13 @@ import { NotificationsPopover } from "./notifications/notifications-popover";
 import {
     getCreateScheduleHref,
     getDashboardShiftsHref,
+    getSchedulerHref,
     isCreateSchedulePath,
     isOnboardingPath,
 } from "@/lib/routes";
 
 const NAV_ITEMS = [
+    { label: "Schedule", href: getSchedulerHref() },
     { label: "Shifts", href: getDashboardShiftsHref() },
     { label: "Roster", href: "/rosters" },
     { label: "Reports", href: "/reports" },

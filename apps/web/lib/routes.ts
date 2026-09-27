@@ -19,6 +19,7 @@ function buildHref(pathname: string, params?: Record<string, QueryValue>) {
 }
 
 export const DASHBOARD_SHIFTS_PATH = "/dashboard/shifts";
+export const SCHEDULER_PATH = "/schedule";
 export const DASHBOARD_SCHEDULE_CREATE_PATH = "/dashboard/schedule/create";
 export const DASHBOARD_ONBOARDING_PATH = "/dashboard/onboarding";
 export const ROSTERS_PATH = "/rosters";
@@ -37,6 +38,22 @@ export function getDashboardShiftsHref(options?: {
         layout: options?.layout,
         week: options?.week,
     });
+}
+
+/** The weekly Scheduler. Omitted params mean the first location and its current week. */
+export function getSchedulerHref(options?: {
+    location?: string;
+    /** Any local date (YYYY-MM-DD) inside the week to open. */
+    week?: string;
+}) {
+    return buildHref(SCHEDULER_PATH, {
+        location: options?.location,
+        week: options?.week,
+    });
+}
+
+export function isSchedulerPath(pathname: string) {
+    return pathname === SCHEDULER_PATH || pathname.startsWith(`${SCHEDULER_PATH}/`);
 }
 
 export function getDashboardHistoryHref() {
@@ -112,6 +129,7 @@ export function isOnboardingExemptProtectedPath(pathname: string) {
     return (
         isOnboardingPath(pathname) ||
         isCreateSchedulePath(pathname) ||
+        isSchedulerPath(pathname) ||
         isRosterPath(pathname)
     );
 }
