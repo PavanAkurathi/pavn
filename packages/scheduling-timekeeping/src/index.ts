@@ -47,6 +47,15 @@ export {
 } from "./modules/scheduler/changes";
 export { previewSchedulerPublish, publishSchedulerWeek } from "./modules/scheduler/publish-week";
 export {
+    actOnRequest,
+    createShiftRequest,
+    createTimeOff,
+    listOpenShifts,
+    listSwapCandidates,
+    listWorkerRequests,
+} from "./modules/requests/worker";
+export { decideRequest, getRequestsSummary, listManagerRequests } from "./modules/requests/manager";
+export {
     applySchedulingSetup,
     canonicalDepartmentRoles,
     createDepartment,

@@ -27,6 +27,17 @@ import {
     UpdateSchedulingSettingsSchema,
 } from "@repo/contracts/scheduler";
 import {
+    DecideRequestInputSchema,
+    DecideRequestResultSchema,
+    ManagerRequestsQuerySchema,
+    ManagerRequestsResponseSchema,
+    RequestIdParamSchema,
+    RequestsSummarySchema,
+} from "@repo/contracts/requests";
+import {
+    decideRequest,
+    getRequestsSummary,
+    listManagerRequests,
     previewSchedulerPublish,
     publishSchedulerWeek,
     applySchedulerChanges,
@@ -308,3 +319,68 @@ schedulerRouter.openapi(deleteDepartmentRoute, async (c) => {
     const { id } = c.req.valid("param");
     return jsonOk(c, await deleteDepartment(c.get("orgId"), id));
 });
+
+// =============================================================================
+// REQUESTS (claims, drops, swaps, time off)
+// =============================================================================
+
+const listRequestsRoute = createRoute({
+    method: "get",
+    path: "/requests",
+    summary: "Requests waiting on a manager",
+    description:
+        "Claims, drops, swaps a coworker already accepted, and time off, newest first, each with what approving " +
+        "would do and anything that needs \"approve anyway\". `view=recent` lists the last two weeks' decisions instead.",
+    request: { query: ManagerRequestsQuerySchema },
+    responses: {
+        200: { ...json(ManagerRequestsResponseSchema), description: "Requests" },
+        403: { description: "Managers only" },
+    },
+});
+
+schedulerRouter.openapi(listRequestsRoute, async (c) => {
+    return jsonOk(c, await listManagerRequests({ orgId: c.get("orgId"), query: c.req.valid("query") }));
+});
+
+const requestsSummaryRoute = createRoute({
+    method: "get",
+    path: "/requests/summary",
+    summary: "How many requests are waiting",
+    responses: {
+        200: { ...json(RequestsSummarySchema), description: "Count" },
+        403: { description: "Managers only" },
+    },
+});
+
+schedulerRouter.openapi(requestsSummaryRoute, async (c) => {
+    return jsonOk(c, await getRequestsSummary({ orgId: c.get("orgId") }));
+});
+
+const decisionRoute = (decision: "approve" | "decline") =>
+    createRoute({
+        method: "post",
+        path: `/requests/{id}/${decision}`,
+        summary: decision === "approve" ? "Approve a request" : "Decline a request",
+        description:
+            decision === "approve"
+                ? "Applies it now: the person is put on or taken off the shift, or the time off is granted, and they're told. " +
+                  "A 409 names a double-booking or time off unless `force` is set (audited)."
+                : "Nothing changes on the schedule; the person is told, with the note if there is one.",
+        request: { params: RequestIdParamSchema, body: { ...json(DecideRequestInputSchema), required: true } },
+        responses: {
+            200: { ...json(DecideRequestResultSchema), description: "Decided" },
+            403: { description: "Managers only" },
+            404: { description: "Request not found" },
+            409: { description: "Already decided, shift started or full, or a conflict" },
+        },
+    });
+
+for (const decision of ["approve", "decline"] as const) {
+    schedulerRouter.openapi(decisionRoute(decision), async (c) => {
+        const { id } = c.req.valid("param");
+        return jsonOk(
+            c,
+            await decideRequest({ orgId: c.get("orgId"), actorId: c.get("user")?.id ?? "unknown", id, decision, body: c.req.valid("json") }),
+        );
+    });
+}

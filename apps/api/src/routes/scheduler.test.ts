@@ -47,6 +47,15 @@ mock.module("@repo/scheduling-timekeeping", () => ({
     applySchedulerChanges: record("applySchedulerChanges", { undo: [], overridden: [] }),
     previewSchedulerPublish: record("previewSchedulerPublish", { newShifts: 1 }),
     publishSchedulerWeek: record("publishSchedulerWeek", { newShifts: 1, publishedAt: "2027-02-01T00:00:00.000Z" }),
+    listManagerRequests: record("listManagerRequests", { requests: [], pendingCount: 0 }),
+    getRequestsSummary: record("getRequestsSummary", { pending: 2 }),
+    decideRequest: (input: { id: string; decision: string; body: { force?: boolean } }) => {
+        settingsCalls.push({ fn: "decideRequest", args: [input] });
+        if (input.id === "req_conflict" && !input.body.force) {
+            return Promise.reject(new AppError("Ana: Already on Tue 4p–11p Server", "SCHEDULE_CONFLICT", 409, { conflicts: ["Already on Tue 4p–11p Server"] }));
+        }
+        return Promise.resolve({ id: input.id, status: input.decision === "approve" ? "approved" : "declined" });
+    },
     discardSchedulerWeek: record("discardSchedulerWeek", { deletedDrafts: 1, revertedShifts: 0, revertedAssignments: 0 }),
     listShiftTemplates: record("listShiftTemplates", [
         { id: "tpl_1", name: "Dinner", locationId: "loc_dt", locationName: "Downtown", startTime: "16:00", endTime: "23:00", positions: [{ roleName: "Server", headcount: 3 }], headcount: 3 },
@@ -238,5 +247,56 @@ describe("publishing", () => {
             body: JSON.stringify({ locationId: "loc_dt", weekStart: "2027-02-03" }),
         });
         expect(response.status).toBe(403);
+    });
+});
+
+describe("/scheduler/requests", () => {
+    beforeEach(() => {
+        settingsCalls.length = 0;
+    });
+
+    test("lists and counts for the caller's organization, managers only", async () => {
+        const list = await appAs("manager").request("/scheduler/requests?view=recent");
+        expect(list.status).toBe(200);
+        expect(settingsCalls[0]).toEqual({ fn: "listManagerRequests", args: [{ orgId: "org_1", query: { view: "recent" } }] });
+        expect(await (await appAs("manager").request("/scheduler/requests/summary")).json()).toEqual({ pending: 2 });
+        expect((await appAs("member").request("/scheduler/requests")).status).toBe(403);
+    });
+
+    test("approve and decline pass who decided", async () => {
+        const post = (path: string, body: unknown) =>
+            appAs("manager").request(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+        expect(await (await post("/scheduler/requests/req_abc/approve", {})).json()).toEqual({ id: "req_abc", status: "approved" });
+        expect(await (await post("/scheduler/requests/tor_abc/decline", { note: "Short-staffed that week" })).json()).toEqual({
+            id: "tor_abc",
+            status: "declined",
+        });
+        expect(settingsCalls.map((c) => c.args[0])).toEqual([
+            { orgId: "org_1", actorId: "user_1", id: "req_abc", decision: "approve", body: { force: false } },
+            { orgId: "org_1", actorId: "user_1", id: "tor_abc", decision: "decline", body: { note: "Short-staffed that week", force: false } },
+        ]);
+    });
+
+    test("a conflict comes back as a 409 with the reasons, and force gets past it", async () => {
+        const post = (body: unknown) =>
+            appAs("manager").request("/scheduler/requests/req_conflict/approve", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify(body),
+            });
+        const blocked = await post({});
+        expect(blocked.status).toBe(409);
+        expect(JSON.stringify(await blocked.json())).toContain("Already on Tue 4p–11p Server");
+        expect((await post({ force: true })).status).toBe(200);
+    });
+
+    test("unknown request ids are rejected before any work", async () => {
+        const response = await appAs("manager").request("/scheduler/requests/shf_1/approve", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: "{}",
+        });
+        expect(response.status).toBe(400);
+        expect(settingsCalls).toHaveLength(0);
     });
 });

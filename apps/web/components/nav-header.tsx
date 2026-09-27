@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import useSWR from "swr";
 import { cn } from "@repo/ui/lib/utils";
 import { Building2 } from "lucide-react";
 import { NavUser } from "./nav-user";
@@ -14,6 +15,7 @@ import {
     isCreateSchedulePath,
     isOnboardingPath,
 } from "@/lib/routes";
+import { REQUESTS_SUMMARY_KEY, fetchRequestsSummary } from "@/lib/scheduler/client";
 
 const NAV_ITEMS = [
     { label: "Schedule", href: getSchedulerHref() },
@@ -39,6 +41,12 @@ interface NavHeaderProps {
 export function NavHeader({ activeOrg: serverOrg, user, trial }: NavHeaderProps) {
     const pathname = usePathname();
     const activeOrg = serverOrg;
+    // Requests waiting on a manager, badged on Schedule. Workers get a 403 and no badge.
+    const { data: requests } = useSWR(activeOrg ? REQUESTS_SUMMARY_KEY : null, fetchRequestsSummary, {
+        refreshInterval: 60_000,
+        shouldRetryOnError: false,
+    });
+    const waiting = requests?.pending ?? 0;
 
     // Distraction-free mode for focused creation/setup flows
     if (
@@ -90,6 +98,14 @@ export function NavHeader({ activeOrg: serverOrg, user, trial }: NavHeaderProps)
                                     )}
                                 >
                                     {item.label}
+                                    {item.label === "Schedule" && waiting > 0 ? (
+                                        <span
+                                            className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold leading-5 text-primary-foreground"
+                                            aria-label={`${waiting} ${waiting === 1 ? "request" : "requests"} waiting`}
+                                        >
+                                            {waiting}
+                                        </span>
+                                    ) : null}
                                 </Link>
                             );
                         })}

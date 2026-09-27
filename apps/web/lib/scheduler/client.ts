@@ -8,6 +8,7 @@ import type {
     SchedulerTemplate,
     SchedulerWeek,
 } from "@repo/contracts/scheduler";
+import type { DecideRequestResult, ManagerRequestsResponse, RequestsSummary } from "@repo/contracts/requests";
 
 /** Browser-side calls to the Scheduler API, through the organization-scoped proxy. */
 
@@ -71,4 +72,28 @@ export function fetchPublishPreview([, locationId, weekStart]: readonly [string,
 
 export function publishWeek(locationId: string, weekStart: string, force: boolean): Promise<SchedulerPublishResult> {
     return request<SchedulerPublishResult>("week/publish", { method: "POST", body: JSON.stringify({ locationId, weekStart, force }) });
+}
+
+// ---- Requests ----------------------------------------------------------------
+
+export const requestsKey = (view: "pending" | "recent") => ["scheduler-requests", view] as const;
+export const REQUESTS_SUMMARY_KEY = "scheduler-requests-summary";
+
+export function fetchRequests([, view]: ReturnType<typeof requestsKey>): Promise<ManagerRequestsResponse> {
+    return request<ManagerRequestsResponse>(`requests?${new URLSearchParams({ view })}`);
+}
+
+export function fetchRequestsSummary(): Promise<RequestsSummary> {
+    return request<RequestsSummary>("requests/summary");
+}
+
+export function decideRequest(id: string, decision: "approve" | "decline", body: { note?: string; force?: boolean }): Promise<DecideRequestResult> {
+    return request<DecideRequestResult>(`requests/${encodeURIComponent(id)}/${decision}`, { method: "POST", body: JSON.stringify(body) });
+}
+
+/** The reasons a 409 gave for needing "Approve anyway". */
+export function requestConflictsOf(error: unknown): string[] | null {
+    if (!(error instanceof SchedulerRequestError) || error.code !== "SCHEDULE_CONFLICT") return null;
+    const conflicts = (error.details as { conflicts?: unknown } | undefined)?.conflicts;
+    return Array.isArray(conflicts) && conflicts.every((c) => typeof c === "string") ? conflicts : null;
 }

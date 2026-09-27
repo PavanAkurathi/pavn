@@ -164,15 +164,16 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
             db.query.department.findMany({
                 where: eq(department.organizationId, input.orgId),
             }),
+            // What's waiting on a manager, the same count the Requests panel shows.
             db.query.shiftRequest.findMany({
                 where: and(
                     eq(shiftRequest.organizationId, input.orgId),
-                    inArray(shiftRequest.status, ["pending_peer", "pending_manager"]),
+                    eq(shiftRequest.status, "pending_manager"),
                 ),
                 columns: { id: true },
             }),
             db.query.timeOffRequest.findMany({
-                where: and(eq(timeOffRequest.organizationId, input.orgId), eq(timeOffRequest.status, "pending")),
+                where: and(eq(timeOffRequest.organizationId, input.orgId), eq(timeOffRequest.status, "pending"), gt(timeOffRequest.endTime, now)),
                 columns: { id: true },
             }),
         ]);

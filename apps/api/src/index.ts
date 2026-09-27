@@ -311,6 +311,12 @@ app.use("*", async (c, next) => {
     const ORG_FREE_PREFIXES = [
         '/worker/all-shifts',
         '/worker/organizations',
+        // Requests act across workplaces; each use case checks membership
+        // against the shift's or request's own organization.
+        '/worker/open-shifts',
+        '/worker/requests',
+        '/worker/swap-candidates',
+        '/worker/time-off',
         '/devices',
         '/organizations/invitations',
         '/organizations/default',

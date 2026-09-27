@@ -21,12 +21,28 @@ import {
     OpenApiLooseObjectSchema,
 } from "../lib/openapi-schemas.js";
 import { jsonOk } from "../lib/response.js";
+import {
+    OpenShiftsResponseSchema,
+    SwapCandidatesResponseSchema,
+    TimeOffCreatedSchema,
+    TimeOffInputSchema,
+    WorkerRequestActionSchema,
+    WorkerRequestResultSchema,
+    WorkerRequestsResponseSchema,
+    WorkerShiftRequestInputSchema,
+} from "@repo/contracts/requests";
 
 // Import services
 import {
     getWorkerShifts,
     getWorkerShiftById,
     getWorkerAllShifts,
+    actOnRequest,
+    createShiftRequest,
+    createTimeOff,
+    listOpenShifts,
+    listSwapCandidates,
+    listWorkerRequests,
 } from "@repo/scheduling-timekeeping";
 import {
     getAvailability,
@@ -397,4 +413,127 @@ workerRouter.openapi(workerOrgsRoute, async (c) => {
     return jsonOk(c, {
         organizations,
     });
+});
+
+// =============================================================================
+// OPEN SHIFTS, REQUESTS AND TIME OFF (cross-org: each call checks membership
+// against the shift's or request's own organization)
+// =============================================================================
+
+const json = <T extends z.ZodTypeAny>(schema: T) => ({ content: { "application/json": { schema } } });
+
+const openShiftsRoute = createRoute({
+    method: "get",
+    path: "/open-shifts",
+    summary: "Open shifts I can pick up",
+    description: "Published shifts with open spots in the next four weeks, at every workplace, for roles I hold.",
+    responses: {
+        200: { ...json(OpenShiftsResponseSchema), description: "Open shifts" },
+        401: { description: "Unauthorized" },
+    },
+});
+
+workerRouter.openapi(openShiftsRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    return jsonOk(c, await listOpenShifts({ workerId: user.id }));
+});
+
+const myRequestsRoute = createRoute({
+    method: "get",
+    path: "/requests",
+    summary: "My requests",
+    description: "Claims, drops, swaps (mine and ones offered to me) and time off, with what I can do about each.",
+    responses: {
+        200: { ...json(WorkerRequestsResponseSchema), description: "Requests" },
+        401: { description: "Unauthorized" },
+    },
+});
+
+workerRouter.openapi(myRequestsRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    return jsonOk(c, await listWorkerRequests({ workerId: user.id }));
+});
+
+const createRequestRoute = createRoute({
+    method: "post",
+    path: "/requests",
+    summary: "Claim, drop or swap a shift",
+    description:
+        "claim: take an open spot (right away or after a manager approves, per the workplace's policy). " +
+        "drop: ask to come off a shift. swap: offer a shift to a named coworker, who accepts first.",
+    request: { body: { ...json(WorkerShiftRequestInputSchema), required: true } },
+    responses: {
+        200: { ...json(WorkerRequestResultSchema), description: "Request made" },
+        401: { description: "Unauthorized" },
+        403: { description: "Not a member, or not set up for the role" },
+        409: { description: "Full, started, already on it, or not free then" },
+    },
+});
+
+workerRouter.openapi(createRequestRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    return jsonOk(c, await createShiftRequest({ workerId: user.id, body: c.req.valid("json") }));
+});
+
+const actOnRequestRoute = createRoute({
+    method: "post",
+    path: "/requests/{id}/{action}",
+    summary: "Accept, decline or cancel a request",
+    description: "Accept or decline a swap a coworker offered me, or cancel one of my own requests (including time off).",
+    request: { params: z.object({ id: z.string().min(1), action: WorkerRequestActionSchema }) },
+    responses: {
+        200: { ...json(WorkerRequestResultSchema), description: "Done" },
+        401: { description: "Unauthorized" },
+        404: { description: "Request not found" },
+        409: { description: "Already answered or no longer possible" },
+    },
+});
+
+workerRouter.openapi(actOnRequestRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    const { id, action } = c.req.valid("param");
+    return jsonOk(c, await actOnRequest({ workerId: user.id, id, action }));
+});
+
+const swapCandidatesRoute = createRoute({
+    method: "get",
+    path: "/swap-candidates",
+    summary: "Coworkers who could take my shift",
+    description: "People at the same workplace who hold the role, free ones first. Only whether they're free is shown.",
+    request: { query: z.object({ shiftId: z.string().min(1) }) },
+    responses: {
+        200: { ...json(SwapCandidatesResponseSchema), description: "Coworkers" },
+        401: { description: "Unauthorized" },
+        409: { description: "Not on this shift" },
+    },
+});
+
+workerRouter.openapi(swapCandidatesRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    return jsonOk(c, await listSwapCandidates({ workerId: user.id, shiftId: c.req.valid("query").shiftId }));
+});
+
+const timeOffRoute = createRoute({
+    method: "post",
+    path: "/time-off",
+    summary: "Ask for time off",
+    description: "Whole days or exact times, sent to every workplace unless `organizationIds` picks some.",
+    request: { body: { ...json(TimeOffInputSchema), required: true } },
+    responses: {
+        200: { ...json(TimeOffCreatedSchema), description: "Sent" },
+        400: { description: "Invalid or in the past" },
+        401: { description: "Unauthorized" },
+        409: { description: "Already asked for that time" },
+    },
+});
+
+workerRouter.openapi(timeOffRoute, async (c) => {
+    const user = c.get("user");
+    if (!user) return c.json({ error: "Unauthorized" }, 401);
+    return jsonOk(c, await createTimeOff({ workerId: user.id, body: c.req.valid("json") }));
 });

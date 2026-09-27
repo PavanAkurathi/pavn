@@ -31,6 +31,7 @@ export function SchedulerToolbar({
     viewMode,
     onViewMode,
     onOpenCounter,
+    onRequests,
     onHelp,
     busy,
     history,
@@ -48,6 +49,7 @@ export function SchedulerToolbar({
     viewMode: ViewMode;
     onViewMode: (mode: ViewMode) => void;
     onOpenCounter: () => void;
+    onRequests: () => void;
     onHelp: () => void;
     busy: boolean;
     history: { canUndo: boolean; canRedo: boolean; undoLabel?: string; onUndo: () => void; onRedo: () => void };
@@ -161,9 +163,16 @@ export function SchedulerToolbar({
                     </button>
                 ) : null}
                 {pendingRequestCount > 0 ? (
-                    <span className="inline-flex h-9 items-center px-2 text-[13.5px] font-semibold text-foreground/80">
-                        {pendingRequestCount} {pendingRequestCount === 1 ? "request" : "requests"}
-                    </span>
+                    <button
+                        type="button"
+                        onClick={onRequests}
+                        className="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-[13.5px] font-semibold text-foreground/80 hover:bg-muted hover:text-foreground"
+                    >
+                        <span aria-hidden className="grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] leading-5 text-primary-foreground">
+                            {pendingRequestCount}
+                        </span>
+                        {pendingRequestCount === 1 ? "request" : "requests"}
+                    </button>
                 ) : null}
                 {eventsFirst ? (
                     <Button variant="outline" className="h-9" onClick={tools.onAddEvent}>
@@ -181,6 +190,7 @@ export function SchedulerToolbar({
                         <DropdownMenuItem onSelect={tools.onCopyWeek}>Copy last week…</DropdownMenuItem>
                         <DropdownMenuItem onSelect={tools.onTemplate}>Use a template…</DropdownMenuItem>
                         <DropdownMenuItem onSelect={tools.onAddEvent}>Add event…</DropdownMenuItem>
+                        <DropdownMenuItem onSelect={onRequests}>Requests…</DropdownMenuItem>
                         <DropdownMenuItem
                             onSelect={tools.onDiscard}
                             disabled={pendingChangeCount === 0}
