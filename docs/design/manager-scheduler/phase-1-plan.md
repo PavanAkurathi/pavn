@@ -10,7 +10,7 @@ schedule-building experience is what gets replaced.
 
 **Outcome:** one fast, spreadsheet-grade weekly Scheduler (people × days) where
 managers build, fix and publish a week without leaving the grid. Events and
-headcount-per-role are first-class, conflicts and labor are visible inline, and
+headcount-per-role are first-class, conflicts and scheduled hours are visible inline, and
 workers can claim, drop, swap and request time off from their phones.
 
 ## Decisions (confirmed with owner)
@@ -20,8 +20,37 @@ workers can claim, drop, swap and request time off from their phones.
   building/assigning → one new **Scheduler** at `/schedule`.
 - **Depth:** new UI + reshaped scheduling API/contracts; DB changed only where the
   design needs it (additive migration).
-- **Phase 1 scope:** build/publish week · hours & overtime per person · labor cost ·
+- **Phase 1 scope:** build/publish week · scheduled hours & overtime per person ·
   open shifts claimable on mobile · time-off & swap requests with manager approval.
+- **Hours, not pay (revision 2).** The product is timesheet-focused. Pay and labor
+  cost belong to HR/payroll.
+  - The scheduler shows **no dollar amounts**: no labor cost and no rate warnings.
+  - A worker's hourly rate stays an optional, suggested field in the Roster
+    (`member.hourlyRate` / `rosterEntry.hourlyRate` / `workerRole.hourlyRate`
+    already exist). It is not used in scheduling.
+  - Exports stay hours-only, matching the existing payroll CSV.
+- **Setup model: presets, not SAP-style configuration (revision 3).** The owner
+  asked whether businesses should configure the system at onboarding.
+  - **Answer:** ask 3 plain questions during onboarding. The answers pick sensible
+    defaults, and everything can be changed later in Settings → Scheduling.
+  - **Why not SAP-style:** that model depends on implementation consultants, and
+    small business owners can't answer abstract setup questions before using the
+    product. It also multiplies test cases.
+  - **No rule builders, custom workflows or custom fields in Phase 1.**
+  - The existing onboarding already follows this pattern: its on-site attendance
+    toggle in `business-basics-step.tsx`.
+  - **Where each choice lives:**
+
+    | Where | Who | What |
+    |---|---|---|
+    | Onboarding | Owner, once | Business type · how the schedule changes week to week · open-shift claim approval |
+    | Settings → Scheduling | Admin, rarely | Week start day · overtime rule (existing `regional_overtime_policy`) · claim/swap approval · departments |
+    | Inside the Scheduler | Each manager, remembered | Department filter · view by People or Positions · compact rows |
+
+- **Scale (revision 3).** The design must hold at 50+ workers; see §2.1a.
+- **Simplicity (revision 2).** Owner feedback on prototype v1: too cluttered and
+  confusing (the extra rows above the team, numbers everywhere, too many controls).
+  §2 is rewritten around the "clean grid" layout the owner chose.
 - **Architecture:** follow `docs/architecture/api-first-backend-blueprint.md`:
   contract (`packages/contracts`) → use case (`packages/scheduling-timekeeping`) →
   thin Hono route (`apps/api`) → UI. `apps/web` never imports `@repo/database`.
@@ -69,8 +98,9 @@ workers can claim, drop, swap and request time off from their phones.
    - Edit, copy-week, apply-template and publish-drafts check nothing.
 7. **Timezone drift.** The grid, date grouping and draft→form conversion use the
    viewer's timezone, not the location's.
-8. **No labor data.** No rate reaches the shift (`budgetRateSnapshot` is always
-   null), so cost can't be shown.
+8. **Hours are never computed for scheduling.** Only reporting reads the overtime
+   policy. Pay rates exist but never reach a shift, which is fine: the Scheduler
+   stays hours-only by decision.
 9. **Broken open-shift promise.** Publish copy says open slots are claimable. But
    `GET /shifts/open` is shadowed by `GET /shifts/{id}`, and the worker app has no
    open-shifts screen.
@@ -92,68 +122,143 @@ managers most often raise about those tools:
 - "publish all" re-notifying everyone;
 - time off shown as hours instead of times.
 
-### 2.1 Layout (desktop ≥1024px; `/schedule?location=&week=&group=`)
+### 2.1 Layout: the clean grid (desktop ≥1024px; `/schedule?location=&week=`)
+The owner picked this layout after prototype v1.
 ```
-┌ Schedule  [Downtown ▾]  ‹  Oct 6 – 12  ›  [Today]   Group: (People|Roles)   [Tools ▾]  [Requests 3]  [Publish 14 changes] ┐
-├ Open slots 5 · Scheduled 412h · Overtime 2 people · Labor $6,120 · 3 people missing a rate ───────────────────────────────┤
-│ Search people… [Role ▾] [Scheduled only ☐]│ Sun 6     │ Mon 7        │ Tue 8     │ … │ Sat 12              │ Week      │
-│ EVENTS                                    │           │              │           │   │ Smith Wedding 4–11p │           │
-│                                           │           │              │           │   │ ●●●○○ 5/8  (amber)  │           │
-│ OPEN SHIFTS                               │           │ 2× Server    │           │   │ 3× Server (event)   │ 5 open    │
-│                                           │           │  5–11p       │           │   │                     │           │
-│ ▾ SERVERS                                 │           │              │           │   │                     │           │
-│   Ana Ruiz      Server · $18              │ 9a–5p     │ [+]          │ TIME OFF  │   │ 4–11p ◆Wedding      │ 38h $684  │
-│   Ben Kim       Server                    │ 10a–6p ⚠  │ 5–11p        │ ░unavail░ │   │                     │ 44h ⚠OT   │
-│ ▾ BARTENDERS                              │           │              │           │   │                     │           │
-│   Cara Diaz     Invited (no app)          │ ╱draft╱   │              │           │   │                     │ 16h       │
-│ ▸ AGENCY (1)                              │           │              │           │   │                     │           │
-├───────────────────────────────────────────┼───────────┼──────────────┼───────────┼───┼─────────────────────┼───────────┤
-│ Day total                                 │ 58h $1,020│ 64h $1,130   │ …         │   │ 96h $1,700          │ 412h $6.1k│
-└───────────────────────────────────────────┴───────────┴──────────────┴───────────┴───┴─────────────────────┴───────────┘
+Downtown Bistro ▾   ‹ Sep 27 – Oct 3 ›           6 open · 4 requests   ⋯   [Publish 6]
+─────────────────────────────────────────────────────────────────────────────────────
+ 🔍 Find person   Sun 27   Mon 28   Tue 29   Wed 30   Thu 1    Fri 2    Sat 3
+                                                                        ◆ Smith Wedding 5/8
+ Open             ·        2 Server ·        1 Cook   ·        ·        3 open
+─────────────────────────────────────────────────────────────────────────────────────
+ Ana Ruiz         9a–3p    4p–11p   ·        11a–7p   4p–11p   4p–11p   ◆4p–11p     39.5h
+ Ben Kim          4p–11p   11a–7p   Off  !   4p–11p   11a–7p   11a–7p   ·           41.5h OT
+ Priya Shah       9a–3p    ·        4p–11p   11a–5p   ·        Off? !   ◆4p–11p     31h
+ Marcus Lee  inv  ·        ·        ·        ·        ╱11a–5p╱ ·        11a–5p      12h
+ ▾ Front of house · 22 people · 3 open        (collapsible department section)
+ Cara Diaz        11a–5p   ·        5p–12a   5p–12a   ·        6p–2a    ◆4p–11p     33h
 ```
-- **Sticky header and first column.** The week always starts on the org's
-  `weekStartsOn`. All dates and times are in the **location's** timezone.
-- **Grouping.**
-  - **People** (default): rows are employees grouped by primary role. An Open
-    Shifts row sits on top, above an Events lane.
-  - **Roles**: rows are roles. Cells show each shift with fill (`2/3`), avatars and
-    open count. This is the view for variable events.
-- **Chip states.**
+**What's on screen, and nothing more:**
+- **Toolbar, one row:**
+  - Location, and the week with ‹ › arrows. "This week" appears only when you're
+    viewing another week.
+  - Department chips (`All · Front of house · Kitchen`), shown once the org has
+    more than one department (§2.1a).
+  - Two clickable counters: **open slots** (scrolls to and highlights the Open row)
+    and **requests** (opens the Requests panel).
+  - **⋯** (copy last week, apply template, add event, discard changes, help).
+  - **Publish N**.
+- **Removed from v1:**
+  - Stats bar, dollar amounts, day totals, legend row.
+  - Filters row: search moves into the name-column header.
+  - People/Roles toggle in the toolbar (the Positions view moves into ⋯ → View
+    by), Events lane, role group headers (replaced by department sections).
+  - Prototype hint strip: the help text moves into ⋯ → Help.
+- **Rows:**
+  - One **Open** row on top, then people.
+  - People sit in collapsible department sections (§2.1a), sorted by main role,
+    then name.
+  - The name cell shows name + main role. An "Invited" or "Agency" tag appears
+    only when it applies.
+- **Events** are a small tag in the day header ("◆ Smith Wedding 5/8", colored by
+  how staffed it is). Clicking it opens the event panel. Event shifts show a ◆ on
+  their chip.
+- **Chips are one line:** the time only. The role is added only when it differs
+  from the person's main role ("11a–5p · Server").
+- **Chip markings** (the owner kept these):
+  - Stripes = not published yet.
+  - Amber dot = published shift with unpublished edits.
+  - Red **!** = something blocking (double-booked, approved time off).
+  - Softer warnings (unavailable, overtime, not trained) show only on hover and in
+    the shift panel. They get no badge, which keeps the grid quiet.
+- **Row end:** scheduled hours only. Amber within 4h of overtime; red over it, with
+  "OT". No cost.
+- **Time off:** a compact "Off" cell ("Off?" while pending; hover shows exact
+  times). Unavailable windows are a faint hatch, with details on hover.
+- **Empty week:** one line, "Nothing scheduled yet · Copy last week · Use a
+  template". It never blocks navigation.
+- **Pinned while scrolling:** day headers and the name column.
+  - The week always starts on the org's `weekStartsOn`. All times are in the
+    location's timezone.
+  - Note from the v1 prototype: pinning to the *bottom* does not work for CSS grid
+    cells, so nothing depends on a pinned footer.
 
-  | State | Look |
-  |---|---|
-  | Draft | Diagonal stripes |
-  | Published | Solid role color |
-  | Published with unpublished edits | Solid, plus an amber "changed" dot |
-  | Conflict | Corner icon: red = overlap/time off, amber = unavailable/overtime/role mismatch; tooltip explains |
-  | Overridden conflict | Keeps the icon, marked "scheduled anyway" (audited) |
-  | Event shift | ◆ event tag |
+### 2.1a Holding up at 50+ workers
+Fifty people in comfortable rows is about 3,000px of scrolling. That's usable once,
+but not every week. What fixes it:
+1. **Department filter** in the toolbar: `All · Front of house · Kitchen`.
+   - At this size each manager usually schedules one department, so the view drops
+     to 12–25 rows.
+   - The choice is remembered per manager.
+   - Departments are groups of roles (Kitchen = Line cook, Prep, Dishwasher). A
+     person shows up in a department through their roles, so nobody has to assign
+     people to departments by hand.
+   - Departments come pre-filled from the business type chosen at onboarding.
+2. **Collapsible department sections** replace the v1 role group headers. Each
+   header shows the department name, headcount, and open slots.
+   - Collapsed: one line with hours and open count.
+   - Expanded: its people.
+3. **Compact rows by default** (≈40px, one-line chips).
+   - A person with two shifts in a day shows "2 shifts" until hovered or expanded,
+     so the row height stays even.
+4. **Search** in the name column (already in §2.1). Row virtualization kicks in
+   above ~150 people; that's a build detail and invisible to users.
+5. **View by Positions** (rows = roles, each shift showing `filled/needed`), picked
+   from ⋯ → View by.
+   - It is the default for businesses that answered "changes around events" at
+     onboarding.
+   - Staffing 8 servers for a wedding is faster by position than by scanning 50
+     names.
+   - This brings back v1's Roles view without the extra toggle in the toolbar.
 
-- **Row end:** weekly hours and cost. Amber within 4h of the overtime threshold;
-  red over it. Tooltip includes hours at other locations.
-- **Day footer:** hours and cost per day. The stats bar gives week totals.
-- **Time off & availability:** approved time off fills the cell with its exact
-  times. Pending time off is hatched. Unavailable windows are shaded.
-- **Empty week:** an inline strip offers **Copy last week · Apply template · Start
-  from scratch**. It never blocks navigation.
+### 2.1b Onboarding: "How you schedule" step
+A new step, `scheduling-setup-step.tsx`, goes after "Location basics" in
+`app/(protected)/dashboard/onboarding/_components/`. It is wired through
+`business-onboarding-view.tsx`. Three questions, each a tappable choice, with one
+line explaining what it changes:
+
+1. **What kind of business is this?**
+   - Choices: Restaurant or bar · Retail store · Events & catering · Something else.
+   - Seeds the starter roles and departments:
+     - Restaurant: Front of house (Server, Host, Bartender, Busser) · Kitchen (Line
+       cook, Prep, Dishwasher).
+     - Retail: Sales floor (Cashier, Sales associate) · Stock (Stock associate) ·
+       Leads (Shift lead).
+     - Events: Service (Server, Bartender) · Kitchen (Cook, Prep) · Setup (Setup
+       crew).
+     - Other: one "Team" department.
+   - The seeds are editable.
+2. **How does your schedule change week to week?**
+   - Choices: Mostly the same every week · It changes around events and bookings.
+   - "Mostly the same": the Scheduler defaults to the People view, and an empty week
+     offers "Copy last week" first.
+   - "Around events": the Scheduler defaults to the Positions view, and "Add event"
+     sits in the toolbar instead of the ⋯ menu.
+3. **When someone picks up an open shift…**
+   - Choices: I approve it first · First to claim gets it.
+   - Sets `openShiftClaimPolicy`.
+
+"Skip for now" applies the Restaurant defaults. Settings → Scheduling (a new tab in
+the existing `settings/[[...tab]]` page) shows the same three answers, plus week
+start, overtime rule, swap approval and a department editor.
 
 ### 2.2 Interactions
 | Action | Behavior |
 |---|---|
 | Create | Click an empty cell (or Enter on a focused cell) → **quick-create popover**. |
-| Quick-create fields | Time field accepts `9-5`, `9a-5:30p`, `17-23`, `10-2` (overnight aware). Role defaults to the row's role; break select; "Note to staff". "More" expands capacity, event and manager-only note. Enter saves as a draft; Tab moves to the next cell. |
-| Edit | Click a chip → right **Shift drawer** (Sheet). Fields: time, role, break, capacity, notes (staff / manager-only), event. **Assignees** list plus ranked **candidates**. Actions: duplicate ×N, save as template, delete/cancel, "Open timesheet" (links to the kept detail page). |
-| Candidates | Ranked qualified-first: role match, no conflict, hours this week, cost. Each row shows why it isn't recommended ("On time off 2–6p", "Puts her at 44h"). Choosing a flagged person asks **"Schedule anyway"**, which is audited. |
+| Quick-create fields | Just the **time** field and **role** (defaults to the row's role). Time accepts `9-5`, `9a-5:30p`, `17-23`, `10-2` (overnight aware). Break is auto-set (30 min over 6h) and editable in the shift panel. Enter saves as a draft. |
+| Edit | Click a chip → right **Shift panel** (Sheet). Fields: time, day, role, break, how many people, note to staff. Manager note and event sit under "More". **On this shift** list, then **Who can take it**. Actions: duplicate, save as template, delete/remove, "Open timesheet" (links to the kept detail page). |
+| Candidates | Ranked qualified-first: role match, no conflict, fewest hours this week. No pay shown. Each row shows why it isn't recommended ("On time off 2–6p", "Would be at 44h"). Choosing a flagged person asks **"Schedule anyway"**, which is audited. |
 | Move | Drag a chip to another cell, person or day. The shift keeps all its details. |
 | Copy | **Alt/Option-drag**, or `c` / `v` on a focused chip. |
 | Unassign / assign | Drag to the Open row = unassign (the slot stays open). Drag from Open onto a person = assign. |
 | Keyboard | Arrow keys move focus · Enter opens · `c` / `v` / `Delete` · `z` undo / `Shift+z` redo · `n` new open shift · `?` shortcut overlay. |
 | Undo | Every grid operation has an inverse. An "Undone / Redo" toast plus an undo stack for the session. |
 | Headcount | Capacity is a number field ("How many"). Open slots render as one chip reading "3× Server". |
-| Events | Tools → "Add event", or click the Events lane. **Event drawer:** name, date, time window, notes, and role lines (role × headcount × optional time override). This creates the event plus one shift per role line. The lane shows fill with red/amber/green rollup. Staffing uses the same candidate list or drag. |
-| Tools menu | Copy last week (options: include people / as open shifts) · Apply template · Save week's shifts as template · Discard unpublished changes (this week and location only). |
+| Events | ⋯ → "Add event", or click a day header's event tag. **Event panel:** name, day, time, notes, and roles needed (role × how many). This creates the event plus one shift per role, with open slots in the Open row. The panel lists each role's fill with a "Staff" button that opens the shift panel. |
+| ⋯ menu | Copy last week (keep people / as open shifts) · Apply template · Add event · Discard unpublished changes (this week and location only) · Help & shortcuts. |
 | Publish | The button shows the pending count and is grey when there is nothing to publish. The dialog shows: new / changed / removed shifts; the named people who will be notified (one batched push each, **only people with changes**); the named invited/agency people who can't be reached ("tell them yourself"); open slots that become claimable; and unresolved conflicts, with "Review" jumping to each one. Scope is **this location + this week**. |
-| Requests | The toolbar button (and a badge on the "Schedule" nav item) opens a right panel. Tabs: Time off · Swaps & drops · Open-shift claims. Each card shows the exact times and the impact ("creates 1 open slot Tue", "puts Ben at 44h"). Approve / Decline with a note. |
+| Requests | The "N requests" counter (and a badge on the "Schedule" nav item) opens a right panel. It is one list, newest first, with a type label on each card (Time off · Swap · Drop · Claim); no tabs. Each card shows the exact times and the impact ("Opens 1 Server slot Tue", "Ben would be at 44h"). Approve / Decline with a note. |
 
 ### 2.3 Edit model: a working copy until publish (7shifts/When I Work behavior; supports Fair Workweek)
 - New shifts are **drafts**, invisible to workers.
@@ -167,6 +272,43 @@ managers most often raise about those tools:
 - **Discard unpublished changes** clears the staging for that location and week.
 - Edits made from the kept detail page still apply live (current behavior). They
   also clear any staged fields they overwrite.
+
+### 2.3b Prototype v2: changes from v1 (next step after this plan is approved)
+Edit `scratchpad/scheduler-prototype.html`, republish to the same artifact URL, and
+update `docs/design/manager-scheduler/prototype.html` + this plan copy on the branch.
+- **Remove:**
+  - Prototype hint strip (the text moves into ⋯ → Help).
+  - The "Schedule" h1 (keep it for screen readers only).
+  - Stats bar, filters row + legend, People/Roles toggle, Tools button, Events
+    lane, role group header rows.
+  - Every `$`: row cost, candidate cost, stats, day totals in headers.
+- **Toolbar:** location · week ‹ › · ("This week" only off the current week) ·
+  "N open" and "N requests" counters · ⋯ · Publish N.
+- **Grid:**
+  - Search box in the name-column header.
+  - Day header shows the day and date, plus an event tag when there is one.
+  - Open row, then people in collapsible department sections.
+  - One-line chips, with the role only when it differs from the person's main role.
+  - Red ! only for blocking conflicts; other warnings on hover.
+  - "Off" / "Off?" cells.
+  - Row end shows hours only, with OT in red.
+- **Panels:**
+  - Quick-create is only time + role.
+  - The shift panel moves manager note and event under "More" and drops pay.
+  - Requests become one list without tabs.
+  - The help dialog adds a short "what the markings mean" section.
+- **Scale:**
+  - Grow Downtown Bistro's sample team to ~48 people across Front of house and
+    Kitchen.
+  - Add department chips, collapsible department sections, compact rows, and
+    ⋯ → View by People / Positions.
+- **Setup:**
+  - A clickable mock of the 3-question "How you schedule" onboarding step, opened
+    from ⋯ → "Setup questions".
+  - Changing an answer visibly switches the defaults (view, departments, claim
+    policy).
+- **Keep as is:** drag/Alt-drag, undo, typed times, candidates with reasons, the
+  publish dialog, the event panel, retail sample data.
 
 ### 2.4 Mobile worker additions (Expo, `apps/gig-workers`)
 - **Tabs:** My shifts · **Open** · **Requests** · Profile.
@@ -195,11 +337,15 @@ managers most often raise about those tools:
 
 | Table | Change |
 |---|---|
-| `organization` | Add `weekStartsOn` smallint default 0 · `openShiftClaimPolicy` text `'approval'\|'auto'` default `'approval'` · `swapApprovalRequired` boolean default true |
+| `organization` | Add `weekStartsOn` smallint default 0 · `openShiftClaimPolicy` text `'approval'\|'auto'` default `'approval'` · `swapApprovalRequired` boolean default true · `businessType` text `'restaurant'\|'retail'\|'events'\|'other'` · `scheduleStyle` text `'steady'\|'events'` (picks the default view) |
 | `shift` | Add `breakMinutes` int default 0 · `eventId` → `schedule_event` (nullable, set null on delete) · `pendingPatch` jsonb null · `managerNote` text · `publishedAt` timestamptz. Keep `description` as the staff note. Stop overloading `scheduleGroupId` (legacy only). |
-| `shift_assignment` | Add `pendingState` text null (`'add'\|'remove'`). Write `budgetRateSnapshot` at publish. |
+| `shift_assignment` | Add `pendingState` text null (`'add'\|'remove'`). Rate columns stay untouched and unused by scheduling. |
 
 **New tables**
+- **`department`:** id, organizationId, name, `roles` jsonb string[] (canonicalized
+  with `canonicalizeWorkerRole`), sortOrder.
+  - Seeded from the business-type preset.
+  - Membership is derived from a person's roles, so there is no join table.
 - **`schedule_event`:** id, organizationId, locationId, name, startTime, endTime,
   notes, createdBy, timestamps.
 - **`shift_request`:**
@@ -237,11 +383,7 @@ availability.
 - **`hours.ts`:** per-person week minutes minus unpaid break, counted across all org
   locations, in regular vs overtime. Uses `policy`: `weekly_40`, or `daily_8` via
   the existing `calculateDailyOvertimeMinutes` (`packages/config/src/time-rules.ts`).
-- **`rates.ts`:** resolution order is `workerRole` (worker+org+role) →
-  `member.hourlyRate` → `rosterEntry.hourlyRate` → none (flagged). Agency workers
-  have no rate.
-- **`labor-cost.ts`:** regular × rate + overtime × rate × 1.5, per day / person /
-  week.
+- No rate or labor-cost modules: scheduling is hours-only (see Decisions).
 - Reuse: `utils/zoned-time.ts` (date-fns-tz), `utils/mapper.ts` (worker kinds),
   `canonicalizeWorkerRole` (`packages/database/src/worker-roles.ts`),
   `buildNotificationSchedule` (`packages/notifications`), `logAudit`, and the
@@ -251,7 +393,7 @@ availability.
 
 | Use case | Notes |
 |---|---|
-| `get-week` | View model: people, shifts, events, time off, availability, hours, cost, totals, pending-change counts, request counts |
+| `get-week` | View model: people, shifts, events, time off, availability, scheduled hours + overtime per person, open-slot count, pending-change count, request count |
 | `create-shifts` | |
 | `update-shift` | Stages into the working copy if published |
 | `set-assignees` | |
@@ -265,6 +407,18 @@ availability.
 
 **Requests module** — `…/modules/requests/`: open shifts, claim, drop, swap,
 time off, approve/decline. It enforces the org policies.
+
+**Setup presets** — `packages/organizations`:
+- `presets.ts`: roles and departments per business type (pure data).
+- `apply-scheduling-setup.ts`: saves the 3 answers, seeds departments and roles
+  once, and never overwrites edits.
+- `departments.ts` (CRUD).
+- Routes:
+  - `POST /organizations/onboarding/scheduling`
+  - `GET/PATCH /organizations/scheduling-settings`
+  - `GET/POST/PATCH/DELETE /organizations/departments`
+- Onboarding completion state in the existing onboarding module learns about the
+  new step.
 
 **Contracts** — `packages/contracts/src/scheduler.ts`: `SchedulerWeek`,
 `SchedulerShift`, `SchedulerPerson`, `ConflictWarning`, `PublishPreview`,
@@ -332,16 +486,15 @@ pipeline.
 |---|---|
 | `page.tsx` | Server: session, locations, initial week |
 | `_components/scheduler.tsx` | Client shell |
-| `scheduler-toolbar.tsx` | Location select, week nav, grouping, tools, publish button |
-| `week-stats-bar.tsx` | Open slots, hours, overtime, labor cost |
-| `week-grid.tsx`, `person-row.tsx`, `role-row.tsx`, `open-row.tsx`, `event-lane.tsx`, `day-footer.tsx` | Grid |
-| `shift-chip.tsx` | Chip states |
+| `scheduler-toolbar.tsx` | Location, week nav, open/requests counters, ⋯ menu, Publish |
+| `week-grid.tsx`, `day-header.tsx` (with event tag), `open-row.tsx`, `person-row.tsx` | Grid |
+| `shift-chip.tsx` | One-line chip: time, stripes/dot/! markings |
 | `quick-create-popover.tsx` | Cell create |
 | `shift-drawer.tsx` + `candidate-list.tsx` | Edit and staffing |
 | `event-drawer.tsx` | Events |
 | `publish-dialog.tsx` | Publish |
 | `requests-panel.tsx` | Requests |
-| `shortcuts-overlay.tsx` | Keyboard help |
+| `help-dialog.tsx` | How to use + keyboard shortcuts + what the markings mean |
 | `hooks/use-grid-keyboard.ts`, `use-undo-stack.ts`, `use-scheduler-week.ts` | Behavior |
 | `apps/web/lib/scheduler/parse-time-range.ts` (+ test), `role-color.ts` | Helpers; `role-color.ts` extends `lib/shifts/role-theme.ts` with a hash fallback |
 
@@ -383,18 +536,19 @@ Follow the existing `Screen` / `PageHeader` / `EmptyState` / heroui-native patte
 
 | Milestone | Work |
 |---|---|
-| **M0 — Design sign-off** | Clickable HTML prototype of the Scheduler (week grid, quick-create, drawer, publish dialog, requests panel, event lane) with realistic data; owner approves before code. |
-| **M1 — Foundations** | Migration · contracts · domain (`conflicts`, `hours`, `rates`, `labor-cost`) with unit tests · `get-week` + `GET /scheduler/week`. |
-| **M2 — Read-only grid** | `/schedule` page, People/Roles grouping, week nav, location tz, hours/overtime/cost, time off, availability, nav change. |
+| **M0 — Design sign-off** | v1 prototype published and reviewed. **Next: prototype v2** with the clean grid (§2.1), the same URL republished (https://claude.ai/artifact/FYrErrVCSuL2deWSRpB4K3), and the repo copy in `docs/design/manager-scheduler/` updated. Owner approves v2 before code. |
+| **M1 — Foundations** | Migration · contracts · domain (`conflicts`, `hours`) with unit tests · `get-week` + `GET /scheduler/week`. |
+| **M1b — Setup presets** | Business-type presets, departments, onboarding "How you schedule" step, Settings → Scheduling tab. Existing orgs get Restaurant defaults. |
+| **M2 — Read-only grid** | `/schedule` page, clean-grid layout, department chips + collapsible sections, compact rows, People/Positions view (default from `scheduleStyle`), week nav, location tz, scheduled hours/overtime, time off, availability, nav change. Checked with a 60-person seed. |
 | **M3 — Editing** | Quick-create, drawer + candidates, drag move/copy, Open row, delete, undo, keyboard, copy week, templates, discard. |
 | **M4 — Publish** | Working copy, preview + publish, batched notifications, audit, worker reads honor staging. |
-| **M5 — Events** | Event drawer, lane, rollup, Roles view polish. |
+| **M5 — Events** | Event panel, day-header event tag with fill status, ◆ on event chips. |
 | **M6 — Requests** | Worker endpoints, mobile Open/Requests/Drop/Swap/Time off, manager Requests panel + nav badge, pushes, org policy settings in Settings. |
 | **M7 — Remove old** | Delete the create flow, weekly grid and old endpoints; migrate the e2e tests. |
 
-Later, not in Phase 1: day timeline with hourly headcount strip, auto-assign, sales
-forecast/labor %, recurring availability, compliance rules (minors, rest periods,
-predictability pay), cross-location view.
+Later, not in Phase 1: day timeline with hourly headcount strip, auto-assign, recurring
+availability, compliance rules (minors, rest periods, predictability pay),
+cross-location view. Labor cost is not planned; pay stays with HR/payroll.
 
 ## Out of scope, found during the audit (fix separately; on kept pages)
 - **Timesheet Approve does nothing.** `timesheet/client.tsx` never passes
@@ -411,7 +565,9 @@ predictability pay), cross-location view.
   - Conflicts: overlap edges, overnight shifts, cross-location, time off vs
     unavailable.
   - Hours: `weekly_40` / `daily_8`, breaks, a week spanning two policies.
-  - Rates: fallback chain. Labor cost.
+  - Presets: each business type seeds the right roles and departments, and
+    re-running setup never overwrites edits. Department membership is derived
+    from roles.
   - `get-week`: timezone boundaries (DST week).
   - Working-copy publish diff.
   - Request state machines.
