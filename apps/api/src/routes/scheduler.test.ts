@@ -47,6 +47,7 @@ mock.module("@repo/scheduling-timekeeping", () => ({
     applySchedulerChanges: record("applySchedulerChanges", { undo: [], overridden: [] }),
     previewSchedulerPublish: record("previewSchedulerPublish", { newShifts: 1 }),
     publishSchedulerWeek: record("publishSchedulerWeek", { newShifts: 1, publishedAt: "2027-02-01T00:00:00.000Z" }),
+    deleteShiftTemplate: record("deleteShiftTemplate", { success: true }),
     listManagerRequests: record("listManagerRequests", { requests: [], pendingCount: 0 }),
     getRequestsSummary: record("getRequestsSummary", { pending: 2 }),
     decideRequest: (input: { id: string; decision: string; body: { force?: boolean } }) => {
@@ -298,5 +299,18 @@ describe("/scheduler/requests", () => {
         });
         expect(response.status).toBe(400);
         expect(settingsCalls).toHaveLength(0);
+    });
+});
+
+describe("DELETE /scheduler/templates/{id}", () => {
+    beforeEach(() => {
+        settingsCalls.length = 0;
+    });
+
+    test("deletes within the caller's organization, managers only", async () => {
+        const response = await appAs("manager").request("/scheduler/templates/tpl_1", { method: "DELETE" });
+        expect(response.status).toBe(200);
+        expect(settingsCalls).toEqual([{ fn: "deleteShiftTemplate", args: ["tpl_1", "org_1"] }]);
+        expect((await appAs("member").request("/scheduler/templates/tpl_1", { method: "DELETE" })).status).toBe(403);
     });
 });

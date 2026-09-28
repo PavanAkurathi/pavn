@@ -4,8 +4,6 @@ export type {
     TimesheetWorker,
 } from "@repo/contracts/shifts";
 
-export type ShiftLayout = "list" | "weekly";
-
 export interface Location {
     id: string;
     name: string;

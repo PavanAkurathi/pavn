@@ -5,25 +5,14 @@
 import * as React from 'react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import {
-    ChevronLeft,
-    ChevronRight,
-    Filter,
-    LayoutGrid,
-    List,
-    MapPin,
-    Calendar as CalendarIcon,
-    Copy as CopyIcon,
-    X,
-} from "lucide-react";
+import { Filter, MapPin, Calendar as CalendarIcon, X } from "lucide-react";
 
 import { Button } from '@repo/ui/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@repo/ui/components/ui/popover';
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@repo/ui/components/ui/select';
-import { LOCATIONS, SHIFT_LAYOUTS, SHIFT_STATUS, STATUS_LABELS } from '@/lib/constants';
+import { LOCATIONS, SHIFT_STATUS, STATUS_LABELS } from '@/lib/constants';
 import { WorkerCombobox } from './worker-combobox';
-import type { ShiftLayout } from '@/lib/types';
 
 interface FilterState {
     location: string | null;
@@ -36,17 +25,6 @@ interface FilterState {
 interface EventFiltersProps {
     filters: FilterState;
     setFilters: (updates: Partial<FilterState>) => void;
-    layout: ShiftLayout;
-    availableLayouts: ShiftLayout[];
-    onLayoutChange: (layout: ShiftLayout) => void;
-    weekRangeLabel: string;
-    onPreviousWeek: () => void;
-    onTodayWeek: () => void;
-    onCopyLastWeek?: () => void;
-    isCopyingWeek?: boolean;
-    /** The template picker, passed in so this stays a presentational toolbar. */
-    templateSlot?: React.ReactNode;
-    onNextWeek: () => void;
     availableLocations: any[];
     availableWorkers: { id: string; name: string; initials: string }[];
 }
@@ -54,16 +32,6 @@ interface EventFiltersProps {
 export function EventFilters({
     filters,
     setFilters,
-    layout,
-    availableLayouts,
-    onLayoutChange,
-    weekRangeLabel,
-    onPreviousWeek,
-    onTodayWeek,
-    onCopyLastWeek,
-    isCopyingWeek = false,
-    templateSlot,
-    onNextWeek,
     availableLocations,
     availableWorkers,
 }: EventFiltersProps) {
@@ -97,11 +65,6 @@ export function EventFilters({
         filters.status !== SHIFT_STATUS.ALL ||
         filters.workerId !== null ||
         (filters.startDate !== '' && filters.startDate !== null);
-
-    const layoutOptions = [
-        { value: SHIFT_LAYOUTS.WEEKLY, label: 'Weekly', icon: LayoutGrid },
-        { value: SHIFT_LAYOUTS.LIST, label: 'List', icon: List },
-    ].filter((option) => availableLayouts.includes(option.value));
 
     return (
         // Wraps rather than overflowing: this row also renders in the narrower
@@ -143,60 +106,29 @@ export function EventFilters({
                     onChange={(val) => setFilters({ workerId: val })}
                 />
 
-                {layout === SHIFT_LAYOUTS.WEEKLY ? (
-                    <div className="flex items-center gap-2 rounded-xl border bg-background px-2 py-1.5">
-                        <Button variant="ghost" size="icon" onClick={onPreviousWeek} aria-label="Previous week">
-                            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            className="w-[220px] justify-start bg-background border-border text-left font-normal"
+                        >
+                            <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                            {formattedDateLabel}
                         </Button>
-                        <div className="min-w-[170px] px-1 text-center">
-                            <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">Week</p>
-                            <p className="text-sm font-semibold text-foreground">{weekRangeLabel}</p>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <div className="p-3">
+                            <Calendar
+                                mode="range"
+                                defaultMonth={dateRange?.from}
+                                selected={dateRange}
+                                onSelect={handleRangeChange}
+                                numberOfMonths={1}
+                                className="w-full"
+                            />
                         </div>
-                        <Button variant="outline" size="sm" onClick={onTodayWeek}>
-                            Today
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={onNextWeek} aria-label="Next week">
-                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                        </Button>
-                        {onCopyLastWeek ? (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={onCopyLastWeek}
-                                disabled={isCopyingWeek}
-                                title="Recreate last week's shifts in this week as drafts"
-                            >
-                                <CopyIcon data-icon="inline-start" aria-hidden="true" />
-                                {isCopyingWeek ? "Copying…" : "Copy last week"}
-                            </Button>
-                        ) : null}
-                        {templateSlot}
-                    </div>
-                ) : (
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                className="w-[220px] justify-start bg-background border-border text-left font-normal"
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                                {formattedDateLabel}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <div className="p-3">
-                                <Calendar
-                                    mode="range"
-                                    defaultMonth={dateRange?.from}
-                                    selected={dateRange}
-                                    onSelect={handleRangeChange}
-                                    numberOfMonths={1}
-                                    className="w-full"
-                                />
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                )}
+                    </PopoverContent>
+                </Popover>
 
                 {/* Status Filter */}
                 <Select
@@ -233,28 +165,6 @@ export function EventFilters({
                         Reset
                     </Button>
                 )}
-            </div>
-
-            {/* RIGHT SIDE: VIEW TOGGLES */}
-            <div className="flex items-center rounded-full bg-muted/50 p-1">
-                {layoutOptions.map((option) => {
-                    const Icon = option.icon;
-                    const isActive = layout === option.value;
-                    return (
-                        <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => onLayoutChange(option.value)}
-                            className={`flex items-center rounded-full px-3 py-1.5 text-sm font-medium transition-all ${isActive
-                                ? 'bg-background text-foreground shadow-sm'
-                                : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                        >
-                            <Icon className="mr-2 h-4 w-4" />
-                            {option.label}
-                        </button>
-                    );
-                })}
             </div>
         </div>
     );

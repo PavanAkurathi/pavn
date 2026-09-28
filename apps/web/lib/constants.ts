@@ -9,11 +9,6 @@ export const SHIFT_STATUS = {
     APPROVED: 'approved',
 } as const;
 
-export const SHIFT_LAYOUTS = {
-    WEEKLY: 'weekly' as const,
-    LIST: 'list' as const,
-};
-
 export const LOCATIONS = {
     ALL: 'all',
 };

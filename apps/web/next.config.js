@@ -13,6 +13,10 @@ const nextConfig = {
     turbopack: {
         root: repoRoot,
     },
+    // The old schedule builder became the Scheduler.
+    async redirects() {
+        return [{ source: "/dashboard/schedule/create", destination: "/schedule", permanent: false }];
+    },
 };
 
 const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;

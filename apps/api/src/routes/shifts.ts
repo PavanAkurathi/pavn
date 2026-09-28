@@ -29,17 +29,12 @@ import {
     getPendingShifts,
     getHistoryShifts,
     getDraftShifts,
-    deleteDrafts,
     getShiftById,
-    getShiftGroup,
     approveShift,
     cancelShift,
     assignWorker,
     getShiftTimesheets,
     updateTimesheet,
-    publishSchedule,
-    publishDrafts,
-    copyWeek,
     createShiftTemplate,
     createTemplateFromShift,
     listShiftTemplates,
@@ -47,7 +42,6 @@ import {
     applyShiftTemplate,
     editShift,
     duplicateShift,
-    getOpenShifts,
     unassignWorker,
 } from "@repo/scheduling-timekeeping";
 
@@ -75,26 +69,6 @@ shiftsRouter.openapi(getDraftsRoute, async (c) => {
     const orgId = c.get("orgId");
     const result = await getDraftShifts(orgId);
     return jsonOk(c, result);
-});
-
-const deleteDraftsRoute = createRoute({
-    method: 'delete',
-    path: '/drafts',
-    summary: 'Delete Draft Shifts',
-    description: 'Clear all draft shifts.',
-    responses: {
-        200: { content: { 'application/json': { schema: z.object({ success: z.boolean(), message: z.string() }) } }, description: 'Drafts deleted' },
-        403: { description: 'Forbidden' }
-    }
-});
-
-shiftsRouter.openapi(deleteDraftsRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const orgId = c.get("orgId");
-    const result = await deleteDrafts(orgId);
-    return c.json(result, 200);
 });
 
 // =============================================================================
@@ -171,32 +145,6 @@ shiftsRouter.openapi(getHistoryRoute, async (c) => {
     const limit = Math.min(Math.max(parseInt(c.req.query("limit") || "50"), 1), 100);
     const offset = Math.max(parseInt(c.req.query("offset") || "0"), 0);
     const result = await getHistoryShifts(orgId, { limit, offset });
-    return jsonOk(c, result);
-});
-
-// =============================================================================
-// SHIFT GROUPS
-// =============================================================================
-
-const getGroupRoute = createRoute({
-    method: 'get',
-    path: '/groups/{groupId}',
-    summary: 'Get Shift Group',
-    description: 'Get details of a shift group.',
-    request: { params: z.object({ groupId: z.string() }) },
-    responses: {
-        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Shift group' },
-        403: { description: 'Forbidden' }
-    }
-});
-
-shiftsRouter.openapi(getGroupRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const groupId = c.req.param("groupId");
-    const orgId = c.get("orgId");
-    const result = await getShiftGroup(groupId, orgId);
     return jsonOk(c, result);
 });
 
@@ -452,75 +400,6 @@ shiftsRouter.openapi(updateTimesheetRoute, async (c) => {
     return jsonOk(c, result);
 });
 
-// =============================================================================
-// SCHEDULE PUBLISHING
-// =============================================================================
-
-const publishRoute = createRoute({
-    method: 'post',
-    path: '/publish',
-    summary: 'Publish Schedule',
-    description: 'Publish draft shifts.',
-    responses: {
-        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Schedule published' },
-        403: { description: 'Forbidden' }
-    }
-});
-
-const copyWeekRoute = createRoute({
-    method: 'post',
-    path: '/copy-week',
-    summary: 'Copy Last Week',
-    description: "Refill a week from the one before it. Creates drafts; publishing stays a separate, explicit step.",
-    responses: {
-        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Week copied' },
-        403: { description: 'Forbidden' }
-    }
-});
-
-shiftsRouter.use('/copy-week', rateLimit(RATE_LIMITS.publish));
-shiftsRouter.openapi(copyWeekRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const result = await copyWeek(await c.req.json(), c.get("orgId"));
-    return jsonOk(c, result);
-});
-
-const publishDraftsRoute = createRoute({
-    method: 'post',
-    path: '/publish-drafts',
-    summary: 'Publish Existing Drafts',
-    description: 'Announce shifts that are already on the calendar as drafts. The other half of Copy last week.',
-    responses: {
-        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Drafts published' },
-        403: { description: 'Forbidden' },
-        404: { description: 'No drafts found' }
-    }
-});
-
-shiftsRouter.use('/publish-drafts', rateLimit(RATE_LIMITS.publish));
-shiftsRouter.openapi(publishDraftsRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const result = await publishDrafts(await c.req.json(), c.get("orgId"));
-    return jsonOk(c, result);
-});
-
-shiftsRouter.use('/publish', rateLimit(RATE_LIMITS.publish));
-shiftsRouter.openapi(publishRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const orgId = c.get("orgId");
-    const body = await c.req.json();
-
-    // publishSchedule(body, headerOrgId)
-    const result = await publishSchedule(body, orgId);
-    return jsonOk(c, result);
-});
-
 export default shiftsRouter;
 
 // =============================================================================
@@ -611,29 +490,5 @@ shiftsRouter.openapi(duplicateShiftRoute, async (c) => {
     const orgId = c.get("orgId");
     const body = await c.req.json();
     const result = await duplicateShift(id, orgId, body);
-    return jsonOk(c, result);
-});
-
-// =============================================================================
-// OPEN / UNFILLED SHIFTS
-// =============================================================================
-
-const openShiftsRoute = createRoute({
-    method: 'get',
-    path: '/open',
-    summary: 'Get Open Shifts',
-    description: 'Get future shifts with unfilled capacity (spots remaining > 0).',
-    responses: {
-        200: { content: { 'application/json': { schema: OpenApiLooseArraySchema } }, description: 'Open shifts' },
-        403: { description: 'Forbidden' }
-    }
-});
-
-shiftsRouter.openapi(openShiftsRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const orgId = c.get("orgId");
-    const result = await getOpenShifts(orgId);
     return jsonOk(c, result);
 });

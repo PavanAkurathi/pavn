@@ -4,8 +4,7 @@ import { FileText } from "lucide-react";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { Banner } from "@repo/ui/components/ui/banner";
-import { getDashboardShiftsHref } from "@/lib/routes";
-import { SHIFT_LAYOUTS } from "@/lib/constants";
+import { getSchedulerHref } from "@/lib/routes";
 import type { Shift } from "@/lib/types";
 
 interface DraftBannerProps {
@@ -15,16 +14,12 @@ interface DraftBannerProps {
 export function DraftBanner({ drafts }: DraftBannerProps) {
     if (drafts.length === 0) return null;
 
-    // Land on the week the drafts are in, not on an empty schedule builder. The
-    // earliest one is the week the manager is most likely chasing.
+    // Land in the Scheduler on the week the drafts are in: that's where they
+    // are reviewed and published. The earliest is the week most likely chased.
     const earliest = drafts.reduce((soonest, shift) =>
         parseISO(shift.startTime) < parseISO(soonest.startTime) ? shift : soonest,
     );
-    const href = getDashboardShiftsHref({
-        view: "upcoming",
-        layout: SHIFT_LAYOUTS.WEEKLY,
-        week: format(parseISO(earliest.startTime), "yyyy-MM-dd"),
-    });
+    const href = getSchedulerHref({ week: format(parseISO(earliest.startTime), "yyyy-MM-dd") });
 
     return (
         <Link href={href} className="group block">

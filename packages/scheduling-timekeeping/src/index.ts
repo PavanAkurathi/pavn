@@ -1,18 +1,13 @@
 export * from "./types";
 export * from "./schemas";
-export { publishSchedule } from "./modules/shifts/publish";
-export { publishDrafts } from "./modules/shifts/publish-drafts";
 export { getDraftShifts } from "./modules/shifts/drafts";
 export { getUpcomingShifts } from "./modules/shifts/upcoming";
 export { getHistoryShifts } from "./modules/shifts/history";
 export { getShiftById } from "./modules/shifts/get-by-id";
 export { cancelShift } from "./modules/shifts/cancel";
-export { deleteDrafts } from "./modules/shifts/delete-drafts";
-export { getShiftGroup } from "./modules/shifts/get-shift-group";
 export { getPendingShifts } from "./modules/shifts/pending";
 export { editShift } from "./modules/shifts/edit-shift";
 export { duplicateShift } from "./modules/shifts/duplicate-shift";
-export { getOpenShifts } from "./modules/shifts/open-shifts";
 
 export { approveShift } from "./modules/time-tracking/approve";
 export { assignWorker } from "./modules/time-tracking/assign";
@@ -27,7 +22,6 @@ export { getWorkerAllShifts } from "./modules/time-tracking/worker-all-shifts";
 export { exportTimesheets } from "./modules/reporting/export-timesheets";
 export { getTimesheetsReport } from "./modules/reporting/get-timesheets-report";
 export { getReportFilters } from "./modules/reporting/get-report-filters";
-export { copyWeek } from "./modules/shifts/copy-week";
 export {
     createShiftTemplate,
     createTemplateFromShift,

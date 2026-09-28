@@ -48,6 +48,54 @@ async function createSessionContext(
     });
 }
 
+/**
+ * Puts a shift on the schedule the way a manager does now: a draft made in
+ * the Scheduler, then that week published. Returns the new shift's id.
+ */
+async function publishShiftViaScheduler(
+    managerContext: APIRequestContext,
+    input: {
+        orgId: string;
+        locationId: string;
+        localDate: string;
+        startLocal: string;
+        endLocal: string;
+        role: string;
+        workerIds: (string | null)[];
+    },
+) {
+    const shiftId = `shf_${Array.from({ length: 16 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join("")}`;
+    const people = input.workerIds.filter((id): id is string => Boolean(id));
+    const created = await managerContext.post("/scheduler/changes", {
+        headers: { "x-org-id": input.orgId },
+        data: {
+            force: true,
+            changes: [
+                {
+                    op: "create",
+                    shiftId,
+                    shift: {
+                        locationId: input.locationId,
+                        localDate: input.localDate,
+                        startLocal: input.startLocal,
+                        endLocal: input.endLocal,
+                        role: input.role,
+                        capacity: Math.max(1, input.workerIds.length),
+                    },
+                    assignees: people.map((personId) => ({ personId, kind: "roster" })),
+                },
+            ],
+        },
+    });
+    expect(created.ok(), await created.text()).toBeTruthy();
+    const published = await managerContext.post("/scheduler/week/publish", {
+        headers: { "x-org-id": input.orgId },
+        data: { locationId: input.locationId, weekStart: input.localDate, force: true },
+    });
+    expect(published.ok(), await published.text()).toBeTruthy();
+    return shiftId;
+}
+
 function createRunId(label: string): string {
     return `${label}-${Date.now()}-${crypto.randomUUID()}`;
 }
@@ -224,32 +272,18 @@ test.describe("manager/worker lifecycle", () => {
         const shiftDate = shiftStart.toISOString().slice(0, 10);
         const startTime = shiftStart.toISOString().slice(11, 16);
         const endTime = shiftEnd.toISOString().slice(11, 16);
-        const shiftTitle = `Lifecycle Shift ${runId}`;
+        // Roles are at most 60 characters; the uuid's tail keeps it unique.
+        const shiftTitle = `Lifecycle Shift ${runId.slice(-12)}`;
 
-        const publishResponse = await managerContext.post("/shifts/publish", {
-            headers: { "x-org-id": orgId },
-            data: {
-                organizationId: orgId,
-                locationId,
-                timezone: "UTC",
-                status: "published",
-                schedules: [
-                    {
-                        scheduleName: shiftTitle,
-                        dates: [shiftDate],
-                        startTime,
-                        endTime,
-                        positions: [
-                            {
-                                roleName: shiftTitle,
-                                workerIds: [workerUser!.id],
-                            },
-                        ],
-                    },
-                ],
-            },
+        await publishShiftViaScheduler(managerContext, {
+            orgId,
+            locationId,
+            localDate: shiftDate,
+            startLocal: startTime,
+            endLocal: endTime,
+            role: shiftTitle,
+            workerIds: [workerUser!.id],
         });
-        expect(publishResponse.ok()).toBeTruthy();
 
         const createdShift = await db.query.shift.findFirst({
             where: and(
@@ -384,32 +418,17 @@ test.describe("manager/worker lifecycle", () => {
         const shiftDate = shiftStart.toISOString().slice(0, 10);
         const startTime = shiftStart.toISOString().slice(11, 16);
         const endTime = shiftEnd.toISOString().slice(11, 16);
-        const shiftTitle = `Shift Lifecycle ${runId}`;
+        const shiftTitle = `Shift Lifecycle ${runId.slice(-12)}`;
 
-        const publishResponse = await managerContext.post("/shifts/publish", {
-            headers: { "x-org-id": orgId },
-            data: {
-                organizationId: orgId,
-                locationId,
-                timezone: "UTC",
-                status: "published",
-                schedules: [
-                    {
-                        scheduleName: shiftTitle,
-                        dates: [shiftDate],
-                        startTime,
-                        endTime,
-                        positions: [
-                            {
-                                roleName: shiftTitle,
-                                workerIds: [workerUser.id],
-                            },
-                        ],
-                    },
-                ],
-            },
+        await publishShiftViaScheduler(managerContext, {
+            orgId,
+            locationId,
+            localDate: shiftDate,
+            startLocal: startTime,
+            endLocal: endTime,
+            role: shiftTitle,
+            workerIds: [workerUser.id],
         });
-        expect(publishResponse.ok()).toBeTruthy();
 
         const createdShift = await db.query.shift.findFirst({
             where: and(
@@ -647,30 +666,15 @@ test.describe("manager/worker lifecycle", () => {
         });
         expect(syncedRoster?.status).toBe("active");
 
-        const publishResponse = await managerContext.post("/shifts/publish", {
-            headers: { "x-org-id": orgId },
-            data: {
-                organizationId: orgId,
-                locationId,
-                timezone: "UTC",
-                status: "published",
-                schedules: [
-                    {
-                        scheduleName: `Custom Role Shift ${runId}`,
-                        dates: [new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10)],
-                        startTime: "09:00",
-                        endTime: "17:00",
-                        positions: [
-                            {
-                                roleName: "Forklift Operator",
-                                workerIds: [workerUserId, null],
-                            },
-                        ],
-                    },
-                ],
-            },
+        await publishShiftViaScheduler(managerContext, {
+            orgId,
+            locationId,
+            localDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+            startLocal: "09:00",
+            endLocal: "17:00",
+            role: "Forklift Operator",
+            workerIds: [workerUserId, null],
         });
-        expect(publishResponse.ok()).toBeTruthy();
 
         const publishedShift = await db.query.shift.findFirst({
             where: and(

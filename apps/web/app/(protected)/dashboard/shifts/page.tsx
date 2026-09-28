@@ -17,17 +17,14 @@ export default async function ShiftsPage(props: {
     const searchParams = await props.searchParams;
     const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined;
     const view = viewParam === 'past' ? 'past' : 'upcoming';
-    const layoutParam = typeof searchParams.layout === "string" ? searchParams.layout : undefined;
-    const weekParam = typeof searchParams.week === "string" ? searchParams.week : undefined;
     const session = await getRequiredSession();
     const orgId = await resolveActiveOrganizationId(
         session.user.id,
         getSessionActiveOrganizationId(session),
     );
 
-    // The drafts come back as a list, not a count: the banner needs the count,
-    // but the schedule needs the shifts themselves so a copied week is visible
-    // and publishable where it sits.
+    // Drafts come back as a list: the banner links to their week in the
+    // Scheduler, and the list shows them marked as drafts.
     const [shifts, pendingCount, draftShifts, locations] = await Promise.all([
         getShifts({ view, orgId: orgId ?? undefined }),
         orgId ? getPendingShiftsCount(orgId) : Promise.resolve(0),
@@ -64,8 +61,6 @@ export default async function ShiftsPage(props: {
                 availableLocations={mappedLocations}
                 defaultTab={view}
                 pendingCount={pendingCount}
-                initialLayoutParam={layoutParam}
-                initialWeekParam={weekParam}
             />
         </div>
     );

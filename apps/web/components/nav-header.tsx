@@ -12,7 +12,6 @@ import { NotificationsPopover } from "./notifications/notifications-popover";
 import {
     getDashboardShiftsHref,
     getSchedulerHref,
-    isCreateSchedulePath,
     isOnboardingPath,
 } from "@/lib/routes";
 import { REQUESTS_SUMMARY_KEY, fetchRequestsSummary } from "@/lib/scheduler/client";
@@ -48,11 +47,8 @@ export function NavHeader({ activeOrg: serverOrg, user, trial }: NavHeaderProps)
     });
     const waiting = requests?.pending ?? 0;
 
-    // Distraction-free mode for focused creation/setup flows
-    if (
-        isCreateSchedulePath(pathname) ||
-        isOnboardingPath(pathname)
-    ) {
+    // Distraction-free mode for setup
+    if (isOnboardingPath(pathname)) {
         return null;
     }
 

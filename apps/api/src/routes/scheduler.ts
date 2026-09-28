@@ -43,6 +43,7 @@ import {
     applySchedulerChanges,
     discardSchedulerWeek,
     listShiftTemplates,
+    deleteShiftTemplate,
     applySchedulingSetup,
     createDepartment,
     deleteDepartment,
@@ -318,6 +319,23 @@ const deleteDepartmentRoute = createRoute({
 schedulerRouter.openapi(deleteDepartmentRoute, async (c) => {
     const { id } = c.req.valid("param");
     return jsonOk(c, await deleteDepartment(c.get("orgId"), id));
+});
+
+const deleteTemplateRoute = createRoute({
+    method: "delete",
+    path: "/templates/{id}",
+    summary: "Delete a shift template",
+    request: { params: z.object({ id: z.string().min(1) }) },
+    responses: {
+        200: { ...json(z.object({ success: z.boolean() }).passthrough()), description: "Deleted" },
+        403: { description: "Managers only" },
+        404: { description: "Template not found" },
+    },
+});
+
+schedulerRouter.openapi(deleteTemplateRoute, async (c) => {
+    const { id } = c.req.valid("param");
+    return jsonOk(c, await deleteShiftTemplate(id, c.get("orgId")));
 });
 
 // =============================================================================

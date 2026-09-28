@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import type { SchedulerTemplate, SchedulerWeek } from "@repo/contracts/scheduler";
 import { Button } from "@repo/ui/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@repo/ui/components/ui/dialog";
 import { cn } from "@repo/ui/lib/utils";
-import { fetchSchedulerWeek, fetchTemplates, weekKey } from "@/lib/scheduler/client";
+import { deleteTemplate, fetchSchedulerWeek, fetchTemplates, weekKey } from "@/lib/scheduler/client";
 import { addDays, compactRange, weekdayShort } from "@/lib/scheduler/format";
 import { planCopyWeek, planTemplate, type Plan } from "@/lib/scheduler/plans";
 
@@ -76,8 +78,9 @@ export function TemplateDialog({
     onOpenChange: (open: boolean) => void;
     run: (plan: Plan) => Promise<boolean>;
 }) {
-    const { data: templates, isLoading } = useSWR(open ? ["scheduler-templates", week.location.id] : null, ([, id]) => fetchTemplates(id));
+    const { data: templates, isLoading, mutate } = useSWR(open ? ["scheduler-templates", week.location.id] : null, ([, id]) => fetchTemplates(id));
     const [chosen, setChosen] = useState<SchedulerTemplate | null>(null);
+    const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
     const [days, setDays] = useState<Set<number>>(new Set());
     const [working, setWorking] = useState(false);
 
@@ -86,6 +89,18 @@ export function TemplateDialog({
         if (next.has(index)) next.delete(index);
         else next.add(index);
         setDays(next);
+    };
+
+    const remove = async (template: SchedulerTemplate) => {
+        setConfirmingDelete(null);
+        try {
+            await deleteTemplate(template.id);
+            if (chosen?.id === template.id) setChosen(null);
+            await mutate();
+            toast.success(`Deleted ${template.name}`);
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Couldn't delete it");
+        }
     };
 
     const apply = async () => {
@@ -117,13 +132,13 @@ export function TemplateDialog({
                 ) : null}
                 <ul className="flex max-h-56 flex-col gap-1 overflow-y-auto">
                     {templates?.map((t) => (
-                        <li key={t.id}>
+                        <li key={t.id} className="group/template relative">
                             <button
                                 type="button"
                                 aria-pressed={chosen?.id === t.id}
                                 onClick={() => setChosen(t)}
                                 className={cn(
-                                    "flex w-full flex-col items-start rounded-lg border px-3 py-2 text-left text-sm transition-colors hover:bg-muted/60",
+                                    "flex w-full flex-col items-start rounded-lg border px-3 py-2 pr-10 text-left text-sm transition-colors hover:bg-muted/60",
                                     chosen?.id === t.id && "border-primary bg-primary/5",
                                 )}
                             >
@@ -132,6 +147,27 @@ export function TemplateDialog({
                                     {compactRange(t.startTime, t.endTime)} · {t.positions.map((p) => `${p.headcount} ${p.roleName}`).join(", ")}
                                 </span>
                             </button>
+                            {confirmingDelete === t.id ? (
+                                <div className="absolute inset-0 flex items-center justify-end gap-2 rounded-lg border border-destructive/40 bg-card px-3 text-sm">
+                                    <span className="mr-auto">Delete {t.name}?</span>
+                                    <Button size="sm" variant="ghost" onClick={() => setConfirmingDelete(null)}>
+                                        Keep
+                                    </Button>
+                                    <Button size="sm" variant="destructive" onClick={() => void remove(t)}>
+                                        Delete
+                                    </Button>
+                                </div>
+                            ) : (
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    aria-label={`Delete ${t.name}`}
+                                    className="absolute right-1 top-1/2 size-8 -translate-y-1/2 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 group-hover/template:opacity-100"
+                                    onClick={() => setConfirmingDelete(t.id)}
+                                >
+                                    <Trash2 />
+                                </Button>
+                            )}
                         </li>
                     ))}
                 </ul>

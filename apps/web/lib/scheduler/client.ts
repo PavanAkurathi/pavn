@@ -60,6 +60,10 @@ export function fetchTemplates(locationId: string): Promise<SchedulerTemplate[]>
     return request<SchedulerTemplate[]>(`templates?${new URLSearchParams({ locationId })}`);
 }
 
+export function deleteTemplate(id: string): Promise<unknown> {
+    return request(`templates/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
 export function blockingConflictsOf(error: unknown): SchedulerBlockingConflict[] | null {
     if (!(error instanceof SchedulerRequestError) || error.code !== "SCHEDULE_CONFLICT") return null;
     const conflicts = (error.details as { conflicts?: SchedulerBlockingConflict[] } | undefined)?.conflicts;

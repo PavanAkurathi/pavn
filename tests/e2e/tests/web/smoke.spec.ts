@@ -38,21 +38,22 @@ test.describe("Manager web smoke", () => {
     test("seeded admin reaches the shifts dashboard", async ({ page }) => {
         await signIn(page);
 
-        await expect(page.getByRole("heading", { name: "Shifts" })).toBeVisible();
-        await expect(page.getByRole("link", { name: /shifts/i })).toBeVisible();
-        await expect(page.getByRole("link", { name: /roster/i })).toBeVisible();
-        await expect(page.getByRole("link", { name: /reports/i })).toBeVisible();
-        await expect(page.getByRole("link", { name: /availability/i })).toBeVisible();
-        await expect(page.getByRole("link", { name: /create a schedule/i })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Shifts", exact: true })).toBeVisible();
+        const nav = page.getByRole("navigation");
+        await expect(nav.getByRole("link", { name: /^Schedule/ })).toBeVisible();
+        await expect(nav.getByRole("link", { name: "Shifts", exact: true })).toBeVisible();
+        await expect(nav.getByRole("link", { name: "Roster", exact: true })).toBeVisible();
+        await expect(nav.getByRole("link", { name: "Reports", exact: true })).toBeVisible();
     });
 
-    test("create schedule flow opens", async ({ page }) => {
+    test("Schedule opens the weekly Scheduler", async ({ page }) => {
         await signIn(page);
 
-        await page.getByRole("link", { name: /create a schedule/i }).click();
+        await page.getByRole("navigation").getByRole("link", { name: /^Schedule/ }).click();
 
-        await expect(page).toHaveURL(/.*\/dashboard\/schedule\/create.*/);
-        await expect(page.locator('[data-testid="dates-trigger"]')).toBeVisible();
+        await expect(page).toHaveURL(/\/schedule/);
+        await expect(page.getByRole("table").first()).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole("button", { name: /^Publish/ })).toBeVisible();
     });
 
     test("roster page loads with workforce actions", async ({ page }) => {

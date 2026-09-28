@@ -109,6 +109,7 @@ test.describe("manager browser signup flow", () => {
         await expect(page.getByText(/account ready/i).first()).toBeVisible();
         await expect(page.getByText(/business basics/i).first()).toBeVisible();
         await expect(page.getByText(/first location/i).first()).toBeVisible();
+        await expect(page.getByText(/how you schedule/i).first()).toBeVisible();
         await expect(page.getByText(/workforce access/i).first()).toBeVisible();
         await expect(page.getByText(/first published shift/i).first()).toBeVisible();
         await expect(page.locator("#onboarding_business_name")).toHaveValue(businessName);
@@ -132,6 +133,11 @@ test.describe("manager browser signup flow", () => {
         await page.locator("#onboarding_location_name").fill("Downtown Boston");
         await page.locator("#onboarding_location_address").fill("4 Yawkey Way, Boston, MA 02215");
         await page.getByRole("button", { name: /save location and continue/i }).click();
+
+        // Three scheduling questions: pick the business type, keep the other defaults.
+        await expect(page.getByRole("heading", { name: /how do you schedule/i })).toBeVisible();
+        await page.getByText("Restaurant or bar", { exact: true }).click();
+        await page.getByRole("button", { name: /save and continue/i }).click();
 
         await expect(page.getByRole("heading", { name: /add your first workers/i })).toBeVisible();
         await expect(page.getByText(/worker access is the gate for the mobile experience/i).first()).toBeVisible();

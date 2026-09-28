@@ -1,5 +1,4 @@
-import type { ShiftLayout } from "@/lib/types";
-import type { ShiftDashboardTab } from "@/lib/shifts/weekly-grid";
+export type ShiftDashboardTab = "upcoming" | "past";
 
 type QueryValue = string | number | boolean | null | undefined;
 
@@ -20,24 +19,14 @@ function buildHref(pathname: string, params?: Record<string, QueryValue>) {
 
 export const DASHBOARD_SHIFTS_PATH = "/dashboard/shifts";
 export const SCHEDULER_PATH = "/schedule";
-export const DASHBOARD_SCHEDULE_CREATE_PATH = "/dashboard/schedule/create";
 export const DASHBOARD_ONBOARDING_PATH = "/dashboard/onboarding";
 export const ROSTERS_PATH = "/rosters";
 export const AUTH_LOGIN_PATH = "/auth/login";
 export const AUTH_VERIFY_EMAIL_PATH = "/auth/verify-email";
 export const AUTH_SIGN_UP_EMAIL_API_PATH = "/api/auth/sign-up/email";
 
-export function getDashboardShiftsHref(options?: {
-    view?: ShiftDashboardTab;
-    layout?: ShiftLayout;
-    /** Local calendar date (YYYY-MM-DD) inside the week to open on. */
-    week?: string;
-}) {
-    return buildHref(DASHBOARD_SHIFTS_PATH, {
-        view: options?.view,
-        layout: options?.layout,
-        week: options?.week,
-    });
+export function getDashboardShiftsHref(options?: { view?: ShiftDashboardTab }) {
+    return buildHref(DASHBOARD_SHIFTS_PATH, { view: options?.view });
 }
 
 /** The weekly Scheduler. Omitted params mean the first location and its current week. */
@@ -69,10 +58,6 @@ export function getShiftTimesheetHref(
     return buildHref(`${DASHBOARD_SHIFTS_PATH}/${shiftId}/timesheet`, {
         returnTo: options?.returnTo,
     });
-}
-
-export function getCreateScheduleHref() {
-    return DASHBOARD_SCHEDULE_CREATE_PATH;
 }
 
 export function getAuthLoginHref(options?: {
@@ -117,10 +102,6 @@ export function isOnboardingPath(pathname: string) {
     return pathname === DASHBOARD_ONBOARDING_PATH || pathname.startsWith(`${DASHBOARD_ONBOARDING_PATH}/`);
 }
 
-export function isCreateSchedulePath(pathname: string) {
-    return pathname === DASHBOARD_SCHEDULE_CREATE_PATH || pathname.startsWith(`${DASHBOARD_SCHEDULE_CREATE_PATH}/`);
-}
-
 export function isRosterPath(pathname: string) {
     return pathname === ROSTERS_PATH || pathname.startsWith(`${ROSTERS_PATH}/`);
 }
@@ -128,7 +109,6 @@ export function isRosterPath(pathname: string) {
 export function isOnboardingExemptProtectedPath(pathname: string) {
     return (
         isOnboardingPath(pathname) ||
-        isCreateSchedulePath(pathname) ||
         isSchedulerPath(pathname) ||
         isRosterPath(pathname)
     );
