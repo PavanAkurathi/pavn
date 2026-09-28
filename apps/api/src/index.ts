@@ -148,13 +148,21 @@ app.use("*", cors(corsConfig));
 // Request tracing, timeout & global rate limit
 app.use("*", requestId());
 app.use("*", timeout(30000));
-// Global rate limit — catches broad abuse; route-specific limits are tighter
-app.use("/shifts/*", rateLimit(RATE_LIMITS.api));
-app.use("/worker/*", rateLimit(RATE_LIMITS.api));
-app.use("/timesheets/*", rateLimit(RATE_LIMITS.api));
-app.use("/organizations/*", rateLimit(RATE_LIMITS.api));
-app.use("/billing/*", rateLimit(RATE_LIMITS.api));
-app.use("/api/auth/*", rateLimit(RATE_LIMITS.auth));
+// Brute-force protection on attempts only: signing in or up, and asking for or
+// checking a one-time code. Session reads (get-session, sign-out) happen on
+// every page load and must not spend this budget; they once did, and a few
+// page loads locked every user out with 429s that looked like being signed out.
+for (const attempt of [
+    "/api/auth/sign-in/*",
+    "/api/auth/sign-up/*",
+    "/api/auth/email-otp/*",
+    "/api/auth/forget-password/*",
+    "/api/auth/reset-password",
+    "/api/auth/change-password",
+    "/api/auth/phone-number/*",
+]) {
+    app.use(attempt, rateLimit(RATE_LIMITS.auth));
+}
 app.use("*", async (c, next) => {
     await next();
 
@@ -354,6 +362,13 @@ app.use("*", async (c, next) => {
 
     await next();
 });
+
+// Broad abuse limit, registered after the session check above so each signed-in
+// user gets their own budget (registered earlier, every caller looked anonymous
+// and all users shared one). Route-specific limits are tighter.
+for (const area of ["/shifts/*", "/worker/*", "/timesheets/*", "/organizations/*", "/billing/*"]) {
+    app.use(area, rateLimit(RATE_LIMITS.api));
+}
 
 // =============================================================================
 // MOUNT ROUTE MODULES

@@ -191,9 +191,27 @@ export default async function proxy(request: NextRequest) {
 
         return response;
     } catch (error) {
+        // Only a definite "not signed in" (401, handled above) goes to the login
+        // page. A failed check (429, 5xx, network) is ours to fix; bouncing to
+        // login turned a busy API into an endless sign-in loop.
         console.error("[Proxy] Protected route check failed:", error);
-        return redirectToLogin(request);
+        return sessionCheckUnavailable();
     }
+}
+
+function sessionCheckUnavailable() {
+    return new NextResponse(
+        '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">' +
+            "<title>Workers Hive</title>" +
+            '<body style="font-family:system-ui,sans-serif;max-width:32rem;margin:15vh auto;padding:0 1rem;color:#18181b">' +
+            '<h1 style="font-size:1.25rem">We couldn&#39;t confirm you&#39;re signed in</h1>' +
+            "<p>That&#39;s a problem on our side, not yours. Refresh in a few seconds.</p>" +
+            '<p><a href="" style="color:#b91c1c">Refresh</a></p></body>',
+        {
+            status: 503,
+            headers: { "content-type": "text/html; charset=utf-8", "retry-after": "5", "cache-control": "no-store" },
+        },
+    );
 }
 
 export const config = {

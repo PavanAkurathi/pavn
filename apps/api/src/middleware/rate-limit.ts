@@ -59,8 +59,18 @@ interface RateLimitConfig {
 }
 
 /**
+ * The caller's IP as the edge saw it. Behind the web app's auth proxy this can
+ * be the web server's address rather than the browser's, so treat it as a
+ * coarse key, not an identity.
+ */
+export function clientIp(c: Context): string {
+    const forwarded = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+    return c.req.header("x-real-ip") || forwarded || "unknown";
+}
+
+/**
  * In-memory cache for fast rate limit lookups.
- * Key format: "userId:orgId:path"
+ * Key format: "userId-or-ip:orgId:path"
  * Note: In serverless, this resets on cold starts - DB persistence handles continuity
  */
 const memoryCache = new Map<string, { count: number; windowStart: number }>();
@@ -79,8 +89,13 @@ export const RATE_LIMITS = {
     /** General API endpoints - 100 per minute */
     api: { windowMs: 60_000, maxRequests: 100 },
     
-    /** Auth attempts - 10 per 15 minutes (brute force protection) */
-    auth: { windowMs: 900_000, maxRequests: 10 },
+    /**
+     * Sign-in, sign-up and one-time-code attempts: 20 per 15 minutes per client
+     * IP and endpoint (brute-force protection). Never apply this to session reads
+     * such as get-session: those run on every page load, and callers on /api/auth
+     * are anonymous, so without the IP key everyone would share one budget.
+     */
+    auth: { windowMs: 900_000, maxRequests: 20, keyFn: (c: Context) => `ip:${clientIp(c)}:${c.req.path}` },
     
     /** Strict limit - 3 per minute (for sensitive operations) */
     strict: { windowMs: 60_000, maxRequests: 3 },
@@ -108,7 +123,9 @@ export function rateLimit(config: RateLimitConfig) {
         const path = c.req.path;
         
         // Generate rate limit key
-        const key = config.keyFn?.(c) || `${userId || "anon"}:${orgId || "global"}:${path}`;
+        // Signed-in callers get their own budget; anonymous ones are keyed by IP
+        // so they never all share one.
+        const key = config.keyFn?.(c) || `${userId || `ip:${clientIp(c)}`}:${orgId || "global"}:${path}`;
         const now = Date.now();
         
         // Check memory cache first (fast path)
