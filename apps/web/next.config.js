@@ -8,6 +8,11 @@ const repoRoot = path.resolve(appDir, "../..");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     transpilePackages: ["@repo/database", "@repo/auth", "@repo/billing", "@repo/email", "@repo/scheduling-timekeeping", "@repo/organizations", "@repo/gig-workers", "@repo/ui", "@repo/notifications", "@repo/observability"],
+    // Load `ws` (the Neon driver's WebSocket client) with Node's own require.
+    // Bundled, its optional native `bufferutil` import became an empty stub,
+    // so any frame of 48 bytes or more called an undefined `mask` and the
+    // database connection died ("b.mask is not a function").
+    serverExternalPackages: ["ws"],
     // Next 16 uses Turbopack by default. Keep the config explicit so builds
     // don't fail on the presence of Sentry's webpack hooks.
     turbopack: {
