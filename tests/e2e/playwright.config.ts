@@ -112,7 +112,7 @@ export default defineConfig({
                 timeout: 120 * 1000,
             },
             {
-                command: 'cd ../../apps/web && bun --env-file=../../.env run dev',
+                command: 'cd ../../apps/web && PAVN_DISABLE_ONBOARDING_ENFORCEMENT=0 bun --env-file=../../.env run dev',
                 url: 'http://localhost:3000',
                 reuseExistingServer,
                 timeout: 120 * 1000,

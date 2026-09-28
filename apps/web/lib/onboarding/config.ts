@@ -13,9 +13,15 @@
  * override, so under the old default that spec could never pass. It went
  * unnoticed because the e2e job is opt-in behind `vars.RUN_E2E`.
  *
- * Enforcement is now on everywhere by default. Set
- * PAVN_DISABLE_ONBOARDING_ENFORCEMENT=1 to opt a specific environment out — for
- * seeded fixtures or a demo account that should land straight on the dashboard.
+ * DEVELOPMENT PHASE: enforcement is OFF by default so the owner can test the
+ * core product (Scheduler, shifts, timesheets) without the setup wizard in the
+ * way. While it's off, /dashboard/onboarding redirects to Shifts; locations,
+ * people and scheduling answers are set in Settings and Roster instead.
+ *
+ * BEFORE LAUNCH: turn it back on, either by setting
+ * PAVN_DISABLE_ONBOARDING_ENFORCEMENT=0 in production or by making the
+ * fallback below `false` again. The e2e job sets it to 0, so the signup spec
+ * still exercises the enforced flow.
  */
 export function isOnboardingEnforcementDisabled() {
     const explicit = process.env.PAVN_DISABLE_ONBOARDING_ENFORCEMENT;
@@ -28,5 +34,6 @@ export function isOnboardingEnforcementDisabled() {
         return false;
     }
 
-    return false;
+    // Development-phase default; see above before launch.
+    return true;
 }
