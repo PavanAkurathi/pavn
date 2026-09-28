@@ -17,6 +17,7 @@ import {
     resolveRequestedUserRole,
 } from "./user-lifecycle";
 import { logError, logMessage } from "@repo/observability";
+import { devLogin, readDevLoginConfig } from "./dev-login";
 import {
     buildTrustedOrigins,
     getBetterAuthInfraConnection,
@@ -41,6 +42,13 @@ function buildInfraPlugins() {
 }
 
 const infraPlugins = buildInfraPlugins();
+
+// Development-phase sign-in link (see dev-login.ts). Off unless configured.
+const devLoginConfig = readDevLoginConfig();
+if (devLoginConfig) {
+    logMessage("[AUTH] Dev sign-in link is ON. Turn it off before launch (packages/auth/src/dev-login.ts).");
+}
+const devLoginPlugins = devLoginConfig ? [devLogin(devLoginConfig)] : [];
 
 const organizationAccessStatements = {
     organization: ["update", "delete"],
@@ -218,6 +226,7 @@ export const auth = betterAuth({
             },
         }),
         ...infraPlugins,
+        ...devLoginPlugins,
     ],
 
     // ── Advanced Cookie Config ────────────────────────────────────────────────

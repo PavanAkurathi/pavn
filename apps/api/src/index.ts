@@ -160,6 +160,7 @@ for (const attempt of [
     "/api/auth/reset-password",
     "/api/auth/change-password",
     "/api/auth/phone-number/*",
+    "/api/auth/dev-login",
 ]) {
     app.use(attempt, rateLimit(RATE_LIMITS.auth));
 }
