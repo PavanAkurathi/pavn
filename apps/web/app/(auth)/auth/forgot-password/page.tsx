@@ -33,8 +33,11 @@ function ForgotPasswordContent() {
             type: "forget-password",
         }, {
             onSuccess: () => {
-                toast.success("Code sent!", {
-                    description: "Check your email for the verification code.",
+                // The server answers the same whether or not the email has an
+                // account (so nobody can probe for accounts); say so, rather
+                // than promising a code that may never come.
+                toast.success("Check your email", {
+                    description: `If ${email} has an account, a 6-digit code is on its way. Nothing after a few minutes? Check the address or sign up.`,
                 });
                 const nextUrl = new URL("/auth/reset-password", window.location.origin);
                 nextUrl.searchParams.set("email", email);

@@ -84,7 +84,7 @@ function ResetPasswordForm() {
                 <>
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">
-                            Enter the code sent to <span className="font-bold text-foreground">{email}</span>.
+                            If <span className="font-bold text-foreground">{email}</span> has an account, we sent it a 6-digit code. Enter it below.
                         </p>
                     </div>
                     <OtpForm
