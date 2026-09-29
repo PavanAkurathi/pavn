@@ -104,9 +104,16 @@ export async function registerGeofences(shifts: WorkerShift[]) {
         const limitedRegions = regions.slice(0, 20);
 
         await Location.startGeofencingAsync(GEOFENCE_TASK_NAME, limitedRegions);
+        return;
+    }
 
-    } else {
+    // Nothing to watch. Stopping a task that was never started throws
+    // "Task not found" — which is not a failure, it is the state we wanted.
+    // Left unguarded it aborted the shift-list load and put an error toast in
+    // front of every worker with no upcoming shifts.
+    try {
         await Location.stopGeofencingAsync(GEOFENCE_TASK_NAME);
-
+    } catch {
+        // Already not running.
     }
 }
