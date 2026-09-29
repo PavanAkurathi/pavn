@@ -5,7 +5,7 @@ and phone triage is replaced by a real Day / Week / Month on phones
 ([`phase-2-manager-landing.md`](./phase-2-manager-landing.md), §3 and §4 are superseded by this document).
 
 **Clickable prototype:** [`prototype-v2.html`](./prototype-v2.html). Open it in a browser and use the
-Desktop / Phone switch at the top. It uses sample data and saves nothing.
+Desktop / Phone switch at the top. It uses sample data and saves nothing. Its working title is "Horizon Schedule".
 
 ## Context
 
@@ -34,6 +34,7 @@ are a separate universe; they are designed after this (§13).
 | Scope now | Business side first. Worker read receipts and teammates-on-shift are deferred. |
 | Managers on phones | Touch-first everywhere. The phone gets day-centric layouts and full editing. |
 | Drag | An optional desktop accelerator. Nothing depends on it. |
+| **No charts** | **Owner feedback: no graphs.** Everything is words, counts and tags. No bars, ribbons, meters, timelines or heatmaps. |
 
 ## 1. Try the prototype
 
@@ -43,8 +44,8 @@ are a separate universe; they are designed after this (§13).
 | Desktop: click a shift, then **Copy**, then **Weekdays**, then **Done**. | Copy to many days in one action. Days that would be blocked are skipped and counted. |
 | Click an empty cell, then a **usual shift** chip. | Creating a shift in two taps. Type `4-11` to see the live parse. |
 | Click an open slot in the Open row. | The inspector has *How many people*, *Who can take it* and **Offer** to matching workers. |
-| **Month**, then the *Time off*, *Events* and *Drafts* lenses, then **Table**. | One question at a time, and the table twin of the heatmap. |
-| Click a bar in the strip at the top. | Jump three weeks ahead without opening a month page. |
+| Tap **Next week** in the row at the top. | See that next week has 16 open slots and is a draft, without opening it. |
+| **Month**, then the *Time off*, *Events* and *Drafts* lenses, then **List**. | One question at a time, and the same data as a list. |
 | Phone: **Week**, **People**, then tap a person. | A phone-sized way to schedule by person, with no grid. |
 | Phone: tap a shift, then **Move** or **Copy**. | Day chips instead of dragging. |
 | Inbox, then **Approve** on Cara's time off, then back to Schedule. | A decision with a consequence: it creates a conflict, and the week says so. |
@@ -56,11 +57,12 @@ Each principle rules something out.
 
 1. **Every action has a tap path.** Drag is a shortcut, never a requirement (WCAG 2.2 SC 2.5.7, Dragging Movements).
 2. **One canvas, three zooms.** Day, Week and Month share one date and one set of filters, so zooming never loses your place.
-3. **Coverage before people.** The first question is "am I covered?", not "what is Ana doing?".
-4. **One question at a time.** A lens shows one thing: coverage, time off, events or drafts. Never all of them.
+3. **Gaps before people.** The first question is "am I covered?", and the answer is a word or a number: *Covered*, *8 open*.
+4. **One question at a time.** A lens shows one thing: open slots, time off, events or drafts. Never all of them.
 5. **A clutter budget.** Three marks on a shift, one number per day, six controls in the toolbar.
 6. **Same content, two containers.** The inspector is a right panel on desktop and a bottom sheet on a phone.
-7. **Everything is undoable.**
+7. **No charts.** If a number or a word says it, do not draw it.
+8. **Everything is undoable.**
 
 ## 3. Information architecture
 
@@ -72,42 +74,41 @@ Each principle rules something out.
   It carries one badge.
 - Phone: bottom tabs **Schedule · Inbox · People · Time**.
 
-## 4. The Horizon strip
+## 4. Weeks ahead
 
-A coverage minimap of the next six weeks, always visible above the grid. It is the reason a manager sees a hole
+A row of six week chips, always visible above the toolbar. Each chip is two lines of text. It is how a manager sees a hole
 three weeks out without opening anything, and it replaces the phase-2 "needs you" strip.
 
-| Encoding | Meaning |
-|---|---|
-| Bar height | Filled slots ÷ all slots that day |
-| Green | Every slot filled |
-| Amber | Some open: at least 80% filled |
-| Orange | Short: under 80% filled |
-| Outlined bar (not solid) | Has drafts. Workers can't see it yet |
-| Flat line | Nothing scheduled |
-| ◆ | An event that day |
-| Red dot | Today |
-| Grey box around a week | The week you are viewing |
+```
+WEEKS AHEAD  [This week      ] [Next week      ] [Oct 11 – 17    ] [Oct 18 – 24  ] [Oct 25 – 31  ]
+             [8 open · 14 drafts] [16 open · Draft] [11 open · Draft] [Not started ] [Not started ]
+```
 
-- Form carries the meaning, not just hue: height for magnitude, solid vs outlined for published vs draft. Colors are the
-  fixed status palette and always pair with a label (tooltip, aria-label, the Month table, the legend).
-- Desktop: every bar is a link to that day. Phone: each *week* is one 44px tap target, because a bar is about 6px wide.
-  Tapping a week keeps the weekday you were on.
-- Legend: the **Key** button on desktop, and **More → How to read the strip** on phone.
-- Hover and focus show a tooltip (`Thu Oct 8 · 7 of 9 filled · 2 open · Draft`). Tapping is never gated on it.
+| Status text | Meaning |
+|---|---|
+| `Covered` | Every slot is filled |
+| `8 open` | Slots still empty, in the warning color |
+| `· 14 drafts` | Some shifts are unpublished. Workers can't see them yet |
+| `· Draft` | The whole week (85% or more) is unpublished |
+| `Not started` | Nothing scheduled |
+
+- The dark chip is the week you are viewing. Tap a chip to jump there; from Day it keeps the weekday you were on.
+- The row scrolls sideways inside itself on a phone. Each chip is at least 44px tall. Its accessible name is
+  `Jump to next week: 16 open · Draft`.
+- There is no legend, because there is nothing to decode.
 
 ## 5. Three zooms
 
 | Zoom | Desktop (≥1024px) | Phone |
 |---|---|---|
-| **Day** | Hour timeline with a lane per role. A coverage ribbon sits on top, aligned to the hours. Bars are shifts, dashed bars are open slots. | Headline (`10 on shift · 2 open`), the coverage ribbon, then dayparts (Morning, Midday, Evening, Late), each `5 of 7` with a meter. Open slots sit under people with **Assign** and **Offer**. |
-| **Week** | People × days grid, or **By role** (`4p–11p 3/4` per cell). Each day header has a coverage bar, an open count and an event line. | Seven day rows with a coverage bar. **People** lens: a row per person with seven day dots and hours. Tapping a person opens their week in a sheet. |
-| **Month** | Heatmap: date, coverage meter, `N open`. A gutter per week says *Live*, *N drafts* or *Not started*. | The same, sized for a thumb. |
+| **Day** | A headline (`8 on shift · 1 open`, with *Gaps* or *Covered*), then a column per daypart: Morning, Evening. Each column says `2 of 2` and lists people, then open slots with **Assign** and **Offer**. | The same, stacked. |
+| **Week** | People × days grid, or **By role** (`4p–11p 3/4` per cell). Each day header says `N open` and names the event. | Seven day rows: `11 of 12 filled`, `1 open`, `Draft`. **People** lens: a row per person, `5 shifts · Sun Mon Tue Fri`, with tags for problems, drafts and days off. Tapping a person opens their week in a sheet. |
+| **Month** | A calendar of numbers. Each day shows `9 on` (people working) or `2 open` in orange. A gutter per week says *Live*, *N drafts* or *Not started*. | The same, sized for a thumb. |
 
-**Month lenses.** Coverage, Time off, Events, Drafts. One at a time, with a legend. **Table** shows the same data as rows.
+**Month lenses.** Coverage, Time off, Events, Drafts. One at a time. **List** shows the same days as rows.
 Tapping a day opens a peek (desktop: the inspector; phone: a sheet) with **Open day** and **Open week**.
 
-**Day-part names** come from shift start times: before 11:00 Morning, 11:00–14:59 Midday, 15:00–21:59 Evening, 22:00 on Late.
+**Daypart names** come from shift start times: before 11:00 Morning, 11:00–14:59 Midday, 15:00–21:59 Evening, 22:00 on Late.
 Presets can rename them per business type.
 
 **Landing.** Phone opens Day if today has shifts, else Week. Desktop opens Week using the time-aware rule from phase 2
@@ -156,11 +157,13 @@ the conflict prompt. Only the input layer changes.
   requests. Each item focuses the grid. This replaces the toolbar counters.
 - A shift selected: time, day, role, *How many people* (open slots), a callout for each mark, and *Who can take it*.
   Editing the time uses the same shorthand as adding.
-- A day selected (header or month cell): coverage, dayparts, **Open day**, **Open week**.
+- A day selected (header or month cell): `9 of 10 filled`, dayparts, **Open day**, **Open week**.
 - Desktop: right panel. Phone: a bottom sheet from the action bar's **Details** or a second tap on the selected shift.
 
 ## 8. The clutter budget
 
+- **No charts.** A bar, a ribbon, a meter, a timeline or a heatmap is a chart. The first version of this design had all five;
+  every one was replaced by words and numbers (§12).
 - **Three marks on a shift:** *Unpublished* (stripes, merging today's "draft" and "edited"), *Open* (dashed) and *Problem*
   (a red **!** with text in the inspector). Time off is an "Off" cell. Unavailable, overtime and "not trained" appear only in the
   inspector and the ranking.
@@ -187,8 +190,8 @@ the conflict prompt. Only the input layer changes.
 | Empty day | *No shifts on Saturday* with **Add open shift**. |
 | Draft week | One note, dashed chips (§8). |
 | Blocked target | "Schedule anyway?" with the reason. Cancel leaves everything as it was. |
-| Loading | The grid comes from the server render. The strip and Month stream in after first paint. |
-| Strip data fails | The strip is hidden. The grid is unaffected. |
+| Loading | The grid comes from the server render. The weeks-ahead row and Month stream in after first paint. |
+| Weeks-ahead data fails | The row is hidden. The grid is unaffected. |
 | No location, no team | The existing notices, each with a button. |
 | Multi-location | A dot on the location select when another location needs attention. |
 
@@ -196,13 +199,13 @@ the conflict prompt. Only the input layer changes.
 
 - WCAG 2.2 **2.5.7**: every drag has a tap or keyboard path.
 - **Touch targets.** On a 390px-wide phone every control is at least 44px, audited by script across Day, Week (Days and People),
-  Month, the Month table, Inbox, People and the shift-details sheet. Stated plainly, the exceptions are:
-  the strip's 6px bars are display only (the week is the 44px target); the Month week gutter is 36px wide and reaches 44px through
-  a hit area that extends into the page margin; and on a 360px phone the Month day cells are about 41px wide (44px tall).
-  All clear the WCAG 2.5.8 minimum of 24px.
-- Color is never alone: marks have shapes and text, coverage has height and outline, the strip has a legend, tooltips, aria-labels and the Month table.
+  Month, the Month list, Inbox, People and the shift-details sheet. Stated plainly, the exceptions are: the Month week gutter is
+  36px wide and reaches 44px through a hit area that extends into the page margin, and on a 360px phone the Month day cells
+  are about 41px wide (60px tall). All clear the WCAG 2.5.8 minimum of 24px.
+- Color is never alone: marks have shapes and text, every status is a word, and nothing needs a legend.
 - Role colors: worst adjacent color-blind separation ΔE 9.1 (light) and 8.4 (dark), normal-vision floor 19.6 and 19.3.
 - Every shift and every day has an aria-label that states person, time, role and marks. Toasts use `role="status"`.
+  The week chip and the toolbar arrow have different names (`Jump to next week: …` and `Next week`).
 - Reduced motion turns off the sheet and toast animation. Forced-colors keeps dashed outlines.
 
 ## 11. Data and platform
@@ -216,12 +219,12 @@ the conflict prompt. Only the input layer changes.
 **New**
 
 - **`GET /scheduler/coverage?locationId&from&to`** returns per day `{ capacity, filled, open, draftCount, eventCount, timeOffCount }`.
-  Aggregate SQL, not full weeks. It feeds the Horizon strip, Month and the landing rule. Layering per
-  `docs/architecture/api-first-backend-blueprint.md`: contract in `packages/contracts/src/scheduler.ts`, use case in
+  Aggregate SQL, not full weeks. It feeds the weeks-ahead row (summed per week), Month and the landing rule. It returns numbers only.
+  Layering per `docs/architecture/api-first-backend-blueprint.md`: contract in `packages/contracts/src/scheduler.ts`, use case in
   `packages/scheduling-timekeeping/src/modules/scheduler/`, thin route in `apps/api/src/routes/scheduler.ts`, SWR client in
   `apps/web/lib/scheduler/client.ts`.
 - **Limit, said plainly:** "capacity" means slots to fill, not forecast demand. There is no minimum-staffing rule model yet,
-  so *covered* means filled ÷ capacity.
+  so *covered* means every slot is filled.
 
 **Web platform work**
 
@@ -234,23 +237,30 @@ the conflict prompt. Only the input layer changes.
 
 These changed the design. They are the reason to test a design before building it.
 
-1. **Place mode was unreadable.** Role mismatch counts as a warning, so most cells lit up amber with a sentence each.
+1. **No charts (owner feedback).** The first version had a six-week bar strip, an hourly headcount ribbon on Day, a fill meter on
+   every day and daypart, a shaded Month heatmap and a Gantt-style Day timeline. All were removed. The strip became six text chips,
+   Day became daypart columns, Month became a calendar of numbers, and the phone People row lost its strip of colored cells.
+   Nothing was lost: every one of them showed a number that is now printed.
+2. **Place mode was unreadable.** Role mismatch counts as a warning, so most cells lit up amber with a sentence each.
    Now: glyphs only, reasons on hover, unqualified rows dimmed.
-2. **Open slots truncated** at 112px ("4p–…"). Now: role over time.
-3. **A draft week was a wall of stripes.** Now: one note when 85% or more is unpublished.
-4. **A toast blocked sheet buttons.** A toast that outlived its action sat above the next sheet and swallowed taps. Toasts now sit
+3. **Open slots truncated** at 112px ("4p–…"). Now: role over time.
+4. **A draft week was a wall of stripes.** Now: one note when 85% or more is unpublished.
+5. **A toast blocked sheet buttons.** A toast that outlived its action sat above the next sheet and swallowed taps. Toasts now sit
    under the scrim.
-5. **The strip bars are not touch targets.** About 6px wide on a phone. Each week is now one 44px target.
 6. **"Weekdays" copy must skip conflicts.** Otherwise it books someone twice. It skips blocked days and says how many.
 7. **A long press swallowed the next 500ms of taps.** Suppression now ends when the finger lifts.
 8. **The Saturday header wrapped** (open count plus event tag). The event now has its own line.
+9. **Two controls shared one name.** The new "Next week" chip and the toolbar's "Next week" arrow were indistinguishable to a screen
+   reader. The chip is now `Jump to next week: …`.
+10. **"Draft" overstated a mostly-published week.** The chip now says `14 drafts`, and reserves `Draft` for a whole unpublished week.
 
 ## 13. Verification and limits
 
-**Verified** in Chromium with 92 scripted checks and zero console errors. 65 run the main flows (desktop, and a touch-emulated
+**Verified** in Chromium with 98 scripted checks and zero console errors. 71 run the main flows (desktop, and a touch-emulated
 phone at 390 × 844) and were run twice, on the standalone file and on the published fragment inside its page skeleton. The other 27
 cover multi-select, long-press, inspector edits, headcount, Offer and Assign, the request side effects, the empty-week starters and the
-Month lenses. They include no horizontal page scroll, light and dark, a viewer-forced theme, and the touch-target audit in §10.
+Month lenses. They include no horizontal page scroll, light and dark, a viewer-forced theme, the touch-target audit in §10, and a
+regression check that **fails if any chart-like element appears** in Day, Week, People or Month on desktop or phone.
 
 **Not verified**
 
@@ -268,6 +278,7 @@ Month lenses. They include no horizontal page scroll, light and dark, a viewer-f
 
 Four tabs: **Today · Schedule · Open · Inbox**. A Today hero card whose one button changes with the moment
 (Directions → Clock in → Clock out → Fix a time), a week list with a month of dots, and the schedule cached for offline use.
+Consistent with §8: words and numbers, no charts.
 
 **Fix first when the worker side starts** (found in the code):
 
@@ -286,8 +297,8 @@ Each step ships and is useful alone.
 1. **Touch fixes on the current grid:** a `TouchSensor` with a press delay, `touch-action`, 44px chips on coarse pointers, a tappable `+N`.
 2. **Select → act → place** on top of `planMove`, `planRemove` and `checkPerson`. Action bar, place mode, **Copy to days**, **Give to…**.
 3. **Inspector** with the summary state, replacing the toolbar counters.
-4. **Coverage endpoint**, then the **Horizon strip** and **Month**.
-5. **Day** (timeline on desktop, dayparts on phone).
+4. **Coverage endpoint**, then the **weeks-ahead row** and **Month**.
+5. **Day** (daypart columns).
 6. **Phone layouts and PWA:** Week rows, People lens, bottom sheets, bottom tabs, safe areas.
 7. **Inbox** merging requests and timesheets; move past shifts and approval to Time.
 8. **Playwright** `scheduler.spec.ts` for the flows in §1. Phase 1 names it; none exists yet.
@@ -297,6 +308,8 @@ Each step ships and is useful alone.
 - **Timesheet approval** is dead today (`timesheet/client.tsx` never passes `onApprove`). Do not put it in the Inbox until it works.
 - **Capacity is not demand.** Managers will ask for "minimum two servers on Friday". That is a rules model, and a later phase.
 - **Scale.** Fifty-plus people need the department sections and row virtualization from phase 1 in the new grid.
+- **Numbers instead of pictures.** A hole two weeks out is now a number in a chip. If managers want more at a glance, add words first
+  (for example the day with the most open slots) before reaching for a chart.
 - **Brand red and problem red** are close. Keep the icon and text on Problem, and test with color-blind users.
 - **Phone Move is day-only.** Changing the person is a second step. If managers find that slow, add the person picker to the same sheet.
-- Open: should the strip cover 6 weeks or 8? Should the week auto-jump be a setting?
+- Open: should the weeks-ahead row cover 6 weeks or 8? Should the week auto-jump be a setting?

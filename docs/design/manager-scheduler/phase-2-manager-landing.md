@@ -1,7 +1,7 @@
 # Manager Scheduler — Phase 2: The Manager's First Ten Seconds
 
 > **Superseded in part by [phase 3](./phase-3-redesign.md).** Phase 3 makes the scheduler touch-first, replaces the "Needs you"
-> strip with the Horizon strip and Inbox, and replaces phone triage with a real Day / Week / Month on phones. The landing
+> strip with a plain-text weeks-ahead row and Inbox, and replaces phone triage with a real Day / Week / Month on phones. The landing
 > redirect (§1) and the time-aware landing-week rule (§2) still stand.
 
 Extends [`phase-1-plan.md`](./phase-1-plan.md). Phase 1 built the weekly Scheduler grid. This
