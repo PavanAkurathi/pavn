@@ -1,0 +1,1765 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Horizon Schedule</title>
+<script>(function(){try{var d=document.documentElement,h=new Date().getHours(),host=d.getAttribute("data-theme"),p=null;try{p=localStorage.getItem("hs-theme")}catch(e){}d.setAttribute("data-host",host||"");if(p!=="light"&&p!=="dark")p=(host==="light"||host==="dark")?host:(h>=7&&h<19?"light":"dark");d.setAttribute("data-theme",p)}catch(e){}})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
+<style>
+/* Layout concept: one canvas, three zooms. A weeks-ahead row sits above every view;
+   Day, Week and Month share one date. Desktop = grid + inspector panel; phone = day-centric
+   lists + bottom sheets. There is no drag anywhere: select, act, place. */
+:root {
+  --font: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --bg: #F3F4F8; --surface: #FFFFFF; --surface-2: #EEF0F5; --surface-3: #E3E6EE;
+  --ink: #141B2D; --ink-2: #444E66; --muted: #66708A;
+  --line: #E0E3EB; --line-2: #C9CEDA;
+  --primary: #D92B3A; --primary-ink: #FFFFFF; --primary-soft: #FBE9EB;
+  --navy: #182540;
+  --focus: #2A78D6;
+  /* status: fixed, never themed; always paired with text or an icon */
+  --ok: #0CA30C; --warn: #FAB219; --ser: #EC835A; --crit: #D03B3B;
+  --ok-text: #0B6B0B; --warn-text: #8A5300; --crit-text: #B3202C;
+  /* roles: categorical slots 1-5 in order */
+  --r-server: #2A78D6; --r-bartender: #EB6834; --r-cook: #1BAF7A; --r-host: #EDA100; --r-dish: #E87BA4;
+  --shadow: 0 1px 2px rgba(20,27,45,.06), 0 4px 14px rgba(20,27,45,.08);
+  --shadow-lg: 0 12px 44px rgba(20,27,45,.26);
+  --scrim: rgba(14,19,32,.46);
+  --frame: #0D1220;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0D1220; --surface: #141B2C; --surface-2: #1B2337; --surface-3: #25304A;
+    --ink: #EEF1F8; --ink-2: #BCC4D6; --muted: #8F99B0;
+    --line: #242D44; --line-2: #354262;
+    --primary-soft: #3A1A20;
+    --focus: #6DA7EC;
+    --ok-text: #5CD65C; --warn-text: #F2B84B; --crit-text: #FF8A93;
+    --r-server: #3987E5; --r-bartender: #D95926; --r-cook: #199E70; --r-host: #C98500; --r-dish: #D55181;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+    --shadow-lg: 0 12px 44px rgba(0,0,0,.6);
+    --scrim: rgba(0,0,0,.6);
+    --frame: #000000;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0D1220; --surface: #141B2C; --surface-2: #1B2337; --surface-3: #25304A;
+  --ink: #EEF1F8; --ink-2: #BCC4D6; --muted: #8F99B0;
+  --line: #242D44; --line-2: #354262;
+  --primary-soft: #3A1A20;
+  --focus: #6DA7EC;
+  --ok-text: #5CD65C; --warn-text: #F2B84B; --crit-text: #FF8A93;
+  --r-server: #3987E5; --r-bartender: #D95926; --r-cook: #199E70; --r-host: #C98500; --r-dish: #D55181;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 14px rgba(0,0,0,.35);
+  --shadow-lg: 0 12px 44px rgba(0,0,0,.6);
+  --scrim: rgba(0,0,0,.6);
+  --frame: #000000;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 14px/1.4 var(--font); -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%; overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: inherit; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); }
+
+/* ---------- stage: preview bar + device ---------- */
+.stage { height: 100%; display: flex; flex-direction: column; min-width: 0; }
+.pbar {
+  flex: none; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 8px 16px; background: var(--frame); color: #C9D0E2; font-size: 12px;
+}
+.pbar b { color: #fff; font-weight: 600; letter-spacing: .01em; }
+.pbar .grp { display: inline-flex; background: #ffffff1a; border-radius: 8px; padding: 2px; }
+.pbar .grp button { padding: 4px 10px; border-radius: 6px; color: #C9D0E2; min-height: 28px; }
+.pbar .grp button[aria-pressed="true"] { background: #fff; color: #141B2D; font-weight: 600; }
+.pbar .sp { flex: 1; }
+.pbar .hint { color: #9AA5C0; }
+.device { flex: 1; min-height: 0; display: flex; justify-content: center; align-items: stretch; }
+.stage[data-frame="1"] .device { align-items: center; padding: 16px; background: var(--surface-2); }
+.app {
+  position: relative; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--bg); width: 100%; height: 100%; min-width: 0;
+}
+.stage[data-frame="1"] .app {
+  width: 390px; height: min(100%, 812px); border-radius: 34px;
+  border: 8px solid var(--frame); box-shadow: var(--shadow-lg);
+}
+
+/* ---------- buttons & small parts ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 0 14px; border-radius: 9px; font-weight: 600; font-size: 13.5px;
+  border: 1px solid var(--line-2); background: var(--surface); white-space: nowrap;
+}
+.btn:hover { background: var(--surface-2); }
+.btn.pri { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+.btn.pri:hover { filter: brightness(1.07); background: var(--primary); }
+.btn.pri[disabled] { background: var(--surface-3); color: var(--muted); border-color: var(--line); opacity: 1; }
+.btn.ghost { border-color: transparent; background: transparent; }
+.btn.ghost:hover { background: var(--surface-2); }
+.btn.sm { min-height: 30px; padding: 0 10px; font-size: 13px; }
+.btn.warnb { border-color: var(--warn-text); color: var(--warn-text); }
+.btn.block { width: 100%; }
+.iconbtn { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; border: 1px solid transparent; }
+.iconbtn:hover { background: var(--surface-2); }
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 10px; padding: 3px; gap: 2px; min-width: 0; }
+.seg button { padding: 0 14px; min-height: 32px; border-radius: 8px; font-weight: 600; font-size: 13.5px; color: var(--ink-2); white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.tog { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border-radius: 9px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 600; font-size: 13px; }
+.tog .sw { width: 28px; height: 16px; border-radius: 9px; background: var(--line-2); position: relative; transition: background .15s; }
+.tog .sw::after { content: ''; position: absolute; left: 2px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.tog[aria-pressed="true"] { border-color: var(--ink); }
+.tog[aria-pressed="true"] .sw { background: var(--ink); }
+.tog[aria-pressed="true"] .sw::after { transform: translateX(12px); background: var(--surface); }
+.tag { display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 7px; border-radius: 6px; font-size: 11.5px; font-weight: 600; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+.tag.draft { background: repeating-linear-gradient(135deg, transparent 0 4px, var(--line-2) 4px 5px), var(--surface-2); }
+.tag.crit { background: var(--crit); color: #fff; }
+.tag.warn { background: color-mix(in srgb, var(--warn) 30%, var(--surface)); color: var(--warn-text); }
+.tag.ok { background: color-mix(in srgb, var(--ok) 16%, var(--surface)); color: var(--ok-text); }
+.badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; }
+.av { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; flex: none;
+  background: color-mix(in srgb, var(--rc, var(--muted)) 14%, var(--surface)); color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--rc, var(--muted)); font-size: 11.5px; font-weight: 700; }
+.av.sm { width: 24px; height: 24px; font-size: 10px; }
+h2, h3 { margin: 0; }
+.muted { color: var(--muted); }
+.row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.grow { flex: 1; min-width: 0; }
+.trunc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- top bar ---------- */
+.top { flex: none; display: flex; align-items: center; gap: 14px; height: 54px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.logo { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -.01em; min-width: 0; }
+.logo .mk { width: 28px; height: 28px; border-radius: 8px; background: var(--navy); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
+.tabs { display: flex; gap: 2px; margin-left: 10px; }
+.tab { position: relative; padding: 0 12px; height: 54px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ink-2); }
+.tab[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--primary); }
+.tab:hover { color: var(--ink); }
+.loc { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; padding: 0 10px; min-height: 34px; border-radius: 9px; border: 1px solid var(--line-2); }
+
+/* ---------- horizon strip ---------- */
+.strip { flex: none; display: flex; align-items: flex-end; gap: 12px; padding: 8px 16px 6px; background: var(--surface); border-bottom: 1px solid var(--line); }
+
+/* ---------- toolbar ---------- */
+.tb { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--bg); }
+.tb .dn { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; padding: 2px; }
+.tb .dn .lbl { min-width: 112px; text-align: center; font-weight: 700; font-size: 13.5px; }
+.tb .sp { flex: 1; }
+.att { flex: none; margin: 0 16px 8px; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); width: calc(100% - 32px); }
+.att .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+.att.clear .dot { background: var(--ok); }
+.att .chev { color: var(--muted); }
+
+/* ---------- main: canvas + inspector ---------- */
+.main { flex: 1; min-height: 0; display: flex; }
+.cwrap { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.canvas { flex: 1; min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; }
+.pad { padding: 4px 16px 130px; }
+.insp { flex: none; width: 332px; border-left: 1px solid var(--line); background: var(--surface); overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.insp h3 { font-size: 15px; letter-spacing: -.01em; }
+.isec { display: flex; flex-direction: column; gap: 8px; }
+.isec > .cap, .cap-l { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.li { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); text-align: left; }
+.li:hover { background: var(--surface-2); }
+.li .n { font-weight: 700; min-width: 20px; }
+.li .sub { font-size: 12.5px; color: var(--muted); }
+.li.crit { border-color: color-mix(in srgb, var(--crit) 50%, var(--line)); }
+.callout { display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); font-size: 13px; }
+.callout.crit { background: color-mix(in srgb, var(--crit) 9%, var(--surface)); }
+.callout.warn { background: color-mix(in srgb, var(--warn) 16%, var(--surface)); }
+.gl { width: 18px; height: 18px; flex: none; border-radius: 50%; display: inline-grid; place-items: center; font-size: 11px; font-weight: 800; color: #fff; background: var(--crit); }
+.gl.w { background: var(--warn); color: #3a2600; }
+.gl.o { background: var(--ok); }
+
+/* ---------- action bar & place banner ---------- */
+.abar {
+  position: absolute; z-index: 20; left: 50%; bottom: 16px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; max-width: calc(100% - 24px); padding: 8px 10px;
+  background: var(--navy); color: #fff; border-radius: 14px; box-shadow: var(--shadow-lg);
+}
+.abar .who { display: flex; align-items: center; gap: 8px; padding: 0 6px 0 2px; min-width: 0; }
+.abar .who .t { font-weight: 700; font-size: 13px; line-height: 1.15; }
+.abar .who .s { font-size: 11.5px; opacity: .75; }
+.abar .acts { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.abar .acts::-webkit-scrollbar { display: none; }
+.abar .ab { min-height: 40px; padding: 0 12px; border-radius: 9px; font-weight: 600; font-size: 13.5px; color: #fff; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.abar .ab:hover { background: #ffffff22; }
+.abar .ab.dng { color: #FFB3B9; }
+.abar .ab.pri { background: var(--primary); }
+.abar .x { color: #fff; opacity: .8; }
+.pbanner { flex: none; margin: 0 16px 8px; padding: 10px 12px; border-radius: 12px; background: var(--navy); color: #fff; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pbanner .t { font-weight: 700; }
+.pbanner .s { font-size: 12.5px; opacity: .8; }
+.pbanner .dchips { display: flex; gap: 4px; flex-wrap: wrap; }
+.pbanner .dc { min-height: 32px; min-width: 42px; padding: 0 8px; border-radius: 8px; border: 1px solid #ffffff44; font-weight: 600; font-size: 12.5px; color: #fff; }
+.pbanner .dc[aria-pressed="true"] { background: #fff; color: var(--navy); border-color: #fff; }
+.pbanner .btn { border-color: #ffffff55; background: transparent; color: #fff; }
+.pbanner .btn.pri { background: var(--primary); border-color: var(--primary); }
+
+/* ---------- chips (the three marks: draft stripes, open dashed, problem !) ---------- */
+.chip {
+  position: relative; display: flex; align-items: center; gap: 6px; width: 100%; min-height: 28px; padding: 2px 8px 2px 8px;
+  border-radius: 7px; border: 1px solid color-mix(in srgb, var(--rc) 32%, var(--line));
+  border-left: 3px solid var(--rc);
+  background: color-mix(in srgb, var(--rc) 13%, var(--surface));
+  font-size: 12.5px; font-weight: 600; line-height: 1.2; text-align: left; white-space: nowrap;
+}
+.chip .tm { font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
+.chip .rl { font-weight: 500; color: var(--ink-2); }
+.chip small { font-weight: 500; color: var(--ink-2); font-size: 11.5px; }
+.chip.draft { background-image: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--rc) 20%, transparent) 5px 7px); }
+.chip.open { background: var(--surface); border-style: dashed; border-color: color-mix(in srgb, var(--rc) 60%, var(--line-2)); border-left-style: solid; color: var(--ink); }
+.chip.prob { box-shadow: 0 0 0 1.5px var(--crit); }
+.chip .pm { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-radius: 50%; background: var(--crit); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; }
+.chip.sel { box-shadow: 0 0 0 2px var(--ink); z-index: 2; }
+.chip.dim, .dimmable.dim { opacity: .3; }
+.chip.mon::after { content: ''; position: absolute; right: 6px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 4px; border: 2px solid var(--ink-2); background: var(--surface); }
+.chip.mon.on::after { background: var(--ink); border-color: var(--ink); box-shadow: inset 0 0 0 2px var(--surface); }
+.plus { min-height: 22px; padding: 0 6px; border-radius: 6px; font-size: 12px; font-weight: 700; color: var(--ink-2); text-align: left; }
+.plus:hover { background: var(--surface-2); }
+
+/* ---------- week grid (desktop) ---------- */
+.wg { display: grid; grid-template-columns: 148px repeat(7, minmax(96px, 1fr)) 60px; min-width: 880px; position: relative; }
+.wg > * { min-width: 0; }
+.wg .hd { position: sticky; top: 0; z-index: 4; background: var(--bg); padding: 8px 6px 8px; }
+.wg .hd.dh { display: flex; flex-direction: column; gap: 5px; text-align: left; border-radius: 10px; }
+.wg .hd.dh:hover { background: var(--surface-2); }
+.wg .dh .d { display: flex; align-items: baseline; gap: 6px; font-weight: 700; }
+.wg .dh .d span { color: var(--muted); font-weight: 600; font-size: 12px; }
+.wg .dh.today .d b { background: var(--primary); color: #fff; border-radius: 6px; padding: 0 6px; }
+.wg .dh .meta { display: flex; align-items: center; gap: 6px; min-height: 18px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.wg .corner { left: 0; z-index: 5; display: flex; align-items: center; }
+.wg .corner input { width: 100%; min-height: 34px; border: 1px solid var(--line-2); border-radius: 9px; padding: 0 10px; background: var(--surface); }
+.wg .lab { position: sticky; left: 0; z-index: 3; background: var(--bg); display: flex; align-items: center; gap: 10px; padding: 4px 8px 4px 0; min-height: 52px; border-top: 1px solid var(--line); }
+.wg .lab .nm { font-weight: 600; line-height: 1.2; }
+.wg .lab .rr { font-size: 12px; color: var(--muted); }
+.wg .cell { border-top: 1px solid var(--line); padding: 5px 3px; display: flex; flex-direction: column; gap: 4px; min-height: 52px; cursor: cell; position: relative; }
+.wg .cell:hover { background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.wg .cell.opencell { background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+.wg .hrs { border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-size: 12.5px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wg .hrs.near { color: var(--warn-text); }
+.wg .hrs.over { color: var(--crit-text); }
+.wg .dept { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 10px 0 6px; border-top: 1px solid var(--line); }
+.wg .dept button { display: flex; align-items: center; gap: 8px; font-weight: 700; min-height: 32px; }
+.wg .dept .sm { font-weight: 500; color: var(--muted); font-size: 12.5px; }
+.off { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--surface-3); color: var(--ink-2); font-size: 12px; font-weight: 600; }
+.off.pend { background: transparent; border: 1px dashed var(--line-2); }
+/* place mode hints */
+.wg .cell.h-ok, .wg .cell.h-warn, .wg .cell.h-block, .wg .cell.picked { cursor: pointer; }
+.wg .cell.h-ok { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ok) 70%, transparent); background: color-mix(in srgb, var(--ok) 8%, var(--surface)); }
+.wg .cell.h-warn { box-shadow: inset 0 0 0 2px var(--warn); background: color-mix(in srgb, var(--warn) 12%, var(--surface)); }
+.wg .cell.h-block { box-shadow: inset 0 0 0 2px var(--crit); background: color-mix(in srgb, var(--crit) 8%, var(--surface)); }
+.wg .cell.picked { box-shadow: inset 0 0 0 2px var(--ink); background: color-mix(in srgb, var(--ink) 8%, var(--surface)); }
+.wg .cell .hg { position: absolute; top: 4px; right: 4px; height: 18px; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; background: var(--surface); box-shadow: 0 0 0 1px var(--line-2); max-width: calc(100% - 8px); }
+.wg.placing .cell:not(.h-ok):not(.h-warn):not(.h-block):not(.picked) { opacity: .45; }
+
+/* ---------- phone: week rows, people rows ---------- */
+.list { display: flex; flex-direction: column; gap: 8px; }
+.wrow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); text-align: left; }
+.wrow.today { border-color: var(--ink); }
+.wrow .dd { width: 46px; flex: none; line-height: 1.1; }
+.wrow .dd b { display: block; font-size: 17px; }
+.wrow .dd span { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.wrow .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.wrow .mid .r { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.wrow .chev, .prow .chev { color: var(--muted); flex: none; }
+.wrow .draftmark { width: 4px; align-self: stretch; border-radius: 3px; background: repeating-linear-gradient(135deg, var(--ink-2) 0 3px, transparent 3px 6px); flex: none; }
+.prowk { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 60px; padding: 8px 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); text-align: left; }
+.prowk .hh { margin-left: auto; font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+.prowk .hh.near { color: var(--warn-text); } .prowk .hh.over { color: var(--crit-text); }
+
+/* ---------- day view ---------- */
+.dsum { display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.dsum .hl { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.dsum .hl .big { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.lg { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); font-weight: 500; }
+.lg span { display: inline-flex; align-items: center; gap: 6px; }
+.dp { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; }
+.dp .dph { display: flex; align-items: center; gap: 10px; padding: 0 2px; }
+.dp .dph .t { font-weight: 700; }
+.dp .dph .tt { font-size: 12.5px; color: var(--muted); }
+.dp .dph .cnt { margin-left: auto; font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+.prow { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); text-align: left; }
+.prow.sel { box-shadow: 0 0 0 2px var(--ink); }
+.prow .nm { font-weight: 600; line-height: 1.2; }
+.prow .rr { font-size: 12.5px; color: var(--muted); }
+.prow .tm { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.prow.draft { background-image: repeating-linear-gradient(135deg, transparent 0 6px, color-mix(in srgb, var(--ink) 4%, transparent) 6px 8px); }
+.orow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 12px; border: 1.5px dashed color-mix(in srgb, var(--rc) 60%, var(--line-2)); background: var(--surface); }
+.orow.sel { box-shadow: 0 0 0 2px var(--ink); }
+.orow .t { font-weight: 700; }
+.orow .s { font-size: 12.5px; color: var(--muted); }
+.orow .acts { margin-left: auto; display: flex; gap: 6px; }
+.emptyw { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 36px 16px; border: 1.5px dashed var(--line-2); border-radius: 16px; background: var(--surface); }
+.emptyw h3 { font-size: 17px; }
+.emptyw .row { flex-wrap: wrap; justify-content: center; }
+
+/* ---------- month ---------- */
+.msum { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; margin: 0 0 12px; }
+.msum b { font-size: 20px; letter-spacing: -.02em; }
+.msum span { color: var(--ink-2); font-size: 13.5px; }
+.mlens { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+.chipb { min-height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 600; font-size: 13px; }
+.chipb[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.mg { display: grid; grid-template-columns: 48px repeat(7, 1fr); gap: 2px; }
+.mg .dow { font-size: 11.5px; font-weight: 700; color: var(--muted); text-align: center; text-transform: uppercase; letter-spacing: .05em; padding: 2px 0 4px; }
+.mw { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; font-weight: 700; border-radius: 8px; min-height: 58px; line-height: 1.15; padding: 2px; }
+.mw:hover { background: var(--surface-2); }
+.mw.live { color: var(--ok-text); }
+.mw.dr { color: var(--warn-text); background: repeating-linear-gradient(135deg, transparent 0 5px, color-mix(in srgb, var(--warn) 22%, transparent) 5px 7px); }
+.mw.none { color: var(--muted); }
+.mc { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 58px; padding: 5px 5px 6px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); text-align: left; min-width: 0; }
+.mc:hover { border-color: var(--line-2); }
+.mc.out { background: transparent; border-color: transparent; }
+.mc.out .dn { color: var(--muted); }
+.mc.today .dn { background: var(--primary); color: #fff; border-radius: 5px; padding: 0 5px; }
+.mc.sel { box-shadow: 0 0 0 2px var(--ink); }
+.mc .dn { align-self: flex-start; font-weight: 700; font-size: 12.5px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.mc .ot { font-size: 11px; font-weight: 700; color: var(--ink-2); line-height: 1.1; }
+.mc .ev { position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background: var(--ink); transform: rotate(45deg); }
+.mc.unp { border-style: dashed; border-color: var(--line-2); }
+.mtbl { width: 100%; border-collapse: collapse; font-size: 13px; background: var(--surface); border-radius: 12px; overflow: hidden; }
+.mtbl th, .mtbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.mtbl th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.tblwrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+
+/* ---------- inbox ---------- */
+.rq { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.rq .hd2 { display: flex; align-items: flex-start; gap: 10px; }
+.rq .tx { font-weight: 600; line-height: 1.3; }
+.rq .sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.rq .ac { display: flex; gap: 8px; }
+.rq .ac .btn { flex: 1; }
+.h3s { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin: 18px 0 8px; }
+.h3s:first-child { margin-top: 4px; }
+.pagehead { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 6px 0 12px; }
+.pagehead h2 { font-size: 22px; letter-spacing: -.02em; }
+
+/* ---------- sheets / dialogs ---------- */
+.scrim { position: absolute; inset: 0; z-index: 60; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; animation: fade .15s ease; }
+.app[data-layout="desktop"] .scrim { align-items: center; }
+.sheet { width: 100%; max-height: 90%; display: flex; flex-direction: column; background: var(--surface); border-radius: 22px 22px 0 0; box-shadow: var(--shadow-lg); animation: rise .18s ease; }
+.app[data-layout="desktop"] .sheet { width: min(480px, 92%); border-radius: 18px; max-height: 86%; }
+.sheet .grab { flex: none; width: 40px; height: 4px; border-radius: 2px; background: var(--line-2); margin: 8px auto 0; }
+.app[data-layout="desktop"] .sheet .grab { display: none; }
+.sh-h { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 14px 16px 6px; }
+.sh-h h3 { font-size: 17px; letter-spacing: -.01em; }
+.sh-h .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.sh-b { flex: 1; min-height: 0; overflow: auto; padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; }
+.sh-f { flex: none; display: flex; gap: 8px; padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); }
+.sh-f .btn { flex: 1; min-height: 44px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.uchip { min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface); font-weight: 700; font-variant-numeric: tabular-nums; }
+.uchip:hover { background: var(--surface-2); }
+.uchip small { display: block; font-weight: 500; color: var(--muted); font-size: 11.5px; }
+.fld { display: flex; flex-direction: column; gap: 6px; }
+.fld label { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.fld input[type="text"], .fld select { min-height: 42px; border-radius: 10px; border: 1px solid var(--line-2); padding: 0 12px; background: var(--surface); width: 100%; }
+.fld .hint { font-size: 12.5px; color: var(--muted); min-height: 18px; }
+.fld .hint.bad { color: var(--crit-text); }
+.step { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line-2); border-radius: 10px; padding: 2px; }
+.step button { width: 38px; height: 38px; border-radius: 8px; font-size: 18px; font-weight: 700; }
+.step button:hover { background: var(--surface-2); }
+.step b { min-width: 32px; text-align: center; font-variant-numeric: tabular-nums; }
+.cand { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 56px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); text-align: left; background: var(--surface); }
+.cand:hover { background: var(--surface-2); }
+.cand .nm { font-weight: 600; line-height: 1.2; }
+.cand .rs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.cand .hh { margin-left: auto; font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; flex: none; }
+.pubs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.pubs .k { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.pubs .k b { display: block; font-size: 22px; letter-spacing: -.02em; line-height: 1.1; }
+.pubs .k span { font-size: 12.5px; color: var(--ink-2); }
+.dchips { display: flex; gap: 6px; flex-wrap: wrap; }
+.dc2 { min-height: 44px; min-width: 46px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--line-2); font-weight: 700; background: var(--surface); display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+.dc2 small { font-size: 10.5px; font-weight: 700; }
+.dc2[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.dc2.h-warn small { color: var(--warn-text); } .dc2[aria-pressed="true"].h-warn small { color: var(--warn); }
+.dc2.h-block { border-color: var(--crit); } .dc2.h-block small { color: var(--crit-text); }
+.dc2.h-ok small { color: var(--ok-text); }
+.menu .li { border-color: transparent; }
+
+/* ---------- tab bar (phone) & toast ---------- */
+.tabbar { flex: none; display: flex; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; font-size: 11.5px; font-weight: 600; color: var(--muted); position: relative; }
+.tabbar button[aria-current="page"] { color: var(--ink); }
+.tabbar button .badge { position: absolute; top: 6px; left: 50%; margin-left: 8px; }
+.toast { position: absolute; z-index: 55; left: 0; right: 0; margin-inline: auto; width: max-content; bottom: 82px; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 12px; background: var(--ink); color: var(--surface); box-shadow: var(--shadow-lg); font-weight: 600; font-size: 13.5px; max-width: calc(100% - 24px); animation: rise .18s ease; }
+.toast button { color: inherit; font-weight: 800; text-decoration: underline; min-height: 32px; padding: 0 4px; }
+.app[data-layout="desktop"] .toast { bottom: 84px; }
+#tip { position: fixed; z-index: 200; pointer-events: none; background: var(--ink); color: var(--surface); padding: 6px 9px; border-radius: 8px; font-size: 12px; font-weight: 600; max-width: 240px; line-height: 1.3; box-shadow: var(--shadow); }
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(14px); opacity: 0; } }
+
+/* ---------- layout switches ---------- */
+.app[data-layout="phone"] .tabs, .app[data-layout="phone"] .insp, .app[data-layout="phone"] .desk-only { display: none !important; }
+.app[data-layout="phone"] .top { height: 52px; padding: 0 16px; }
+.app[data-layout="phone"] .strip { padding: 8px 16px 8px; gap: 0; }
+.app[data-layout="phone"] .tb { padding: 10px 16px 8px; gap: 8px; }
+.app[data-layout="phone"] .tb .seg { width: 100%; }
+.app[data-layout="phone"] .tb .seg button { flex: 1; min-height: 44px; }
+.app[data-layout="phone"] .tb .dn { flex: 1; }
+.app[data-layout="phone"] .tb .dn .lbl { flex: 1; min-width: 0; }
+.app[data-layout="phone"] .iconbtn { width: 44px; height: 44px; }
+.app[data-layout="phone"] .btn { min-height: 44px; }
+.app[data-layout="phone"] .btn.sm { min-height: 44px; }
+.app[data-layout="phone"] .abar { bottom: 10px; left: 8px; right: 8px; transform: none; max-width: none; flex-direction: column; align-items: stretch; gap: 4px; padding: 8px; }
+.app[data-layout="phone"] .abar .acts { justify-content: space-between; }
+.app[data-layout="phone"] .abar .ab { min-height: 46px; flex: 1; justify-content: center; padding: 0 8px; }
+.app[data-layout="phone"] .toast { bottom: 76px; }
+.app[data-layout="phone"] .pad { padding-bottom: 150px; }
+.app[data-layout="desktop"] .phone-only, .app[data-layout="desktop"] .tabbar { display: none !important; }
+.app[data-layout="desktop"] .pad { padding: 4px 20px 120px; }
+.app[data-layout="desktop"] .wg { padding: 0 20px 0; }
+.app[data-layout="desktop"] .tb, .app[data-layout="desktop"] .strip, .app[data-layout="desktop"] .pbanner, .app[data-layout="desktop"] .top { padding-left: 20px; padding-right: 20px; }
+.app[data-layout="desktop"] .pbanner { margin-left: 20px; margin-right: 20px; }
+@media (max-width: 919px) { .pbar .hint, .pbar .devgrp { display: none; } }
+@media (pointer: coarse) { .app[data-layout="desktop"] .chip { min-height: 44px; } .app[data-layout="desktop"] .btn.sm { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+@media (forced-colors: active) { .chip.draft, .tag.draft { border-style: dashed; } }
+
+/* ---------- misc, timeline (desktop day), touch ---------- */
+[hidden] { display: none !important; }
+.chip, .prow, .cand, .li, .wrow { -webkit-touch-callout: none; }
+.chip, .prow { -webkit-user-select: none; user-select: none; }
+.wg .cell .hg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app[data-layout="phone"] .toast.up { bottom: 176px; }
+
+/* phone: every control is a real touch target (strip bars are display + week jump) */
+.app[data-layout="phone"] button { min-height: 44px; }
+.app[data-layout="phone"] .step button { width: 44px; height: 44px; }
+.app[data-layout="phone"] .fld input[type="text"], .app[data-layout="phone"] .fld select { min-height: 46px; }
+.app[data-layout="phone"] .mc { min-height: 60px; }
+.app[data-layout="phone"] .mtbl td button { min-height: 44px; }
+.app[data-layout="phone"] .orow .grow { min-height: 44px; }
+
+/* ---------- round 2: fixes from the visual review ---------- */
+.chip.ogrp { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; padding-block: 3px; min-height: 36px; }
+.chip.ogrp small { font-size: 11.5px; }
+.wg .dh .meta { flex-wrap: wrap; gap: 2px 6px; }
+.wg .dh .meta span { white-space: nowrap; }
+.wg .dh .evrow { font-size: 11.5px; font-weight: 600; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* place mode: glyph-only hints; the reason is in the tooltip and the confirm step */
+.wg .cell .hg { padding: 0 6px; min-width: 22px; justify-content: center; font-size: 12px; }
+.wg .cell.h-warn { box-shadow: none; background: color-mix(in srgb, var(--warn) 10%, var(--surface)); }
+.wg .cell.h-warn .hg { color: var(--warn-text); }
+.wg .cell.h-block .hg { color: var(--crit-text); }
+.wg .cell.h-ok .hg { color: var(--ok-text); }
+.wg .cell.unfit { opacity: .5; }
+.wg .cell.picked .hg { max-width: none; }
+/* phone */
+.app[data-layout="phone"] .abar.pub { flex-direction: row; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; }
+.app[data-layout="phone"] .abar.pub .who { flex: 1; min-width: 0; }
+.app[data-layout="phone"] .abar.pub .ab.pri { flex: none; min-width: 112px; }
+.att { min-height: 44px; height: auto; padding-block: 8px; }
+.att .grow { white-space: normal; }
+.app[data-layout="phone"] .mc { padding: 5px 3px 6px; }
+.app[data-layout="phone"] .mc .ot { font-size: 10.5px; white-space: nowrap; letter-spacing: -.01em; }
+.app[data-layout="phone"] .mc .dn { font-size: 12px; }
+.app[data-layout="phone"] .mc .ot { font-size: 10px; letter-spacing: -.02em; }
+.app[data-layout="phone"] .mg { grid-template-columns: 44px repeat(7, 1fr); }
+/* phone strip: each week is one 44px tap target (the bars are display only there) */
+/* draft weeks and days: one note instead of hatching every chip */
+.dnote { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; background: var(--surface-2); font-size: 13px; font-weight: 500; }
+.app[data-layout="desktop"] .dnote { margin: 0 20px 10px; }
+.app[data-layout="desktop"] .pad > .dnote { margin: 0 0 10px; }
+.alldraft .chip.draft { background-image: none; border-style: dashed; border-left-style: solid; }
+.alldraft .prow.draft { background-image: none; }
+/* desktop action bar never clips its last button */
+.app[data-layout="desktop"] .abar { white-space: nowrap; }
+.app[data-layout="desktop"] .abar .acts { flex: none; overflow: visible; }
+.app[data-layout="desktop"] .abar .who { flex: none; }
+/* seven day chips in one row on a phone */
+.dchips7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.dchips7 .dc2 { min-width: 0; padding: 0; }
+/* phone month: a narrower week gutter so each day is a 44px-wide target at 390px */
+.app[data-layout="phone"] .mg { grid-template-columns: 36px repeat(7, minmax(0, 1fr)); gap: 1px; }
+.app[data-layout="phone"] .mw { font-size: 10px; padding: 1px; position: relative; }
+.app[data-layout="phone"] .mw::after { content: ''; position: absolute; inset: 0 0 0 -8px; }
+.app[data-layout="phone"] .mtbl td button { min-width: 44px; }
+
+
+/* ---------- weeks ahead: plain-text week chips (no charts anywhere) ---------- */
+.strip { align-items: center; gap: 12px; padding: 8px 16px; }
+.strip .cap { flex: none; font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.strip .weeks { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; scroll-snap-type: x proximity; }
+.strip .weeks::-webkit-scrollbar { display: none; }
+.wk { flex: none; min-width: 116px; min-height: 44px; padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--surface); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1px; text-align: left; scroll-snap-align: start; }
+.wk:hover { background: var(--surface-2); }
+.wk .wl { font-weight: 700; font-size: 13px; white-space: nowrap; }
+.wk .ws { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.wk .ws.open { color: var(--warn-text); } .wk .ws.ok { color: var(--ok-text); } .wk .ws.none { color: var(--muted); }
+.wk.in { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.wk.in .ws { color: inherit; opacity: .85; }
+.board { display: grid; gap: 0 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.app[data-layout="desktop"] .board { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.mc .ot.warn { color: var(--warn-text); }
+.prowk .rr { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 2px; }
+
+
+/* ---------- panel as a drawer, theme icon, short windows ---------- */
+.main { position: relative; }
+.paneltab { position: absolute; right: 0; top: 12px; z-index: 15; min-height: 36px; padding: 0 12px; border-radius: 10px 0 0 10px; background: var(--surface); border: 1px solid var(--line); border-right: 0; font-weight: 600; font-size: 12.5px; box-shadow: var(--shadow); }
+.paneltab:hover { background: var(--surface-2); }
+.app[data-layout="desktop"] .scrim.side { justify-content: flex-end; align-items: stretch; }
+.app[data-layout="desktop"] .scrim.side .sheet { width: min(380px, 92%); height: 100%; max-height: none; border-radius: 0; animation: slidein .18s ease; }
+@keyframes slidein { from { transform: translateX(28px); opacity: 0; } }
+.attchip { gap: 8px; }
+.attchip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+.attchip.clear .dot { background: var(--ok); }
+.pbar .themebtn { position: relative; display: inline-grid; place-items: center; width: 34px; height: 30px; min-height: 0; border-radius: 8px; color: #E7ECF8; background: #ffffff1a; }
+.pbar .themebtn::after { content: ""; position: absolute; inset: 0 -8px; }      /* wider tap area, still inside the bar */
+.pbar .themebtn:hover { background: #ffffff33; }
+.pbar .themebtn:focus-visible { outline-color: #fff; }
+.tb .sp { min-width: 0; }
+.tb .btn.pri { flex: none; }
+@media (max-height: 700px) {
+  .pbar { padding: 3px 16px; }
+  .pbar .grp button { min-height: 24px; padding: 2px 8px; }
+  .pbar .themebtn { height: 26px; }
+  .app[data-layout="desktop"] .top { height: 44px; }
+  .app[data-layout="desktop"] .tab { height: 44px; }
+  .strip { padding: 4px 16px; }
+  .app[data-layout="desktop"] .wk { min-height: 38px; padding: 3px 10px; min-width: 104px; }
+  .app[data-layout="desktop"] .tb { padding: 6px 16px; }
+  .app[data-layout="desktop"] .tb .btn, .app[data-layout="desktop"] .tb .tog, .app[data-layout="desktop"] .tb .iconbtn { min-height: 32px; }
+  .app[data-layout="desktop"] .tb .seg button { min-height: 28px; }
+  .app[data-layout="desktop"] .tb .dn .iconbtn { width: 32px; height: 32px; }
+  .app[data-layout="desktop"] .top .loc { min-height: 30px; }
+}
+@media (max-width: 919px) { .pbar { min-height: 44px; padding: 7px 14px; } .pbar .themebtn { height: 30px; } .pbar .themebtn::after { inset: -7px -8px; } }   /* after the short-window rule so phones keep the 44px bar */
+</style></head><body>
+<div class="stage" id="stage" data-frame="0">
+  <div class="pbar">
+    <b>Horizon Schedule</b>
+    <span class="hint">Prototype with sample data. Tap a shift to move, copy or give it. Nothing needs dragging.</span>
+    <span class="sp"></span>
+    <span class="grp devgrp" role="group" aria-label="Preview device"><button data-dev="desktop" aria-pressed="true">Desktop</button><button data-dev="phone" aria-pressed="false">Phone</button></span>
+    <button class="themebtn" id="themebtn" type="button" aria-label="Dark theme" aria-pressed="false" aria-describedby="themewhy"></button><span class="sr" id="themewhy"></span>
+  </div>
+  <div class="device"><div class="app" id="app" data-layout="desktop"></div></div>
+</div>
+<div id="tip" hidden role="tooltip"></div>
+<script>(()=>{
+'use strict';
+/* ============ core: dates, time, data, calculations, edits ============ */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- dates (UTC math on ISO strings, so no timezone drift) ---------- */
+const DAY_MS = 864e5;
+const toUTC = iso => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const toISO = ms => new Date(ms).toISOString().slice(0, 10);
+const addDays = (iso, n) => toISO(toUTC(iso) + n * DAY_MS);
+const diffDays = (a, b) => Math.round((toUTC(a) - toUTC(b)) / DAY_MS);
+const WEEK0 = '2026-09-27';
+const TODAY = '2026-09-29';
+const wkOf = iso => Math.floor(diffDays(iso, WEEK0) / 7);
+const wkStart = wk => addDays(WEEK0, wk * 7);
+const dowOf = iso => new Date(toUTC(iso)).getUTCDay();
+const dayNum = iso => +iso.slice(8, 10);
+const monthNum = iso => +iso.slice(5, 7);
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DOWL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const fmtD = iso => `${DOW[dowOf(iso)]} ${MONS[monthNum(iso) - 1]} ${dayNum(iso)}`;
+const fmtLong = iso => `${DOWL[dowOf(iso)]}, ${MONTHS[monthNum(iso) - 1]} ${dayNum(iso)}`;
+const weekLabel = start => {
+  const end = addDays(start, 6);
+  return monthNum(start) === monthNum(end)
+    ? `${MONS[monthNum(start) - 1]} ${dayNum(start)} – ${dayNum(end)}`
+    : `${MONS[monthNum(start) - 1]} ${dayNum(start)} – ${MONS[monthNum(end) - 1]} ${dayNum(end)}`;
+};
+const monthStart = iso => iso.slice(0, 8) + '01';
+const addMonths = (iso, n) => { const y = +iso.slice(0, 4), m = monthNum(iso) - 1 + n; const d = new Date(Date.UTC(y, m, 1)); return toISO(d.getTime()); };
+
+/* ---------- time ---------- */
+const h12 = m => { const h = Math.floor(m / 60) % 24, mi = m % 60; const ap = h >= 12 ? 'p' : 'a'; const hh = h % 12 || 12; return mi ? `${hh}:${String(mi).padStart(2, '0')}${ap}` : `${hh}${ap}`; };
+const range = (s, e) => `${h12(s)}–${h12(e)}`;
+const paid = (s, e) => { const m = e - s; return (m > 360 ? m - 30 : m) / 60; };
+const fmtH = h => { const r = Math.round(h * 10) / 10; return `${Number.isInteger(r) ? r : r.toFixed(1)}h`; };
+const part = s => (s < 660 ? 'Morning' : s < 900 ? 'Midday' : s < 1320 ? 'Evening' : 'Late');
+const PARTS = ['Morning', 'Midday', 'Evening', 'Late'];
+
+/* "9-5", "4p-11p", "17-23", "10p-2a": the same shorthand the current scheduler accepts */
+function parseRange(txt) {
+  const t = String(txt).trim().toLowerCase().replace(/\s+/g, '').replace(/[–—]/g, '-');
+  const m = t.match(/^(\d{1,2})(?::?(\d{2}))?(am|pm|a|p)?-(\d{1,2})(?::?(\d{2}))?(am|pm|a|p)?$/);
+  if (!m) return null;
+  const a = +m[1], b = +m[4], ma = +(m[2] || 0), mb = +(m[5] || 0);
+  const A = m[3] ? m[3][0] : null, B = m[6] ? m[6][0] : null;
+  if (a > 23 || b > 24 || ma > 59 || mb > 59) return null;
+  const pick = (h, ap) => (h % 12) + (ap === 'p' ? 12 : 0);
+  const nxt = (sh) => [b % 12, (b % 12) + 12, (b % 12) + 24].find(h => h * 60 + mb > sh * 60 + ma);
+  let sh, eh;
+  if (!A && !B && (a >= 13 || b >= 13 || a === 0)) { sh = a; eh = b; if (eh * 60 + mb <= sh * 60 + ma) eh += 24; }
+  else if (A && B) { sh = pick(a, A); eh = pick(b, B); if (eh * 60 + mb <= sh * 60 + ma) eh += 24; }
+  else if (A) { sh = pick(a, A); eh = nxt(sh); }
+  else if (B) { eh = pick(b, B); sh = [pick(a, B), pick(a, B === 'p' ? 'a' : 'p')].find(h => h * 60 + ma < eh * 60 + mb); if (sh === undefined) return null; }
+  else { sh = a === 12 ? 12 : a <= 6 ? a + 12 : a; eh = nxt(sh); }
+  if (eh === undefined) return null;
+  const s = sh * 60 + ma, e = eh * 60 + mb;
+  if (e - s < 30 || e - s > 960) return null;
+  return { s, e, overnight: e > 1440 };
+}
+
+/* ---------- people, roles ---------- */
+const ROLES = ['Server', 'Bartender', 'Cook', 'Host', 'Dish'];
+const RC = { Server: '--r-server', Bartender: '--r-bartender', Cook: '--r-cook', Host: '--r-host', Dish: '--r-dish' };
+const rcv = role => `var(${RC[role] || '--muted'})`;
+const FOH = 'Front of house', KIT = 'Kitchen';
+const PEOPLE = [
+  { id: 'p1', name: 'Ana Ruiz', roles: ['Server', 'Host'], dept: FOH },
+  { id: 'p2', name: 'Ben Kim', roles: ['Server'], dept: FOH },
+  { id: 'p3', name: 'Priya Shah', roles: ['Bartender', 'Server'], dept: FOH },
+  { id: 'p5', name: 'Cara Diaz', roles: ['Server'], dept: FOH },
+  { id: 'p7', name: 'Lena Park', roles: ['Host', 'Server'], dept: FOH },
+  { id: 'p8', name: 'Omar Hassan', roles: ['Bartender'], dept: FOH },
+  { id: 'p11', name: 'Maya Brooks', roles: ['Server'], dept: FOH },
+  { id: 'p12', name: 'Jamal Reed', roles: ['Bartender', 'Server'], dept: FOH },
+  { id: 'p14', name: 'Noah Kim', roles: ['Server', 'Host'], dept: FOH },
+  { id: 'p15', name: 'Zoe Martin', roles: ['Server', 'Host'], dept: FOH },
+  { id: 'p4', name: 'Marcus Lee', roles: ['Cook'], dept: KIT },
+  { id: 'p6', name: 'Dev Patel', roles: ['Cook'], dept: KIT },
+  { id: 'p9', name: 'Sofia Rossi', roles: ['Cook'], dept: KIT },
+  { id: 'p16', name: 'Ivan Petrov', roles: ['Cook'], dept: KIT },
+  { id: 'p10', name: 'Tom Nguyen', roles: ['Dish'], dept: KIT },
+  { id: 'p13', name: 'Elena Petrova', roles: ['Dish', 'Cook'], dept: KIT },
+];
+const PMAP = Object.fromEntries(PEOPLE.map(p => [p.id, p]));
+const firstName = id => PMAP[id].name.split(' ')[0];
+const initials = id => PMAP[id].name.split(' ').map(w => w[0]).join('');
+const mainRole = id => PMAP[id].roles[0];
+const DEPTS = [FOH, KIT];
+const UNAVAIL = [
+  { p: 'p11', dow: 0, from: 0, to: 1440 },
+  { p: 'p6', dow: 1, from: 0, to: 1020 },
+  { p: 'p2', dow: 3, from: 540, to: 900 },
+];
+const USUAL = [[540, 900], [660, 1020], [960, 1380]];
+
+/* ---------- state ---------- */
+const S = {
+  layout: 'desktop', frame: false, theme: 'auto',
+  tab: 'schedule', zoom: 'week', date: TODAY, lens: 'person', pweek: 'days', mlens: 'cov', mtable: false,
+  focus: false, q: '', collapsed: {}, sel: null, place: null, multi: null, sheet: null, toast: null,
+  shifts: [], events: [], gen: new Set(), reqs: [], timeoff: [], times: [], hist: [], uid: 0, ruid: 0,
+};
+const mulberry = a => () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+const newShift = (date, s, e, role, p, pub, ev) => ({ id: 's' + (++S.uid), date, s, e, role, p: p || null, pub: !!pub, ev: ev || null });
+const byId = id => S.shifts.find(x => x.id === id);
+
+/* ---------- seed ---------- */
+function slotsFor(dow) {
+  const we = dow === 5 || dow === 6, su = dow === 0, out = [];
+  const add = (t, role, n) => { for (let i = 0; i < n; i++) out.push({ s: t[0], e: t[1], role }); };
+  add(USUAL[0], 'Server', we || su ? 2 : 1); add(USUAL[0], 'Cook', 1); if (we || su) add(USUAL[0], 'Host', 1);
+  add(USUAL[2], 'Server', we ? 4 : 3); add(USUAL[2], 'Bartender', we ? 2 : 1); add(USUAL[2], 'Cook', we ? 3 : 2); add(USUAL[2], 'Dish', 1); if (we) add(USUAL[2], 'Host', 1);
+  return out;
+}
+function pickPerson(t, date, load, rnd) {
+  const dow = dowOf(date);
+  const c = PEOPLE.filter(x => x.roles.includes(t.role)
+    && !S.timeoff.some(o => o.p === x.id && o.date === date && o.kind === 'approved')
+    && !UNAVAIL.some(u => u.p === x.id && u.dow === dow && t.s < u.to && u.from < t.e)
+    && (load[x.id] || 0) < (t.role === 'Cook' || t.role === 'Dish' ? 6 : 5)
+    && !S.shifts.some(o => o.p === x.id && o.date === date && o.s < t.e && t.s < o.e));
+  if (!c.length) return null;
+  c.sort((a, b) => (load[a.id] || 0) - (load[b.id] || 0) || rnd() - .5);
+  return c[0].id;
+}
+function genWeek(wk) {
+  if (S.gen.has(wk)) return;
+  S.gen.add(wk);
+  const mode = wk < 0 ? 'past' : wk === 0 ? 'now' : wk === 1 ? 'next' : wk === 2 ? 'far' : 'none';
+  if (mode === 'none') return;
+  const rnd = mulberry(7000 + wk * 31), start = wkStart(wk), load = {};
+  const days = mode === 'far' ? [1, 2, 3] : [0, 1, 2, 3, 4, 5, 6];
+  const fill = mode === 'past' ? 1 : mode === 'now' ? .99 : mode === 'next' ? .82 : .6;
+  for (const dow of days) {
+    const date = addDays(start, dow);
+    for (const t of slotsFor(dow)) {
+      let p = null;
+      if (rnd() < fill) p = pickPerson(t, date, load, rnd);
+      if (p) load[p] = (load[p] || 0) + 1;
+      S.shifts.push(newShift(date, t.s, t.e, t.role, p, mode === 'past' || mode === 'now'));
+    }
+  }
+  dirty();
+}
+const FORCED = new Set();
+function force(p, date, s, role, pub) {
+  const slots = S.shifts.filter(z => z.date === date && z.s === s && z.role === role);
+  if (!slots.length) return null;
+  const e = slots[0].e;
+  for (const o of S.shifts) if (o.p === p && o.date === date && o.s < e && s < o.e && !(o.s === s && o.role === role)) o.p = null;
+  const x = slots.find(z => z.p === p) || slots.find(z => !z.p && !FORCED.has(z.id)) || slots.find(z => !FORCED.has(z.id));
+  if (!x) return null;
+  x.p = p; x.pub = pub; FORCED.add(x.id);
+  return x;
+}
+function seed() {
+  const d = n => addDays(WEEK0, n);
+  S.timeoff = [
+    { p: 'p3', date: d(5), kind: 'approved' },
+    { p: 'p4', date: d(4), kind: 'pending' },
+    { p: 'p5', date: d(6), kind: 'pending' },
+    { p: 'p12', date: d(11), kind: 'approved' }, { p: 'p12', date: d(12), kind: 'approved' },
+    { p: 'p9', date: d(18), kind: 'approved' }, { p: 'p7', date: d(23), kind: 'approved' },
+    { p: 'p2', date: d(24), kind: 'approved' }, { p: 'p14', date: d(30), kind: 'approved' },
+  ];
+  for (let wk = -5; wk <= 2; wk++) genWeek(wk);
+  // scenarios in the current week
+  force('p2', d(2), 960, 'Server', true);
+  S.shifts.push(newShift(d(2), 660, 1140, 'Server', 'p2', false));                 // Ben, double-booked (new draft)
+  force('p3', d(5), 960, 'Bartender', true);                                       // Priya scheduled, then approved time off
+  [[0, 540], [1, 540], [2, 960], [3, 960], [4, 960], [5, 960]].forEach(([i, s]) => force('p1', d(i), s, 'Server', true));
+  force('p1', d(6), 960, 'Server', false);                                          // Ana near 40h+: overtime
+  force('p11', d(4), 960, 'Server', true);
+  force('p5', d(6), 960, 'Server', true);
+  force('p2', d(3), 960, 'Server', true);
+  for (const x of S.shifts) if (x.date === d(3) && x.s === 540) x.pub = false;      // Wednesday lunch is a draft
+  let n = 0;                                                                        // two open Friday-night Server slots
+  for (const x of S.shifts) if (x.date === d(5) && x.s === 960 && x.role === 'Server' && !FORCED.has(x.id) && n < 2) { x.p = null; n++; }
+  for (const o of S.shifts) if (o.p === 'p14' && o.date === d(5) && o.s < 1380 && 960 < o.e) o.p = null;
+  {                                                                                 // Ana keeps only her planned week (43.5h, over 40)
+    const r2 = mulberry(5), ld = {};
+    for (const x of S.shifts) if (x.p && wkOf(x.date) === 0) ld[x.p] = (ld[x.p] || 0) + 1;
+    for (const x of S.shifts) if (x.p === 'p1' && wkOf(x.date) === 0 && !FORCED.has(x.id)) { x.p = null; const q = pickPerson(x, x.date, ld, r2); if (q) { x.p = q; ld[q] = (ld[q] || 0) + 1; } }
+  }
+  // event: Smith Wedding
+  S.events.push({ id: 'ev1', name: 'Smith Wedding', date: d(6) });
+  const rnd = mulberry(42), load = {};
+  for (const x of S.shifts) if (x.p && wkOf(x.date) === 0) load[x.p] = (load[x.p] || 0) + 1;
+  [['Server', 1], ['Server', 1], ['Server', 0], ['Bartender', 0], ['Cook', 1]].forEach(([role, f]) => {
+    const t = { s: 1020, e: 1380, role };
+    const p = f ? pickPerson(t, d(6), load, rnd) : null;
+    S.shifts.push(newShift(d(6), 1020, 1380, role, p, false, 'ev1'));
+  });
+  // requests + timesheets
+  const openFri = S.shifts.find(x => x.date === d(5) && x.s === 960 && x.role === 'Server' && !x.p);
+  const maya = force('p11', d(4), 960, 'Server', true);
+  const benWed = force('p2', d(3), 960, 'Server', true);
+  S.reqs = [
+    { id: 'r1', type: 'claim', p: 'p14', sid: openFri.id, note: 'No conflicts. Noah would be at 31h.' },
+    { id: 'r2', type: 'drop', p: 'p11', sid: maya.id, note: 'Dropping opens a Server slot Thu 4p–11p.' },
+    { id: 'r3', type: 'swap', p: 'p2', p2: 'p15', sid: benWed.id, note: 'Zoe would be at 33h. Ben goes to 27h.' },
+    { id: 'r4', type: 'off', p: 'p5', date: d(6), note: 'Cara is on 4p–11p Sat. Approving creates a conflict.' },
+    { id: 'r5', type: 'off', p: 'p4', date: d(4), note: 'No shifts affected.' },
+  ];
+  S.times = [
+    { id: 't1', label: 'Sat Sep 26 · Downtown Bistro', sub: '14 people · 112.5h' },
+    { id: 't2', label: 'Fri Sep 25 · Downtown Bistro', sub: '15 people · 121h' },
+    { id: 't3', label: 'Thu Sep 24 · Downtown Bistro', sub: '11 people · 84.5h' },
+  ];
+  S.hist = [];
+}
+
+/* ---------- indexes & calculations ---------- */
+let IDX = null; const PC = new Map();
+const dirty = () => { IDX = null; PC.clear(); };
+const idx = () => { if (!IDX) { IDX = new Map(); for (const s of S.shifts) { if (!IDX.has(s.date)) IDX.set(s.date, []); IDX.get(s.date).push(s); } } return IDX; };
+const on = date => { genWeek(wkOf(date)); return idx().get(date) || []; };
+const overlaps = (a, b) => a.s < b.e && b.s < a.e;
+const offOn = (p, date) => S.timeoff.find(t => t.p === p && t.date === date);
+const hoursOf = (p, wk, ex) => { let h = 0; const st = wkStart(wk); for (let i = 0; i < 7; i++) for (const s of on(addDays(st, i))) if (s.p === p && s.id !== ex) h += paid(s.s, s.e); return h; };
+function problemsOf(sh) {
+  if (!sh.p) return [];
+  if (PC.has(sh.id)) return PC.get(sh.id);
+  const out = [], off = offOn(sh.p, sh.date);
+  if (off && off.kind === 'approved') out.push(`${firstName(sh.p)} is on approved time off ${DOW[dowOf(sh.date)]}`);
+  for (const o of on(sh.date)) if (o !== sh && o.p === sh.p && overlaps(o, sh)) out.push(`${firstName(sh.p)} is also on ${range(o.s, o.e)}`);
+  PC.set(sh.id, out);
+  return out;
+}
+const SEV = { ok: 0, warn: 1, block: 2 };
+const worst = (a, b) => (SEV[b] > SEV[a] ? b : a);
+function check(sh, p, date) {
+  const msgs = []; let level = 'ok';
+  const off = offOn(p, date);
+  if (off) { if (off.kind === 'approved') { level = 'block'; msgs.push('On approved time off'); } else { level = worst(level, 'warn'); msgs.push('Time off requested'); } }
+  for (const o of on(date)) if (o.id !== sh.id && o.p === p && overlaps(o, sh)) { level = 'block'; msgs.push(`Already ${range(o.s, o.e)}`); }
+  if (!PMAP[p].roles.includes(sh.role)) { level = worst(level, 'warn'); msgs.push(`Not trained as ${sh.role}`); }
+  if (UNAVAIL.some(u => u.p === p && u.dow === dowOf(date) && sh.s < u.to && u.from < sh.e)) { level = worst(level, 'warn'); msgs.push('Marked unavailable'); }
+  const tot = hoursOf(p, wkOf(date), sh.id) + paid(sh.s, sh.e);
+  if (tot > 40) { level = worst(level, 'warn'); msgs.push(`Would be at ${fmtH(tot)}`); }
+  return { level, msgs };
+}
+function candidates(sh, date = sh.date) {
+  return PEOPLE.filter(p => p.id !== sh.p).map(p => ({ p, ...check(sh, p.id, date), hrs: hoursOf(p.id, wkOf(date), sh.id), fit: p.roles.includes(sh.role) }))
+    .sort((a, b) => (b.fit - a.fit) || (SEV[a.level] - SEV[b.level]) || (a.hrs - b.hrs));
+}
+function dayStats(date) {
+  const a = on(date), pk = new Set(); let filled = 0, drafts = 0;
+  for (const s of a) { if (s.p) filled++; if (!s.pub) drafts++; if (problemsOf(s).length) pk.add(s.p); }
+  const cap = a.length;
+  return { cap, filled, open: cap - filled, drafts, prob: pk.size, ratio: cap ? filled / cap : null };
+}
+function wkStats(wk) {
+  const st = wkStart(wk), o = { cap: 0, filled: 0, open: 0, drafts: 0, prob: 0 };
+  for (let i = 0; i < 7; i++) { const s = dayStats(addDays(st, i)); o.cap += s.cap; o.filled += s.filled; o.open += s.open; o.drafts += s.drafts; o.prob += s.prob; }
+  o.ratio = o.cap ? o.filled / o.cap : null;
+  return o;
+}
+const covWord = st => (st.cap === 0 ? 'Not scheduled' : st.open === 0 ? 'Fully covered' : `${st.open} open`);
+const pendingIn = (from, to) => { let n = 0; for (let i = 0; i <= diffDays(to, from); i++) for (const s of on(addDays(from, i))) if (!s.pub) n++; return n; };
+const openGroups = list => {
+  const g = new Map();
+  for (const s of list) if (!s.p) { const k = `${s.s}|${s.e}|${s.role}|${s.ev || ''}`; if (!g.has(k)) g.set(k, []); g.get(k).push(s); }
+  return [...g.values()].sort((a, b) => a[0].s - b[0].s);
+};
+
+/* ---------- edits (every one snapshots first, so every one is undoable) ---------- */
+function snap() { S.hist.push(JSON.stringify({ shifts: S.shifts, reqs: S.reqs, timeoff: S.timeoff, times: S.times, uid: S.uid })); if (S.hist.length > 60) S.hist.shift(); }
+function undo() {
+  const j = S.hist.pop();
+  if (!j) return false;
+  const o = JSON.parse(j);
+  S.shifts = o.shifts; S.reqs = o.reqs; S.timeoff = o.timeoff; S.times = o.times; S.uid = o.uid;
+  dirty();
+  if (S.sel && S.sel.kind === 'shift' && !byId(S.sel.id)) S.sel = null;
+  return true;
+}
+const M = {
+  add(p, date, s, e, role, ev) { snap(); const x = newShift(date, s, e, role, p, false, ev); S.shifts.push(x); dirty(); return x; },
+  move(id, p, date) { snap(); const x = byId(id); x.p = p; x.date = date; x.pub = false; dirty(); },
+  copy(id, targets) { snap(); const x = byId(id); const out = targets.map(t => newShift(t.date, x.s, x.e, x.role, t.p, false, x.ev)); S.shifts.push(...out); dirty(); return out; },
+  give(id, p) { snap(); const x = byId(id); x.p = p; x.pub = false; delete x.offered; dirty(); },
+  open(id) { snap(); const x = byId(id); x.p = null; x.pub = false; dirty(); },
+  del(id) { snap(); S.shifts = S.shifts.filter(s => s.id !== id); dirty(); },
+  delMany(ids) { snap(); S.shifts = S.shifts.filter(s => !ids.includes(s.id)); dirty(); },
+  patch(id, o) { snap(); Object.assign(byId(id), o); byId(id).pub = false; dirty(); },
+  offer(id) { snap(); byId(id).offered = true; dirty(); },
+  more(id) { snap(); const x = byId(id); S.shifts.push(newShift(x.date, x.s, x.e, x.role, null, false, x.ev)); dirty(); },
+  fewer(id) { snap(); const x = byId(id); const twin = S.shifts.find(z => z.id !== id && !z.p && z.date === x.date && z.s === x.s && z.e === x.e && z.role === x.role && z.ev === x.ev); if (twin) S.shifts = S.shifts.filter(z => z.id !== twin.id); dirty(); },
+  publish(from, to) { snap(); let n = 0; const people = new Set(); for (let i = 0; i <= diffDays(to, from); i++) for (const s of on(addDays(from, i))) if (!s.pub) { s.pub = true; n++; if (s.p) people.add(s.p); } dirty(); return { n, people: people.size }; },
+  copyWeek(wk) { snap(); genWeek(wk - 1); const src = []; const st = wkStart(wk - 1); for (let i = 0; i < 7; i++) src.push(...on(addDays(st, i))); const out = src.map(s => newShift(addDays(s.date, 7), s.s, s.e, s.role, s.p, false)); S.shifts.push(...out); dirty(); return out.length; },
+  usual(wk) { snap(); const st = wkStart(wk); let n = 0; for (let i = 0; i < 7; i++) for (const t of slotsFor(i)) { S.shifts.push(newShift(addDays(st, i), t.s, t.e, t.role, null, false)); n++; } dirty(); return n; },
+  decide(id, ok) {
+    snap();
+    const r = S.reqs.find(x => x.id === id);
+    let msg = ok ? 'Approved' : 'Declined';
+    if (ok) {
+      if (r.type === 'claim') { const x = byId(r.sid); if (x) { x.p = r.p; x.pub = false; } msg = `${firstName(r.p)} now has the shift`; }
+      if (r.type === 'drop') { const x = byId(r.sid); if (x) { x.p = null; x.pub = false; } msg = 'Shift is open again'; }
+      if (r.type === 'swap') { const x = byId(r.sid); if (x) { x.p = r.p2; x.pub = false; } msg = `${firstName(r.p2)} took the shift`; }
+      if (r.type === 'off') { const t = S.timeoff.find(z => z.p === r.p && z.date === r.date); if (t) t.kind = 'approved'; else S.timeoff.push({ p: r.p, date: r.date, kind: 'approved' }); msg = `${firstName(r.p)}'s time off approved`; }
+    }
+    S.reqs = S.reqs.filter(x => x.id !== id);
+    dirty();
+    return msg;
+  },
+  approveTime(id) { snap(); S.times = S.times.filter(t => t.id !== id); },
+};
+/* ============ views: everything that turns state into HTML ============ */
+const IC = {
+  l: '<path d="M15 6l-6 6 6 6"/>', r: '<path d="M9 6l6 6-6 6"/>', d: '<path d="M6 9l6 6 6-6"/>',
+  bell: '<path d="M6 16v-5a6 6 0 0112 0v5l1.5 2h-15zM10 21a2 2 0 004 0"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', dots: '<circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>',
+  x: '<path d="M6 6l12 12M18 6L6 18"/>', check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  cal: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+  inbox: '<path d="M4 13l2.5-7h11L20 13v6H4zM4 13h5l1 2h4l1-2h5"/>',
+  ppl: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5a3 3 0 010 6M18 14c2 .6 3.5 2.6 3.5 5"/>',
+  clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>',
+  undo: '<path d="M9 7L4 12l5 5M4 12h9a6 6 0 016 6"/>',
+  pin: '<path d="M12 21s-6-5.6-6-11a6 6 0 0112 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/>',
+};
+const ic = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+const av = (id, role) => `<span class="av" style="--rc:${rcv(role || mainRole(id))}" aria-hidden="true">${initials(id)}</span>`;
+const who = sh => (sh.p ? PMAP[sh.p].name : 'Open slot');
+const isPhone = () => S.layout === 'phone';
+/* the details panel docks beside the grid only on wide desktops; everywhere else it is a drawer you open */
+const dockable = () => S.layout === 'desktop' && innerWidth >= 1280;
+const docked = () => dockable() && S.panelOpen !== false;
+const lensInBar = () => !isPhone() && innerWidth >= 1100;
+const attn = sh => !sh.p || !sh.pub || problemsOf(sh).length > 0;
+const selShift = () => (S.sel && S.sel.kind === 'shift' ? byId(S.sel.id) : null);
+const isSel = id => !!(S.sel && S.sel.kind === 'shift' && S.sel.id === id);
+const tipText = st => `${st.cap ? `${st.filled} of ${st.cap} filled` : 'Not scheduled'}${st.open ? ` · ${st.open} open` : ''}${st.cap && st.drafts ? ' · Draft' : ''}`;
+const eventStat = ev => { const a = S.shifts.filter(s => s.ev === ev.id); return { f: a.filter(s => s.p).length, n: a.length }; };
+/* a span that is almost entirely drafts gets one note, not a hatch on every chip */
+let QUIET = false;
+const allDraft = st => st.cap > 0 && st.drafts / st.cap >= .85;
+const dnote = (scope, btn) => `<div class="dnote"><span class="tag draft">Draft</span><span class="grow">This ${scope} is a draft. Workers can’t see it until you publish.</span>${btn ? '<button class="btn sm" data-act="publish">Publish</button>' : ''}</div>`;
+
+/* ---------- span & attention ---------- */
+function spanRange() {
+  if (S.zoom === 'day') return [S.date, S.date];
+  if (S.zoom === 'week') { const s = wkStart(wkOf(S.date)); return [s, addDays(s, 6)]; }
+  const f = monthStart(S.date); return [f, addDays(addMonths(f, 1), -1)];
+}
+function attention() {
+  const [a, b] = spanRange(), opens = [], probs = []; let drafts = 0, openN = 0;
+  for (let i = 0; i <= diffDays(b, a); i++) {
+    const list = on(addDays(a, i));
+    for (const g of openGroups(list)) { opens.push(g); openN += g.length; }
+    const seen = new Set();
+    for (const s of list) { if (!s.pub) drafts++; if (problemsOf(s).length && !seen.has(s.p + s.date)) { seen.add(s.p + s.date); probs.push(s); } }
+  }
+  return { opens, openN, probs, drafts, reqs: S.reqs.length };
+}
+
+/* ---------- top bar & tabs ---------- */
+function topHTML() {
+  const badge = S.reqs.length + S.times.length;
+  const tabs = [['schedule', 'Schedule'], ['people', 'People'], ['inbox', 'Inbox'], ['time', 'Time']];
+  const loc = `<button class="loc" data-act="noop" data-msg="One location in this prototype"><span aria-hidden="true">${ic('pin', 16)}</span>Downtown Bistro</button>`;
+  if (isPhone()) {
+    return `<header class="top">${loc}<span class="grow"></span><button class="iconbtn" data-act="noop" data-msg="Notifications are outside this prototype" aria-label="Notifications">${ic('bell')}</button><span class="av" style="--rc:var(--navy)" aria-hidden="true">AR</span></header>`;
+  }
+  return `<header class="top"><div class="logo"><span class="mk" aria-hidden="true">WH</span>Workers Hive</div>
+    <nav class="tabs" aria-label="Sections">${tabs.map(([k, l]) => `<button class="tab" data-act="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${l}${k === 'inbox' && badge ? `<span class="badge">${badge}</span>` : ''}</button>`).join('')}</nav>
+    <span class="grow"></span>${loc}<button class="iconbtn" data-act="noop" data-msg="Notifications are outside this prototype" aria-label="Notifications">${ic('bell')}</button><span class="av" style="--rc:var(--navy)" aria-hidden="true">AR</span></header>`;
+}
+function tabbarHTML() {
+  const badge = S.reqs.length + S.times.length;
+  const t = [['schedule', 'Schedule', 'cal'], ['inbox', 'Inbox', 'inbox'], ['people', 'People', 'ppl'], ['time', 'Time', 'clock']];
+  return `<nav class="tabbar phone-only" aria-label="Sections">${t.map(([k, l, i]) => `<button data-act="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${ic(i, 22)}<span>${l}</span>${k === 'inbox' && badge ? `<span class="badge">${badge}</span>` : ''}</button>`).join('')}</nav>`;
+}
+
+/* ---------- weeks ahead: six plain-text week chips, always visible ---------- */
+function weekStatus(wk) {
+  const w = wkStats(wk);
+  if (!w.cap) return { txt: 'Not started', k: 'none' };
+  const d = w.drafts ? (allDraft(w) ? ' · Draft' : ` · ${w.drafts} ${w.drafts === 1 ? 'draft' : 'drafts'}`) : '';
+  return { txt: `${w.open ? `${w.open} open` : 'Covered'}${d}`, k: w.open ? 'open' : 'ok' };
+}
+function stripHTML() {
+  const cur = wkOf(TODAY), vw = wkOf(S.date), vm = S.date.slice(0, 7);
+  const chips = Array.from({ length: 6 }, (_, k) => {
+    const wk = cur + k, st = wkStart(wk), s = weekStatus(wk);
+    const inView = S.zoom === 'month' ? [0, 1, 2, 3, 4, 5, 6].some(i => addDays(st, i).slice(0, 7) === vm) : wk === vw;
+    const label = k === 0 ? 'This week' : k === 1 ? 'Next week' : weekLabel(st);
+    return `<button class="wk${inView ? ' in' : ''}" data-act="stripwk" data-date="${st}" aria-label="Jump to ${esc(label.toLowerCase())}: ${esc(s.txt)}"${inView ? ' aria-current="true"' : ''}><span class="wl">${esc(label)}</span><span class="ws ${s.k}">${esc(s.txt)}</span></button>`;
+  }).join('');
+  return `<section class="strip" aria-label="Weeks ahead"><div class="cap desk-only">Weeks ahead</div><div class="weeks">${chips}</div></section>`;
+}
+
+/* ---------- toolbar ---------- */
+function isCurrentUnit() {
+  if (S.zoom === 'day') return S.date === TODAY;
+  if (S.zoom === 'week') return wkOf(S.date) === wkOf(TODAY);
+  return S.date.slice(0, 7) === TODAY.slice(0, 7);
+}
+function dateLabel() {
+  if (S.zoom === 'day') return isPhone() ? `${DOW[dowOf(S.date)]}, ${MONS[monthNum(S.date) - 1]} ${dayNum(S.date)}` : fmtLong(S.date);
+  if (S.zoom === 'week') return weekLabel(wkStart(wkOf(S.date)));
+  return `${MONTHS[monthNum(S.date) - 1]} ${S.date.slice(0, 4)}`;
+}
+function toolbarHTML() {
+  const pend = (() => { const [a, b] = S.zoom === 'month' ? [monthStart(S.date), addDays(addMonths(monthStart(S.date), 1), -1)] : S.zoom === 'week' ? spanRange() : [S.date, S.date]; return pendingIn(a, b); })();
+  const zoomSeg = `<div class="seg" role="group" aria-label="Zoom">${[['day', 'Day'], ['week', 'Week'], ['month', 'Month']].map(([k, l]) => `<button data-act="zoom" data-z="${k}" aria-pressed="${S.zoom === k}">${l}</button>`).join('')}</div>`;
+  const dn = `<div class="dn"><button class="iconbtn" data-act="nav" data-d="-1" aria-label="Previous ${S.zoom}">${ic('l')}</button><span class="lbl" aria-live="polite">${esc(dateLabel())}</span><button class="iconbtn" data-act="nav" data-d="1" aria-label="Next ${S.zoom}">${ic('r')}</button></div>`;
+  const today = isCurrentUnit() ? '' : `<button class="btn" data-act="today">Today</button>`;
+  const menu = `<button class="iconbtn" data-act="menu" aria-label="More actions">${ic('dots')}</button>`;
+  if (isPhone()) {
+    const sub = S.zoom === 'week' ? `<div class="seg" role="group" aria-label="Week layout" style="width:100%"><button data-act="pweek" data-v="days" aria-pressed="${S.pweek === 'days'}">Days</button><button data-act="pweek" data-v="people" aria-pressed="${S.pweek === 'people'}">People</button></div>` : '';
+    return `<div class="tb">${zoomSeg}<div class="row" style="width:100%">${dn}${today}${menu}</div>${sub}</div>`;
+  }
+  const lens = S.zoom === 'week' && lensInBar() ? `<div class="seg" role="group" aria-label="Rows"><button data-act="lens" data-l="person" aria-pressed="${S.lens === 'person'}">By person</button><button data-act="lens" data-l="role" aria-pressed="${S.lens === 'role'}">By role</button></div>` : '';
+  const undoB = S.hist.length ? `<button class="iconbtn" data-act="undo" aria-label="Undo">${ic('undo')}</button>` : '';
+  const tog = docked() ? `<button class="tog" data-act="focus" aria-pressed="${S.focus}"><span class="sw"></span>Needs attention only</button>` : attChip();
+  return `<div class="tb">${zoomSeg}${dn}${today}${lens}<span class="sp"></span>
+    ${tog}${undoB}${menu}
+    <button class="btn pri" data-act="publish" ${pend ? '' : 'disabled'}>${pend ? `Publish ${pend}` : 'Publish'}</button></div>`;
+}
+function attBits() {
+  const a = attention(), bits = [];
+  if (a.probs.length) bits.push(`${a.probs.length} ${a.probs.length === 1 ? 'problem' : 'problems'}`);
+  if (a.openN) bits.push(`${a.openN} open`);
+  if (a.drafts) bits.push(`${a.drafts} ${a.drafts === 1 ? 'draft' : 'drafts'}`);
+  if (a.reqs) bits.push(`${a.reqs} ${a.reqs === 1 ? 'request' : 'requests'}`);
+  return bits;
+}
+function attRowHTML() {
+  const bits = attBits(), clear = !bits.length;
+  return `<button class="att${clear ? ' clear' : ''}" data-act="summary"><span class="dot" aria-hidden="true"></span><span class="grow trunc"><b>${clear ? 'All clear' : 'Needs a look'}</b>${clear ? '' : ` · ${bits.join(' · ')}`}${S.focus ? ' · filtered' : ''}</span><span class="chev">${ic('r', 16)}</span></button>`;
+}
+function attChip() {
+  const bits = attBits();
+  return `<button class="btn attchip${bits.length ? '' : ' clear'}" data-act="summary" aria-label="${bits.length ? 'Needs a look: ' + bits.join(', ') : 'All clear'}"><span class="dot" aria-hidden="true"></span>${bits.length ? bits.slice(0, 2).join(' · ') : 'All clear'}</button>`;
+}
+
+/* ---------- chips ---------- */
+function chipLabel(sh) {
+  const role = sh.p && sh.role !== mainRole(sh.p) ? `<span class="rl"> · ${sh.role}</span>` : '';
+  return `<span class="tm">${range(sh.s, sh.e)}</span>${role}`;
+}
+function chip(sh) {
+  const pr = problemsOf(sh), dim = S.focus && !attn(sh), on_ = S.multi && S.multi.has(sh.id);
+  const cls = ['chip', !sh.pub && 'draft', !sh.p && 'open', pr.length && 'prob', isSel(sh.id) && 'sel', dim && 'dim', S.multi && 'mon', on_ && 'on'].filter(Boolean).join(' ');
+  const lab = `${who(sh)}, ${fmtD(sh.date)}, ${range(sh.s, sh.e)}, ${sh.role}${!sh.pub ? ', draft' : ''}${!sh.p ? ', open' : ''}${pr.length ? ', problem: ' + pr.join('; ') : ''}`;
+  return `<button class="${cls}" style="--rc:${rcv(sh.role)}" data-act="chip" data-id="${sh.id}" aria-label="${esc(lab)}" ${S.sel && isSel(sh.id) ? 'aria-pressed="true"' : ''}>${chipLabel(sh)}${pr.length ? '<b class="pm" aria-hidden="true">!</b>' : ''}</button>`;
+}
+function openChip(g) {
+  const f = g[0], cls = ['chip', 'open', 'ogrp', !g.every(s => s.pub) && 'draft', g.some(s => isSel(s.id)) && 'sel', S.multi && 'mon', S.multi && S.multi.has(f.id) && 'on'].filter(Boolean).join(' ');
+  return `<button class="${cls}" style="--rc:${rcv(f.role)}" data-act="chip" data-id="${(g.find(s => isSel(s.id)) || f).id}" aria-label="${g.length} open ${f.role} slots ${fmtD(f.date)} ${range(f.s, f.e)}"><span class="tm">${g.length > 1 ? g.length + '× ' : ''}${f.role}</span><small>${range(f.s, f.e)}</small></button>`;
+}
+
+/* ---------- place-mode hints ---------- */
+const pkey = (p, date) => `${p || ''}|${date}`;
+function hintFor(p, date) {
+  if (!S.place) return null;
+  const sh = byId(S.place.id);
+  if (!sh) return null;
+  if (S.place.op === 'copy' && S.place.targets.has(pkey(p, date))) return { cls: 'picked', g: '✓ Picked', tip: 'Picked. Tap again to remove' };
+  if (S.place.op === 'move' && (sh.p || null) === (p || null) && sh.date === date) return { cls: 'picked', g: 'Here now', tip: 'Where it is now' };
+  if (!p) return { cls: 'h-ok', g: '✓', tip: 'Becomes an open slot' };
+  const c = check(sh, p, date), unfit = !PMAP[p].roles.includes(sh.role);
+  return { cls: (c.level === 'ok' ? 'h-ok' : c.level === 'warn' ? 'h-warn' : 'h-block') + (unfit ? ' unfit' : ''), g: c.level === 'ok' ? '✓' : c.level === 'warn' ? '⚠' : '✕', tip: c.level === 'ok' ? 'Fits' : c.msgs.join('. ') };
+}
+
+/* ---------- desktop: week grid ---------- */
+function weekDates() { const s = wkStart(wkOf(S.date)); return Array.from({ length: 7 }, (_, i) => addDays(s, i)); }
+function dayHeaders(dates) {
+  return dates.map((date, i) => {
+    const s = dayStats(date), ev = S.events.find(e => e.date === date), es = ev ? eventStat(ev) : null;
+    return `<button class="hd dh${date === TODAY ? ' today' : ''}" data-act="dayhead" data-date="${date}" aria-label="${esc(fmtLong(date))}: ${esc(tipText(s))}">
+      <div class="d"><b>${dayNum(date)}</b><span>${DOW[i]}</span></div>
+      <div class="meta"><span>${s.open ? `${s.open} open` : ''}</span></div>${ev ? `<div class="evrow" title="${esc(ev.name)}">◆ ${esc(ev.name)} ${es.f}/${es.n}</div>` : ''}</button>`;
+  }).join('');
+}
+function cellHTML(p, date, inner, extra = '', role = '') {
+  const h = hintFor(p, date);
+  return `<div class="cell${extra}${h ? ' ' + h.cls : ''}" role="gridcell" data-act="cell" data-p="${p || ''}" data-date="${date}"${role ? ` data-role="${role}"` : ''}${h ? ` data-tip="${esc(h.tip)}"` : ''} tabindex="-1">${inner}${h ? `<span class="hg" aria-label="${esc(h.tip)}">${esc(h.g)}</span>` : ''}</div>`;
+}
+function emptyWeekHTML(wk) {
+  return `<div class="emptyw"><h3>Nothing scheduled for ${esc(weekLabel(wkStart(wk)))}</h3><p class="muted" style="margin:0;max-width:44ch">Start from your usual shifts, or copy last week and adjust. Everything you add stays a draft until you publish.</p>
+    <div class="row"><button class="btn pri" data-act="usual" data-wk="${wk}">Build from usual shifts</button><button class="btn" data-act="copyweek" data-wk="${wk}">Copy last week</button></div></div>`;
+}
+function peopleGrid() {
+  const dates = weekDates(), wk = wkOf(S.date), q = S.q.trim().toLowerCase();
+  if (dates.every(d => !on(d).length)) return `<div class="pad">${emptyWeekHTML(wk)}</div>`;
+  const ad = allDraft(wkStats(wk));
+  let h = (ad ? dnote('week', true) : '') + `<div class="wg${S.place ? ' placing' : ''}${ad ? ' alldraft' : ''}" role="grid" aria-label="Week schedule, by person">
+    <div class="hd corner"><input id="q" type="search" placeholder="Find person" value="${esc(S.q)}" aria-label="Find person"></div>${dayHeaders(dates)}<div class="hd"></div>`;
+  h += `<div class="lab"><div><div class="nm">Open</div><div class="rr">Unassigned slots</div></div></div>`;
+  for (const date of dates) h += cellHTML(null, date, openGroups(on(date)).map(openChip).join(''), ' opencell');
+  h += `<div class="hrs" style="border-top:1px solid var(--line)"></div>`;
+  for (const dept of DEPTS) {
+    const ppl = PEOPLE.filter(p => p.dept === dept && (!q || p.name.toLowerCase().includes(q))).sort((a, b) => ROLES.indexOf(a.roles[0]) - ROLES.indexOf(b.roles[0]) || a.name.localeCompare(b.name));
+    if (!ppl.length) continue;
+    const col = S.collapsed[dept];
+    let openN = 0; for (const d of dates) for (const s of on(d)) if (!s.p && (s.role === 'Cook' || s.role === 'Dish' ? dept === KIT : dept === FOH)) openN++;
+    h += `<div class="dept"><button data-act="dept" data-dept="${esc(dept)}" aria-expanded="${!col}">${ic(col ? 'r' : 'd', 16)}${esc(dept)}<span class="sm">${ppl.length} people${openN ? ` · ${openN} open` : ''}</span></button></div>`;
+    if (col) continue;
+    for (const p of ppl) {
+      const hrs = hoursOf(p.id, wk), cls = hrs > 40 ? 'over' : hrs >= 36 ? 'near' : '';
+      h += `<div class="lab" role="rowheader">${av(p.id)}<div class="trunc"><div class="nm trunc">${esc(p.name)}</div><div class="rr">${p.roles.join(' · ')}</div></div></div>`;
+      for (const date of dates) {
+        const list = on(date).filter(s => s.p === p.id).sort((a, b) => a.s - b.s), off = offOn(p.id, date);
+        let inner = off ? `<span class="off${off.kind === 'pending' ? ' pend' : ''}">${off.kind === 'pending' ? 'Off?' : 'Off'}</span>` : '';
+        inner += list.slice(0, 2).map(chip).join('');
+        if (list.length > 2) inner += `<button class="plus" data-act="pd" data-p="${p.id}" data-date="${date}">+${list.length - 2} more</button>`;
+        h += cellHTML(p.id, date, inner);
+      }
+      h += `<div class="hrs ${cls}">${cls === 'over' ? 'OT ' : ''}${fmtH(hrs)}</div>`;
+    }
+  }
+  return h + '</div>';
+}
+function roleGrid() {
+  const dates = weekDates(), wk = wkOf(S.date);
+  if (dates.every(d => !on(d).length)) return `<div class="pad">${emptyWeekHTML(wk)}</div>`;
+  const ad = allDraft(wkStats(wk));
+  let h = (ad ? dnote('week', true) : '') + `<div class="wg${ad ? ' alldraft' : ''}" role="grid" aria-label="Week schedule, by role"><div class="hd corner"></div>${dayHeaders(dates)}<div class="hd"></div>`;
+  for (const role of ROLES) {
+    const n = PEOPLE.filter(p => p.roles.includes(role)).length;
+    h += `<div class="lab"><span class="av sm" style="--rc:${rcv(role)}" aria-hidden="true"></span><div><div class="nm">${role}</div><div class="rr">${n} people</div></div></div>`;
+    for (const date of dates) {
+      const list = on(date).filter(s => s.role === role), groups = new Map();
+      for (const s of list) { const k = `${s.s}|${s.e}`; if (!groups.has(k)) groups.set(k, []); groups.get(k).push(s); }
+      let inner = '';
+      for (const g of [...groups.values()].sort((a, b) => a[0].s - b[0].s)) {
+        const f = g.filter(s => s.p).length, first = g.find(s => !s.p) || g[0], prob = g.some(s => problemsOf(s).length), drafts = g.some(s => !s.pub), dim = S.focus && !(f < g.length || drafts || prob);
+        const names = g.filter(s => s.p).map(s => firstName(s.p)).join(', ');
+        inner += `<button class="chip${f < g.length ? ' open' : ''}${drafts ? ' draft' : ''}${prob ? ' prob' : ''}${g.some(s => isSel(s.id)) ? ' sel' : ''}${dim ? ' dim' : ''}" style="--rc:${rcv(role)}" data-act="chip" data-id="${(g.find(s => isSel(s.id)) || first).id}" title="${esc(names || 'Nobody assigned')}" aria-label="${role} ${fmtD(date)} ${range(g[0].s, g[0].e)}: ${f} of ${g.length} filled${names ? ' (' + esc(names) + ')' : ''}"><span class="tm">${range(g[0].s, g[0].e)}</span><small>${f}/${g.length}</small>${prob ? '<b class="pm" aria-hidden="true">!</b>' : ''}</button>`;
+      }
+      h += cellHTML(null, date, inner, ' rolecell', role);
+    }
+    h += `<div class="hrs"></div>`;
+  }
+  return h + '</div>';
+}
+
+/* ---------- day: headline + dayparts, no charts ---------- */
+function emptyDayHTML(date) {
+  return `<div class="emptyw"><h3>No shifts on ${esc(DOWL[dowOf(date)])}</h3><p class="muted" style="margin:0">Add an open shift and offer it to the team, or assign someone straight away.</p><div class="row"><button class="btn pri" data-act="cell" data-p="" data-date="${date}">Add open shift</button></div></div>`;
+}
+function daySummary(date, st) {
+  return `<div class="dsum"><div class="hl"><span class="big num">${st.filled} on shift${st.open ? ` · ${st.open} open` : ''}</span><span class="tag ${st.open ? 'warn' : 'ok'}">${st.open ? 'Gaps' : 'Covered'}</span></div></div>`;
+}
+function prow(sh) {
+  const pr = problemsOf(sh), dim = S.focus && !attn(sh);
+  const tags = `${!sh.pub && !QUIET ? '<span class="tag draft">Draft</span>' : ''}${pr.length ? `<span class="tag crit">! ${pr[0].includes('time off') ? 'Time off' : 'Double-booked'}</span>` : ''}`;
+  return `<button class="prow${!sh.pub ? ' draft' : ''}${isSel(sh.id) ? ' sel' : ''}${dim ? ' dimmable dim' : ''}" style="--rc:${rcv(sh.role)}" data-act="chip" data-id="${sh.id}">${av(sh.p, sh.role)}<span class="grow"><span class="nm trunc" style="display:block">${esc(who(sh))}</span><span class="rr" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${sh.role} ${tags}</span></span><span class="tm">${range(sh.s, sh.e)}</span></button>`;
+}
+function orow(g) {
+  const f = g[0], sel = g.some(s => isSel(s.id));
+  return `<div class="orow${sel ? ' sel' : ''}" style="--rc:${rcv(f.role)}"><button class="grow" data-act="chip" data-id="${(g.find(s => isSel(s.id)) || f).id}" style="text-align:left"><div class="t">${g.length}× ${f.role} open</div><div class="s">${range(f.s, f.e)}${f.offered ? ' · Offered to matching workers' : ''}${!f.pub ? ' · Draft' : ''}</div></button>
+    <div class="acts"><button class="btn sm" data-act="assign" data-id="${f.id}">Assign</button><button class="btn sm" data-act="offer" data-id="${f.id}" ${f.offered ? 'disabled' : ''}>${f.offered ? 'Offered' : 'Offer'}</button></div></div>`;
+}
+function dayView() {
+  const date = S.date, list = on(date).slice().sort((a, b) => a.s - b.s || a.role.localeCompare(b.role));
+  if (!list.length) return `<div class="pad">${emptyDayHTML(date)}</div>`;
+  const st = dayStats(date), ad = allDraft(st);
+  QUIET = ad;
+  let h = `<div class="pad${ad ? ' alldraft' : ''}">${ad ? dnote('day', !isPhone()) : ''}${daySummary(date, st)}<div class="board">`;
+  for (const pn of PARTS) {
+    const items = list.filter(s => part(s.s) === pn);
+    if (!items.length) continue;
+    const fl = items.filter(s => s.p).length;
+    const span = range(Math.min(...items.map(s => s.s)), Math.max(...items.map(s => s.e)));
+    h += `<section class="dp" aria-label="${pn}"><div class="dph"><span class="t">${pn}</span><span class="tt">${span}</span><span class="cnt num">${fl} of ${items.length}</span></div><div class="list" style="gap:6px">${items.filter(s => s.p).map(prow).join('')}${openGroups(items).map(orow).join('')}</div></section>`;
+  }
+  QUIET = false;
+  return h + '</div></div>';
+}
+
+/* ---------- phone: week ---------- */
+function weekRows() {
+  const dates = weekDates(), wk = wkOf(S.date);
+  if (dates.every(d => !on(d).length)) return `<div class="pad">${emptyWeekHTML(wk)}</div>`;
+  const ad = allDraft(wkStats(wk));
+  return `<div class="pad">${ad ? dnote('week', false) : ''}<div class="list">${dates.map((date, i) => {
+    const s = dayStats(date), ev = S.events.find(e => e.date === date), dim = S.focus && !(s.open || s.drafts || s.prob);
+    return `<button class="wrow${date === TODAY ? ' today' : ''}${dim ? ' dimmable dim' : ''}" data-act="dayopen" data-date="${date}">${s.drafts && !ad ? '<span class="draftmark" title="Has drafts"></span>' : ''}
+      <span class="dd"><b class="num">${dayNum(date)}</b><span>${DOW[i]}</span></span>
+      <span class="mid"><span class="r"><span>${s.cap ? `${s.filled} of ${s.cap} filled` : 'Nothing scheduled'}</span><span class="row" style="gap:6px">${s.prob ? `<span class="tag crit">! ${s.prob}</span>` : ''}${s.open ? `<span class="tag warn">${s.open} open</span>` : ''}${s.cap && !s.open && !s.prob ? '<span class="tag ok">Covered</span>' : ''}${s.drafts && !ad ? '<span class="tag draft">Draft</span>' : ''}</span></span>${ev ? `<span class="rr muted" style="font-size:12px">◆ ${esc(ev.name)} · ${eventStat(ev).f}/${eventStat(ev).n}</span>` : ''}</span><span class="chev">${ic('r', 18)}</span></button>`;
+  }).join('')}</div></div>`;
+}
+function peopleRows() {
+  const dates = weekDates(), wk = wkOf(S.date);
+  if (dates.every(d => !on(d).length)) return `<div class="pad">${emptyWeekHTML(wk)}</div>`;
+  const ppl = PEOPLE.slice().sort((a, b) => DEPTS.indexOf(a.dept) - DEPTS.indexOf(b.dept) || ROLES.indexOf(a.roles[0]) - ROLES.indexOf(b.roles[0]) || a.name.localeCompare(b.name));
+  return `<div class="pad"><div class="list" style="gap:6px">${ppl.map(p => {
+    const hrs = hoursOf(p.id, wk), cls = hrs > 40 ? 'over' : hrs >= 36 ? 'near' : '';
+    const mine = d => on(d).filter(s => s.p === p.id);
+    const worked = dates.filter(d => mine(d).length).map(d => DOW[dowOf(d)]);
+    const offd = dates.filter(d => !mine(d).length && offOn(p.id, d)).map(d => DOW[dowOf(d)]);
+    const probd = dates.filter(d => mine(d).some(s => problemsOf(s).length)).map(d => DOW[dowOf(d)]);
+    const anyDraft = dates.some(d => mine(d).some(s => !s.pub));
+    const tags = `${probd.length ? `<span class="tag crit">! ${probd.join(', ')}</span>` : ''}${anyDraft ? '<span class="tag draft">Draft</span>' : ''}${offd.length ? `<span class="off">Off ${offd.join(', ')}</span>` : ''}`;
+    const dim = S.focus && !dates.some(d => on(d).some(s => s.p === p.id && attn(s)));
+    return `<button class="prowk${dim ? ' dimmable dim' : ''}" data-act="person" data-p="${p.id}">${av(p.id)}<span class="grow"><span class="nm" style="font-weight:600;display:block">${esc(p.name)}</span><span class="rr">${worked.length ? `${worked.length} ${worked.length === 1 ? 'shift' : 'shifts'} · ${worked.join(' ')}` : 'No shifts'}${tags}</span></span><span class="hh ${cls}">${cls === 'over' ? 'OT ' : ''}${fmtH(hrs)}</span></button>`;
+  }).join('')}</div></div>`;
+}
+
+/* ---------- month: a calendar of numbers, plus a list view ---------- */
+function monthHTML() {
+  const first = monthStart(S.date), last = addDays(addMonths(first, 1), -1), ym = first.slice(0, 7);
+  const rows = []; let st = wkStart(wkOf(first));
+  while (st <= last) { rows.push(st); st = addDays(st, 7); }
+  let live = 0, dr = 0, none = 0, openN = 0;
+  for (const s of rows) { const w = wkStats(wkOf(s)); if (!w.cap) none++; else if (w.drafts) dr++; else live++; for (let i = 0; i < 7; i++) { const d = addDays(s, i); if (d.slice(0, 7) === ym) openN += dayStats(d).open; } }
+  const bits = [live && `${live} live`, dr && `${dr} with drafts`, none && `${none} not started`, openN && `${openN} open slots`].filter(Boolean);
+  const lens = [['cov', 'Coverage'], ['off', 'Time off'], ['ev', 'Events'], ['dr', 'Drafts']];
+  let h = `<div class="pad"><div class="msum"><b>${MONTHS[monthNum(first) - 1]}</b><span>${bits.join(' · ')}</span></div>
+    <div class="mlens" role="group" aria-label="Month lens">${lens.map(([k, l]) => `<button class="chipb" data-act="mlens" data-k="${k}" aria-pressed="${S.mlens === k}">${l}</button>`).join('')}<span class="grow"></span><button class="chipb" data-act="mtable" aria-pressed="${S.mtable}">List</button></div>`;
+  if (S.mtable) {
+    h += `<div class="tblwrap"><table class="mtbl"><thead><tr><th>Date</th><th>Filled</th><th>Open</th><th>Status</th><th>Event</th></tr></thead><tbody>`;
+    for (let d = first; d <= last; d = addDays(d, 1)) {
+      const s = dayStats(d), ev = S.events.find(e => e.date === d);
+      h += `<tr><td><button data-act="mday" data-date="${d}" style="font-weight:600">${fmtD(d)}</button></td><td class="num">${s.cap ? `${s.filled} of ${s.cap}` : '—'}</td><td class="num">${s.open || '—'}</td><td>${!s.cap ? 'Not scheduled' : s.drafts ? 'Draft' : 'Published'}${s.prob ? ' · problem' : ''}</td><td>${ev ? esc(ev.name) : ''}</td></tr>`;
+    }
+    return h + '</tbody></table></div></div>';
+  }
+  h += `<div class="mg"><span></span>${DOW.map(d => `<span class="dow">${d[0]}<span class="desk-only">${d.slice(1)}</span></span>`).join('')}`;
+  for (const s of rows) {
+    const w = wkStats(wkOf(s)), k = !w.cap ? 'none' : w.drafts ? 'dr' : 'live';
+    h += `<button class="mw ${k}" data-act="wkopen" data-date="${s}" aria-label="Open week of ${esc(weekLabel(s))}: ${k === 'none' ? 'not started' : k === 'dr' ? w.drafts + ' drafts' : 'live'}">${k === 'none' ? 'Not started' : k === 'dr' ? `${w.drafts} draft${w.drafts === 1 ? '' : 's'}` : 'Live'}</button>`;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(s, i), out = d.slice(0, 7) !== ym, ds = dayStats(d), ev = S.events.find(e => e.date === d);
+      let body = '';
+      if (!out) {
+        if (S.mlens === 'cov') body = ds.cap ? (ds.open ? `<span class="ot warn">${ds.open} open</span>` : `<span class="ot">${ds.filled} on</span>`) : '';
+        if (S.mlens === 'off') { const n = S.timeoff.filter(t => t.date === d).length; body = n ? `<span class="ot">${n} off</span>` : ''; }
+        if (S.mlens === 'ev') body = ev ? `<span class="ot">${esc(ev.name.split(' ')[0])}</span>` : '';
+        if (S.mlens === 'dr') body = ds.drafts ? `<span class="ot">${ds.drafts} draft${ds.drafts === 1 ? '' : 's'}</span>` : '';
+      }
+      const unp = !out && (S.mlens === 'dr' || S.mlens === 'cov') && ds.cap && ds.drafts;
+      h += `<button class="mc${out ? ' out' : ''}${d === TODAY ? ' today' : ''}${unp ? ' unp' : ''}${S.sel && S.sel.kind === 'day' && S.sel.date === d ? ' sel' : ''}" data-act="mday" data-date="${d}" aria-label="${esc(fmtD(d))}: ${esc(tipText(ds))}"><span class="dn num">${dayNum(d)}</span>${!out && ev && S.mlens !== 'ev' ? '<b class="ev"></b>' : ''}${!out && S.mlens === 'ev' && ev ? '<b class="ev"></b>' : ''}${body}</button>`;
+    }
+  }
+  const hint = { cov: '<span>Number on shift, or slots still open in orange</span><span>Dashed cell: has drafts</span><span>◆ event</span>', off: '<span>Number of people off</span>', ev: '<span>◆ event</span>', dr: '<span>Dashed cell: has drafts</span>' }[S.mlens];
+  h += `</div><div class="lg" style="margin-top:14px">${hint}</div></div>`;
+  return h;
+}
+
+/* ---------- inbox, people, time, more ---------- */
+function inboxHTML() {
+  const reqs = S.reqs, times = S.times;
+  const typ = { claim: 'Claim', drop: 'Drop', swap: 'Swap', off: 'Time off' };
+  let h = `<div class="pad"><div class="pagehead"><h2>Inbox</h2><span class="muted">${reqs.length + times.length ? `${reqs.length + times.length} waiting on you` : ''}</span></div>`;
+  if (!reqs.length && !times.length) h += `<div class="emptyw"><h3>Nothing waiting on you</h3><p class="muted" style="margin:0">Claims, swaps, time off and timesheets land here.</p></div>`;
+  if (reqs.length) {
+    h += `<div class="h3s">Requests</div><div class="list">`;
+    for (const r of reqs) {
+      const sh = r.sid ? byId(r.sid) : null;
+      const line = r.type === 'off' ? `${firstName(r.p)} requests time off ${fmtD(r.date)}`
+        : !sh ? `${firstName(r.p)}'s ${r.type} request` : r.type === 'claim' ? `${firstName(r.p)} wants to pick up ${fmtD(sh.date)} ${range(sh.s, sh.e)}`
+          : r.type === 'drop' ? `${firstName(r.p)} can't make ${fmtD(sh.date)} ${range(sh.s, sh.e)}` : `${firstName(r.p)} offers ${fmtD(sh.date)} ${range(sh.s, sh.e)} to ${firstName(r.p2)}`;
+      h += `<div class="rq"><div class="hd2">${av(r.p)}<div class="grow"><div class="tx">${esc(line)}</div><div class="sub">${esc(r.note)}</div></div><span class="tag">${typ[r.type]}</span></div>
+        <div class="ac"><button class="btn" data-act="req-no" data-id="${r.id}">Decline</button><button class="btn pri" data-act="req-yes" data-id="${r.id}">Approve</button></div></div>`;
+    }
+    h += '</div>';
+  }
+  if (times.length) {
+    h += `<div class="h3s">Timesheets to approve</div><div class="list">${times.map(t => `<div class="rq"><div class="hd2"><div class="grow"><div class="tx">${esc(t.label)}</div><div class="sub">${esc(t.sub)}</div></div></div><div class="ac"><button class="btn pri" data-act="time-ok" data-id="${t.id}">Approve timesheet</button></div></div>`).join('')}</div>`;
+  }
+  return h + '</div>';
+}
+function peopleTab() {
+  const wk = wkOf(TODAY);
+  return `<div class="pad"><div class="pagehead"><h2>People</h2><span class="muted">${PEOPLE.length} on the team</span></div><div class="list" style="gap:6px">${PEOPLE.map(p => { const hrs = hoursOf(p.id, wk); return `<div class="prowk">${av(p.id)}<span class="grow"><span class="nm" style="font-weight:600;display:block">${esc(p.name)}</span><span class="muted" style="font-size:12.5px">${p.roles.join(' · ')} · ${p.dept}</span></span><span class="hh num">${fmtH(hrs)}</span></div>`; }).join('')}</div></div>`;
+}
+function stubTab(title, body) { return `<div class="pad"><div class="pagehead"><h2>${title}</h2></div><div class="emptyw"><h3>Outside this prototype</h3><p class="muted" style="margin:0;max-width:46ch">${body}</p></div></div>`; }
+
+/* ---------- inspector (desktop panel; phone sheet uses the same content) ---------- */
+function summaryPanel() {
+  const a = attention(), unit = S.zoom === 'day' ? 'this day' : S.zoom === 'week' ? 'this week' : 'this month';
+  let h = `<h3>${S.zoom === 'day' ? `${DOWL[dowOf(S.date)]} at a glance` : S.zoom === 'week' ? (isCurrentUnit() ? 'This week' : 'This week’s view') : 'This month'}</h3>`;
+  if (!a.openN && !a.probs.length && !a.drafts && !a.reqs) return h + `<div class="callout"><span class="gl o" aria-hidden="true">✓</span><div><b>All clear.</b> Nothing needs you ${unit}.</div></div>`;
+  if (a.probs.length) h += `<div class="isec"><div class="cap">Problems · ${a.probs.length}</div>${a.probs.slice(0, 6).map(s => `<button class="li crit" data-act="pick" data-id="${s.id}"><span class="gl" aria-hidden="true">!</span><span class="grow"><b>${esc(who(s))}</b> · ${fmtD(s.date)}<div class="sub">${esc(problemsOf(s)[0])}</div></span></button>`).join('')}</div>`;
+  if (a.openN) h += `<div class="isec"><div class="cap">Open slots · ${a.openN}</div>${a.opens.slice(0, 7).map(g => `<button class="li" data-act="pick" data-id="${g[0].id}"><span class="n num">${g.length}×</span><span class="grow">${g[0].role} · ${range(g[0].s, g[0].e)}<div class="sub">${fmtD(g[0].date)}${g[0].offered ? ' · offered' : ''}</div></span></button>`).join('')}${a.opens.length > 7 ? `<div class="muted" style="font-size:12.5px">and ${a.opens.length - 7} more groups</div>` : ''}</div>`;
+  if (a.drafts) h += `<div class="isec"><div class="cap">Not published</div><button class="li" data-act="publish"><span class="n num">${a.drafts}</span><span class="grow">unpublished ${a.drafts === 1 ? 'change' : 'changes'}<div class="sub">Workers can't see them yet</div></span></button></div>`;
+  if (a.reqs) h += `<div class="isec"><div class="cap">Requests</div><button class="li" data-act="tab" data-tab="inbox"><span class="n num">${a.reqs}</span><span class="grow">waiting on you<div class="sub">Claims, drops, swaps, time off</div></span></button></div>`;
+  return h;
+}
+function dayPanel(date) {
+  const s = dayStats(date), ev = S.events.find(e => e.date === date), list = on(date);
+  let h = `<h3>${esc(fmtLong(date))}</h3><div class="row" style="gap:8px;flex-wrap:wrap"><span class="tag ${s.open ? 'warn' : s.cap ? 'ok' : ''}">${esc(covWord(s))}</span>${s.drafts ? '<span class="tag draft">Draft</span>' : ''}${ev ? `<span class="tag">◆ ${esc(ev.name)} ${eventStat(ev).f}/${eventStat(ev).n}</span>` : ''}</div>`;
+  if (s.cap) h += `<div class="muted num">${s.filled} of ${s.cap} filled</div>`;
+  const parts = PARTS.map(pn => { const it = list.filter(x => part(x.s) === pn); return it.length ? `<div class="li" style="cursor:default"><span class="grow"><b>${pn}</b><div class="sub">${range(Math.min(...it.map(x => x.s)), Math.max(...it.map(x => x.e)))}</div></span><span class="num"><b>${it.filter(x => x.p).length}</b> of ${it.length}</span></div>` : ''; }).join('');
+  if (parts) h += `<div class="isec"><div class="cap">Dayparts</div>${parts}</div>`;
+  h += `<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn pri" data-act="dayopen" data-date="${date}">Open day</button><button class="btn" data-act="wkopen" data-date="${wkStart(wkOf(date))}">Open week</button></div>`;
+  return h;
+}
+function shiftPanel(sh) {
+  const pr = problemsOf(sh), c = sh.p ? check(sh, sh.p, sh.date) : null;
+  const warns = c && c.level === 'warn' ? c.msgs : [];
+  const dates = Array.from({ length: 7 }, (_, i) => addDays(wkStart(wkOf(sh.date)), i));
+  const group = !sh.p ? S.shifts.filter(z => !z.p && z.date === sh.date && z.s === sh.s && z.e === sh.e && z.role === sh.role && z.ev === sh.ev) : null;
+  const cands = candidates(sh).slice(0, 4);
+  let h = `<div class="row" style="gap:10px">${sh.p ? av(sh.p, sh.role) : `<span class="av" style="--rc:${rcv(sh.role)}" aria-hidden="true">+</span>`}<div class="grow"><h3 class="trunc">${esc(who(sh))}</h3><div class="muted" style="font-size:12.5px">${sh.role} · ${esc(fmtLong(sh.date))}</div></div><button class="iconbtn desk-only" data-act="desel" aria-label="Close details">${ic('x')}</button></div>`;
+  const marks = [];
+  if (!sh.pub) marks.push(`<div class="callout"><span class="tag draft">Draft</span><div>${sh.p ? 'Workers can’t see this yet. It goes out when you publish.' : 'Not published. Workers can’t see or claim it yet.'}</div></div>`);
+  if (!sh.p) marks.push(`<div class="callout warn"><span class="gl w" aria-hidden="true">○</span><div><b>Open.</b> Nobody is assigned.${sh.offered ? ' Offered to matching workers.' : ''}</div></div>`);
+  for (const m of pr) marks.push(`<div class="callout crit"><span class="gl" aria-hidden="true">!</span><div><b>Problem.</b> ${esc(m)}.</div></div>`);
+  for (const m of warns) marks.push(`<div class="callout warn"><span class="gl w" aria-hidden="true">⚠</span><div>${esc(m)}</div></div>`);
+  h += marks.join('');
+  h += `<div class="isec"><div class="cap">Details</div>
+    <div class="fld"><label for="f-time">Time</label><input id="f-time" type="text" data-chg="time" value="${range(sh.s, sh.e)}" autocomplete="off"><div class="hint" id="f-hint">${paid(sh.s, sh.e)}h paid${sh.e > 1440 ? ' · ends next day' : ''}. Try 9-5 or 4p-11p.</div></div>
+    <div class="fld"><label for="f-day">Day</label><select id="f-day" data-chg="day">${dates.map(d => `<option value="${d}" ${d === sh.date ? 'selected' : ''}>${fmtD(d)}</option>`).join('')}</select></div>
+    <div class="fld"><label for="f-role">Role</label><select id="f-role" data-chg="role">${ROLES.map(r => `<option ${r === sh.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+    ${group ? `<div class="fld"><label>How many people</label><div class="row"><div class="step"><button data-act="fewer" data-id="${sh.id}" aria-label="One fewer" ${group.length < 2 ? 'disabled' : ''}>−</button><b class="num">${group.length}</b><button data-act="more" data-id="${sh.id}" aria-label="One more">+</button></div></div></div>` : ''}</div>`;
+  if (cands.length) h += `<div class="isec"><div class="cap">${sh.p ? 'Who else can take it' : 'Who can take it'}</div>${cands.map(x => `<button class="cand" data-act="give-to" data-id="${sh.id}" data-p="${x.p.id}">${av(x.p.id)}<span class="grow"><span class="nm" style="display:block;font-weight:600">${esc(x.p.name)}</span><span class="rs">${x.level === 'ok' ? '<span class="tag ok">✓ Fits</span>' : x.msgs.map(m => `<span class="tag ${x.level === 'block' ? 'crit' : 'warn'}">${esc(m)}</span>`).join('')}</span></span><span class="hh">${fmtH(x.hrs)}</span></button>`).join('')}</div>`;
+  return h;
+}
+function inspectorHTML() {
+  const sh = selShift();
+  const body = sh ? shiftPanel(sh) : S.sel && S.sel.kind === 'day' ? dayPanel(S.sel.date) : summaryPanel();
+  return `<aside class="insp desk-only" data-scroll="insp" aria-label="Details"><div class="row" style="justify-content:space-between;margin:-2px 0 -6px"><span class="cap-l">Details</span><button class="iconbtn" data-act="panel-toggle" aria-label="Hide the details panel">${ic('r')}</button></div>${body}</aside>`;
+}
+
+/* ---------- action bar & place banner ---------- */
+function abarHTML() {
+  const sh = selShift();
+  if (S.multi) {
+    return `<div class="abar" role="toolbar" aria-label="Selection actions"><div class="who"><div><div class="t">${S.multi.size} selected</div><div class="s">Tap shifts to add or remove</div></div></div><div class="acts"><button class="ab" data-act="multi-copy" ${S.multi.size ? '' : 'disabled'}>Copy to days</button><button class="ab dng" data-act="multi-del" ${S.multi.size ? '' : 'disabled'}>Delete</button><button class="ab" data-act="multi-cancel">Done</button></div></div>`;
+  }
+  if (sh && !S.place) {
+    const mark = sh.p ? `${range(sh.s, sh.e)} · ${sh.role}` : `Open · ${range(sh.s, sh.e)}`;
+    const a = [['ab-move', 'Move'], ['ab-copy', 'Copy'], [sh.p ? 'ab-give' : 'ab-give', sh.p ? 'Give to…' : 'Assign to…']];
+    if (sh.p) a.push(['ab-open', 'Make open']); else a.push(['ab-offer', sh.offered ? 'Offered' : 'Offer']);
+    return `<div class="abar" role="toolbar" aria-label="Actions for selected shift"><div class="who">${sh.p ? av(sh.p, sh.role) : `<span class="av" style="--rc:${rcv(sh.role)}" aria-hidden="true">+</span>`}<div><div class="t">${esc(who(sh))}</div><div class="s">${mark}</div></div></div>
+      <div class="acts">${a.map(([k, l]) => `<button class="ab" data-act="${k}" ${k === 'ab-offer' && sh.offered ? 'disabled' : ''}>${l}</button>`).join('')}${!docked() ? '<button class="ab" data-act="ab-details">Details</button>' : ''}<button class="ab dng" data-act="ab-del">Delete</button></div><button class="ab x" data-act="desel" aria-label="Deselect">${ic('x', 16)}</button></div>`;
+  }
+  if (isPhone() && !S.place && S.tab === 'schedule') {
+    const [a, b] = S.zoom === 'month' ? [monthStart(S.date), addDays(addMonths(monthStart(S.date), 1), -1)] : spanRange();
+    const n = pendingIn(a, b);
+    if (n) return `<div class="abar pub" role="region" aria-label="Publish"><div class="who"><div><div class="t">${n} unpublished ${n === 1 ? 'change' : 'changes'}</div><div class="s">Workers can’t see them yet</div></div></div><div class="acts" style="flex:none"><button class="ab pri" data-act="publish">Publish</button></div></div>`;
+  }
+  return '';
+}
+function placeBanner() {
+  if (!S.place || isPhone()) return '';
+  const sh = byId(S.place.id); if (!sh) return '';
+  const copy = S.place.op === 'copy';
+  const dates = weekDates();
+  return `<div class="pbanner" role="status"><div class="grow"><div class="t">${copy ? 'Copy' : 'Move'} ${esc(sh.p ? firstName(sh.p) + '’s' : 'the open')} ${range(sh.s, sh.e)} ${sh.role} shift</div>
+    <div class="s">Choose where it goes. <b>✓</b> fits · <b>⚠</b> works with a warning · <b>✕</b> blocked.</div>
+    ${copy ? `<div class="dchips" style="margin-top:8px"><button class="dc" data-act="place-weekdays">Weekdays</button>${dates.map((d, i) => `<button class="dc" data-act="place-day" data-date="${d}" aria-pressed="${S.place.targets.has(pkey(sh.p, d))}">${DOW[i]}</button>`).join('')}</div>` : ''}</div>
+    <button class="btn" data-act="place-cancel">Cancel</button>${copy ? `<button class="btn pri" data-act="place-done" ${S.place.targets.size ? '' : 'disabled'}>Done · ${S.place.targets.size} ${S.place.targets.size === 1 ? 'copy' : 'copies'}</button>` : ''}</div>`;
+}
+
+/* ---------- sheets ---------- */
+function sheetWrap(title, sub, body, foot, side) {
+  return `<div class="scrim${side ? ' side' : ''}" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="grab"></div>
+    <div class="sh-h"><div><h3>${esc(title)}</h3>${sub ? `<div class="sub">${sub}</div>` : ''}</div><button class="iconbtn" data-act="close" aria-label="Close">${ic('x')}</button></div>
+    <div class="sh-b" data-scroll="sheet">${body}</div>${foot ? `<div class="sh-f">${foot}</div>` : ''}</div></div>`;
+}
+function sheetHTML() {
+  const sh = S.sheet; if (!sh) return '';
+  if (sh.type === 'add') {
+    const open = !sh.p, roles = open ? ROLES : PMAP[sh.p].roles.concat(ROLES.filter(r => !PMAP[sh.p].roles.includes(r)));
+    const off = sh.p && offOn(sh.p, sh.date);
+    return sheetWrap(open ? 'Add open shift' : `Add shift for ${firstName(sh.p)}`, esc(fmtLong(sh.date)),
+      `${off ? `<div class="callout warn"><span class="gl w" aria-hidden="true">⚠</span><div>${firstName(sh.p)} has ${off.kind === 'approved' ? 'approved time off' : 'requested time off'} this day.</div></div>` : ''}
+      <div class="fld"><label>Usual shifts</label><div class="chips">${USUAL.map(([s, e]) => `<button class="uchip" data-act="add-usual" data-s="${s}" data-e="${e}">${range(s, e)}<small>${paid(s, e)}h paid</small></button>`).join('')}</div></div>
+      <div class="fld"><label for="add-role">Role</label><select id="add-role" data-chg="addrole">${roles.map(r => `<option ${r === sh.role ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <div class="fld"><label for="add-time">Or type a time</label><input id="add-time" type="text" placeholder="9-5, 4p-11p, 17-23" autocomplete="off" value="${esc(sh.txt || '')}"><div class="hint" id="add-hint">${sh.txt ? '' : 'Type a range, then press Add.'}</div></div>
+      ${open ? `<div class="fld"><label>How many people</label><div class="row"><div class="step"><button data-act="add-n" data-d="-1" aria-label="One fewer" ${sh.n < 2 ? 'disabled' : ''}>−</button><b class="num">${sh.n}</b><button data-act="add-n" data-d="1" aria-label="One more">+</button></div></div></div>` : ''}`,
+      `<button class="btn" data-act="close">Cancel</button><button class="btn pri" data-act="add-go" id="add-go">Add shift</button>`);
+  }
+  if (sh.type === 'give') {
+    const x = byId(sh.id); if (!x) return '';
+    return sheetWrap(x.p ? 'Give to…' : 'Assign to…', `${esc(fmtD(x.date))} · ${range(x.s, x.e)} · ${x.role}`,
+      `<div class="list" style="gap:6px">${candidates(x).map(c => `<button class="cand" data-act="give-to" data-id="${x.id}" data-p="${c.p.id}">${av(c.p.id)}<span class="grow"><span class="nm" style="display:block;font-weight:600">${esc(c.p.name)}</span><span class="rs">${c.level === 'ok' ? '<span class="tag ok">✓ Fits</span>' : c.msgs.map(m => `<span class="tag ${c.level === 'block' ? 'crit' : 'warn'}">${esc(m)}</span>`).join('')}${!c.fit && !c.msgs.some(m => m.startsWith('Not trained')) ? '' : ''}</span></span><span class="hh">${fmtH(c.hrs)}</span></button>`).join('')}</div>`);
+  }
+  if (sh.type === 'mv') {
+    const multi = !!sh.ids, x = byId(multi ? sh.ids[0] : sh.id); if (!x) return '';
+    const dates = Array.from({ length: 7 }, (_, i) => addDays(wkStart(wkOf(x.date)), i)), copy = sh.op === 'copy';
+    const chips = dates.map((d, i) => {
+      const cur = !multi && d === x.date, c = !multi && x.p ? check(x, x.p, d) : { level: 'ok', msgs: [] }, sel = sh.days.has(d);
+      const g = cur && !copy ? 'now' : c.level === 'ok' ? '✓' : c.level === 'warn' ? '⚠' : '✕';
+      return `<button class="dc2 h-${cur && !copy ? 'ok' : c.level}" data-act="mv-day" data-date="${d}" aria-pressed="${sel}" ${cur ? 'disabled' : ''} aria-label="${DOW[i]} ${dayNum(d)}: ${c.level === 'ok' ? 'fits' : c.msgs.join(', ')}">${DOW[i]}<b class="num">${dayNum(d)}</b><small>${g}</small></button>`;
+    }).join('');
+    const notes = multi ? '' : [...sh.days].map(d => { const c = x.p ? check(x, x.p, d) : { level: 'ok', msgs: [] }; return c.level === 'ok' ? '' : `<div class="callout ${c.level === 'block' ? 'crit' : 'warn'}"><span class="gl ${c.level === 'block' ? '' : 'w'}" aria-hidden="true">${c.level === 'block' ? '✕' : '⚠'}</span><div><b>${fmtD(d)}.</b> ${esc(c.msgs.join('. '))}.</div></div>`; }).join('');
+    return sheetWrap(multi ? `Copy ${sh.ids.length} shifts to days` : copy ? 'Copy to days' : 'Move to a day', multi ? 'Each shift keeps its person, time and role.' : `${esc(who(x))} · ${range(x.s, x.e)} · ${x.role}`,
+      `${copy ? '<button class="btn sm" data-act="mv-weekdays" style="align-self:flex-start">Select weekdays</button>' : ''}<div class="dchips7">${chips}</div>${notes}<p class="muted" style="margin:0;font-size:12.5px">${copy ? 'Pick as many days as you like.' : 'To change who works it, use Give to… after.'} ✓ fits · ⚠ works with a warning · ✕ blocked.</p>`,
+      `<button class="btn" data-act="close">Cancel</button><button class="btn pri" data-act="mv-go" ${sh.days.size ? '' : 'disabled'}>${copy ? `Done · ${sh.days.size} ${sh.days.size === 1 ? 'copy' : 'copies'}` : 'Move here'}</button>`);
+  }
+  if (sh.type === 'publish') {
+    const [a, b] = sh.range, list = []; for (let i = 0; i <= diffDays(b, a); i++) for (const s of on(addDays(a, i))) if (!s.pub) list.push(s);
+    const ppl = [...new Set(list.filter(s => s.p).map(s => s.p))], openN = list.filter(s => !s.p).length, prob = list.filter(s => problemsOf(s).length);
+    return sheetWrap(`Publish ${esc(a === b ? fmtD(a) : weekLabel(a))}`, 'Workers see this once you publish.',
+      `<div class="pubs"><div class="k"><b class="num">${list.length}</b><span>shifts go out</span></div><div class="k"><b class="num">${ppl.length}</b><span>people get one message each</span></div><div class="k"><b class="num">${openN}</b><span>open slots become claimable</span></div><div class="k"><b class="num">${prob.length}</b><span>${prob.length === 1 ? 'problem to review' : 'problems to review'}</span></div></div>
+      ${prob.length ? `<div class="isec"><div class="cap">Problems</div>${prob.map(s => `<button class="li crit" data-act="pick" data-id="${s.id}"><span class="gl" aria-hidden="true">!</span><span class="grow"><b>${esc(who(s))}</b> · ${fmtD(s.date)}<div class="sub">${esc(problemsOf(s)[0])}</div></span></button>`).join('')}</div>` : ''}
+      ${ppl.length ? `<div class="isec"><div class="cap">Who is notified</div><div class="chips">${ppl.map(p => `<span class="tag">${esc(firstName(p))}</span>`).join('')}</div></div>` : ''}`,
+      `<button class="btn" data-act="close">Not yet</button><button class="btn pri" data-act="publish-go" ${list.length ? '' : 'disabled'}>Publish ${list.length}</button>`);
+  }
+  if (sh.type === 'summary') return sheetWrap('Needs a look', esc(dateLabel()), `<div class="isec" style="gap:12px">${summaryPanel().replace(/^<h3>.*?<\/h3>/, '')}</div>`, '', true);
+  if (sh.type === 'inspect') { const x = byId(sh.id); if (!x) return ''; return sheetWrap('Shift details', '', shiftPanel(x).replace(/<button class="iconbtn desk-only"[\s\S]*?<\/button>/, ''), '', true); }
+  if (sh.type === 'day') return sheetWrap(fmtD(sh.date), '', dayPanel(sh.date).replace(/^<h3>.*?<\/h3>/, ''), '', true);
+  if (sh.type === 'pd') {
+    const list = on(sh.date).filter(s => s.p === sh.p).sort((a, b) => a.s - b.s);
+    return sheetWrap(`${firstName(sh.p)} · ${fmtD(sh.date)}`, `${list.length} shifts`, `<div class="list" style="gap:6px">${list.map(prow).join('')}</div>`, `<button class="btn" data-act="cell" data-p="${sh.p}" data-date="${sh.date}">Add another</button>`);
+  }
+  if (sh.type === 'person') {
+    const wk = wkOf(S.date), dates = Array.from({ length: 7 }, (_, i) => addDays(wkStart(wk), i)), hrs = hoursOf(sh.p, wk);
+    return sheetWrap(PMAP[sh.p].name, `${PMAP[sh.p].roles.join(' · ')} · ${fmtH(hrs)} this week`, `<div class="list" style="gap:6px">${dates.map(d => {
+      const list = on(d).filter(s => s.p === sh.p).sort((a, b) => a.s - b.s), off = offOn(sh.p, d);
+      return `<div class="row" style="align-items:stretch;gap:8px"><div style="width:52px;flex:none;padding-top:10px;font-weight:700">${DOW[dowOf(d)]}<div class="muted num" style="font-size:12px;font-weight:600">${dayNum(d)}</div></div><div class="grow list" style="gap:6px">${off ? `<span class="off${off.kind === 'pending' ? ' pend' : ''}" style="align-self:flex-start">${off.kind === 'pending' ? 'Time off requested' : 'Time off'}</span>` : ''}${list.map(prow).join('')}<button class="btn sm" data-act="cell" data-p="${sh.p}" data-date="${d}" style="align-self:flex-start">${ic('plus', 14)} Add shift</button></div></div>`;
+    }).join('')}</div>`);
+  }
+  if (sh.type === 'confirm') return sheetWrap(sh.title, '', `<div class="callout ${sh.tone || 'warn'}"><span class="gl ${sh.tone === 'crit' ? '' : 'w'}" aria-hidden="true">${sh.tone === 'crit' ? '!' : '⚠'}</span><div>${sh.body}</div></div>`, `<button class="btn" data-act="close">Cancel</button><button class="btn pri" data-act="confirm-go">${esc(sh.ok)}</button>`);
+  if (sh.type === 'menu') {
+    const items = [['multi-start', 'Select shifts', 'Copy or delete several at once'], ['copyweek', 'Copy last week', 'Adds last week’s shifts as drafts'], ['usual', 'Build from usual shifts', 'Adds every usual slot as open drafts']];
+    if (!docked()) items.unshift(['focus', S.focus ? 'Show everything' : 'Needs attention only', 'Dims what is already fine']);
+    if (!isPhone() && !lensInBar() && S.zoom === 'week') items.unshift(['lens-toggle', S.lens === 'person' ? 'Show rows by role' : 'Show rows by person', 'Changes how the week is grouped']);
+    if (S.hist.length) items.push(['undo', 'Undo last change', '']);
+    return sheetWrap('More', '', `<div class="list menu" style="gap:2px">${items.map(([k, l, s]) => `<button class="li" data-act="${k}" data-wk="${wkOf(S.date)}"><span class="grow"><b>${l}</b>${s ? `<div class="sub">${s}</div>` : ''}</span></button>`).join('')}</div>`);
+  }
+  return '';
+}
+function toastHTML() {
+  if (!S.toast) return '';
+  const up = isPhone() && (selShift() || S.multi || (S.tab === 'schedule' && !S.sheet)) ? ' up' : '';
+  return `<div class="toast${up}" role="status">${esc(S.toast.msg)}${S.toast.undo ? '<button data-act="undo">Undo</button>' : ''}</div>`;
+}
+
+/* ---------- the app ---------- */
+function canvasHTML() {
+  if (S.zoom === 'month') return monthHTML();
+  if (S.zoom === 'day') return dayView();
+  if (isPhone()) return S.pweek === 'people' ? peopleRows() : weekRows();
+  return S.lens === 'role' ? roleGrid() : peopleGrid();
+}
+function appHTML() {
+  let h = topHTML();
+  if (S.tab === 'schedule') {
+    h += stripHTML() + toolbarHTML();
+    if (isPhone()) h += attRowHTML();
+    h += placeBanner();
+    h += `<div class="main"><div class="cwrap"><div class="canvas" data-scroll="canvas" id="canvas">${canvasHTML()}</div>${abarHTML()}</div>${docked() ? inspectorHTML() : ''}${dockable() && !docked() ? '<button class="paneltab" data-act="panel-toggle" aria-label="Show the details panel">Details</button>' : ''}</div>`;
+  } else {
+    const body = S.tab === 'inbox' ? inboxHTML() : S.tab === 'people' ? peopleTab() : S.tab === 'time' ? stubTab('Time', 'Timesheets, approvals and reports live here. Past shifts moved out of Schedule so the schedule only shows what is coming up.') : stubTab('More', 'Settings, locations and billing.');
+    h += `<div class="main"><div class="cwrap"><div class="canvas" data-scroll="canvas" id="canvas" style="max-width:880px;width:100%;margin:0 auto">${body}</div></div></div>`;
+  }
+  h += tabbarHTML() + sheetHTML() + toastHTML();
+  return h;
+}
+/* ============ actions, events, render, boot ============ */
+const A = {};
+let resetScroll = false, pressTimer = 0, suppressClick = false, lastSheetKey = '', toastT = 0;
+const HOST_THEME = document.documentElement.getAttribute('data-host') || null;   // the viewer's own theme, saved by the early script
+const BREAK = 920;                                                                // below this width the phone layout is used
+
+/* ---------- theme: automatic by the viewer's local time, one icon to override ---------- */
+const THEME_KEY = 'hs-theme', PANEL_KEY = 'hs-panel';
+const themeForHour = h => (h >= 7 && h < 19 ? 'light' : 'dark');
+const autoTheme = () => themeForHour(new Date().getHours());
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (_) { /* storage blocked: the choice lasts for this page only */ } },
+};
+S.pin = ['light', 'dark'].includes(store.get(THEME_KEY)) ? store.get(THEME_KEY) : (['light', 'dark'].includes(HOST_THEME) ? HOST_THEME : null);
+S.panelOpen = store.get(PANEL_KEY) !== '0';
+const currentTheme = () => S.pin || autoTheme();
+const SUN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg>';
+function applyTheme() {
+  const cur = currentTheme(), b = $('#themebtn');
+  document.documentElement.setAttribute('data-theme', cur);
+  if (!b) return;
+  const why = S.pin ? `${cur === 'dark' ? 'Dark' : 'Light'} theme, set by you. Click to switch.`
+    : cur === 'dark' ? 'Dark theme, automatic: dark from 7pm to 7am. Click to switch.' : 'Light theme, automatic: light from 7am to 7pm. Click to switch.';
+  b.innerHTML = cur === 'dark' ? MOON : SUN;
+  b.setAttribute('aria-pressed', String(cur === 'dark'));
+  b.setAttribute('data-tip', why);
+  const w = $('#themewhy'); if (w) w.textContent = why;
+}
+function toggleTheme() {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  if (next === autoTheme()) { S.pin = null; store.set(THEME_KEY, null); }      // flipping back to what automatic shows clears the pin
+  else { S.pin = next; store.set(THEME_KEY, next); }
+  applyTheme();
+}
+let themeTimer = 0;
+function scheduleThemeFlip() {
+  clearTimeout(themeTimer);
+  const now = new Date(), at = h => { const d = new Date(now); d.setHours(h, 0, 0, 0); if (d <= now) d.setDate(d.getDate() + 1); return d; };
+  const next = Math.min(at(7), at(19));
+  themeTimer = setTimeout(() => { applyTheme(); scheduleThemeFlip(); }, Math.min(next - now + 500, 2147483000));
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { applyTheme(); scheduleThemeFlip(); } });
+
+function toast(msg, undoable) {
+  const t = ++toastT;
+  S.toast = { msg, undo: !!undoable, t };
+  setTimeout(() => { if (S.toast && S.toast.t === t) { S.toast = null; render(); } }, 6000);
+}
+function clearModes() { S.sel = null; S.place = null; S.multi = null; }
+function syncStage() {
+  const st = $('#stage');
+  st.dataset.frame = S.frame ? '1' : '0';
+  $$('[data-dev]').forEach(b => b.setAttribute('aria-pressed', String(S.layout === b.dataset.dev)));
+}
+function render() {
+  const app = $('#app'), sc = {};
+  $$('[data-scroll]', app).forEach(e => { sc[e.dataset.scroll] = [e.scrollLeft, e.scrollTop]; });
+  const fid = document.activeElement && document.activeElement.id, caret = fid === 'q' ? document.activeElement.selectionStart : null;
+  const sheetKey = S.sheet ? S.sheet.type + (S.sheet.id || S.sheet.p || S.sheet.date || '') : '';
+  app.dataset.layout = S.layout;
+  app.dataset.dock = docked() ? '1' : '0';
+  app.innerHTML = appHTML();
+  $$('[data-scroll]', app).forEach(e => {
+    if (e.dataset.scroll === 'sheet' && sheetKey !== lastSheetKey) return;
+    if (resetScroll && (e.dataset.scroll === 'canvas' || e.dataset.scroll === 'tl')) return;
+    const p = sc[e.dataset.scroll]; if (p) { e.scrollLeft = p[0]; e.scrollTop = p[1]; }
+  });
+  lastSheetKey = sheetKey; resetScroll = false;
+  if (fid === 'q') { const q = $('#q'); if (q) { q.focus(); try { q.setSelectionRange(caret, caret); } catch (_) { /* search input */ } } }
+  syncStage();
+}
+
+/* ---------- navigation ---------- */
+A.noop = el => toast(el.dataset.msg || 'Not part of this prototype');
+A.tab = el => { S.tab = el.dataset.tab; clearModes(); S.sheet = null; resetScroll = true; };
+A.zoom = el => { S.zoom = el.dataset.z; clearModes(); S.sheet = null; resetScroll = true; };
+A.nav = el => { const d = +el.dataset.d; S.date = S.zoom === 'day' ? addDays(S.date, d) : S.zoom === 'week' ? addDays(S.date, 7 * d) : addMonths(monthStart(S.date), d); clearModes(); resetScroll = true; };
+A.today = () => { S.date = TODAY; clearModes(); resetScroll = true; };
+A.lens = el => { S.lens = el.dataset.l; S.place = null; };
+A.pweek = el => { S.pweek = el.dataset.v; };
+A['lens-toggle'] = () => { S.lens = S.lens === 'person' ? 'role' : 'person'; S.place = null; S.sheet = null; };
+A['panel-toggle'] = () => { S.panelOpen = !S.panelOpen; store.set(PANEL_KEY, S.panelOpen ? '1' : '0'); };
+A.focus = () => { S.focus = !S.focus; S.sheet = null; };
+A.stripwk = el => {
+  const st = el.dataset.date; clearModes();
+  S.date = S.zoom === 'day' ? addDays(st, dowOf(S.date)) : S.zoom === 'month' ? addDays(st, 3) : st;
+  resetScroll = true;
+};
+A.dayhead = el => { if (docked()) S.sel = { kind: 'day', date: el.dataset.date }; else S.sheet = { type: 'day', date: el.dataset.date }; };
+A.dayopen = el => { S.date = el.dataset.date; S.zoom = 'day'; clearModes(); S.sheet = null; resetScroll = true; };
+A.wkopen = el => { S.date = el.dataset.date; S.zoom = 'week'; clearModes(); S.sheet = null; resetScroll = true; };
+A.mday = el => { const date = el.dataset.date; S.date = date; if (docked()) S.sel = { kind: 'day', date }; else S.sheet = { type: 'day', date }; };
+A.mlens = el => { S.mlens = el.dataset.k; };
+A.mtable = () => { S.mtable = !S.mtable; };
+A.dept = el => { S.collapsed[el.dataset.dept] = !S.collapsed[el.dataset.dept]; };
+A.summary = () => { S.sheet = { type: 'summary' }; };
+A.menu = () => { S.sheet = { type: 'menu' }; };
+A.close = () => { S.sheet = null; };
+A.scrim = (el, ev) => { if (ev.target === el) S.sheet = null; };
+A.desel = () => { S.sel = null; };
+A.pd = el => { S.sheet = { type: 'pd', p: el.dataset.p, date: el.dataset.date }; };
+A.person = el => { S.sheet = { type: 'person', p: el.dataset.p }; };
+A.undo = () => { if (undo()) { S.sheet = null; S.place = null; toast('Undone'); } };
+A.pick = el => {
+  const sh = byId(el.dataset.id); if (!sh) return;
+  S.sheet = null; S.date = sh.date; if (S.zoom === 'month') S.zoom = 'week'; S.tab = 'schedule';
+  S.sel = { kind: 'shift', id: sh.id };
+};
+
+/* ---------- select, then act ---------- */
+A.chip = el => {
+  if (suppressClick) return;
+  const id = el.dataset.id, sh = byId(id); if (!sh) return;
+  if (S.multi) { if (S.multi.has(id)) S.multi.delete(id); else S.multi.add(id); return; }
+  if (S.place) return placeAt(sh.p, sh.date);
+  if (S.sheet && ['person', 'pd'].includes(S.sheet.type)) S.sheet = null;
+  if (isSel(id) && !docked()) { S.sheet = { type: 'inspect', id }; return; }
+  S.sel = { kind: 'shift', id };
+};
+A.cell = el => {
+  if (suppressClick || S.multi) return;
+  const p = el.dataset.p || null, date = el.dataset.date;
+  if (S.place) return placeAt(p, date);
+  S.sheet = { type: 'add', p, date, role: el.dataset.role || (p ? mainRole(p) : 'Server'), n: 1, txt: '' };
+};
+function offer(id) {
+  const sh = byId(id), n = PEOPLE.filter(p => p.roles.includes(sh.role) && check(sh, p.id, sh.date).level !== 'block').length;
+  M.offer(id);
+  toast(sh.pub ? `Offered to ${n} matching workers. First to claim gets a request.` : `Will be offered to ${n} matching workers when you publish`, true);
+}
+A.offer = el => offer(el.dataset.id);
+A.assign = el => { S.sel = { kind: 'shift', id: el.dataset.id }; S.sheet = { type: 'give', id: el.dataset.id }; };
+A['ab-give'] = () => { const sh = selShift(); if (sh) S.sheet = { type: 'give', id: sh.id }; };
+A['ab-offer'] = () => { const sh = selShift(); if (sh) offer(sh.id); };
+A['ab-open'] = () => { const sh = selShift(); if (!sh) return; const nm = firstName(sh.p); M.open(sh.id); toast(`${nm} is off ${fmtD(sh.date)}. The slot is open`, true); };
+A['ab-del'] = () => { const sh = selShift(); if (!sh) return; M.del(sh.id); S.sel = null; toast('Shift deleted', true); };
+A['ab-details'] = () => { if (S.sel) S.sheet = { type: 'inspect', id: S.sel.id }; };
+A['ab-move'] = () => startPlace('move');
+A['ab-copy'] = () => startPlace('copy');
+function startPlace(op) {
+  const sh = selShift(); if (!sh) return;
+  if (isPhone()) { S.sheet = { type: 'mv', op, id: sh.id, days: new Set() }; return; }
+  S.zoom = 'week'; S.lens = 'person'; S.date = sh.date; S.place = { op, id: sh.id, targets: new Set() };
+}
+function confirmThen(title, body, ok, then, tone) { S.sheet = { type: 'confirm', title, body, ok, then, tone: tone || 'crit' }; }
+A['confirm-go'] = () => { const f = S.sheet && S.sheet.then; S.sheet = null; if (f) f(); };
+function doMove(id, p, date, warn) {
+  M.move(id, p, date); S.place = null; S.sheet = null; S.sel = { kind: 'shift', id };
+  toast(`Moved to ${p ? firstName(p) : 'Open'} · ${fmtD(date)}${warn ? ' · ' + warn : ''}`, true);
+}
+function placeAt(p, date) {
+  const sh = byId(S.place.id); if (!sh) { S.place = null; return; }
+  const c = p ? check(sh, p, date) : { level: 'ok', msgs: [] };
+  if (S.place.op === 'copy') {
+    const k = pkey(p, date);
+    if (S.place.targets.has(k)) { S.place.targets.delete(k); return; }
+    if (c.level === 'block') return confirmThen(`Copy to ${p ? firstName(p) : 'Open'} anyway?`, `${esc(c.msgs.join('. '))}. This is recorded in the audit log.`, 'Copy anyway', () => { S.place.targets.add(k); });
+    S.place.targets.add(k); return;
+  }
+  if ((sh.p || null) === (p || null) && sh.date === date) return;
+  if (c.level === 'block') return confirmThen(`Schedule ${p ? firstName(p) : ''} anyway?`, `${esc(c.msgs.join('. '))}. This is recorded in the audit log.`, 'Schedule anyway', () => doMove(sh.id, p, date));
+  doMove(sh.id, p, date, c.level === 'warn' ? c.msgs[0] : '');
+}
+A['place-cancel'] = () => { S.place = null; };
+A['place-day'] = el => { const sh = byId(S.place.id); if (sh) placeAt(sh.p, el.dataset.date); };
+A['place-weekdays'] = () => {
+  const sh = byId(S.place.id); if (!sh) return; let skipped = 0;
+  for (const d of weekDates()) {
+    if (dowOf(d) < 1 || dowOf(d) > 5 || d === sh.date) continue;
+    const c = sh.p ? check(sh, sh.p, d) : { level: 'ok' };
+    if (c.level === 'block') { skipped++; continue; }
+    S.place.targets.add(pkey(sh.p, d));
+  }
+  if (skipped) toast(`Skipped ${skipped} blocked ${skipped === 1 ? 'day' : 'days'}`);
+};
+function dedupe(sh, targets) { return targets.filter(t => !on(t.date).some(z => z.p === (t.p || null) && z.s === sh.s && z.e === sh.e && z.role === sh.role)); }
+A['place-done'] = () => {
+  const sh = byId(S.place.id); if (!sh) return;
+  const list = dedupe(sh, [...S.place.targets].map(k => { const [p, date] = k.split('|'); return { p: p || null, date }; }));
+  M.copy(sh.id, list); S.place = null; toast(`${list.length} ${list.length === 1 ? 'copy' : 'copies'} added as drafts`, true);
+};
+/* phone: day-centric move/copy sheet */
+A['mv-day'] = el => {
+  const sh = S.sheet, d = el.dataset.date;
+  if (sh.op === 'move') sh.days = new Set([d]); else if (sh.days.has(d)) sh.days.delete(d); else sh.days.add(d);
+};
+A['mv-weekdays'] = () => {
+  const sh = S.sheet, x = byId(sh.id || sh.ids[0]);
+  for (const d of Array.from({ length: 7 }, (_, i) => addDays(wkStart(wkOf(x.date)), i))) if (dowOf(d) >= 1 && dowOf(d) <= 5 && d !== x.date) sh.days.add(d);
+};
+A['mv-go'] = () => {
+  const sh = S.sheet;
+  if (sh.ids) { const n = copyMany(sh.ids, [...sh.days]); S.sheet = null; S.multi = null; toast(`${n} copies added as drafts`, true); return; }
+  const x = byId(sh.id); if (!x) return;
+  if (sh.op === 'move') {
+    const d = [...sh.days][0], c = x.p ? check(x, x.p, d) : { level: 'ok', msgs: [] };
+    if (c.level === 'block') return confirmThen('Schedule anyway?', `${esc(c.msgs.join('. '))}. This is recorded in the audit log.`, 'Schedule anyway', () => doMove(x.id, x.p, d));
+    return doMove(x.id, x.p, d, c.level === 'warn' ? c.msgs[0] : '');
+  }
+  const list = dedupe(x, [...sh.days].map(d => ({ p: x.p, date: d })));
+  M.copy(x.id, list); S.sheet = null; toast(`${list.length} ${list.length === 1 ? 'copy' : 'copies'} added as drafts`, true);
+};
+function copyMany(ids, days) {
+  snap(); const out = [];
+  for (const id of ids) { const x = byId(id); if (!x) continue; for (const d of days) { if (d === x.date) continue; if (on(d).some(z => z.p === x.p && z.s === x.s && z.e === x.e && z.role === x.role)) continue; out.push(newShift(d, x.s, x.e, x.role, x.p, false, x.ev)); } }
+  S.shifts.push(...out); dirty(); return out.length;
+}
+A['multi-start'] = () => { S.multi = new Set(); S.sel = null; S.sheet = null; };
+A['multi-cancel'] = () => { S.multi = null; };
+A['multi-del'] = () => { const ids = [...S.multi]; M.delMany(ids); S.multi = null; toast(`${ids.length} ${ids.length === 1 ? 'shift' : 'shifts'} deleted`, true); };
+A['multi-copy'] = () => { S.sheet = { type: 'mv', op: 'copy', ids: [...S.multi], days: new Set() }; };
+
+/* ---------- give / add / edit ---------- */
+A['give-to'] = el => {
+  const id = el.dataset.id, p = el.dataset.p, sh = byId(id); if (!sh) return;
+  const c = check(sh, p, sh.date);
+  const go = () => { M.give(id, p); S.sheet = null; S.sel = { kind: 'shift', id }; toast(`${firstName(p)} now has ${fmtD(sh.date)} ${range(sh.s, sh.e)}${c.level === 'warn' ? ' · ' + c.msgs[0] : ''}`, true); };
+  if (c.level === 'block') confirmThen(`Schedule ${firstName(p)} anyway?`, `${esc(c.msgs.join('. '))}. This is recorded in the audit log.`, 'Schedule anyway', go);
+  else go();
+};
+function addHint(txt, id) {
+  const el = $('#' + id); if (!el) return;
+  const r = parseRange(txt);
+  el.classList.toggle('bad', !!txt && !r);
+  el.textContent = !txt ? 'Type a range, then press Add.' : r ? `${range(r.s, r.e)}${r.overnight ? ', ends next day' : ''} · ${fmtH(paid(r.s, r.e))} paid` : 'Not a time range. Try 9-5 or 4p-11p.';
+}
+function commitAdd(s, e) {
+  const { p, date, n } = S.sheet, role = $('#add-role') ? $('#add-role').value : S.sheet.role;
+  const c = p ? check({ id: 'new', s, e, role, date }, p, date) : { level: 'ok', msgs: [] };
+  const go = () => {
+    snap(); const made = [];
+    for (let i = 0; i < (p ? 1 : n); i++) made.push(newShift(date, s, e, role, p, false));
+    S.shifts.push(...made); dirty(); S.sheet = null; S.sel = { kind: 'shift', id: made[0].id };
+    toast(`Added ${range(s, e)} ${role}${p ? ' for ' + firstName(p) : n > 1 ? ' ×' + n : ''}${c.level === 'warn' ? ' · ' + c.msgs[0] : ''}`, true);
+  };
+  if (c.level === 'block') confirmThen(`Schedule ${firstName(p)} anyway?`, `${esc(c.msgs.join('. '))}. This is recorded in the audit log.`, 'Schedule anyway', go);
+  else go();
+}
+A['add-usual'] = el => commitAdd(+el.dataset.s, +el.dataset.e);
+A['add-go'] = () => {
+  const txt = $('#add-time').value, r = parseRange(txt);
+  if (!r) { addHint(txt || '', 'add-hint'); const h = $('#add-hint'); if (h && !txt) { h.classList.add('bad'); h.textContent = 'Pick a usual shift or type a time first.'; } throw new Error('stay'); }
+  commitAdd(r.s, r.e);
+};
+A['add-n'] = el => { S.sheet.n = Math.max(1, Math.min(20, S.sheet.n + +el.dataset.d)); };
+A.more = el => M.more(el.dataset.id);
+A.fewer = el => M.fewer(el.dataset.id);
+A.usual = el => {
+  const wk = +el.dataset.wk; S.sheet = null;
+  if (wkStats(wk).cap) return toast('This week already has shifts');
+  toast(`Added ${M.usual(wk)} open slots as drafts`, true);
+};
+A.copyweek = el => {
+  const wk = +el.dataset.wk; S.sheet = null;
+  if (wkStats(wk).cap) return toast('This week already has shifts. Copy last week works on an empty week.');
+  toast(`Copied ${M.copyWeek(wk)} shifts from last week as drafts`, true);
+};
+
+/* ---------- publish, requests ---------- */
+A.publish = () => {
+  const r = S.zoom === 'month' ? [monthStart(S.date), addDays(addMonths(monthStart(S.date), 1), -1)] : spanRange();
+  S.sheet = { type: 'publish', range: r };
+};
+A['publish-go'] = () => { const [a, b] = S.sheet.range, r = M.publish(a, b); S.sheet = null; toast(`Published. ${r.people} ${r.people === 1 ? 'person' : 'people'} notified`, true); };
+A['req-yes'] = el => { const m = M.decide(el.dataset.id, true); toast(m, true); };
+A['req-no'] = el => { M.decide(el.dataset.id, false); toast('Declined', true); };
+A['time-ok'] = el => { M.approveTime(el.dataset.id); toast('Timesheet approved', true); };
+
+/* ---------- events ---------- */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || !$('#app').contains(el)) return;
+  const fn = A[el.dataset.act];
+  if (!fn || el.disabled) return;
+  if (fn === A.scrim && e.target !== el) return;
+  try { fn(el, e); } catch (err) { if (err.message !== 'stay') throw err; return; }
+  render();
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'q') { S.q = t.value; render(); }
+  else if (t.id === 'add-time' && S.sheet) { S.sheet.txt = t.value; addHint(t.value, 'add-hint'); }
+  else if (t.id === 'f-time') addHint(t.value, 'f-hint');
+});
+document.addEventListener('change', e => {
+  const t = e.target, k = t.dataset && t.dataset.chg;
+  if (!k) return;
+  if (k === 'addrole') { S.sheet.role = t.value; return; }
+  const sh = selShift(); if (!sh) return;
+  if (k === 'time') {
+    const r = parseRange(t.value);
+    if (!r) { addHint(t.value, 'f-hint'); t.value = range(sh.s, sh.e); return; }
+    M.patch(sh.id, { s: r.s, e: r.e }); toast(`Time set to ${range(r.s, r.e)}`, true);
+  } else if (k === 'day') { M.patch(sh.id, { date: t.value }); S.date = t.value; toast(`Moved to ${fmtD(t.value)}`, true); }
+  else if (k === 'role') { M.patch(sh.id, { role: t.value }); toast(`Role set to ${t.value}`, true); }
+  render();
+});
+document.addEventListener('keydown', e => {
+  const tag = (e.target.tagName || '').toLowerCase(), typing = tag === 'input' || tag === 'select' || tag === 'textarea';
+  if (e.key === 'Escape') {
+    if (S.sheet) S.sheet = null; else if (S.place) S.place = null; else if (S.multi) S.multi = null; else S.sel = null;
+    render(); return;
+  }
+  if (typing || e.metaKey || e.ctrlKey || e.altKey || S.sheet || S.tab !== 'schedule') return;
+  const k = e.key.toLowerCase(), sh = selShift(); let done = true;
+  if (k === 'z') A.undo();
+  else if (['1', '2', '3'].includes(k)) { S.zoom = ['day', 'week', 'month'][+k - 1]; clearModes(); resetScroll = true; }
+  else if (sh && !S.place && k === 'm') A['ab-move']();
+  else if (sh && !S.place && k === 'c') A['ab-copy']();
+  else if (sh && !S.place && k === 'g') A['ab-give']();
+  else if (sh && !S.place && k === 'o' && sh.p) A['ab-open']();
+  else if (sh && !S.place && (e.key === 'Delete' || e.key === 'Backspace')) A['ab-del']();
+  else done = false;
+  if (done) { e.preventDefault(); render(); }
+});
+/* long-press a shift to start selecting several (touch and mouse) */
+document.addEventListener('pointerdown', e => {
+  const c = e.target.closest('[data-act="chip"]');
+  if (!c || S.place || S.multi || S.tab !== 'schedule' || S.sheet) return;
+  clearTimeout(pressTimer);
+  pressTimer = setTimeout(() => { S.multi = new Set([c.dataset.id]); S.sel = null; suppressClick = true; render(); }, 520);
+});
+['pointerup', 'pointercancel', 'pointerleave', 'scroll'].forEach(t => document.addEventListener(t, () => clearTimeout(pressTimer), true));
+/* swallow only the click that follows the release of the long press, then listen again */
+['pointerup', 'pointercancel'].forEach(t => document.addEventListener(t, () => { if (suppressClick) setTimeout(() => { suppressClick = false; }, 80); }, true));
+document.addEventListener('contextmenu', e => { if (e.target.closest('[data-act="chip"]')) e.preventDefault(); });
+/* tooltips (hover and focus only; every value is also in the aria-label and the table view) */
+const tipEl = () => $('#tip');
+function showTip(t) {
+  const tip = tipEl(); tip.textContent = t.dataset.tip; tip.hidden = false;
+  const r = t.getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(innerWidth - 8 - tip.offsetWidth, r.left + r.width / 2 - tip.offsetWidth / 2)) + 'px';
+  tip.style.top = Math.max(8, r.top - tip.offsetHeight - 8) + 'px';
+}
+document.addEventListener('mouseover', e => { const t = e.target.closest && e.target.closest('[data-tip]'); if (t) showTip(t); else tipEl().hidden = true; });
+document.addEventListener('focusin', e => { const t = e.target.closest && e.target.closest('[data-tip]'); if (t) showTip(t); });
+document.addEventListener('focusout', () => { tipEl().hidden = true; });
+document.addEventListener('mouseleave', () => { tipEl().hidden = true; });
+
+/* preview bar: device and theme */
+$('.pbar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'themebtn') { toggleTheme(); return; }
+  if (b.dataset.dev) { S.layout = b.dataset.dev; S.frame = S.layout === 'phone' && innerWidth >= BREAK; S.manual = true; clearModes(); S.sheet = null; }
+  render();
+});
+addEventListener('resize', () => {
+  if (innerWidth < BREAK) { S.layout = 'phone'; S.frame = false; }
+  else if (!S.manual) { S.layout = 'desktop'; S.frame = false; }
+  else S.frame = S.layout === 'phone';
+  render();
+});
+
+/* ---------- boot ---------- */
+seed(); dirty();
+S.layout = innerWidth < BREAK ? 'phone' : 'desktop';
+if (S.layout === 'phone') S.zoom = 'day';
+render();
+applyTheme(); scheduleThemeFlip();
+})();</script></body></html>
