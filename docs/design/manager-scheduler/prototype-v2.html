@@ -1,8 +1,9 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Horizon Schedule</title>
+<script>(function(){try{var d=document.documentElement,h=new Date().getHours(),host=d.getAttribute("data-theme"),p=null;try{p=localStorage.getItem("hs-theme")}catch(e){}d.setAttribute("data-host",host||"");if(p!=="light"&&p!=="dark")p=(host==="light"||host==="dark")?host:(h>=7&&h<19?"light":"dark");d.setAttribute("data-theme",p)}catch(e){}})()</script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
 <style>
-/* Layout concept: one canvas, three zooms. A 6-week coverage strip sits above every view;
+/* Layout concept: one canvas, three zooms. A weeks-ahead row sits above every view;
    Day, Week and Month share one date. Desktop = grid + inspector panel; phone = day-centric
    lists + bottom sheets. There is no drag anywhere: select, act, place. */
 :root {
@@ -151,7 +152,7 @@ h2, h3 { margin: 0; }
 /* ---------- toolbar ---------- */
 .tb { flex: none; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; background: var(--bg); }
 .tb .dn { display: inline-flex; align-items: center; gap: 2px; background: var(--surface); border: 1px solid var(--line-2); border-radius: 10px; padding: 2px; }
-.tb .dn .lbl { min-width: 128px; text-align: center; font-weight: 700; font-size: 13.5px; }
+.tb .dn .lbl { min-width: 112px; text-align: center; font-weight: 700; font-size: 13.5px; }
 .tb .sp { flex: 1; }
 .att { flex: none; margin: 0 16px 8px; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); width: calc(100% - 32px); }
 .att .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
@@ -227,7 +228,7 @@ h2, h3 { margin: 0; }
 .plus:hover { background: var(--surface-2); }
 
 /* ---------- week grid (desktop) ---------- */
-.wg { display: grid; grid-template-columns: 188px repeat(7, minmax(112px, 1fr)) 76px; min-width: 1000px; position: relative; }
+.wg { display: grid; grid-template-columns: 148px repeat(7, minmax(96px, 1fr)) 60px; min-width: 880px; position: relative; }
 .wg > * { min-width: 0; }
 .wg .hd { position: sticky; top: 0; z-index: 4; background: var(--bg); padding: 8px 6px 8px; }
 .wg .hd.dh { display: flex; flex-direction: column; gap: 5px; text-align: left; border-radius: 10px; }
@@ -421,7 +422,7 @@ h2, h3 { margin: 0; }
 .app[data-layout="desktop"] .wg { padding: 0 20px 0; }
 .app[data-layout="desktop"] .tb, .app[data-layout="desktop"] .strip, .app[data-layout="desktop"] .pbanner, .app[data-layout="desktop"] .top { padding-left: 20px; padding-right: 20px; }
 .app[data-layout="desktop"] .pbanner { margin-left: 20px; margin-right: 20px; }
-@media (max-width: 899px) { .pbar .hint, .pbar .devgrp { display: none; } }
+@media (max-width: 919px) { .pbar .hint, .pbar .devgrp { display: none; } }
 @media (pointer: coarse) { .app[data-layout="desktop"] .chip { min-height: 44px; } .app[data-layout="desktop"] .btn.sm { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 @media (forced-colors: active) { .chip.draft, .tag.draft { border-style: dashed; } }
@@ -503,6 +504,39 @@ h2, h3 { margin: 0; }
 .app[data-layout="desktop"] .board { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 .mc .ot.warn { color: var(--warn-text); }
 .prowk .rr { font-size: 12.5px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; margin-top: 2px; }
+
+
+/* ---------- panel as a drawer, theme icon, short windows ---------- */
+.main { position: relative; }
+.paneltab { position: absolute; right: 0; top: 12px; z-index: 15; min-height: 36px; padding: 0 12px; border-radius: 10px 0 0 10px; background: var(--surface); border: 1px solid var(--line); border-right: 0; font-weight: 600; font-size: 12.5px; box-shadow: var(--shadow); }
+.paneltab:hover { background: var(--surface-2); }
+.app[data-layout="desktop"] .scrim.side { justify-content: flex-end; align-items: stretch; }
+.app[data-layout="desktop"] .scrim.side .sheet { width: min(380px, 92%); height: 100%; max-height: none; border-radius: 0; animation: slidein .18s ease; }
+@keyframes slidein { from { transform: translateX(28px); opacity: 0; } }
+.attchip { gap: 8px; }
+.attchip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--warn); flex: none; }
+.attchip.clear .dot { background: var(--ok); }
+.pbar .themebtn { position: relative; display: inline-grid; place-items: center; width: 34px; height: 30px; min-height: 0; border-radius: 8px; color: #E7ECF8; background: #ffffff1a; }
+.pbar .themebtn::after { content: ""; position: absolute; inset: 0 -8px; }      /* wider tap area, still inside the bar */
+.pbar .themebtn:hover { background: #ffffff33; }
+.pbar .themebtn:focus-visible { outline-color: #fff; }
+.tb .sp { min-width: 0; }
+.tb .btn.pri { flex: none; }
+@media (max-height: 700px) {
+  .pbar { padding: 3px 16px; }
+  .pbar .grp button { min-height: 24px; padding: 2px 8px; }
+  .pbar .themebtn { height: 26px; }
+  .app[data-layout="desktop"] .top { height: 44px; }
+  .app[data-layout="desktop"] .tab { height: 44px; }
+  .strip { padding: 4px 16px; }
+  .app[data-layout="desktop"] .wk { min-height: 38px; padding: 3px 10px; min-width: 104px; }
+  .app[data-layout="desktop"] .tb { padding: 6px 16px; }
+  .app[data-layout="desktop"] .tb .btn, .app[data-layout="desktop"] .tb .tog, .app[data-layout="desktop"] .tb .iconbtn { min-height: 32px; }
+  .app[data-layout="desktop"] .tb .seg button { min-height: 28px; }
+  .app[data-layout="desktop"] .tb .dn .iconbtn { width: 32px; height: 32px; }
+  .app[data-layout="desktop"] .top .loc { min-height: 30px; }
+}
+@media (max-width: 919px) { .pbar { min-height: 44px; padding: 7px 14px; } .pbar .themebtn { height: 30px; } .pbar .themebtn::after { inset: -7px -8px; } }   /* after the short-window rule so phones keep the 44px bar */
 </style></head><body>
 <div class="stage" id="stage" data-frame="0">
   <div class="pbar">
@@ -510,7 +544,7 @@ h2, h3 { margin: 0; }
     <span class="hint">Prototype with sample data. Tap a shift to move, copy or give it. Nothing needs dragging.</span>
     <span class="sp"></span>
     <span class="grp devgrp" role="group" aria-label="Preview device"><button data-dev="desktop" aria-pressed="true">Desktop</button><button data-dev="phone" aria-pressed="false">Phone</button></span>
-    <span class="grp" role="group" aria-label="Theme"><button data-th="auto" aria-pressed="true">Auto</button><button data-th="light" aria-pressed="false">Light</button><button data-th="dark" aria-pressed="false">Dark</button></span>
+    <button class="themebtn" id="themebtn" type="button" aria-label="Dark theme" aria-pressed="false" aria-describedby="themewhy"></button><span class="sr" id="themewhy"></span>
   </div>
   <div class="device"><div class="app" id="app" data-layout="desktop"></div></div>
 </div>
@@ -845,6 +879,10 @@ const ic = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" f
 const av = (id, role) => `<span class="av" style="--rc:${rcv(role || mainRole(id))}" aria-hidden="true">${initials(id)}</span>`;
 const who = sh => (sh.p ? PMAP[sh.p].name : 'Open slot');
 const isPhone = () => S.layout === 'phone';
+/* the details panel docks beside the grid only on wide desktops; everywhere else it is a drawer you open */
+const dockable = () => S.layout === 'desktop' && innerWidth >= 1280;
+const docked = () => dockable() && S.panelOpen !== false;
+const lensInBar = () => !isPhone() && innerWidth >= 1100;
 const attn = sh => !sh.p || !sh.pub || problemsOf(sh).length > 0;
 const selShift = () => (S.sel && S.sel.kind === 'shift' ? byId(S.sel.id) : null);
 const isSel = id => !!(S.sel && S.sel.kind === 'shift' && S.sel.id === id);
@@ -929,20 +967,28 @@ function toolbarHTML() {
     const sub = S.zoom === 'week' ? `<div class="seg" role="group" aria-label="Week layout" style="width:100%"><button data-act="pweek" data-v="days" aria-pressed="${S.pweek === 'days'}">Days</button><button data-act="pweek" data-v="people" aria-pressed="${S.pweek === 'people'}">People</button></div>` : '';
     return `<div class="tb">${zoomSeg}<div class="row" style="width:100%">${dn}${today}${menu}</div>${sub}</div>`;
   }
-  const lens = S.zoom === 'week' ? `<div class="seg" role="group" aria-label="Rows"><button data-act="lens" data-l="person" aria-pressed="${S.lens === 'person'}">By person</button><button data-act="lens" data-l="role" aria-pressed="${S.lens === 'role'}">By role</button></div>` : '';
+  const lens = S.zoom === 'week' && lensInBar() ? `<div class="seg" role="group" aria-label="Rows"><button data-act="lens" data-l="person" aria-pressed="${S.lens === 'person'}">By person</button><button data-act="lens" data-l="role" aria-pressed="${S.lens === 'role'}">By role</button></div>` : '';
   const undoB = S.hist.length ? `<button class="iconbtn" data-act="undo" aria-label="Undo">${ic('undo')}</button>` : '';
+  const tog = docked() ? `<button class="tog" data-act="focus" aria-pressed="${S.focus}"><span class="sw"></span>Needs attention only</button>` : attChip();
   return `<div class="tb">${zoomSeg}${dn}${today}${lens}<span class="sp"></span>
-    <button class="tog" data-act="focus" aria-pressed="${S.focus}"><span class="sw"></span>Needs attention only</button>${undoB}${menu}
+    ${tog}${undoB}${menu}
     <button class="btn pri" data-act="publish" ${pend ? '' : 'disabled'}>${pend ? `Publish ${pend}` : 'Publish'}</button></div>`;
 }
-function attRowHTML() {
+function attBits() {
   const a = attention(), bits = [];
-  if (a.openN) bits.push(`${a.openN} open`);
   if (a.probs.length) bits.push(`${a.probs.length} ${a.probs.length === 1 ? 'problem' : 'problems'}`);
+  if (a.openN) bits.push(`${a.openN} open`);
   if (a.drafts) bits.push(`${a.drafts} ${a.drafts === 1 ? 'draft' : 'drafts'}`);
   if (a.reqs) bits.push(`${a.reqs} ${a.reqs === 1 ? 'request' : 'requests'}`);
-  const clear = !bits.length;
+  return bits;
+}
+function attRowHTML() {
+  const bits = attBits(), clear = !bits.length;
   return `<button class="att${clear ? ' clear' : ''}" data-act="summary"><span class="dot" aria-hidden="true"></span><span class="grow trunc"><b>${clear ? 'All clear' : 'Needs a look'}</b>${clear ? '' : ` · ${bits.join(' · ')}`}${S.focus ? ' · filtered' : ''}</span><span class="chev">${ic('r', 16)}</span></button>`;
+}
+function attChip() {
+  const bits = attBits();
+  return `<button class="btn attchip${bits.length ? '' : ' clear'}" data-act="summary" aria-label="${bits.length ? 'Needs a look: ' + bits.join(', ') : 'All clear'}"><span class="dot" aria-hidden="true"></span>${bits.length ? bits.slice(0, 2).join(' · ') : 'All clear'}</button>`;
 }
 
 /* ---------- chips ---------- */
@@ -1224,7 +1270,7 @@ function shiftPanel(sh) {
 function inspectorHTML() {
   const sh = selShift();
   const body = sh ? shiftPanel(sh) : S.sel && S.sel.kind === 'day' ? dayPanel(S.sel.date) : summaryPanel();
-  return `<aside class="insp desk-only" data-scroll="insp" aria-label="Details">${body}</aside>`;
+  return `<aside class="insp desk-only" data-scroll="insp" aria-label="Details"><div class="row" style="justify-content:space-between;margin:-2px 0 -6px"><span class="cap-l">Details</span><button class="iconbtn" data-act="panel-toggle" aria-label="Hide the details panel">${ic('r')}</button></div>${body}</aside>`;
 }
 
 /* ---------- action bar & place banner ---------- */
@@ -1238,7 +1284,7 @@ function abarHTML() {
     const a = [['ab-move', 'Move'], ['ab-copy', 'Copy'], [sh.p ? 'ab-give' : 'ab-give', sh.p ? 'Give to…' : 'Assign to…']];
     if (sh.p) a.push(['ab-open', 'Make open']); else a.push(['ab-offer', sh.offered ? 'Offered' : 'Offer']);
     return `<div class="abar" role="toolbar" aria-label="Actions for selected shift"><div class="who">${sh.p ? av(sh.p, sh.role) : `<span class="av" style="--rc:${rcv(sh.role)}" aria-hidden="true">+</span>`}<div><div class="t">${esc(who(sh))}</div><div class="s">${mark}</div></div></div>
-      <div class="acts">${a.map(([k, l]) => `<button class="ab" data-act="${k}" ${k === 'ab-offer' && sh.offered ? 'disabled' : ''}>${l}</button>`).join('')}${isPhone() ? '<button class="ab" data-act="ab-details">Details</button>' : ''}<button class="ab dng" data-act="ab-del">Delete</button></div><button class="ab x" data-act="desel" aria-label="Deselect">${ic('x', 16)}</button></div>`;
+      <div class="acts">${a.map(([k, l]) => `<button class="ab" data-act="${k}" ${k === 'ab-offer' && sh.offered ? 'disabled' : ''}>${l}</button>`).join('')}${!docked() ? '<button class="ab" data-act="ab-details">Details</button>' : ''}<button class="ab dng" data-act="ab-del">Delete</button></div><button class="ab x" data-act="desel" aria-label="Deselect">${ic('x', 16)}</button></div>`;
   }
   if (isPhone() && !S.place && S.tab === 'schedule') {
     const [a, b] = S.zoom === 'month' ? [monthStart(S.date), addDays(addMonths(monthStart(S.date), 1), -1)] : spanRange();
@@ -1259,8 +1305,8 @@ function placeBanner() {
 }
 
 /* ---------- sheets ---------- */
-function sheetWrap(title, sub, body, foot) {
-  return `<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="grab"></div>
+function sheetWrap(title, sub, body, foot, side) {
+  return `<div class="scrim${side ? ' side' : ''}" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="grab"></div>
     <div class="sh-h"><div><h3>${esc(title)}</h3>${sub ? `<div class="sub">${sub}</div>` : ''}</div><button class="iconbtn" data-act="close" aria-label="Close">${ic('x')}</button></div>
     <div class="sh-b" data-scroll="sheet">${body}</div>${foot ? `<div class="sh-f">${foot}</div>` : ''}</div></div>`;
 }
@@ -1304,9 +1350,9 @@ function sheetHTML() {
       ${ppl.length ? `<div class="isec"><div class="cap">Who is notified</div><div class="chips">${ppl.map(p => `<span class="tag">${esc(firstName(p))}</span>`).join('')}</div></div>` : ''}`,
       `<button class="btn" data-act="close">Not yet</button><button class="btn pri" data-act="publish-go" ${list.length ? '' : 'disabled'}>Publish ${list.length}</button>`);
   }
-  if (sh.type === 'summary') return sheetWrap('Needs a look', esc(dateLabel()), `<div class="isec" style="gap:12px">${summaryPanel().replace(/^<h3>.*?<\/h3>/, '')}</div>`);
-  if (sh.type === 'inspect') { const x = byId(sh.id); if (!x) return ''; return sheetWrap('Shift details', '', shiftPanel(x).replace(/<button class="iconbtn desk-only"[\s\S]*?<\/button>/, '')); }
-  if (sh.type === 'day') return sheetWrap(fmtD(sh.date), '', dayPanel(sh.date).replace(/^<h3>.*?<\/h3>/, ''));
+  if (sh.type === 'summary') return sheetWrap('Needs a look', esc(dateLabel()), `<div class="isec" style="gap:12px">${summaryPanel().replace(/^<h3>.*?<\/h3>/, '')}</div>`, '', true);
+  if (sh.type === 'inspect') { const x = byId(sh.id); if (!x) return ''; return sheetWrap('Shift details', '', shiftPanel(x).replace(/<button class="iconbtn desk-only"[\s\S]*?<\/button>/, ''), '', true); }
+  if (sh.type === 'day') return sheetWrap(fmtD(sh.date), '', dayPanel(sh.date).replace(/^<h3>.*?<\/h3>/, ''), '', true);
   if (sh.type === 'pd') {
     const list = on(sh.date).filter(s => s.p === sh.p).sort((a, b) => a.s - b.s);
     return sheetWrap(`${firstName(sh.p)} · ${fmtD(sh.date)}`, `${list.length} shifts`, `<div class="list" style="gap:6px">${list.map(prow).join('')}</div>`, `<button class="btn" data-act="cell" data-p="${sh.p}" data-date="${sh.date}">Add another</button>`);
@@ -1321,7 +1367,8 @@ function sheetHTML() {
   if (sh.type === 'confirm') return sheetWrap(sh.title, '', `<div class="callout ${sh.tone || 'warn'}"><span class="gl ${sh.tone === 'crit' ? '' : 'w'}" aria-hidden="true">${sh.tone === 'crit' ? '!' : '⚠'}</span><div>${sh.body}</div></div>`, `<button class="btn" data-act="close">Cancel</button><button class="btn pri" data-act="confirm-go">${esc(sh.ok)}</button>`);
   if (sh.type === 'menu') {
     const items = [['multi-start', 'Select shifts', 'Copy or delete several at once'], ['copyweek', 'Copy last week', 'Adds last week’s shifts as drafts'], ['usual', 'Build from usual shifts', 'Adds every usual slot as open drafts']];
-    if (isPhone()) items.unshift(['focus', S.focus ? 'Show everything' : 'Needs attention only', 'Dims what is already fine']);
+    if (!docked()) items.unshift(['focus', S.focus ? 'Show everything' : 'Needs attention only', 'Dims what is already fine']);
+    if (!isPhone() && !lensInBar() && S.zoom === 'week') items.unshift(['lens-toggle', S.lens === 'person' ? 'Show rows by role' : 'Show rows by person', 'Changes how the week is grouped']);
     if (S.hist.length) items.push(['undo', 'Undo last change', '']);
     return sheetWrap('More', '', `<div class="list menu" style="gap:2px">${items.map(([k, l, s]) => `<button class="li" data-act="${k}" data-wk="${wkOf(S.date)}"><span class="grow"><b>${l}</b>${s ? `<div class="sub">${s}</div>` : ''}</span></button>`).join('')}</div>`);
   }
@@ -1346,7 +1393,7 @@ function appHTML() {
     h += stripHTML() + toolbarHTML();
     if (isPhone()) h += attRowHTML();
     h += placeBanner();
-    h += `<div class="main"><div class="cwrap"><div class="canvas" data-scroll="canvas" id="canvas">${canvasHTML()}</div>${abarHTML()}</div>${isPhone() ? '' : inspectorHTML()}</div>`;
+    h += `<div class="main"><div class="cwrap"><div class="canvas" data-scroll="canvas" id="canvas">${canvasHTML()}</div>${abarHTML()}</div>${docked() ? inspectorHTML() : ''}${dockable() && !docked() ? '<button class="paneltab" data-act="panel-toggle" aria-label="Show the details panel">Details</button>' : ''}</div>`;
   } else {
     const body = S.tab === 'inbox' ? inboxHTML() : S.tab === 'people' ? peopleTab() : S.tab === 'time' ? stubTab('Time', 'Timesheets, approvals and reports live here. Past shifts moved out of Schedule so the schedule only shows what is coming up.') : stubTab('More', 'Settings, locations and billing.');
     h += `<div class="main"><div class="cwrap"><div class="canvas" data-scroll="canvas" id="canvas" style="max-width:880px;width:100%;margin:0 auto">${body}</div></div></div>`;
@@ -1357,7 +1404,47 @@ function appHTML() {
 /* ============ actions, events, render, boot ============ */
 const A = {};
 let resetScroll = false, pressTimer = 0, suppressClick = false, lastSheetKey = '', toastT = 0;
-const HOST_THEME = document.documentElement.getAttribute('data-theme');
+const HOST_THEME = document.documentElement.getAttribute('data-host') || null;   // the viewer's own theme, saved by the early script
+const BREAK = 920;                                                                // below this width the phone layout is used
+
+/* ---------- theme: automatic by the viewer's local time, one icon to override ---------- */
+const THEME_KEY = 'hs-theme', PANEL_KEY = 'hs-panel';
+const themeForHour = h => (h >= 7 && h < 19 ? 'light' : 'dark');
+const autoTheme = () => themeForHour(new Date().getHours());
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+  set(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (_) { /* storage blocked: the choice lasts for this page only */ } },
+};
+S.pin = ['light', 'dark'].includes(store.get(THEME_KEY)) ? store.get(THEME_KEY) : (['light', 'dark'].includes(HOST_THEME) ? HOST_THEME : null);
+S.panelOpen = store.get(PANEL_KEY) !== '0';
+const currentTheme = () => S.pin || autoTheme();
+const SUN = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+const MOON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z"/></svg>';
+function applyTheme() {
+  const cur = currentTheme(), b = $('#themebtn');
+  document.documentElement.setAttribute('data-theme', cur);
+  if (!b) return;
+  const why = S.pin ? `${cur === 'dark' ? 'Dark' : 'Light'} theme, set by you. Click to switch.`
+    : cur === 'dark' ? 'Dark theme, automatic: dark from 7pm to 7am. Click to switch.' : 'Light theme, automatic: light from 7am to 7pm. Click to switch.';
+  b.innerHTML = cur === 'dark' ? MOON : SUN;
+  b.setAttribute('aria-pressed', String(cur === 'dark'));
+  b.setAttribute('data-tip', why);
+  const w = $('#themewhy'); if (w) w.textContent = why;
+}
+function toggleTheme() {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  if (next === autoTheme()) { S.pin = null; store.set(THEME_KEY, null); }      // flipping back to what automatic shows clears the pin
+  else { S.pin = next; store.set(THEME_KEY, next); }
+  applyTheme();
+}
+let themeTimer = 0;
+function scheduleThemeFlip() {
+  clearTimeout(themeTimer);
+  const now = new Date(), at = h => { const d = new Date(now); d.setHours(h, 0, 0, 0); if (d <= now) d.setDate(d.getDate() + 1); return d; };
+  const next = Math.min(at(7), at(19));
+  themeTimer = setTimeout(() => { applyTheme(); scheduleThemeFlip(); }, Math.min(next - now + 500, 2147483000));
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { applyTheme(); scheduleThemeFlip(); } });
 
 function toast(msg, undoable) {
   const t = ++toastT;
@@ -1369,11 +1456,6 @@ function syncStage() {
   const st = $('#stage');
   st.dataset.frame = S.frame ? '1' : '0';
   $$('[data-dev]').forEach(b => b.setAttribute('aria-pressed', String(S.layout === b.dataset.dev)));
-  $$('[data-th]').forEach(b => b.setAttribute('aria-pressed', String(S.theme === b.dataset.th)));
-  if (!S.themeTouched) return;                          // leave the viewer's own theme alone until the preview bar is used
-  const root = document.documentElement;
-  if (S.theme === 'auto') { if (HOST_THEME) root.setAttribute('data-theme', HOST_THEME); else root.removeAttribute('data-theme'); }
-  else root.setAttribute('data-theme', S.theme);
 }
 function render() {
   const app = $('#app'), sc = {};
@@ -1381,6 +1463,7 @@ function render() {
   const fid = document.activeElement && document.activeElement.id, caret = fid === 'q' ? document.activeElement.selectionStart : null;
   const sheetKey = S.sheet ? S.sheet.type + (S.sheet.id || S.sheet.p || S.sheet.date || '') : '';
   app.dataset.layout = S.layout;
+  app.dataset.dock = docked() ? '1' : '0';
   app.innerHTML = appHTML();
   $$('[data-scroll]', app).forEach(e => {
     if (e.dataset.scroll === 'sheet' && sheetKey !== lastSheetKey) return;
@@ -1400,16 +1483,18 @@ A.nav = el => { const d = +el.dataset.d; S.date = S.zoom === 'day' ? addDays(S.d
 A.today = () => { S.date = TODAY; clearModes(); resetScroll = true; };
 A.lens = el => { S.lens = el.dataset.l; S.place = null; };
 A.pweek = el => { S.pweek = el.dataset.v; };
+A['lens-toggle'] = () => { S.lens = S.lens === 'person' ? 'role' : 'person'; S.place = null; S.sheet = null; };
+A['panel-toggle'] = () => { S.panelOpen = !S.panelOpen; store.set(PANEL_KEY, S.panelOpen ? '1' : '0'); };
 A.focus = () => { S.focus = !S.focus; S.sheet = null; };
 A.stripwk = el => {
   const st = el.dataset.date; clearModes();
   S.date = S.zoom === 'day' ? addDays(st, dowOf(S.date)) : S.zoom === 'month' ? addDays(st, 3) : st;
   resetScroll = true;
 };
-A.dayhead = el => { S.sel = { kind: 'day', date: el.dataset.date }; };
+A.dayhead = el => { if (docked()) S.sel = { kind: 'day', date: el.dataset.date }; else S.sheet = { type: 'day', date: el.dataset.date }; };
 A.dayopen = el => { S.date = el.dataset.date; S.zoom = 'day'; clearModes(); S.sheet = null; resetScroll = true; };
 A.wkopen = el => { S.date = el.dataset.date; S.zoom = 'week'; clearModes(); S.sheet = null; resetScroll = true; };
-A.mday = el => { const date = el.dataset.date; S.date = date; if (isPhone()) S.sheet = { type: 'day', date }; else S.sel = { kind: 'day', date }; };
+A.mday = el => { const date = el.dataset.date; S.date = date; if (docked()) S.sel = { kind: 'day', date }; else S.sheet = { type: 'day', date }; };
 A.mlens = el => { S.mlens = el.dataset.k; };
 A.mtable = () => { S.mtable = !S.mtable; };
 A.dept = el => { S.collapsed[el.dataset.dept] = !S.collapsed[el.dataset.dept]; };
@@ -1434,7 +1519,7 @@ A.chip = el => {
   if (S.multi) { if (S.multi.has(id)) S.multi.delete(id); else S.multi.add(id); return; }
   if (S.place) return placeAt(sh.p, sh.date);
   if (S.sheet && ['person', 'pd'].includes(S.sheet.type)) S.sheet = null;
-  if (isSel(id) && isPhone()) { S.sheet = { type: 'inspect', id }; return; }
+  if (isSel(id) && !docked()) { S.sheet = { type: 'inspect', id }; return; }
   S.sel = { kind: 'shift', id };
 };
 A.cell = el => {
@@ -1660,12 +1745,12 @@ document.addEventListener('mouseleave', () => { tipEl().hidden = true; });
 /* preview bar: device and theme */
 $('.pbar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  if (b.dataset.dev) { S.layout = b.dataset.dev; S.frame = S.layout === 'phone' && innerWidth >= 900; S.manual = true; clearModes(); S.sheet = null; }
-  if (b.dataset.th) { S.theme = b.dataset.th; S.themeTouched = true; }
+  if (b.id === 'themebtn') { toggleTheme(); return; }
+  if (b.dataset.dev) { S.layout = b.dataset.dev; S.frame = S.layout === 'phone' && innerWidth >= BREAK; S.manual = true; clearModes(); S.sheet = null; }
   render();
 });
 addEventListener('resize', () => {
-  if (innerWidth < 900) { S.layout = 'phone'; S.frame = false; }
+  if (innerWidth < BREAK) { S.layout = 'phone'; S.frame = false; }
   else if (!S.manual) { S.layout = 'desktop'; S.frame = false; }
   else S.frame = S.layout === 'phone';
   render();
@@ -1673,7 +1758,8 @@ addEventListener('resize', () => {
 
 /* ---------- boot ---------- */
 seed(); dirty();
-S.layout = innerWidth < 900 ? 'phone' : 'desktop';
+S.layout = innerWidth < BREAK ? 'phone' : 'desktop';
 if (S.layout === 'phone') S.zoom = 'day';
 render();
+applyTheme(); scheduleThemeFlip();
 })();</script></body></html>

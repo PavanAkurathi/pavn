@@ -6,6 +6,7 @@ and phone triage is replaced by a real Day / Week / Month on phones
 
 **Clickable prototype:** [`prototype-v2.html`](./prototype-v2.html). Open it in a browser and use the
 Desktop / Phone switch at the top. It uses sample data and saves nothing. Its working title is "Horizon Schedule".
+Resize the window to see the three width tiers (§5). The sun or moon icon at the top right is the theme control (§10).
 
 ## Context
 
@@ -50,6 +51,8 @@ are a separate universe; they are designed after this (§13).
 | Phone: tap a shift, then **Move** or **Copy**. | Day chips instead of dragging. |
 | Inbox, then **Approve** on Cara's time off, then back to Schedule. | A decision with a consequence: it creates a conflict, and the week says so. |
 | Press `1` `2` `3`, `m` `c` `g` `o`, `z`, `Esc`. | The keyboard covers the same actions. |
+| Make the window 960px wide, then tap **2 problems · 8 open** in the toolbar. | The details panel is a drawer that opens on request, so the grid keeps the full width. |
+| Tap the sun or moon icon. | Light and dark follow your local time (light 7am to 7pm). A click overrides it and the choice sticks. |
 
 ## 2. Principles
 
@@ -60,7 +63,7 @@ Each principle rules something out.
 3. **Gaps before people.** The first question is "am I covered?", and the answer is a word or a number: *Covered*, *8 open*.
 4. **One question at a time.** A lens shows one thing: open slots, time off, events or drafts. Never all of them.
 5. **A clutter budget.** Three marks on a shift, one number per day, six controls in the toolbar.
-6. **Same content, two containers.** The inspector is a right panel on desktop and a bottom sheet on a phone.
+6. **Same content, three containers.** The inspector is a docked panel on a wide desktop, a drawer on a narrower one, and a bottom sheet on a phone.
 7. **No charts.** If a number or a word says it, do not draw it.
 8. **Everything is undoable.**
 
@@ -99,7 +102,7 @@ WEEKS AHEAD  [This week      ] [Next week      ] [Oct 11 – 17    ] [Oct 18 –
 
 ## 5. Three zooms
 
-| Zoom | Desktop (≥1024px) | Phone |
+| Zoom | Desktop (≥920px) | Phone |
 |---|---|---|
 | **Day** | A headline (`8 on shift · 1 open`, with *Gaps* or *Covered*), then a column per daypart: Morning, Evening. Each column says `2 of 2` and lists people, then open slots with **Assign** and **Offer**. | The same, stacked. |
 | **Week** | People × days grid, or **By role** (`4p–11p 3/4` per cell). Each day header says `N open` and names the event. | Seven day rows: `11 of 12 filled`, `1 open`, `Draft`. **People** lens: a row per person, `5 shifts · Sun Mon Tue Fri`, with tags for problems, drafts and days off. Tapping a person opens their week in a sheet. |
@@ -114,6 +117,27 @@ Presets can rename them per business type.
 **Landing.** Phone opens Day if today has shifts, else Week. Desktop opens Week using the time-aware rule from phase 2
 (this week, or next week when this week is clean and next is empty or has drafts), with a visible "Showing next week · Back" chip.
 The prototype does not implement that chip.
+
+### Responsive tiers and the panel
+
+The first version docked the details panel (332px) on every desktop-sized window. In a 960 × 540 window, which is a normal laptop
+with the browser not maximised, the panel took a third of the width, the grid needs 1000px, and the Thu, Fri and Sat columns
+disappeared behind it. The panel is now closed until needed, and it only docks when there is room.
+
+| Width | Layout | Details panel |
+|---|---|---|
+| ≥ 1280px | Desktop | Docked beside the grid, with a collapse button and a **Details** edge tab to bring it back. The choice is remembered in this browser. |
+| 920 – 1279px | Desktop | **Not docked.** A drawer from the right, `min(380px, 92%)` wide, opened by **Details** in the action bar or by the **Needs a look** chip in the toolbar. Esc, a tap outside, or ✕ closes it. |
+| < 920px | Phone | Bottom sheets, as before. |
+
+- **Selecting a shift never opens the drawer.** Move and Copy keep the whole grid visible. The panel opens only when asked for.
+- **The grid fits 920px.** Name column 148px, seven day columns of at least 96px, hours column 60px: 880px plus the 20px page gutter.
+  There is no sideways scroll at 920px and up.
+- **The toolbar stays one row below 1280px.** *Needs attention only* and the By person / By role switch move into the ⋯ menu, as on the
+  phone. The **Needs a look** chip (`2 problems · 8 open`) takes their place and opens the drawer. **Publish N** stays last and never wraps.
+- **Short windows.** Under 700px of height the weeks-ahead chips, top bar, tabs and toolbar are compacted. In a 540px-high window the
+  grid now starts at 181px, including the 34px preview bar, where it used to start at about 226px and left barely two rows of people.
+  Without the preview bar the chrome is about 147px.
 
 ## 6. Editing without drag: select → act → place
 
@@ -158,7 +182,8 @@ the conflict prompt. Only the input layer changes.
 - A shift selected: time, day, role, *How many people* (open slots), a callout for each mark, and *Who can take it*.
   Editing the time uses the same shorthand as adding.
 - A day selected (header or month cell): `9 of 10 filled`, dayparts, **Open day**, **Open week**.
-- Desktop: right panel. Phone: a bottom sheet from the action bar's **Details** or a second tap on the selected shift.
+- Desktop, 1280px and wider: a docked right panel that can be collapsed. Desktop, 920 to 1279px: a drawer opened on request (§5).
+  Phone: a bottom sheet from the action bar's **Details** or a second tap on the selected shift.
 
 ## 8. The clutter budget
 
@@ -208,6 +233,23 @@ the conflict prompt. Only the input layer changes.
   The week chip and the toolbar arrow have different names (`Jump to next week: …` and `Next week`).
 - Reduced motion turns off the sheet and toast animation. Forced-colors keeps dashed outlines.
 
+### Theme: automatic by time, one icon to override
+
+The Auto / Light / Dark tabs are gone. One icon button replaces them: a **sun** when the page is light, a **moon** when it is dark.
+
+- **Rule.** The theme follows the viewer's local clock, which already reflects their time zone. Light from 07:00 to 18:59, dark otherwise.
+  It is evaluated on load, at every 07:00 and 19:00 while the page is open (a timer), and when the tab becomes visible again.
+  The same instant is light in New York (10:00) and dark in Tokyo (23:00).
+- **Override.** A click flips the theme and remembers the choice in this browser (`localStorage`, in a try/catch; with storage blocked the
+  choice lasts until the page is closed). A click that lands on what automatic would show right now clears the choice, so
+  clicking twice returns to automatic. There is no third state to learn.
+- **Semantics.** A toggle button with `aria-pressed` (true = dark) and a stable name, *Dark theme*. A description says how the current
+  state came about, for example *Dark theme, automatic: dark from 7pm to 7am. Click to switch.* or *Light theme, set by you.* The same text
+  is the tooltip. The tap area is 44 × 44 on a phone.
+- **No flash.** A small inline script sets the theme before first paint. A theme forced by the host page is respected until the icon is clicked.
+- **Stated limit.** True sunrise and sunset need a location, and geolocation is blocked in the viewer. The hours are fixed. Per-business or
+  per-user hours are a later setting. In the product the icon belongs in the top bar or the user menu, not a preview bar.
+
 ## 11. Data and platform
 
 **Exists**
@@ -253,14 +295,24 @@ These changed the design. They are the reason to test a design before building i
 9. **Two controls shared one name.** The new "Next week" chip and the toolbar's "Next week" arrow were indistinguishable to a screen
    reader. The chip is now `Jump to next week: …`.
 10. **"Draft" overstated a mostly-published week.** The chip now says `14 drafts`, and reserves `Draft` for a whole unpublished week.
+11. **The docked panel squeezed the grid (owner feedback).** At 960px the always-open panel hid three of seven day columns, and the owner
+    read it as "Publish is blocked half the screen". The panel is now closed until needed below 1280px, and the desktop layout starts at
+    920px, the width the grid needs (§5).
+12. **The chrome used 40% of a short window.** Preview bar, top bar, weeks-ahead row and toolbar took about 226px of a 540px window.
+    Under 700px of height they are compacted, and the toolbar is a single row (§5).
+13. **Three theme tabs were a chore.** Nobody wants to choose a theme in a scheduler. It now follows the clock, and one icon overrides it (§10).
 
 ## 13. Verification and limits
 
-**Verified** in Chromium with 98 scripted checks and zero console errors. 71 run the main flows (desktop, and a touch-emulated
-phone at 390 × 844) and were run twice, on the standalone file and on the published fragment inside its page skeleton. The other 27
-cover multi-select, long-press, inspector edits, headcount, Offer and Assign, the request side effects, the empty-week starters and the
-Month lenses. They include no horizontal page scroll, light and dark, a viewer-forced theme, the touch-target audit in §10, and a
+**Verified** in Chromium with 208 scripted checks and zero console errors. 72 run the main flows (desktop, and a touch-emulated
+phone at 390 × 844). 27 cover multi-select, long-press, inspector edits, headcount, Offer and Assign, the request side effects, the
+empty-week starters and the Month lenses. 109 cover the responsive tiers and the theme: at 960 × 540 the whole week and **Publish** are
+visible with the panel closed, the drawer opens and closes four ways, the panel docks at 1280 and 1440 and its collapse is remembered,
+1279 is not docked and 919 is the phone layout, and the theme is right at 10:00 and 21:00 in New York and Tokyo, at 06:59, 07:00, 18:59
+and 19:00, across the 19:00 and 07:00 flips of an open page, after a reload, with the pin cleared by a second click, with a host-forced
+theme, and with storage blocked. The rest include no horizontal page scroll, light and dark, the touch-target audit in §10, and a
 regression check that **fails if any chart-like element appears** in Day, Week, People or Month on desktop or phone.
+The main and responsive suites were run twice, on the standalone file and on the published fragment inside its page skeleton.
 
 **Not verified**
 
