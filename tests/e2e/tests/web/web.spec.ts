@@ -269,10 +269,12 @@ test.describe('Settings', () => {
     });
 
     test('can access organization settings', async ({ page }) => {
-        // Open user menu
-        await page.click('[data-testid="user-menu"]');
-        // Click Settings
-        await page.getByText('Settings').click();
+        // The menu is a client component: a click before it has hydrated does nothing, so retry until it opens.
+        await expect(async () => {
+            await page.click('[data-testid="user-menu"]');
+            await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible({ timeout: 2000 });
+        }).toPass({ timeout: 20000 });
+        await page.getByRole('menuitem', { name: 'Settings' }).click();
 
         await expect(page).toHaveURL(/.*settings.*/);
     });

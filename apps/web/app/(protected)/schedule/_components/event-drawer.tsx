@@ -122,7 +122,7 @@ function EventPanel({
                 <SheetTitle className="flex items-center justify-between gap-3">
                     <span>{event ? event.name : "New event"}</span>
                     {event ? (
-                        <Badge variant={filled < needed ? "destructive" : "secondary"}>
+                        <Badge variant="secondary" className={filled < needed ? "bg-warn-soft text-warn" : "bg-ok-soft text-ok"}>
                             {filled}/{needed} staffed
                         </Badge>
                     ) : null}
@@ -192,7 +192,7 @@ function EventPanel({
                                         <span className="text-muted-foreground"> · {compactRange(s.startLocal, s.endLocal)}</span>
                                     </span>
                                     <span className="flex items-center gap-2">
-                                        <span className={cn("text-sm font-semibold tabular-nums", s.open > 0 && "text-destructive")}>
+                                        <span className={cn("text-sm font-semibold tabular-nums", s.open > 0 && "text-warn")}>
                                             {s.filled}/{s.capacity}
                                         </span>
                                         <Button type="button" size="sm" variant="outline" onClick={() => onStaff(s.id)}>

@@ -20,10 +20,13 @@ function Row({ candidate, onAdd, busy }: { candidate: Candidate; onAdd: (person:
             <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-base font-semibold">{person.name}</span>
                 <span className="text-sm">
-                    <span className="text-muted-foreground">{formatHours(person.scheduledMinutes)} this week · </span>
-                    <span className={cn(blocked ? "font-medium text-destructive" : reasons.length ? "text-warn" : "text-ok")}>
-                        {reasons.length ? reasons.join(" · ") : "Free and knows the role"}
-                    </span>
+                    <span className="text-muted-foreground">{formatHours(person.scheduledMinutes)} this week</span>
+                    {reasons.length ? (
+                        <span className={cn(blocked ? "font-medium text-destructive" : "text-warn")}> · {reasons.join(" · ")}</span>
+                    ) : (
+                        // The "Good fit" heading says it for everyone in that pile; a screen reader still hears it per person.
+                        <span className="sr-only"> · Free and knows the role</span>
+                    )}
                 </span>
             </div>
             <Button

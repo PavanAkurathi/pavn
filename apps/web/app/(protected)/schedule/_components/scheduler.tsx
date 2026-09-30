@@ -15,7 +15,6 @@ import {
     AlertDialogTitle,
 } from "@repo/ui/components/ui/alert-dialog";
 import { Button } from "@repo/ui/components/ui/button";
-import { Skeleton } from "@repo/ui/components/ui/skeleton";
 import { cn } from "@repo/ui/lib/utils";
 import { buildDay, publishableChanges, weekCoverage, weekIssues } from "@/lib/scheduler/day-model";
 import { discardWeek, fetchSchedulerWeek, weekKey } from "@/lib/scheduler/client";
@@ -23,6 +22,7 @@ import { addDays } from "@/lib/scheduler/format";
 import { planRemove, type Plan } from "@/lib/scheduler/plans";
 import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
+import { useIsPhone } from "@/lib/scheduler/use-is-phone";
 import { ALL_DEPARTMENTS, buildPeopleView, buildPositionsView, type ViewMode } from "@/lib/scheduler/view-model";
 import { getSchedulerHref } from "@/lib/routes";
 import { AddShiftSheet, type AddShiftTarget } from "./add-shift-sheet";
@@ -113,7 +113,10 @@ export function Scheduler({
         week.settings.scheduleStyle === "events" ? "positions" : "people",
         isViewMode,
     );
-    const [layout, setLayout] = usePersistentState<Layout>(`wh.scheduler.${orgId}.layout`, "day", isLayout);
+    const [chosenLayout, setLayout] = usePersistentState<Layout>(`wh.scheduler.${orgId}.layout`, "day", isLayout);
+    // The Week table needs room: a phone (or a narrow window) always gets the Day view, whatever was chosen on a wide one.
+    const phone = useIsPhone();
+    const layout: Layout = phone ? "day" : chosenLayout;
     const [collapsedRaw, setCollapsedRaw] = usePersistentState<string>(`wh.scheduler.${orgId}.collapsed`, "");
     const collapsed = useMemo(() => new Set(collapsedRaw.split(",").filter(Boolean)), [collapsedRaw]);
 
@@ -247,7 +250,7 @@ export function Scheduler({
                 onLocation={changeLocation}
                 onWeek={(step) => goToWeek(addDays(week.weekStart, step * 7))}
                 onToday={() => goToWeek(null)}
-                showToday={showToday || !isInitial}
+                showToday={showToday}
                 layout={layout}
                 onLayout={setLayout}
                 department={department}
@@ -386,13 +389,6 @@ export function Scheduler({
                     </>
                 )}
             </div>
-
-            {isValidating && !data ? (
-                <div className="flex w-full flex-col gap-3" aria-hidden>
-                    <Skeleton className="h-20 rounded-2xl" />
-                    <Skeleton className="h-20 rounded-2xl" />
-                </div>
-            ) : null}
 
             <p className="text-xs text-muted-foreground">
                 Times are {week.location.name}&apos;s local time ({week.location.timezone.replace(/_/g, " ")}). Changes stay with you until you
