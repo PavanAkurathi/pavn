@@ -7,7 +7,7 @@ import { apiJsonRequest } from "@/lib/server/api-client";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { Scheduler } from "./_components/scheduler";
 
-type SearchParams = Promise<{ location?: string | string[]; week?: string | string[] }>;
+type SearchParams = Promise<{ location?: string | string[]; week?: string | string[]; day?: string | string[] }>;
 
 const single = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
 const isLocalDate = (value: string | undefined): value is string => Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
@@ -43,6 +43,8 @@ export default async function SchedulePage(props: { searchParams: SearchParams }
     const location = locations.find((l) => l.id === requestedLocation) ?? locations[0]!;
     const requestedWeek = single(searchParams.week);
     const weekParam = isLocalDate(requestedWeek) ? requestedWeek : null;
+    const requestedDay = single(searchParams.day);
+    const dayParam = isLocalDate(requestedDay) ? requestedDay : null;
 
     const query = new URLSearchParams({ locationId: location.id });
     if (weekParam) query.set("weekStart", weekParam);
@@ -72,6 +74,7 @@ export default async function SchedulePage(props: { searchParams: SearchParams }
             initialWeek={week}
             initialLocationId={location.id}
             initialWeekParam={weekParam}
+            initialDayParam={dayParam}
         />
     );
 }

@@ -2,31 +2,35 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Copy, Trash2, UserPlus, X } from "lucide-react";
-import type { SchedulerChange, SchedulerShift, SchedulerShiftPatch, SchedulerWeek } from "@repo/contracts/scheduler";
-import { Badge } from "@repo/ui/components/ui/badge";
+import { Copy, Lock, OctagonAlert, Trash2, TriangleAlert, X } from "lucide-react";
+import type { SchedulerShift, SchedulerShiftPatch, SchedulerWeek } from "@repo/contracts/scheduler";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@repo/ui/components/ui/sheet";
+import { Switch } from "@repo/ui/components/ui/switch";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { cn } from "@repo/ui/lib/utils";
-import { rankCandidates } from "@/lib/scheduler/candidates";
+import { isLocked } from "@/lib/scheduler/day-model";
 import { compactRange, formatHours, weekdayShort } from "@/lib/scheduler/format";
 import { formatTimeRange, parseTimeRange } from "@/lib/scheduler/parse-time-range";
-import { newShiftId, staying, type Plan } from "@/lib/scheduler/plans";
+import { newShiftId, planAddPerson, planCopyToDays, planTakeOff, staying, type Plan } from "@/lib/scheduler/plans";
 import { getShiftTimesheetHref } from "@/lib/routes";
-import { knownRoles } from "./quick-create";
-
-const CANDIDATES_SHOWN = 8;
+import { knownRoles } from "./add-shift-sheet";
+import { PersonAvatar } from "./person-avatar";
+import { ResponsiveSheet } from "./responsive-sheet";
+import { SuggestList } from "./suggest-list";
 
 function statusText(shift: SchedulerShift) {
-    if (shift.pendingRemoval) return "Removed when you publish";
-    if (shift.status === "draft") return "Draft · staff can't see it yet";
-    if (shift.hasUnpublishedEdits) return "Published · has changes staff can't see yet";
-    return "Published";
+    if (shift.pendingRemoval) return "Goes away when you publish";
+    if (shift.status === "draft") return "Not shared yet. Your team can't see it.";
+    if (shift.hasUnpublishedEdits) return "Shared, with changes your team can't see yet";
+    return "Shared with your team";
 }
 
+const dayChip =
+    "inline-flex h-10 min-w-14 items-center justify-center rounded-full border px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+
+/** One shift: who's on it, who else could be, and its details. Opens from any card or table cell. */
 export function ShiftDrawer({
     week,
     shiftId,
@@ -42,11 +46,24 @@ export function ShiftDrawer({
 }) {
     const shift = shiftId ? week.shifts.find((s) => s.id === shiftId) ?? null : null;
     return (
-        <Sheet open={shift !== null} onOpenChange={(open) => !open && onClose()}>
-            <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-y-auto p-0 sm:max-w-md">
-                {shift ? <ShiftPanel key={`${shift.id}:${shift.startsAt}:${shift.role}:${shift.capacity}`} week={week} shift={shift} run={run} onClose={onClose} onOpenEvent={onOpenEvent} /> : null}
-            </SheetContent>
-        </Sheet>
+        <ResponsiveSheet
+            open={shift !== null}
+            onOpenChange={(open) => !open && onClose()}
+            testId="shift-sheet"
+            title={shift ? `${weekdayShort(shift.localDate)} ${compactRange(shift.startLocal, shift.endLocal)} · ${shift.role}` : "Shift"}
+            description={shift ? statusText(shift) : undefined}
+        >
+            {shift ? (
+                <ShiftPanel
+                    key={`${shift.id}:${shift.startsAt}:${shift.role}:${shift.capacity}`}
+                    week={week}
+                    shift={shift}
+                    run={run}
+                    onClose={onClose}
+                    onOpenEvent={onOpenEvent}
+                />
+            ) : null}
+        </ResponsiveSheet>
     );
 }
 
@@ -73,13 +90,13 @@ function ShiftPanel({
     const [note, setNote] = useState(shift.note ?? "");
     const [managerNote, setManagerNote] = useState(shift.managerNote ?? "");
     const [moreOpen, setMoreOpen] = useState(Boolean(shift.managerNote));
-    const [showAll, setShowAll] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [copyDays, setCopyDays] = useState<number[]>([]);
+    const [keepPeople, setKeepPeople] = useState(true);
 
     const range = parseTimeRange(time);
     const refs = staying(shift);
-    const candidates = useMemo(() => rankCandidates(week, shift), [week, shift]);
-    const locked = shift.pendingRemoval;
+    const locked = shift.pendingRemoval || isLocked(shift);
     const event = shift.eventId ? week.events.find((e) => e.id === shift.eventId) ?? null : null;
 
     const patch: SchedulerShiftPatch = {};
@@ -108,239 +125,273 @@ function ShiftPanel({
         }
     };
 
-    const setPeople = (next: typeof refs, text: string) => {
-        const changes: SchedulerChange[] = [];
-        if (next.length > shift.capacity) changes.push({ op: "update", shiftId: shift.id, patch: { capacity: next.length } });
-        changes.push({ op: "assign", shiftId: shift.id, assignees: next });
-        void run({ changes, label: text });
-    };
-
-    const shown = showAll ? candidates : candidates.slice(0, CANDIDATES_SHOWN);
+    const copyPlan = planCopyToDays(week, shift.id, copyDays, { keepPeople: keepPeople && refs.length > 0 });
 
     return (
         <>
-            <SheetHeader className="gap-1 border-b p-5 text-left">
-                <SheetTitle className="flex items-center justify-between gap-3">
-                    <span>
-                        {label} · {shift.role}
-                    </span>
-                    <Badge variant={shift.open > 0 ? "destructive" : "secondary"}>
-                        {shift.filled}/{shift.capacity}
-                    </Badge>
-                </SheetTitle>
-                <SheetDescription>{statusText(shift)}</SheetDescription>
-                {event ? (
-                    <button
-                        type="button"
-                        onClick={() => onOpenEvent(event.id)}
-                        className="w-fit text-sm font-medium text-primary underline-offset-2 hover:underline"
-                    >
-                        <span aria-hidden>◆ </span>
-                        {event.name}
-                    </button>
-                ) : null}
-            </SheetHeader>
+            {locked ? (
+                <div className="flex items-start gap-3 rounded-2xl bg-muted px-4 py-3 text-sm">
+                    <Lock aria-hidden className="mt-0.5 size-4 shrink-0" />
+                    <p>
+                        {shift.pendingRemoval
+                            ? "This shift goes away when you publish."
+                            : "This shift has started or is finished, so it changes from its timesheet."}
+                    </p>
+                </div>
+            ) : null}
 
-            <div className="flex flex-col gap-6 p-5">
-                <form
-                    className="flex flex-col gap-4"
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        if (dirty && range && !capacityTooLow) void save();
-                    }}
+            {event ? (
+                <button
+                    type="button"
+                    onClick={() => onOpenEvent(event.id)}
+                    className="w-fit text-sm font-medium text-primary underline-offset-4 hover:underline"
                 >
-                    <div className="grid grid-cols-[7rem_minmax(0,1fr)] gap-3">
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium" htmlFor="sd-day">
-                                Day
-                            </label>
-                            <Select value={dayIndex} onValueChange={setDayIndex} disabled={locked}>
-                                <SelectTrigger id="sd-day">
-                                    <SelectValue>{weekdayShort(newDate)}</SelectValue>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {week.days.map((d) => (
-                                        <SelectItem key={d.index} value={String(d.index)}>
-                                            {weekdayShort(d.localDate)} {Number(d.localDate.slice(8))}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium" htmlFor="sd-time">
-                                Time
-                            </label>
-                            <Input id="sd-time" value={time} disabled={locked} onChange={(e) => setTime(e.target.value)} aria-invalid={!range} />
-                            <span className={cn("text-xs", range ? "text-muted-foreground" : "text-destructive")}>
-                                {range
-                                    ? `${formatHours(range.minutes - breakValue)} paid${range.overnight ? ", ends next day" : ""}`
-                                    : "Try 9-5 or 4p-11p"}
-                            </span>
-                        </div>
-                    </div>
+                    ◆ Part of {event.name}
+                </button>
+            ) : null}
 
-                    <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_5.5rem] gap-3">
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium" htmlFor="sd-role">
-                                Role
-                            </label>
-                            <Input id="sd-role" list="sd-roles" value={role} disabled={locked} onChange={(e) => setRole(e.target.value)} />
-                            <datalist id="sd-roles">
-                                {roles.map((r) => (
-                                    <option key={r} value={r} />
-                                ))}
-                            </datalist>
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium" htmlFor="sd-break">
-                                Break (min)
-                            </label>
-                            <Input id="sd-break" type="number" min={0} max={240} step={5} value={breakMinutes} disabled={locked} onChange={(e) => setBreakMinutes(e.target.value)} />
-                        </div>
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium" htmlFor="sd-capacity">
-                                How many
-                            </label>
-                            <Input id="sd-capacity" type="number" min={1} max={200} value={capacity} disabled={locked} onChange={(e) => setCapacity(e.target.value)} aria-invalid={capacityTooLow} />
-                        </div>
-                    </div>
-                    {capacityTooLow ? <p className="-mt-2 text-xs text-destructive">{refs.length} people are on it; take someone off first.</p> : null}
-
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium" htmlFor="sd-note">
-                            Note to staff
-                        </label>
-                        <Textarea id="sd-note" rows={2} value={note} disabled={locked} onChange={(e) => setNote(e.target.value)} placeholder="Wear black. Park in the back lot." />
-                    </div>
-
-                    {moreOpen ? (
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-xs font-medium" htmlFor="sd-manager-note">
-                                Manager note <span className="font-normal text-muted-foreground">(only managers see it)</span>
-                            </label>
-                            <Textarea id="sd-manager-note" rows={2} value={managerNote} disabled={locked} onChange={(e) => setManagerNote(e.target.value)} />
-                        </div>
-                    ) : (
-                        <button type="button" className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => setMoreOpen(true)}>
-                            More: manager note
-                        </button>
-                    )}
-
-                    {locked ? null : (
-                        <div className="flex justify-end">
-                            <Button type="submit" disabled={!dirty || !range || capacityTooLow || saving}>
-                                Save changes
-                            </Button>
-                        </div>
-                    )}
-                </form>
-
-                <section className="flex flex-col gap-2" aria-labelledby="sd-on-shift">
-                    <h3 id="sd-on-shift" className="text-sm font-semibold">
-                        On this shift
-                    </h3>
-                    {refs.length === 0 ? <p className="text-sm text-muted-foreground">Nobody yet.</p> : null}
-                    <ul className="flex flex-col gap-1">
-                        {shift.assignees.map((a) => {
-                            const person = people.get(a.personId);
-                            const removed = a.pendingState === "remove";
-                            return (
-                                <li key={a.personId} className="flex items-start justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/60">
-                                    <div className="flex min-w-0 flex-col">
-                                        <span className={cn("truncate text-sm font-medium", removed && "line-through opacity-60")}>
-                                            {person?.name ?? "Someone no longer on the team"}
-                                            {a.pendingState === "add" ? <span className="font-normal text-muted-foreground"> · not published yet</span> : null}
-                                            {removed ? <span className="font-normal text-muted-foreground"> · coming off</span> : null}
-                                        </span>
-                                        {a.warnings.map((w) => (
-                                            <span key={w.message} className={cn("text-xs", w.severity === "block" ? "text-destructive" : "text-amber-700")}>
-                                                {w.message}
-                                            </span>
-                                        ))}
-                                    </div>
-                                    {removed || locked ? null : (
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="size-7 shrink-0"
-                                            aria-label={`Take ${person?.name ?? "them"} off`}
-                                            onClick={() => setPeople(refs.filter((r) => r.personId !== a.personId), `Took ${person?.name.split(" ")[0] ?? "someone"} off ${label}`)}
+            <section className="flex flex-col gap-2" aria-labelledby="sd-on-shift">
+                <h3 id="sd-on-shift" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    On this shift · {shift.filled} of {shift.capacity}
+                </h3>
+                {shift.assignees.length === 0 ? <p className="px-1 text-sm text-muted-foreground">Nobody yet.</p> : null}
+                <ul className="flex flex-col gap-1">
+                    {shift.assignees.map((a) => {
+                        const person = people.get(a.personId) ?? null;
+                        const removed = a.pendingState === "remove";
+                        const name = person?.name ?? "Someone no longer on the team";
+                        return (
+                            <li key={a.personId} className="flex items-center gap-3 rounded-2xl px-2 py-2 hover:bg-muted/60">
+                                <PersonAvatar person={person} role={shift.role} />
+                                <div className="flex min-w-0 flex-1 flex-col">
+                                    <span className={cn("truncate text-base font-semibold", removed && "line-through opacity-60")}>
+                                        {name}
+                                        {a.pendingState === "add" ? <span className="text-sm font-normal text-muted-foreground"> · Not shared yet</span> : null}
+                                        {removed ? <span className="text-sm font-normal text-muted-foreground"> · Coming off</span> : null}
+                                    </span>
+                                    {a.warnings.map((w) => (
+                                        <span
+                                            key={w.message}
+                                            className={cn("flex items-start gap-1.5 text-sm font-medium", w.severity === "block" ? "text-destructive" : "text-warn")}
                                         >
-                                            <X />
-                                        </Button>
-                                    )}
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </section>
-
-                {locked ? null : (
-                    <section className="flex flex-col gap-2" aria-labelledby="sd-candidates">
-                        <h3 id="sd-candidates" className="text-sm font-semibold">
-                            Who can take it
-                        </h3>
-                        <ul className="flex flex-col gap-1">
-                            {shown.map((c) => (
-                                <li key={c.person.id} className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-muted/60">
-                                    <div className="flex min-w-0 flex-col">
-                                        <span className="truncate text-sm font-medium">
-                                            {c.person.name}
-                                            <span className="font-normal text-muted-foreground"> · {formatHours(c.person.scheduledMinutes)}</span>
+                                            {w.severity === "block" ? (
+                                                <OctagonAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+                                            ) : (
+                                                <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+                                            )}
+                                            {w.message}
                                         </span>
-                                        {c.reasons.length ? (
-                                            <span className={cn("truncate text-xs", c.blocked ? "text-destructive" : "text-muted-foreground")}>{c.reasons.join(" · ")}</span>
-                                        ) : (
-                                            <span className="text-xs text-emerald-700">Free and trained</span>
-                                        )}
-                                    </div>
+                                    ))}
+                                </div>
+                                {removed || locked ? null : (
                                     <Button
                                         type="button"
+                                        variant="ghost"
                                         size="sm"
-                                        variant={c.blocked ? "ghost" : "outline"}
-                                        className="shrink-0"
-                                        onClick={() =>
-                                            setPeople([...refs, { personId: c.person.id, kind: c.person.kind }], `Added ${c.person.name.split(" ")[0]} to ${label}`)
-                                        }
+                                        className="h-10 shrink-0 px-3"
+                                        aria-label={`Take ${name} off`}
+                                        onClick={() => {
+                                            const plan = planTakeOff(week, shift.id, a.personId);
+                                            if (plan) void run(plan);
+                                        }}
                                     >
-                                        <UserPlus data-icon="inline-start" />
-                                        Add
+                                        <X data-icon="inline-start" />
+                                        Take off
                                     </Button>
-                                </li>
-                            ))}
-                        </ul>
-                        {candidates.length > CANDIDATES_SHOWN ? (
-                            <button type="button" className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => setShowAll(!showAll)}>
-                                {showAll ? "Show fewer" : `Show all ${candidates.length}`}
-                            </button>
-                        ) : null}
-                    </section>
-                )}
-            </div>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
+            </section>
 
-            <div className="mt-auto flex flex-wrap items-center gap-2 border-t p-4">
+            {locked ? null : (
+                <section className="flex flex-col gap-2" aria-labelledby="sd-add">
+                    <h3 id="sd-add" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        {shift.open > 0 ? "Who can work this?" : "Add another person"}
+                    </h3>
+                    <SuggestList
+                        week={week}
+                        shift={shift}
+                        onAdd={(person) => {
+                            const plan = planAddPerson(week, shift.id, person);
+                            if (plan) void run(plan);
+                        }}
+                    />
+                </section>
+            )}
+
+            <form
+                className="flex flex-col gap-4"
+                aria-labelledby="sd-details"
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    if (dirty && range && !capacityTooLow && !locked) void save();
+                }}
+            >
+                <h3 id="sd-details" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Details
+                </h3>
+                <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-3">
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium" htmlFor="sd-day">
+                            Day
+                        </label>
+                        <Select value={dayIndex} onValueChange={setDayIndex} disabled={locked}>
+                            <SelectTrigger id="sd-day" className="h-11">
+                                <SelectValue>
+                                    {weekdayShort(newDate)} {Number(newDate.slice(8))}
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {week.days.map((d) => (
+                                    <SelectItem key={d.index} value={String(d.index)}>
+                                        {weekdayShort(d.localDate)} {Number(d.localDate.slice(8))}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium" htmlFor="sd-time">
+                            Time
+                        </label>
+                        <Input id="sd-time" className="h-11" value={time} disabled={locked} onChange={(e) => setTime(e.target.value)} aria-invalid={!range} />
+                        <span className={cn("text-sm", range ? "text-muted-foreground" : "text-destructive")}>
+                            {range
+                                ? `${formatHours(range.minutes - breakValue)} paid${range.overnight ? ", ends next day" : ""}`
+                                : "Try 9-5 or 4p-11p"}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-[minmax(0,1fr)_6rem_6rem] gap-3">
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium" htmlFor="sd-role">
+                            Role
+                        </label>
+                        <Input id="sd-role" className="h-11" list="sd-roles" value={role} disabled={locked} onChange={(e) => setRole(e.target.value)} />
+                        <datalist id="sd-roles">
+                            {roles.map((r) => (
+                                <option key={r} value={r} />
+                            ))}
+                        </datalist>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium" htmlFor="sd-break">
+                            Break (min)
+                        </label>
+                        <Input id="sd-break" className="h-11" type="number" min={0} max={240} step={5} value={breakMinutes} disabled={locked} onChange={(e) => setBreakMinutes(e.target.value)} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium" htmlFor="sd-capacity">
+                            How many
+                        </label>
+                        <Input id="sd-capacity" className="h-11" type="number" min={1} max={200} value={capacity} disabled={locked} onChange={(e) => setCapacity(e.target.value)} aria-invalid={capacityTooLow} />
+                    </div>
+                </div>
+                {capacityTooLow ? <p className="-mt-2 text-sm text-destructive">{refs.length} people are on it. Take someone off first.</p> : null}
+
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium" htmlFor="sd-note">
+                        Note to your team
+                    </label>
+                    <Textarea id="sd-note" rows={2} value={note} disabled={locked} onChange={(e) => setNote(e.target.value)} placeholder="Wear black. Park in the back lot." />
+                </div>
+
+                {moreOpen ? (
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-sm font-medium" htmlFor="sd-manager-note">
+                            Manager note <span className="font-normal text-muted-foreground">(only managers see it)</span>
+                        </label>
+                        <Textarea id="sd-manager-note" rows={2} value={managerNote} disabled={locked} onChange={(e) => setManagerNote(e.target.value)} />
+                    </div>
+                ) : (
+                    <button type="button" className="w-fit text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline" onClick={() => setMoreOpen(true)}>
+                        Add a note only managers see
+                    </button>
+                )}
+
+                {locked ? null : (
+                    <div className="flex justify-end">
+                        <Button type="submit" className="h-11 px-6" disabled={!dirty || !range || capacityTooLow || saving}>
+                            Save changes
+                        </Button>
+                    </div>
+                )}
+            </form>
+
+            {locked ? null : (
+                <section className="flex flex-col gap-3" aria-labelledby="sd-copy">
+                    <h3 id="sd-copy" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                        Copy to other days
+                    </h3>
+                    <div className="flex flex-wrap gap-2" role="group" aria-labelledby="sd-copy">
+                        {week.days
+                            .filter((d) => d.index !== shift.dayIndex)
+                            .map((d) => {
+                                const on = copyDays.includes(d.index);
+                                return (
+                                    <button
+                                        key={d.index}
+                                        type="button"
+                                        aria-pressed={on}
+                                        onClick={() => setCopyDays((c) => (on ? c.filter((x) => x !== d.index) : [...c, d.index]))}
+                                        className={cn(dayChip, on ? "border-secondary bg-secondary text-secondary-foreground" : "bg-card hover:bg-muted")}
+                                    >
+                                        {weekdayShort(d.localDate)}
+                                    </button>
+                                );
+                            })}
+                    </div>
+                    {refs.length > 0 ? (
+                        <label className="flex items-center gap-3 text-sm">
+                            <Switch checked={keepPeople} onCheckedChange={setKeepPeople} />
+                            Bring the same {refs.length === 1 ? "person" : "people"}
+                        </label>
+                    ) : null}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 w-fit px-5"
+                        disabled={!copyPlan}
+                        onClick={async () => {
+                            if (copyPlan && (await run(copyPlan))) setCopyDays([]);
+                        }}
+                    >
+                        <Copy data-icon="inline-start" />
+                        {copyPlan ? `Copy to ${copyPlan.changes.length} ${copyPlan.changes.length === 1 ? "day" : "days"}` : "Pick the days"}
+                    </Button>
+                </section>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 border-t pt-4">
                 {shift.pendingRemoval ? (
-                    <Button type="button" variant="outline" onClick={() => void run({ changes: [{ op: "update", shiftId: shift.id, patch: { cancel: false } }], label: `Kept ${label}` })}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11"
+                        onClick={() => void run({ changes: [{ op: "update", shiftId: shift.id, patch: { cancel: false } }], label: `Kept ${label}` })}
+                    >
                         Keep this shift
                     </Button>
-                ) : (
+                ) : locked ? null : (
                     <>
                         <Button
                             type="button"
                             variant="ghost"
-                            className="text-destructive hover:text-destructive"
+                            className="h-11 text-destructive hover:text-destructive"
                             onClick={async () => {
-                                if (await run({ changes: [{ op: "delete", shiftId: shift.id }], label: `Deleted ${label} ${shift.role}` })) onClose();
+                                if (await run({ changes: [{ op: "delete", shiftId: shift.id }], label: `Removed ${label} ${shift.role}` })) onClose();
                             }}
                         >
                             <Trash2 data-icon="inline-start" />
-                            {shift.status === "draft" ? "Delete" : "Remove"}
+                            Remove this shift
                         </Button>
                         <Button
                             type="button"
                             variant="ghost"
+                            className="h-11"
                             onClick={() =>
                                 void run({
                                     changes: [
@@ -360,17 +411,17 @@ function ShiftPanel({
                                             assignees: [],
                                         },
                                     ],
-                                    label: `Duplicated ${label} as open`,
+                                    label: `Added another ${shift.role} spot on ${label}`,
                                 })
                             }
                         >
                             <Copy data-icon="inline-start" />
-                            Duplicate
+                            Add another spot
                         </Button>
                     </>
                 )}
                 {shift.status !== "draft" ? (
-                    <Button asChild variant="link" className="ml-auto">
+                    <Button asChild variant="link" className="ml-auto h-11">
                         <Link href={getShiftTimesheetHref(shift.id)}>Open timesheet</Link>
                     </Button>
                 ) : null}

@@ -13,6 +13,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* The page behind cards. Opaque, so a sticky bar can match it exactly. */
+@utility bg-page {
+  background-color: color-mix(in srgb, var(--muted) 40%, var(--background));
+}
+
 /* 
   2. ROOT VARIABLES (Light Mode) 
 */

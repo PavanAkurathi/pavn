@@ -34,10 +34,13 @@ export function getSchedulerHref(options?: {
     location?: string;
     /** Any local date (YYYY-MM-DD) inside the week to open. */
     week?: string;
+    /** The day (YYYY-MM-DD) to show first. Defaults to today, or the first day of another week. */
+    day?: string;
 }) {
     return buildHref(SCHEDULER_PATH, {
         location: options?.location,
         week: options?.week,
+        day: options?.day,
     });
 }
 

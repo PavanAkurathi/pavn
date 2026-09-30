@@ -51,6 +51,23 @@ export function dayOfMonth(localDate: string): number {
     return parts(localDate).d;
 }
 
+const WEEKDAYS_LONG = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+export function weekdayLong(localDate: string): string {
+    return WEEKDAYS_LONG[toUtc(localDate).getUTCDay()]!;
+}
+
+/** "Wednesday, Oct 1": the heading over a day's list. */
+export function dayHeading(localDate: string): string {
+    const { m, d } = parts(localDate);
+    return `${weekdayLong(localDate)}, ${MONTHS_SHORT[m - 1]} ${d}`;
+}
+
+/** "Sam Wu" → "Sam". */
+export function firstNameOf(name: string | null | undefined): string {
+    return name?.trim().split(/\s+/)[0] || "Someone";
+}
+
 /** "Sep 27 – Oct 3", or "Sep 6 – 12" inside one month; the year only when it differs. */
 export function weekRangeLabel(firstDay: string, lastDay: string, today?: string): string {
     const a = parts(firstDay);

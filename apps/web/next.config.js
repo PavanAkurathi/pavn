@@ -18,6 +18,9 @@ const nextConfig = {
     turbopack: {
         root: repoRoot,
     },
+    // The dev-mode "N" badge sits over the phone's first tab and swallows taps.
+    // Browser tests switch it off (tests/e2e/playwright.config.ts); nobody else is affected.
+    ...(process.env.NEXT_DEV_INDICATOR === "off" ? { devIndicators: false } : {}),
     // The old schedule builder became the Scheduler.
     async redirects() {
         return [{ source: "/dashboard/schedule/create", destination: "/schedule", permanent: false }];

@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { cn } from "@repo/ui/lib/utils";
 import { NotificationsPopover } from "../notifications/notifications-popover";
 import { NavUser } from "../nav-user";
 import { getDashboardShiftsHref } from "@/lib/routes";
 import type { TrialState } from "@/lib/trial";
-import { NAV_ITEMS, isNavActive } from "./nav-items";
+import { MainNav } from "./main-nav";
 import { OrgMark } from "./org-mark";
-import { useRequestsWaiting, waitingLabel } from "./use-requests-waiting";
 
 export interface TopBarProps {
     activeOrg?: { id: string; name: string; logo?: string | null } | null;
@@ -22,11 +20,8 @@ export interface TopBarProps {
  * account; the four places to go move to the tab bar at the bottom.
  */
 export function TopBar({ activeOrg, user, trial }: TopBarProps) {
-    const pathname = usePathname();
-    const waiting = useRequestsWaiting(Boolean(activeOrg));
-
     return (
-        <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+        <header className="sticky top-0 z-40 w-full border-b bg-background">
             <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 md:h-16 lg:px-8">
                 <div className="flex min-w-0 items-center gap-2 lg:gap-6">
                     <Link
@@ -42,37 +37,7 @@ export function TopBar({ activeOrg, user, trial }: TopBarProps) {
                         </span>
                     </Link>
 
-                    <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
-                        {NAV_ITEMS.map((item) => {
-                            const active = isNavActive(item, pathname);
-                            const Icon = item.icon;
-                            return (
-                                <Link
-                                    key={item.key}
-                                    href={item.href}
-                                    aria-current={active ? "page" : undefined}
-                                    data-testid={`nav-link-${item.key}`}
-                                    className={cn(
-                                        "inline-flex h-10 items-center gap-2 rounded-full px-3.5 text-sm font-medium transition-colors lg:px-4",
-                                        active
-                                            ? "bg-secondary text-secondary-foreground"
-                                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                                    )}
-                                >
-                                    <Icon aria-hidden className="size-4" />
-                                    {item.label}
-                                    {item.key === "schedule" && waiting > 0 ? (
-                                        <span
-                                            className="inline-grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-xs font-semibold leading-none text-primary-foreground"
-                                            aria-label={waitingLabel(waiting)}
-                                        >
-                                            {waiting}
-                                        </span>
-                                    ) : null}
-                                </Link>
-                            );
-                        })}
-                    </nav>
+                    <MainNav hasOrg={Boolean(activeOrg)} />
                 </div>
 
                 <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">

@@ -1,4 +1,4 @@
-/* Visual language of the Scheduler grid. See docs/design/manager-scheduler. */
+/* Visual language of the Week table. The Day view is Tailwind cards. See docs/design/manager-scheduler. */
 
 .grid {
     display: grid;
@@ -43,7 +43,7 @@
 /* An open slot waiting for someone. */
 .open {
     background: var(--card);
-    border: 1px dashed color-mix(in srgb, var(--destructive) 55%, var(--border));
+    border: 1px dashed var(--warn-line);
     color: var(--foreground);
 }
 
@@ -116,7 +116,7 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #d97706;
+    background: var(--warn-line);
     box-shadow: 0 0 0 1.5px var(--card);
 }
 
@@ -151,24 +151,4 @@
 .offPending {
     background: repeating-linear-gradient(45deg, #e8ecf2 0 6px, var(--card) 6px 12px);
     border-style: dashed;
-}
-
-.flash {
-    animation: flash 1.4s ease-out;
-}
-
-@keyframes flash {
-    0%,
-    40% {
-        background: color-mix(in srgb, var(--primary) 10%, var(--card));
-    }
-    100% {
-        background: inherit;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .flash {
-        animation: none;
-    }
 }
