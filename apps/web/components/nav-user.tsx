@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, ChevronDown, User, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, ChevronDown, User, Settings as SettingsIcon, Sparkles } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     DropdownMenu,
@@ -16,6 +16,7 @@ import {
 } from "@repo/ui/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar";
 import { authClient } from "@repo/auth/client";
+import type { TrialState } from "@/lib/trial";
 
 interface NavUserProps {
     user?: {
@@ -23,9 +24,11 @@ interface NavUserProps {
         email?: string | null;
         image?: string | null;
     } | null;
+    /** Shown in the menu where the top bar has no room for its own pill. */
+    trial?: TrialState | null;
 }
 
-export function NavUser({ user }: NavUserProps) {
+export function NavUser({ user, trial }: NavUserProps) {
     const router = useRouter();
 
     const handleSignOut = async () => {
@@ -43,20 +46,20 @@ export function NavUser({ user }: NavUserProps) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-auto py-1.5 rounded-full hover:bg-slate-100 data-[state=open]:bg-slate-100" data-testid="user-menu">
-                    <Avatar className="h-8 w-8 border border-slate-200">
+                <Button variant="ghost" className="flex h-auto items-center gap-2 rounded-full py-1.5 pl-1.5 pr-1.5 hover:bg-muted data-[state=open]:bg-muted lg:pr-2" data-testid="user-menu">
+                    <Avatar className="h-8 w-8 border">
                         <AvatarImage src={user.image || undefined} />
-                        <AvatarFallback className="bg-slate-100 text-slate-600 font-medium">
+                        <AvatarFallback className="bg-muted text-muted-foreground font-medium">
                             {user.name?.slice(0, 2).toUpperCase() || "ME"}
                         </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium text-slate-700 hidden sm:block truncate max-w-[120px]">
+                    <span className="hidden max-w-[120px] truncate text-sm font-medium text-foreground lg:block">
                         {user.name}
                     </span>
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                    <ChevronDown className="hidden h-4 w-4 text-muted-foreground lg:block" />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user.name}</p>
@@ -64,6 +67,14 @@ export function NavUser({ user }: NavUserProps) {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {trial ? (
+                    <DropdownMenuItem asChild className="lg:hidden">
+                        <Link href="/settings/billing">
+                            <Sparkles className="mr-2 h-4 w-4" />
+                            Trial · {trial.daysLeft} {trial.daysLeft === 1 ? "day" : "days"} left
+                        </Link>
+                    </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem asChild>
                     <Link href="/settings">
                         <User className="mr-2 h-4 w-4" />
@@ -77,7 +88,7 @@ export function NavUser({ user }: NavUserProps) {
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50" onClick={handleSignOut} data-testid="sign-out">
+                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-primary-soft" onClick={handleSignOut} data-testid="sign-out">
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out
                 </DropdownMenuItem>

@@ -33,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <div className="flex flex-col min-h-screen bg-background">
           <script
             type="application/ld+json"
@@ -52,7 +52,8 @@ export default function RootLayout({
           <CSPostHogProvider>
             {children}
           </CSPostHogProvider>
-          <Toaster />
+          {/* On phones the bottom tab bar sits at the bottom, so toasts (and their Undo) ride above it. */}
+          <Toaster mobileOffset={{ bottom: "5.5rem" }} />
         </div>
       </body>
     </html>
