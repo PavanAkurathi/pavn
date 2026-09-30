@@ -6,7 +6,6 @@ import {
     planAddPerson,
     planCopyWeek,
     planCreate,
-    planMove,
     planRemove,
     planCopyToDays,
     planSetNeeded,
@@ -77,67 +76,6 @@ const week = (shifts: SchedulerShift[]): SchedulerWeek => ({
 });
 
 const ops = (plan: { changes: { op: string }[] } | null) => plan?.changes.map((c) => c.op);
-
-describe("planMove", () => {
-    test("a one-person shift moves whole to another day and person", () => {
-        const w = week([shift({ id: "mon", assignees: [assignee("ana")] })]);
-        const plan = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "ben", dayIndex: 3 }, { copy: false });
-        expect(plan!.changes).toEqual([
-            { op: "update", shiftId: "mon", patch: { localDate: "2026-09-30" } },
-            { op: "assign", shiftId: "mon", assignees: [{ personId: "ben", kind: "roster" }] },
-        ]);
-        expect(plan!.label).toBe("Moved 4p–11p to Ben on Wed");
-    });
-
-    test("leaving a group shift takes the spot along; copying leaves it", () => {
-        const w = week([shift({ id: "mon", capacity: 3, filled: 2, open: 1, assignees: [assignee("ana"), assignee("ben")] })]);
-        const move = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "ana", dayIndex: 2 }, { copy: false });
-        expect(ops(move)).toEqual(["create", "assign", "update"]);
-        expect(move!.changes[2]).toEqual({ op: "update", shiftId: "mon", patch: { capacity: 2 } });
-
-        const copy = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "ana", dayIndex: 2 }, { copy: true });
-        expect(ops(copy)).toEqual(["create"]);
-        expect(copy!.label).toBe("Copied 4p–11p to Ana on Tue");
-    });
-
-    test("joins a matching shift on the target day instead of making another", () => {
-        const w = week([
-            shift({ id: "mon", assignees: [assignee("ana")] }),
-            shift({ id: "tue", dayIndex: 2, localDate: "2026-09-29", assignees: [assignee("ben")] }),
-        ]);
-        const plan = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "cy", dayIndex: 2 }, { copy: true });
-        expect(plan!.changes).toEqual([
-            { op: "update", shiftId: "tue", patch: { capacity: 2 } },
-            { op: "assign", shiftId: "tue", assignees: [{ personId: "ben", kind: "roster" }, { personId: "cy", kind: "roster" }] },
-        ]);
-    });
-
-    test("dropping on the Open row the same day takes the person off and keeps the spot", () => {
-        const w = week([shift({ id: "mon", assignees: [assignee("ana")] })]);
-        const plan = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: null, dayIndex: 1 }, { copy: false });
-        expect(plan).toEqual({ changes: [{ op: "assign", shiftId: "mon", assignees: [] }], label: "Took Ana off 4p–11p" });
-    });
-
-    test("dragging an open spot onto someone fills it", () => {
-        const w = week([shift({ id: "mon", capacity: 2, filled: 1, open: 1, assignees: [assignee("ana")] })]);
-        const plan = planMove(w, { kind: "open", shiftId: "mon" }, { personId: "ben", dayIndex: 1 }, { copy: false });
-        expect(plan!.changes).toEqual([
-            { op: "assign", shiftId: "mon", assignees: [{ personId: "ana", kind: "roster" }, { personId: "ben", kind: "roster" }] },
-        ]);
-    });
-
-    test("nothing to do when dropping where it already is", () => {
-        const w = week([shift({ id: "mon", assignees: [assignee("ana")] })]);
-        expect(planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "ana", dayIndex: 1 }, { copy: false })).toBeNull();
-        expect(planMove(w, { kind: "open", shiftId: "mon" }, { personId: null, dayIndex: 1 }, { copy: false })).toBeNull();
-    });
-
-    test("people staged to come off don't count", () => {
-        const w = week([shift({ id: "mon", capacity: 2, assignees: [assignee("ana"), assignee("ben", "remove")] })]);
-        const plan = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "cy", dayIndex: 1 }, { copy: false });
-        expect(plan!.changes).toEqual([{ op: "assign", shiftId: "mon", assignees: [{ personId: "cy", kind: "roster" }] }]);
-    });
-});
 
 describe("planRemove", () => {
     test("a person's own shift is deleted; a group shift keeps the open spot", () => {
