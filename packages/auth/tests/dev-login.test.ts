@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { describe, expect, test } from "bun:test";
 
+import { devSeedEmail } from "@repo/database/dev-seed";
 import { readDevLoginConfig, safeNextPath, tokenMatches } from "../src/dev-login";
 
 const TOKEN = "a".repeat(40);
@@ -10,8 +11,12 @@ const COMMITTED = { tokenSha256: TOKEN_SHA256, account: { userId: "user_1" } };
 describe("readDevLoginConfig", () => {
     test("is off with no env vars and nothing committed", () => {
         expect(readDevLoginConfig({}, null)).toBeNull();
-        expect(readDevLoginConfig({ DEV_LOGIN_TOKEN: TOKEN }, null)).toBeNull();
         expect(readDevLoginConfig({ DEV_LOGIN_EMAIL: "owner@example.com" }, null)).toBeNull();
+    });
+
+    test("a token alone defaults to the seeded owner", () => {
+        const config = readDevLoginConfig({ DEV_LOGIN_TOKEN: TOKEN }, null);
+        expect(config?.account).toEqual({ email: "owner@dev.pavn.test" });
     });
 
     test("uses the env vars first, trimmed, with the email lowercased", () => {
@@ -37,6 +42,21 @@ describe("readDevLoginConfig", () => {
     test("DEV_LOGIN=off switches it off everywhere", () => {
         expect(readDevLoginConfig({ DEV_LOGIN: "off" }, COMMITTED)).toBeNull();
         expect(readDevLoginConfig({ DEV_LOGIN: "OFF", DEV_LOGIN_TOKEN: TOKEN, DEV_LOGIN_EMAIL: "o@example.com" }, COMMITTED)).toBeNull();
+    });
+});
+
+describe("devSeedEmail", () => {
+    test("resolves only the seeded aliases, on the seed domain", () => {
+        expect(devSeedEmail("owner")).toBe("owner@dev.pavn.test");
+        expect(devSeedEmail("alex")).toBe("alex@dev.pavn.test");
+    });
+
+    test("never builds an address from anything else", () => {
+        expect(devSeedEmail("someone@real.com")).toBeNull();
+        expect(devSeedEmail("owner@evil.com")).toBeNull();
+        expect(devSeedEmail("")).toBeNull();
+        expect(devSeedEmail(undefined)).toBeNull();
+        expect(devSeedEmail(["owner"])).toBeNull();
     });
 });
 
