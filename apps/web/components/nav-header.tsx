@@ -1,139 +1,16 @@
 // apps/web/components/nav-header.tsx
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import useSWR from "swr";
-import { cn } from "@repo/ui/lib/utils";
-import { Building2 } from "lucide-react";
-import { NavUser } from "./nav-user";
-import type { TrialState } from "@/lib/trial";
-import { NotificationsPopover } from "./notifications/notifications-popover";
-import {
-    getDashboardShiftsHref,
-    getSchedulerHref,
-    isOnboardingPath,
-} from "@/lib/routes";
-import { REQUESTS_SUMMARY_KEY, fetchRequestsSummary } from "@/lib/scheduler/client";
+import { isOnboardingPath } from "@/lib/routes";
+import { TopBar, type TopBarProps } from "./app-nav/top-bar";
 
-const NAV_ITEMS = [
-    { label: "Schedule", href: getSchedulerHref() },
-    { label: "Shifts", href: getDashboardShiftsHref() },
-    { label: "Roster", href: "/rosters" },
-    { label: "Reports", href: "/reports" },
-];
-
-interface NavHeaderProps {
-    activeOrg?: {
-        id: string;
-        name: string;
-        logo?: string | null;
-    } | null;
-    user?: {
-        name?: string | null;
-        email?: string | null;
-        image?: string | null;
-    } | null;
-    trial?: TrialState | null;
-}
-
-export function NavHeader({ activeOrg: serverOrg, user, trial }: NavHeaderProps) {
+/** The top bar of the signed-in app. The phone's tab bar is <BottomTabBar/>, rendered by the layout. */
+export function NavHeader(props: TopBarProps) {
     const pathname = usePathname();
-    const activeOrg = serverOrg;
-    // Requests waiting on a manager, badged on Schedule. Workers get a 403 and no badge.
-    const { data: requests } = useSWR(activeOrg ? REQUESTS_SUMMARY_KEY : null, fetchRequestsSummary, {
-        refreshInterval: 60_000,
-        shouldRetryOnError: false,
-    });
-    const waiting = requests?.pending ?? 0;
 
     // Distraction-free mode for setup
-    if (isOnboardingPath(pathname)) {
-        return null;
-    }
+    if (isOnboardingPath(pathname)) return null;
 
-    return (
-        <header className="sticky top-0 z-40 w-full border-b bg-white">
-            <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-                {/* Left: Logo & Nav */}
-                <div className="flex items-center gap-8">
-                    {/* Logo (Business Identity) */}
-                    <Link href={getDashboardShiftsHref()} className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-                        <div className="h-9 w-9 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-lg shrink-0 overflow-hidden shadow-sm">
-                            {activeOrg?.logo ? (
-                                <img src={activeOrg.logo} alt={activeOrg.name} className="h-full w-full object-cover" />
-                            ) : (
-                                activeOrg ? <Building2 className="h-5 w-5" /> : "W"
-                            )}
-                        </div>
-                        <div className="flex flex-col justify-center">
-                            <span className="font-bold text-sm tracking-tight text-slate-900 leading-none mb-0.5" data-testid="org-name">
-                                {activeOrg?.name || "Workers Hive"}
-                            </span>
-                            {activeOrg && (
-                                <span className="text-[10px] font-medium text-slate-500 leading-none uppercase tracking-wider">
-                                    Workers Hive
-                                </span>
-                            )}
-                        </div>
-                    </Link>
-
-                    {/* Desktop Navigation */}
-                    <nav className="hidden md:flex items-center gap-1">
-                        {NAV_ITEMS.map((item) => {
-                            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                            return (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    className={cn(
-                                        "px-3 py-2 text-sm font-medium transition-colors",
-                                        isActive
-                                            ? "text-primary border-b-2 border-primary"
-                                            : "text-muted-foreground hover:text-foreground"
-                                    )}
-                                >
-                                    {item.label}
-                                    {item.label === "Schedule" && waiting > 0 ? (
-                                        <span
-                                            className="ml-1.5 inline-grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold leading-5 text-primary-foreground"
-                                            aria-label={`${waiting} ${waiting === 1 ? "request" : "requests"} waiting`}
-                                        >
-                                            {waiting}
-                                        </span>
-                                    ) : null}
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                </div>
-
-                {/* Right: CTA & User */}
-                <div className="flex items-center gap-4">
-                    {trial ? (
-                        <Link
-                            href="/settings/billing"
-                            className={cn(
-                                "hidden items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition-colors lg:inline-flex",
-                                trial.isExpiring
-                                    ? "bg-amber-100 text-amber-900 hover:bg-amber-200"
-                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-                            )}
-                        >
-                            Trial · {trial.daysLeft} {trial.daysLeft === 1 ? "day" : "days"} left
-                        </Link>
-                    ) : null}
-
-                    <div className="h-6 w-px bg-slate-200 hidden sm:block" />
-
-                    <div className="hidden sm:block">
-                        <NotificationsPopover />
-                    </div>
-
-                    <NavUser user={user} />
-                </div>
-            </div>
-            {/* Mobile Nav Placeholder (Optional - can be expanded later) */}
-        </header>
-    );
+    return <TopBar {...props} />;
 }

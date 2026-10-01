@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useDroppable } from "@dnd-kit/core";
 import { ChevronDown, Plus } from "lucide-react";
 import type { SchedulerEvent, SchedulerPerson, SchedulerWeek } from "@repo/contracts/scheduler";
 import { cn } from "@repo/ui/lib/utils";
 import { compactRange, dayOfMonth, formatHours, weekdayShort } from "@/lib/scheduler/format";
-import type { DropTarget } from "@/lib/scheduler/plans";
 import { roleColor } from "@/lib/scheduler/role-color";
 import { hoursTone, type PeopleView, type PersonRow, type PositionRow } from "@/lib/scheduler/view-model";
 import { ROSTERS_PATH } from "@/lib/routes";
@@ -22,28 +20,17 @@ const dayCell =
     "group/cell relative flex min-h-[44px] min-w-0 cursor-cell flex-col justify-center gap-1 border-b border-r bg-card p-1 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--primary)]";
 const hoursCell = "flex flex-col items-end justify-center border-b bg-card px-2.5 py-1 tabular-nums";
 
-export interface DropHint {
-    tone: "ok" | "warn" | "block";
-    message?: string;
-}
-
 export interface GridEditing {
     chips: ChipActions;
-    /** Click or Enter on a cell: quick-create there. */
-    onCreateAt: (anchor: HTMLElement, target: DropTarget, role?: string) => void;
-    /** "v" on a cell: paste what "c" copied. */
-    onPasteAt: (target: DropTarget) => void;
-    /** While dragging: what dropping here would mean. */
-    hintFor: (target: DropTarget) => DropHint | null;
-    dragging: boolean;
-    /** Click on a day header's event tag. */
+    /** Tap an empty part of a cell (or Enter on it): add a shift there. */
+    onCreateAt: (target: { personId: string | null; dayIndex: number }, role?: string) => void;
+    /** Tap a day header's event tag. */
     onOpenEvent: (eventId: string) => void;
 }
 
 function eventTone(e: SchedulerEvent) {
-    if (e.needed === 0 || e.filled >= e.needed) return "border-emerald-600/60 text-emerald-800";
-    if (e.filled / e.needed >= 0.5) return "border-amber-500/70 text-amber-800";
-    return "border-destructive/60 text-destructive";
+    if (e.needed === 0 || e.filled >= e.needed) return "border-ok/50 text-ok";
+    return "border-warn-line/70 text-warn";
 }
 
 /** Arrow keys walk the cells; Home/End jump along the row. */
@@ -129,7 +116,7 @@ function Header({
     );
 }
 
-/** A day cell you can click to add to, drop onto, and paste into. */
+/** A day cell you can tap to add to. */
 function DayCell({
     target,
     position,
@@ -139,7 +126,7 @@ function DayCell({
     role,
     children,
 }: {
-    target: DropTarget;
+    target: { personId: string | null; dayIndex: number };
     /** Row and column for arrow-key focus. */
     position: [number, number];
     editing: GridEditing;
@@ -148,21 +135,17 @@ function DayCell({
     role?: string;
     children: React.ReactNode;
 }) {
-    const id = `cell:${target.personId ?? `open${role ? `:${role}` : ""}`}:${target.dayIndex}`;
-    const { setNodeRef, isOver } = useDroppable({ id, data: { target }, disabled: Boolean(role) });
-    const hint = isOver ? editing.hintFor(target) : null;
     const empty = !children || (Array.isArray(children) && children.every((c) => !c || (Array.isArray(c) && c.length === 0)));
 
     return (
         <div
-            ref={setNodeRef}
             role="cell"
             tabIndex={position[0] === 0 && position[1] === 0 ? 0 : -1}
             data-cell={`${position[0]},${position[1]}`}
             title={title}
             onClick={(event) => {
                 if ((event.target as HTMLElement).closest("[data-chip]")) return;
-                editing.onCreateAt(event.currentTarget, target, role);
+                editing.onCreateAt(target, role);
             }}
             onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) return;
@@ -170,36 +153,18 @@ function DayCell({
                     event.preventDefault();
                     const chip = event.currentTarget.querySelector<HTMLElement>("[data-chip]");
                     if (chip) chip.click();
-                    else editing.onCreateAt(event.currentTarget, target, role);
-                } else if (event.key === "v" && !event.metaKey && !event.ctrlKey) {
-                    editing.onPasteAt(target);
+                    else editing.onCreateAt(target, role);
                 }
             }}
-            className={cn(
-                dayCell,
-                className,
-                hint?.tone === "ok" && "shadow-[inset_0_0_0_2px_#047857] bg-emerald-50",
-                hint?.tone === "warn" && "shadow-[inset_0_0_0_2px_#d97706]",
-                hint?.tone === "block" && "shadow-[inset_0_0_0_2px_var(--destructive)]",
-            )}
+            className={cn(dayCell, className)}
         >
             {children}
-            {empty && !editing.dragging ? (
+            {empty ? (
                 <span
                     aria-hidden
                     className="pointer-events-none absolute inset-1 grid place-items-center rounded-md border border-dashed border-border text-muted-foreground opacity-0 transition-opacity group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100"
                 >
                     <Plus className="size-4" />
-                </span>
-            ) : null}
-            {hint?.message ? (
-                <span
-                    className={cn(
-                        "pointer-events-none absolute inset-x-1 bottom-[calc(100%-4px)] z-30 rounded border bg-card px-1.5 py-0.5 text-[10.5px] font-semibold leading-tight shadow-sm",
-                        hint.tone === "block" ? "text-destructive" : hint.tone === "warn" ? "text-amber-700" : "text-emerald-700",
-                    )}
-                >
-                    {hint.message}
                 </span>
             ) : null}
         </div>
@@ -215,14 +180,14 @@ function PersonLabel({ person }: { person: SchedulerPerson }) {
                 <span className="flex min-w-0 items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
                     {person.primaryRole ?? "No role yet"}
                     {person.kind === "invited" ? (
-                        <span className="rounded-full border border-amber-300 bg-amber-50 px-1.5 text-[10px] font-semibold leading-4 text-amber-800">
+                        <span className="rounded-full border border-warn-line/40 bg-warn-soft px-1.5 text-[10px] font-semibold leading-4 text-warn">
                             Invited
                         </span>
                     ) : null}
                     {person.kind === "agency" ? (
                         <span
                             title={person.agencyName ?? undefined}
-                            className="rounded-full border border-violet-300 bg-violet-50 px-1.5 text-[10px] font-semibold leading-4 text-violet-800"
+                            className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-foreground/70"
                         >
                             Agency
                         </span>
@@ -286,8 +251,7 @@ function PersonRowCells({
                                 key={shift.id}
                                 shift={shift}
                                 actions={editing.chips}
-                                dragId={`chip:${shift.id}:${person.id}`}
-                                variant={{
+                                                                variant={{
                                     kind: "assignment",
                                     assignee,
                                     showRole: !person.primaryRole || shift.role.toLowerCase() !== person.primaryRole.toLowerCase(),
@@ -304,7 +268,7 @@ function PersonRowCells({
                 <span
                     className={cn(
                         "text-[13px] font-semibold",
-                        tone === "near" && "text-amber-700",
+                        tone === "near" && "text-warn",
                         tone === "over" && "text-destructive",
                     )}
                 >
@@ -325,8 +289,6 @@ export function PeopleGrid({
     onSearch,
     collapsed,
     onToggleSection,
-    flashOpenRow,
-    openRowRef,
     editing,
 }: {
     week: SchedulerWeek;
@@ -335,8 +297,6 @@ export function PeopleGrid({
     onSearch: (value: string) => void;
     collapsed: Set<string>;
     onToggleSection: (id: string) => void;
-    flashOpenRow: boolean;
-    openRowRef: React.RefObject<HTMLDivElement | null>;
     editing: GridEditing;
 }) {
     const openTotal = view.open.flat().reduce((sum, s) => sum + s.open, 0);
@@ -359,10 +319,10 @@ export function PeopleGrid({
             />
 
             <div role="row" className="contents">
-                <div role="rowheader" ref={openRowRef} className={cn(labelCell, "bg-muted/70", flashOpenRow && styles.flash)}>
+                <div role="rowheader" className={cn(labelCell, "bg-muted/70")}>
                     <div className="flex flex-col leading-tight">
                         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Open</span>
-                        {openTotal ? <span className="text-[11.5px] font-medium text-destructive">{openTotal} to fill</span> : null}
+                        {openTotal ? <span className="text-[11.5px] font-medium text-warn">{openTotal} to fill</span> : null}
                     </div>
                 </div>
                 {view.open.map((shifts, index) => (
@@ -371,10 +331,10 @@ export function PeopleGrid({
                         target={{ personId: null, dayIndex: index }}
                         position={[rowIndex, index]}
                         editing={editing}
-                        className={cn("bg-muted/30", flashOpenRow && styles.flash)}
+                        className="bg-muted/30"
                     >
                         {shifts.map((shift) => (
-                            <ShiftChip key={shift.id} shift={shift} actions={editing.chips} dragId={`open:${shift.id}`} variant={{ kind: "open" }} />
+                            <ShiftChip key={shift.id} shift={shift} actions={editing.chips} variant={{ kind: "open" }} />
                         ))}
                     </DayCell>
                 ))}
@@ -397,7 +357,7 @@ export function PeopleGrid({
                                 <span className="font-normal text-muted-foreground">
                                     · {section.people.length} {section.people.length === 1 ? "person" : "people"}
                                 </span>
-                                {section.openSlots ? <span className="font-semibold text-destructive">· {section.openSlots} open</span> : null}
+                                {section.openSlots ? <span className="font-semibold text-warn">· {section.openSlots} open</span> : null}
                                 {isCollapsed ? (
                                     <span className="font-normal text-muted-foreground">· {formatHours(section.scheduledMinutes)}</span>
                                 ) : null}
@@ -458,7 +418,7 @@ export function PositionsGrid({
                             <span aria-hidden className={styles.dot} style={{ ["--rc" as string]: roleColor(row.role) }} />
                             <div className="flex min-w-0 flex-col leading-tight">
                                 <span className="truncate text-[13px] font-semibold">{row.role}</span>
-                                <span className={cn("text-[11.5px]", row.open ? "font-medium text-destructive" : "text-muted-foreground")}>
+                                <span className={cn("text-[11.5px]", row.open ? "font-medium text-warn" : "text-muted-foreground")}>
                                     {row.open ? `${row.open} open` : "All filled"}
                                 </span>
                             </div>
@@ -477,7 +437,7 @@ export function PositionsGrid({
                             </DayCell>
                         ))}
                         <div role="cell" className={hoursCell}>
-                            <span className={cn("text-[13px] font-semibold", filled < needed && "text-destructive")}>
+                            <span className={cn("text-[13px] font-semibold", filled < needed && "text-warn")}>
                                 {filled}/{needed}
                             </span>
                         </div>

@@ -13,6 +13,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* The page behind cards. Opaque, so a sticky bar can match it exactly. */
+@utility bg-page {
+  background-color: color-mix(in srgb, var(--muted) 40%, var(--background));
+}
+
 /* 
   2. ROOT VARIABLES (Light Mode) 
 */
@@ -89,10 +94,24 @@
   --role-support: #fde047;   /* Pale Sand/Yellow */
   --role-default: #cbd5e1;   /* Pale Slate/Grey */
   --role-foreground: #0D0D0D;
+
+  /*
+    STATUS COLORS (schedule and dashboards)
+    ok   = covered / all set (calm teal)
+    warn = needs someone / heads up (warm amber)
+    Red is reserved for real conflicts; brand red is also the button color,
+    so status never leans on it. Always pair with an icon and words.
+  */
+  --ok: #0F766E;
+  --ok-soft: #E6F4F1;
+  --warn: #92400E;
+  --warn-soft: #FEF3C7;
+  --warn-line: #D97706;
+  --primary-soft: #FDECEE;
 }
 
-/* 
-  3. DARK MODE VARIABLES 
+/*
+  3. DARK MODE VARIABLES
   Mapped logically to use your dark palette options.
 */
 .dark {
@@ -146,6 +165,13 @@
   --role-support: #facc15;
   --role-default: #94a3b8;
   --role-foreground: #0D0D0D;
+
+  --ok: #5EEAD4;
+  --ok-soft: #0F2F2B;
+  --warn: #FCD34D;
+  --warn-soft: #3A2A06;
+  --warn-line: #F59E0B;
+  --primary-soft: #3A0D13;
 }
 
 /* 
@@ -192,6 +218,20 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Status colors */
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-warn-line: var(--warn-line);
+  --color-primary-soft: var(--primary-soft);
+
+  /* Soft shadow for cards: navy-tinted, never harsh */
+  --shadow-card: 0 1px 2px rgb(24 37 64 / 0.06), 0 6px 16px rgb(24 37 64 / 0.05);
+
+  /* Geist is loaded in app/layout.tsx and exposes --font-geist-sans on <body> */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
   /* Semantic Role Colors */
   --color-role-server: var(--role-server);
   --color-role-bartender: var(--role-bartender);
@@ -231,8 +271,9 @@
     @apply border-border outline-ring/50;
   }
 
+  /* clip, not hidden: hidden makes body a scroll container and breaks position: sticky. */
   html, body {
-    overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100%;
   }
 
@@ -271,4 +312,16 @@
 /* Ensure no background on header to match "Clean" look */
 .rdp-caption {
   @apply bg-transparent m-0 relative;
+}
+
+/* Respect "reduce motion": sheets, dialogs and hover fades snap instead of sliding. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

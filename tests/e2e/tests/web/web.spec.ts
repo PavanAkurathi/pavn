@@ -118,25 +118,34 @@ test.describe('Schedule Management', () => {
     test('schedule page loads', async ({ page }) => {
         await page.getByRole('link', { name: /^Schedule/ }).first().click();
         await expect(page).toHaveURL(/\/schedule/);
-        await expect(page.getByRole('table').first()).toBeVisible({ timeout: 30000 });
+        await expect(page.getByTestId('week-strip')).toBeVisible({ timeout: 30000 });
     });
 
-    test('can add a shift in the Scheduler and publish the week', async ({ page }) => {
+    test('can add a shift, fill it with a suggestion, and publish the week', async ({ page }) => {
         test.setTimeout(120000);
-        await page.setViewportSize({ width: 1280, height: 800 });
 
-        // A random week months out, so no earlier run's shift sits in the cell we click.
+        // A random week months out, so no earlier run's shift is in the way.
         const weeksOut = 8 + Math.floor(Math.random() * 400);
         const someWeek = new Date(Date.now() + weeksOut * 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
         await page.goto(`/schedule?week=${someWeek}`);
-        await expect(page.getByRole('table').first()).toBeVisible({ timeout: 30000 });
+        await expect(page.getByTestId('week-strip')).toBeVisible({ timeout: 30000 });
 
-        // Click Wednesday in the Open row and type the time.
-        await page.locator('[data-cell="0,3"]').click();
+        // Wednesday: type the time, pick the role, add it. No dragging anywhere.
+        await page.getByTestId('day-tile-3').click();
+        await page.getByTestId('add-shift').click();
         await page.getByLabel('Time', { exact: true }).fill('9-5');
         await page.getByLabel('Role', { exact: true }).fill('Server');
         await page.getByRole('button', { name: 'Add', exact: true }).click();
-        await expect(page.locator('[data-cell="0,3"]').getByText('9a–5p')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByTestId('day-panel').getByText('9a–5p')).toBeVisible({ timeout: 10000 });
+        await expect(page.getByTestId('needed-card')).toHaveCount(1);
+
+        // Suggest someone for the open spot.
+        await page.getByTestId('suggest-button').click();
+        await expect(page.getByTestId('suggest-sheet')).toBeVisible();
+        await page.locator('[data-testid^="suggest-add-"]').first().click();
+        await expect(page.getByText('All filled. Nice.')).toBeVisible({ timeout: 10000 });
+        await page.getByRole('button', { name: 'Done' }).click();
+        await expect(page.getByTestId('person-card')).toHaveCount(1);
 
         // Publish the week.
         await page.getByRole('button', { name: /^Publish \d+/ }).click();
@@ -144,6 +153,17 @@ test.describe('Schedule Management', () => {
         await expect(dialog).toBeVisible();
         await dialog.getByRole('button', { name: /^Publish( anyway)?$/ }).click();
         await expect(page.getByText(/^Published\./)).toBeVisible({ timeout: 15000 });
+        await expect(page.getByTestId('publish-bar')).toBeHidden();
+    });
+
+    test('the Week table opens the Add a shift sheet from a cell', async ({ page, isMobile }) => {
+        test.skip(isMobile, 'The Week table is desktop only; phones use the Day view.');
+        await page.goto('/schedule');
+        await expect(page.getByTestId('week-strip')).toBeVisible({ timeout: 30000 });
+        await page.getByTestId('schedule-view-week').click();
+        await expect(page.getByRole('table').first()).toBeVisible();
+        await page.locator('[data-cell="0,3"]').click();
+        await expect(page.getByTestId('add-shift-sheet')).toBeVisible();
     });
 
     test('can view shift details', async ({ page }) => {
@@ -249,10 +269,12 @@ test.describe('Settings', () => {
     });
 
     test('can access organization settings', async ({ page }) => {
-        // Open user menu
-        await page.click('[data-testid="user-menu"]');
-        // Click Settings
-        await page.getByText('Settings').click();
+        // The menu is a client component: a click before it has hydrated does nothing, so retry until it opens.
+        await expect(async () => {
+            await page.click('[data-testid="user-menu"]');
+            await expect(page.getByRole('menuitem', { name: 'Settings' })).toBeVisible({ timeout: 2000 });
+        }).toPass({ timeout: 20000 });
+        await page.getByRole('menuitem', { name: 'Settings' }).click();
 
         await expect(page).toHaveURL(/.*settings.*/);
     });
@@ -272,20 +294,16 @@ test.describe('Settings', () => {
 test.describe('Mobile Responsiveness', () => {
     test.use({ viewport: { width: 375, height: 812 } }); // iPhone X
 
-    test.skip('mobile navigation works', async ({ page }) => {
+    test('mobile navigation works', async ({ page }) => {
         await signIn(page);
-        // Mobile nav not implemented yet in NavHeader
-        await page.setViewportSize({ width: 375, height: 667 });
 
-        // Mobile menu button should be visible
-        const menuButton = page.locator('[data-testid="mobile-menu"]');
-        await expect(menuButton).toBeVisible();
+        // Below 768px the four places to go sit in a bottom tab bar.
+        const tabs = page.getByRole('navigation');
+        await expect(tabs.getByRole('link', { name: /^Schedule/ })).toBeVisible();
+        await expect(tabs.getByRole('link', { name: 'Roster', exact: true })).toBeVisible();
 
-        // Click to open menu
-        await menuButton.click();
-
-        // Navigation should be visible
-        await expect(page.locator('nav')).toBeVisible();
+        await tabs.getByRole('link', { name: 'Reports', exact: true }).click();
+        await expect(page).toHaveURL(/\/reports/);
     });
 
     test('forms are usable on mobile', async ({ page }) => {

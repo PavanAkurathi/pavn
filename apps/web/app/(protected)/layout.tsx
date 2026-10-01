@@ -1,6 +1,7 @@
 // apps/web/app/(protected)/layout.tsx
 
 import { NavHeader } from "../../components/nav-header";
+import { PhoneNavSpacer } from "../../components/app-nav/phone-nav-spacer";
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { getOrganizationSummary } from "@/lib/api/organizations";
@@ -23,7 +24,7 @@ export default async function ProtectedLayout({
         : null;
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-page">
             <NavHeader
                 activeOrg={activeOrg}
                 trial={getTrialState(activeOrg)}
@@ -36,6 +37,7 @@ export default async function ProtectedLayout({
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {children}
             </main>
+            <PhoneNavSpacer />
         </div>
     );
 }

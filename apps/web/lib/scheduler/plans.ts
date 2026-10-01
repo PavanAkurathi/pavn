@@ -28,16 +28,10 @@ export interface Plan {
     label: string;
 }
 
-/** Where a chip came from. */
+/** Which chip a change is about: one person's place on a shift, or the open spots on it. */
 export type DragSource =
     | { kind: "assignment"; shiftId: string; personId: string }
     | { kind: "open"; shiftId: string };
-
-/** Where it was dropped: a person's day, or the Open row (personId null). */
-export interface DropTarget {
-    personId: string | null;
-    dayIndex: number;
-}
 
 export const staying = (shift: SchedulerShift): SchedulerPersonRef[] =>
     shift.assignees.filter((a) => a.pendingState !== "remove").map((a) => ({ personId: a.personId, kind: a.kind }));
@@ -45,138 +39,6 @@ export const staying = (shift: SchedulerShift): SchedulerPersonRef[] =>
 const without = (refs: SchedulerPersonRef[], personId: string) => refs.filter((r) => r.personId !== personId);
 const firstName = (person: SchedulerPerson | undefined) => person?.name.split(" ")[0] ?? "Someone";
 const timeOf = (shift: Pick<SchedulerShift, "startLocal" | "endLocal">) => compactRange(shift.startLocal, shift.endLocal);
-
-/** Taking one person's spot off a shift: a one-person shift goes, a group shift loses the spot. */
-function removeSpot(shift: SchedulerShift, personId: string | null): SchedulerChange[] {
-    const refs = staying(shift);
-    const remaining = personId ? without(refs, personId) : refs;
-    if (shift.capacity <= 1 && remaining.length === 0) return [{ op: "delete", shiftId: shift.id }];
-    const changes: SchedulerChange[] = [];
-    if (personId) changes.push({ op: "assign", shiftId: shift.id, assignees: remaining });
-    changes.push({ op: "update", shiftId: shift.id, patch: { capacity: Math.max(1, shift.capacity - 1, remaining.length) } });
-    return changes;
-}
-
-/** Add a person (or an open spot when ref is null) to the same kind of shift on another day. */
-function addToDay(week: SchedulerWeek, shift: SchedulerShift, dayIndex: number, ref: SchedulerPersonRef | null): SchedulerChange[] {
-    const localDate = week.days[dayIndex]!.localDate;
-    const match = week.shifts.find(
-        (s) =>
-            s.dayIndex === dayIndex &&
-            !s.pendingRemoval &&
-            s.role === shift.role &&
-            s.startLocal === shift.startLocal &&
-            s.endLocal === shift.endLocal &&
-            (!ref || !staying(s).some((r) => r.personId === ref.personId)),
-    );
-    if (match) {
-        const refs = staying(match);
-        const changes: SchedulerChange[] = [];
-        const needsSpot = ref ? refs.length >= match.capacity : true;
-        if (needsSpot) changes.push({ op: "update", shiftId: match.id, patch: { capacity: match.capacity + 1 } });
-        if (ref) changes.push({ op: "assign", shiftId: match.id, assignees: [...refs, ref] });
-        return changes;
-    }
-    return [
-        {
-            op: "create",
-            shiftId: newShiftId(),
-            shift: {
-                locationId: shift.locationId,
-                localDate,
-                startLocal: shift.startLocal,
-                endLocal: shift.endLocal,
-                role: shift.role,
-                capacity: 1,
-                breakMinutes: shift.breakMinutes,
-                note: shift.note,
-            },
-            assignees: ref ? [ref] : [],
-        },
-    ];
-}
-
-export function planMove(
-    week: SchedulerWeek,
-    source: DragSource,
-    target: DropTarget,
-    options: { copy: boolean },
-): Plan | null {
-    const shift = week.shifts.find((s) => s.id === source.shiftId);
-    if (!shift || shift.pendingRemoval || target.dayIndex < 0 || target.dayIndex > 6) return null;
-    const people = new Map(week.people.map((p) => [p.id, p]));
-    const refs = staying(shift);
-    const sameDay = shift.dayIndex === target.dayIndex;
-    const day = weekdayShort(week.days[target.dayIndex]!.localDate);
-    const targetPerson = target.personId ? people.get(target.personId) : undefined;
-    const targetRef: SchedulerPersonRef | null = targetPerson ? { personId: targetPerson.id, kind: targetPerson.kind } : null;
-    if (target.personId && !targetRef) return null;
-    const verb = options.copy ? "Copied" : "Moved";
-
-    if (source.kind === "assignment") {
-        const mover = people.get(source.personId);
-        const personal = shift.capacity === 1 && refs.length === 1 && refs[0]!.personId === source.personId;
-
-        if (!targetRef) {
-            // To the Open row: the spot stays, the person comes off it.
-            if (sameDay) {
-                if (options.copy) return null;
-                return {
-                    changes: [{ op: "assign", shiftId: shift.id, assignees: without(refs, source.personId) }],
-                    label: `Took ${firstName(mover)} off ${timeOf(shift)}`,
-                };
-            }
-            const changes = addToDay(week, shift, target.dayIndex, null);
-            if (!options.copy) changes.push(...removeSpot(shift, source.personId));
-            return { changes, label: `${verb} an open ${shift.role} spot to ${day}` };
-        }
-
-        if (sameDay) {
-            if (refs.some((r) => r.personId === targetRef.personId)) return null;
-            if (options.copy) {
-                const changes: SchedulerChange[] = [];
-                if (refs.length >= shift.capacity) changes.push({ op: "update", shiftId: shift.id, patch: { capacity: shift.capacity + 1 } });
-                changes.push({ op: "assign", shiftId: shift.id, assignees: [...refs, targetRef] });
-                return { changes, label: `Added ${firstName(targetPerson)} to ${timeOf(shift)}` };
-            }
-            return {
-                changes: [{ op: "assign", shiftId: shift.id, assignees: [...without(refs, source.personId), targetRef] }],
-                label: `Gave ${firstName(mover)}'s ${timeOf(shift)} to ${firstName(targetPerson)}`,
-            };
-        }
-
-        if (personal && !options.copy) {
-            // A one-person shift moves whole, keeping everything about it.
-            const changes: SchedulerChange[] = [
-                { op: "update", shiftId: shift.id, patch: { localDate: week.days[target.dayIndex]!.localDate } },
-            ];
-            if (targetRef.personId !== source.personId) changes.push({ op: "assign", shiftId: shift.id, assignees: [targetRef] });
-            return { changes, label: `Moved ${timeOf(shift)} to ${firstName(targetPerson)} on ${day}` };
-        }
-
-        const changes = addToDay(week, shift, target.dayIndex, targetRef);
-        if (!options.copy) changes.push(...removeSpot(shift, source.personId));
-        return { changes, label: `${verb} ${timeOf(shift)} to ${firstName(targetPerson)} on ${day}` };
-    }
-
-    // From the Open row.
-    if (!targetRef) {
-        if (sameDay) return null;
-        const changes = addToDay(week, shift, target.dayIndex, null);
-        if (!options.copy) changes.push(...removeSpot(shift, null));
-        return { changes, label: `${verb} an open ${shift.role} spot to ${day}` };
-    }
-    if (sameDay) {
-        if (refs.some((r) => r.personId === targetRef.personId)) return null;
-        return {
-            changes: [{ op: "assign", shiftId: shift.id, assignees: [...refs, targetRef] }],
-            label: `Gave ${firstName(targetPerson)} ${timeOf(shift)}`,
-        };
-    }
-    const changes = addToDay(week, shift, target.dayIndex, targetRef);
-    if (!options.copy) changes.push(...removeSpot(shift, null));
-    return { changes, label: `Gave ${firstName(targetPerson)} ${timeOf(shift)} on ${day}` };
-}
 
 /** Delete on a person's chip takes them off; on an open chip it drops the open spots. */
 export function planRemove(week: SchedulerWeek, source: DragSource): Plan | null {
@@ -198,6 +60,98 @@ export function planRemove(week: SchedulerWeek, source: DragSource): Plan | null
         changes: [{ op: "update", shiftId: shift.id, patch: { capacity: refs.length } }],
         label: `Dropped ${shift.open} open ${shift.role} ${shift.open === 1 ? "spot" : "spots"}`,
     };
+}
+
+const shiftLabel = (week: SchedulerWeek, shift: SchedulerShift) =>
+    `${weekdayShort(week.days[shift.dayIndex]?.localDate ?? shift.localDate)} ${timeOf(shift)}`;
+
+/** Someone joins a shift. A full shift grows by one spot, so adding never fails on headcount. */
+export function planAddPerson(week: SchedulerWeek, shiftId: string, person: SchedulerPerson): Plan | null {
+    const shift = week.shifts.find((s) => s.id === shiftId);
+    if (!shift || shift.pendingRemoval) return null;
+    const refs = staying(shift);
+    if (refs.some((r) => r.personId === person.id)) return null;
+    const changes: SchedulerChange[] = [];
+    if (refs.length >= shift.capacity) changes.push({ op: "update", shiftId, patch: { capacity: refs.length + 1 } });
+    changes.push({ op: "assign", shiftId, assignees: [...refs, { personId: person.id, kind: person.kind }] });
+    return { changes, label: `Added ${firstName(person)} to ${shiftLabel(week, shift)}` };
+}
+
+/** Someone comes off a shift; the spot stays open so it shows up as needed. */
+export function planTakeOff(week: SchedulerWeek, shiftId: string, personId: string): Plan | null {
+    const shift = week.shifts.find((s) => s.id === shiftId);
+    if (!shift || shift.pendingRemoval) return null;
+    const refs = staying(shift);
+    if (!refs.some((r) => r.personId === personId)) return null;
+    const person = week.people.find((p) => p.id === personId);
+    return {
+        changes: [{ op: "assign", shiftId, assignees: without(refs, personId) }],
+        label: `Took ${firstName(person)} off ${shiftLabel(week, shift)}`,
+    };
+}
+
+/** "How many people": never below the people already on it, never below one. */
+export function planSetNeeded(week: SchedulerWeek, shiftId: string, wanted: number): Plan | null {
+    const shift = week.shifts.find((s) => s.id === shiftId);
+    if (!shift || shift.pendingRemoval) return null;
+    const capacity = Math.min(200, Math.max(1, wanted, staying(shift).length));
+    if (capacity === shift.capacity) return null;
+    return {
+        changes: [{ op: "update", shiftId, patch: { capacity } }],
+        label: `Now need ${capacity} ${shift.role} ${weekdayShort(week.days[shift.dayIndex]?.localDate ?? shift.localDate)} ${timeOf(shift)}`,
+    };
+}
+
+/**
+ * "Copy to other days": the same shift on the chosen days, one new shift each,
+ * in a single undoable step. With `keepPeople` the same people come along
+ * (skipping days they already work it); without, each copy is open.
+ */
+export function planCopyToDays(
+    week: SchedulerWeek,
+    shiftId: string,
+    dayIndexes: number[],
+    options: { keepPeople: boolean },
+): Plan | null {
+    const shift = week.shifts.find((s) => s.id === shiftId);
+    if (!shift || shift.pendingRemoval) return null;
+    const people = options.keepPeople ? staying(shift) : [];
+    const changes: SchedulerChange[] = [];
+    const days: number[] = [];
+    for (const dayIndex of [...new Set(dayIndexes)].sort((a, b) => a - b)) {
+        if (dayIndex === shift.dayIndex || dayIndex < 0 || dayIndex > 6) continue;
+        const alreadyThere =
+            people.length > 0 &&
+            week.shifts.some(
+                (s) =>
+                    s.dayIndex === dayIndex &&
+                    !s.pendingRemoval &&
+                    s.role === shift.role &&
+                    s.startLocal === shift.startLocal &&
+                    s.endLocal === shift.endLocal &&
+                    staying(s).some((r) => people.some((p) => p.personId === r.personId)),
+            );
+        if (alreadyThere) continue;
+        changes.push({
+            op: "create",
+            shiftId: newShiftId(),
+            shift: {
+                locationId: shift.locationId,
+                localDate: week.days[dayIndex]!.localDate,
+                startLocal: shift.startLocal,
+                endLocal: shift.endLocal,
+                role: shift.role,
+                capacity: Math.max(shift.capacity, people.length),
+                breakMinutes: shift.breakMinutes,
+                note: shift.note,
+            },
+            assignees: people,
+        });
+        days.push(dayIndex);
+    }
+    if (changes.length === 0) return null;
+    const names = days.map((d) => weekdayShort(week.days[d]!.localDate)).join(", ");
+    return { changes, label: `Copied ${timeOf(shift)} ${shift.role} to ${names}` };
 }
 
 export function planCreate(input: {

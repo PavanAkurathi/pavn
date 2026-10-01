@@ -77,7 +77,7 @@ export function departmentOfRole(week: Pick<SchedulerWeek, "departments">): (rol
     return (role) => map.get(role.toLowerCase()) ?? catchAll;
 }
 
-function inDepartment(departmentFilter: string, departmentId: string | null) {
+export function inDepartment(departmentFilter: string, departmentId: string | null) {
     if (departmentFilter === ALL_DEPARTMENTS) return true;
     if (departmentFilter === NO_DEPARTMENT) return departmentId === null;
     return departmentId === departmentFilter;

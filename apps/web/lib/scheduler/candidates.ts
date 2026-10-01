@@ -1,5 +1,5 @@
 /**
- * "Who can take it": everyone who could work a shift, best first, each with
+ * "Who can work this": everyone who could work a shift, best first, each with
  * the reason they might not be the right call. The same rules the server
  * enforces, read off the week already on screen.
  */
@@ -18,26 +18,6 @@ export interface Candidate {
 
 const overlaps = (a: { startsAt: string; endsAt: string }, b: { startsAt: string; endsAt: string }) =>
     Date.parse(a.startsAt) < Date.parse(b.endsAt) && Date.parse(b.startsAt) < Date.parse(a.endsAt);
-
-/** One person against a shift as it would be on another day: the drop hint while dragging. */
-export function checkPerson(
-    week: SchedulerWeek,
-    shift: SchedulerShift,
-    personId: string,
-    dayIndex: number,
-): { blocked: boolean; reasons: string[] } {
-    const person = week.people.find((p) => p.id === personId);
-    if (!person) return { blocked: false, reasons: [] };
-    const shiftMs = (dayIndex - shift.dayIndex) * 24 * 60 * 60 * 1000;
-    const moved = {
-        ...shift,
-        dayIndex,
-        startsAt: new Date(Date.parse(shift.startsAt) + shiftMs).toISOString(),
-        endsAt: new Date(Date.parse(shift.endsAt) + shiftMs).toISOString(),
-    };
-    const { blocked, reasons } = assess(week, person, moved);
-    return { blocked, reasons };
-}
 
 function assess(week: SchedulerWeek, person: SchedulerPerson, shift: SchedulerShift): Candidate {
     const role = shift.role.toLowerCase();
@@ -85,4 +65,24 @@ export function rankCandidates(week: SchedulerWeek, shift: SchedulerShift): Cand
             a.person.scheduledMinutes - b.person.scheduledMinutes ||
             a.person.name.localeCompare(b.person.name),
     );
+}
+
+export interface CandidateGroups {
+    /** Free, and set up for the role: nothing to say against them. */
+    good: Candidate[];
+    /** Could do it, with something worth knowing (near overtime, unavailable, other role). */
+    maybe: Candidate[];
+    /** Double-booked or on approved time off: needs "Schedule anyway". */
+    blocked: Candidate[];
+}
+
+/** The ranked list cut into the three piles a manager actually thinks in. Order inside each pile is kept. */
+export function groupCandidates(candidates: Candidate[]): CandidateGroups {
+    const groups: CandidateGroups = { good: [], maybe: [], blocked: [] };
+    for (const c of candidates) {
+        if (c.blocked) groups.blocked.push(c);
+        else if (c.reasons.length === 0 && c.trained) groups.good.push(c);
+        else groups.maybe.push(c);
+    }
+    return groups;
 }

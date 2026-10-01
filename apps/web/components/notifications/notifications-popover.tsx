@@ -110,7 +110,7 @@ export function NotificationsPopover() {
                 </ScrollArea>
                 <div className="p-2 border-t bg-muted/20 text-center">
                     <Button variant="link" size="sm" className="h-auto text-xs w-full" asChild>
-                        <Link href="/settings?tab=notifications">View Settings</Link>
+                        <Link href="/settings/notifications">View Settings</Link>
                     </Button>
                 </div>
             </PopoverContent>

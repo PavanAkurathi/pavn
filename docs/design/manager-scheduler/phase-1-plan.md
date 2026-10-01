@@ -1,5 +1,12 @@
 # Manager Scheduler Rebuild — Phase 1 Plan
 
+> **Superseded (2026-09-30): the main view is now day-first, and there is no drag-and-drop.**
+> §2.1's people × days grid and §2.2's drag, Alt-drag and `c`/`v` interactions are
+> replaced by the week strip, the day list, Suggest and "Copy to other days". The grid
+> survives as the tap-only **Week** view. Everything else here (the edit model, working
+> copy until publish, hours not pay, presets, requests) still holds. See
+> [day-first-redesign.md](day-first-redesign.md).
+
 ## Context
 Manager scheduling in `apps/web` was built on Instawork's marketplace model: a shift
 is a *posting* with slots, created blind through a long form on a separate page.

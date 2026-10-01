@@ -23,7 +23,7 @@ import { cn } from "@repo/ui/lib/utils";
 import { compactRange, weekdayShort } from "@/lib/scheduler/format";
 import { formatTimeRange, parseTimeRange } from "@/lib/scheduler/parse-time-range";
 import { newShiftId, planCreateEvent, planDeleteEvent, planUpdateEvent, type Plan } from "@/lib/scheduler/plans";
-import { knownRoles } from "./quick-create";
+import { knownRoles } from "./add-shift-sheet";
 
 export type EventEditTarget = { mode: "new"; dayIndex: number } | { mode: "edit"; eventId: string };
 
@@ -122,7 +122,7 @@ function EventPanel({
                 <SheetTitle className="flex items-center justify-between gap-3">
                     <span>{event ? event.name : "New event"}</span>
                     {event ? (
-                        <Badge variant={filled < needed ? "destructive" : "secondary"}>
+                        <Badge variant="secondary" className={filled < needed ? "bg-warn-soft text-warn" : "bg-ok-soft text-ok"}>
                             {filled}/{needed} staffed
                         </Badge>
                     ) : null}
@@ -192,7 +192,7 @@ function EventPanel({
                                         <span className="text-muted-foreground"> · {compactRange(s.startLocal, s.endLocal)}</span>
                                     </span>
                                     <span className="flex items-center gap-2">
-                                        <span className={cn("text-sm font-semibold tabular-nums", s.open > 0 && "text-destructive")}>
+                                        <span className={cn("text-sm font-semibold tabular-nums", s.open > 0 && "text-warn")}>
                                             {s.filled}/{s.capacity}
                                         </span>
                                         <Button type="button" size="sm" variant="outline" onClick={() => onStaff(s.id)}>

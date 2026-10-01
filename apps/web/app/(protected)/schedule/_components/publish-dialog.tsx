@@ -122,10 +122,10 @@ export function PublishDialog({
                             ) : null}
 
                             {preview.unreachable.length ? (
-                                <section className="flex flex-col gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2">
-                                    <h3 className="font-semibold text-amber-900">Tell these people yourself</h3>
-                                    <p className="text-xs text-amber-900/80">They don&apos;t have the app yet, so they can&apos;t be messaged.</p>
-                                    <ul className="text-amber-950">
+                                <section className="flex flex-col gap-1.5 rounded-lg border border-warn-line/50 bg-warn-soft px-3 py-2">
+                                    <h3 className="font-semibold text-warn">Tell these people yourself</h3>
+                                    <p className="text-xs text-warn/80">They don&apos;t have the app yet, so they can&apos;t be messaged.</p>
+                                    <ul className="text-foreground">
                                         {preview.unreachable.map((p) => (
                                             <li key={p.personId}>
                                                 {p.name}
