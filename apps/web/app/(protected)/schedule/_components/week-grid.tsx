@@ -458,7 +458,7 @@ export function PositionsGrid({
             <Header
                 week={week}
                 onOpenEvent={editing.onOpenEvent}
-                corner={<span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Position</span>}
+                corner={<span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Role</span>}
                 endLabel="Filled"
             />
             {rows.map((row, rowIndex) => {

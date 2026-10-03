@@ -109,6 +109,28 @@ export function SchedulerToolbar({
                 </Button>
             )}
 
+            <div role="group" aria-label="Board" className="flex h-9 items-center gap-0.5 rounded-control border bg-muted p-0.5">
+                {(
+                    [
+                        ["positions", "Roles"],
+                        ["people", "People"],
+                    ] as const
+                ).map(([mode, label]) => (
+                    <button
+                        key={mode}
+                        type="button"
+                        aria-pressed={viewMode === mode}
+                        onClick={() => onViewMode(mode)}
+                        className={cn(
+                            "h-full whitespace-nowrap rounded-chip px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground",
+                            viewMode === mode && "bg-card text-foreground shadow-sm",
+                        )}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
+
             {week.departments.length > 1 ? (
                 <div
                     role="group"
@@ -203,12 +225,6 @@ export function SchedulerToolbar({
                         >
                             Discard unpublished changes…
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuLabel>View by</DropdownMenuLabel>
-                        <DropdownMenuRadioGroup value={viewMode} onValueChange={(v) => onViewMode(v as ViewMode)}>
-                            <DropdownMenuRadioItem value="people">People</DropdownMenuRadioItem>
-                            <DropdownMenuRadioItem value="positions">Positions</DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
                         <DropdownMenuLabel>Shift cards</DropdownMenuLabel>
                         <DropdownMenuRadioGroup value={density} onValueChange={(v) => onDensity(v as Density)}>
                             <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>

@@ -94,6 +94,8 @@ function ShiftCard({
         // Removed at next publish.
         removed && "border-dashed border-destructive bg-muted opacity-60",
         conflict && "shadow-[0_0_0_2px_var(--destructive)]",
+        // "N open" in the toolbar marks the open cards for a moment.
+        "data-[flash=true]:outline-2 data-[flash=true]:outline-offset-2 data-[flash=true]:outline-primary",
         className
       )}
       style={{ "--hue": hue, ...style } as React.CSSProperties}

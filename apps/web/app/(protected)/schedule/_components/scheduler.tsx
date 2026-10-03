@@ -105,7 +105,8 @@ export function Scheduler({
             : ALL_DEPARTMENTS;
     const [viewMode, setViewMode] = usePersistentState<ViewMode>(
         `wh.scheduler.${orgId}.view`,
-        week.settings.scheduleStyle === "events" ? "positions" : "people",
+        // Roles first: who is on each position, and what is still open, at a glance.
+        "positions",
         isViewMode,
     );
     // Cards are comfortable until the team is big enough that rows would run long (50+),
@@ -146,12 +147,22 @@ export function Scheduler({
         syncUrl({ location: next, week: weekParam });
     };
 
+    const gridRef = useRef<HTMLDivElement | null>(null);
     const showOpenRow = () => {
-        if (viewMode !== "people") setViewMode("people");
         requestAnimationFrame(() => {
-            openRowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-            setFlashOpen(true);
-            window.setTimeout(() => setFlashOpen(false), 1400);
+            if (viewMode === "people") {
+                openRowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                setFlashOpen(true);
+                window.setTimeout(() => setFlashOpen(false), 1400);
+                return;
+            }
+            // On the Roles board the open slots sit in their role's row: scroll to the first and mark them all.
+            const cards = [...(gridRef.current?.querySelectorAll<HTMLElement>('[data-kind="open"]') ?? [])];
+            cards[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
+            for (const card of cards) card.dataset.flash = "true";
+            window.setTimeout(() => {
+                for (const card of cards) delete card.dataset.flash;
+            }, 1600);
         });
     };
 
@@ -332,6 +343,7 @@ export function Scheduler({
 
             <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
                 <div
+                    ref={gridRef}
                     aria-busy={isValidating || edits.busy}
                     className={cn(
                         "max-h-[calc(100vh-12rem)] min-h-[360px] overflow-auto overscroll-contain rounded-xl border bg-card shadow-sm transition-opacity",
