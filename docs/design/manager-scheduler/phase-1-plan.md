@@ -1,5 +1,11 @@
 # Manager Scheduler Rebuild — Phase 1 Plan
 
+> **Visual design superseded (Oct 2026).** For Schedule, Team and Requests,
+> [`shiftly-phase1.html`](./shiftly-phase1.html) replaces `prototype.html` as the design
+> target (icon rail, role cards, chips row, Roles | People board, one-click publish).
+> Behaviour in this plan still stands. The Requests side panel became a page
+> (`/requests`), "Roster" is now "Team", and the product is named Pavn.
+
 ## Context
 Manager scheduling in `apps/web` was built on Instawork's marketplace model: a shift
 is a *posting* with slots, created blind through a long form on a separate page.
@@ -498,7 +504,7 @@ pipeline.
 | `shift-drawer.tsx` + `candidate-list.tsx` | Edit and staffing |
 | `event-drawer.tsx` | Events |
 | `publish-dialog.tsx` | Publish |
-| `requests-panel.tsx` | Requests |
+| `requests-panel.tsx` (replaced by the `/requests` page) | Requests |
 | `help-dialog.tsx` | How to use + keyboard shortcuts + what the markings mean |
 | `hooks/use-grid-keyboard.ts`, `use-undo-stack.ts`, `use-scheduler-week.ts` | Behavior |
 | `apps/web/lib/scheduler/parse-time-range.ts` (+ test), `role-color.ts` | Helpers; `role-color.ts` extends `lib/shifts/role-theme.ts` with a hash fallback |
