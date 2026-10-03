@@ -39,13 +39,16 @@ import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
 import { PublishDialog } from "./publish-dialog";
 import { QuickCreate, type QuickCreateTarget } from "./quick-create";
-import { ChipGhost } from "./shift-chip";
+import { ChipGhost, type Density } from "./shift-chip";
 import { ShiftDrawer } from "./shift-drawer";
 import { SchedulerToolbar } from "./scheduler-toolbar";
 import { CopyWeekDialog, TemplateDialog } from "./week-tools";
 import { PeopleGrid, PositionsGrid, type DropHint, type GridEditing } from "./week-grid";
 
 const isViewMode = (value: string): value is ViewMode => value === "people" || value === "positions";
+const isDensityChoice = (value: string): value is Density | "auto" => value === "comfortable" || value === "compact" || value === "auto";
+/** From this many people on, cards default to one line each. */
+const BIG_TEAM = 50;
 
 const typingIn = (target: EventTarget | null) =>
     target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
@@ -105,6 +108,14 @@ export function Scheduler({
         week.settings.scheduleStyle === "events" ? "positions" : "people",
         isViewMode,
     );
+    // Cards are comfortable until the team is big enough that rows would run long (50+),
+    // unless the manager has picked one.
+    const [storedDensity, setDensity] = usePersistentState<Density | "auto">(
+        `wh.scheduler.${orgId}.density`,
+        "auto",
+        isDensityChoice,
+    );
+    const density: Density = storedDensity === "auto" ? (week.people.length >= BIG_TEAM ? "compact" : "comfortable") : storedDensity;
     const [collapsedRaw, setCollapsedRaw] = usePersistentState<string>(`wh.scheduler.${orgId}.collapsed`, "");
     const collapsed = useMemo(() => new Set(collapsedRaw.split(",").filter(Boolean)), [collapsedRaw]);
 
@@ -217,6 +228,7 @@ export function Scheduler({
         },
         hintFor,
         dragging: dragging !== null,
+        density,
         onOpenEvent: (eventId) => setEventTarget({ mode: "edit", eventId }),
     };
 
@@ -274,6 +286,8 @@ export function Scheduler({
                 onDepartment={setDepartment}
                 viewMode={viewMode}
                 onViewMode={setViewMode}
+                density={density}
+                onDensity={setDensity}
                 onOpenCounter={showOpenRow}
                 onRequests={() => router.push(getRequestsHref())}
                 onHelp={() => setHelpOpen(true)}

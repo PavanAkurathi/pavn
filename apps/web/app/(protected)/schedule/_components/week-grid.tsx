@@ -1,16 +1,17 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import { useDroppable } from "@dnd-kit/core";
 import { ChevronDown, Plus } from "lucide-react";
 import type { SchedulerEvent, SchedulerPerson, SchedulerWeek } from "@repo/contracts/scheduler";
+import { roleHue } from "@repo/ui/lib/role-hue";
 import { cn } from "@repo/ui/lib/utils";
 import { compactRange, dayOfMonth, formatHours, weekdayShort } from "@/lib/scheduler/format";
 import type { DropTarget } from "@/lib/scheduler/plans";
-import { roleColor } from "@/lib/scheduler/role-color";
 import { hoursTone, type PeopleView, type PersonRow, type PositionRow } from "@/lib/scheduler/view-model";
 import { ROSTERS_PATH } from "@/lib/routes";
-import { ShiftChip, type ChipActions } from "./shift-chip";
+import { ShiftChip, type ChipActions, type Density } from "./shift-chip";
 import styles from "./scheduler.module.css";
 
 const MAX_CHIPS = 2;
@@ -36,6 +37,8 @@ export interface GridEditing {
     /** While dragging: what dropping here would mean. */
     hintFor: (target: DropTarget) => DropHint | null;
     dragging: boolean;
+    /** Comfortable cards, or one line each for a big team. */
+    density: Density;
     /** Click on a day header's event tag. */
     onOpenEvent: (eventId: string) => void;
 }
@@ -209,7 +212,7 @@ function DayCell({
 function PersonLabel({ person }: { person: SchedulerPerson }) {
     return (
         <div role="rowheader" className={labelCell}>
-            <span aria-hidden className={styles.dot} style={{ ["--rc" as string]: roleColor(person.primaryRole) }} />
+            <span aria-hidden className={styles.dot} style={{ ["--rc" as string]: roleHue(person.primaryRole) }} />
             <div className="flex min-w-0 flex-col leading-tight">
                 <span className="truncate text-[13px] font-semibold">{person.name}</span>
                 <span className="flex min-w-0 items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
@@ -287,6 +290,7 @@ function PersonRowCells({
                                 shift={shift}
                                 actions={editing.chips}
                                 dragId={`chip:${shift.id}:${person.id}`}
+                                density={editing.density}
                                 variant={{
                                     kind: "assignment",
                                     assignee,
@@ -374,7 +378,14 @@ export function PeopleGrid({
                         className={cn("bg-muted/30", flashOpenRow && styles.flash)}
                     >
                         {shifts.map((shift) => (
-                            <ShiftChip key={shift.id} shift={shift} actions={editing.chips} dragId={`open:${shift.id}`} variant={{ kind: "open" }} />
+                            <ShiftChip
+                                key={shift.id}
+                                shift={shift}
+                                actions={editing.chips}
+                                dragId={`open:${shift.id}`}
+                                density={editing.density}
+                                variant={{ kind: "open" }}
+                            />
                         ))}
                     </DayCell>
                 ))}
@@ -441,6 +452,7 @@ export function PositionsGrid({
     rows: PositionRow[];
     editing: GridEditing;
 }) {
+    const peopleById = new Map(week.people.map((p) => [p.id, p]));
     return (
         <div role="table" aria-label={`Positions at ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
             <Header
@@ -455,7 +467,7 @@ export function PositionsGrid({
                 return (
                     <div key={row.role} role="row" className="contents">
                         <div role="rowheader" className={labelCell}>
-                            <span aria-hidden className={styles.dot} style={{ ["--rc" as string]: roleColor(row.role) }} />
+                            <span aria-hidden className={styles.dot} style={{ ["--rc" as string]: roleHue(row.role) }} />
                             <div className="flex min-w-0 flex-col leading-tight">
                                 <span className="truncate text-[13px] font-semibold">{row.role}</span>
                                 <span className={cn("text-[11.5px]", row.open ? "font-medium text-destructive" : "text-muted-foreground")}>
@@ -472,7 +484,25 @@ export function PositionsGrid({
                                 role={row.role}
                             >
                                 {shifts.map((shift) => (
-                                    <ShiftChip key={shift.id} shift={shift} actions={editing.chips} variant={{ kind: "position" }} />
+                                    <Fragment key={shift.id}>
+                                        {shift.assignees.map((assignee) => (
+                                            <ShiftChip
+                                                key={`${shift.id}:${assignee.personId}`}
+                                                shift={shift}
+                                                actions={editing.chips}
+                                                density={editing.density}
+                                                variant={{ kind: "person", assignee, person: peopleById.get(assignee.personId) }}
+                                            />
+                                        ))}
+                                        {shift.open > 0 && !shift.pendingRemoval ? (
+                                            <ShiftChip
+                                                shift={shift}
+                                                actions={editing.chips}
+                                                density={editing.density}
+                                                variant={{ kind: "open-slots" }}
+                                            />
+                                        ) : null}
+                                    </Fragment>
                                 ))}
                             </DayCell>
                         ))}

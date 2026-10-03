@@ -8,7 +8,10 @@ export interface ShiftCardProps extends Omit<React.ComponentPropsWithRef<"button
   hue: string
   /** "assigned" shows the person; "open" is the dashed slot nobody has yet. */
   kind?: "assigned" | "open"
-  /** The assignee, for kind="assigned". */
+  /**
+   * The assignee, for a card on a position row. Leave it out on a person's own
+   * row, where the row already says who: the card then leads with the time.
+   */
   name?: string
   /** "4p – 11p". */
   time: string
@@ -20,6 +23,8 @@ export interface ShiftCardProps extends Omit<React.ComponentPropsWithRef<"button
   conflict?: boolean
   /** Being removed at the next publish. */
   removed?: boolean
+  /** Part of an event: a ◆ before the time. */
+  event?: boolean
   /** Published, with edits staff can't see yet: an amber dot. */
   edited?: boolean
   /** Comfortable is the mockup card; compact is one line, for big teams. */
@@ -52,6 +57,7 @@ function ShiftCard({
   conflict,
   removed,
   edited,
+  event,
   density = "comfortable",
   trailing,
   openLabel = "OPEN · tap to assign",
@@ -61,6 +67,11 @@ function ShiftCard({
 }: ShiftCardProps) {
   const open = kind === "open"
   const compact = density === "compact"
+  const diamond = event ? (
+    <span aria-hidden className="mr-0.5 text-[10px] font-normal">
+      ◆
+    </span>
+  ) : null
   const timeLine = detail ? `${time} · ${detail}` : time
 
   return (
@@ -119,20 +130,37 @@ function ShiftCard({
       ) : compact ? (
         <span className="flex items-center gap-1.5">
           {name ? <InitialsAvatar name={name} hue={hue} size="2xs" /> : null}
-          <span className={cn("whitespace-nowrap font-semibold tabular-nums", removed && "line-through")}>{time}</span>
+          <span className={cn("whitespace-nowrap font-semibold tabular-nums", removed && "line-through")}>
+            {diamond}
+            {time}
+          </span>
           {detail ? <span className="min-w-0 truncate text-[11px] text-muted-foreground">{detail}</span> : null}
           {trailing ? <span className="ml-auto text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
         </span>
-      ) : (
+      ) : name ? (
+        // On a position row: who, then when.
         <>
           <span className="flex items-center gap-1.5">
-            {name ? <InitialsAvatar name={name} hue={hue} size="xs" /> : null}
+            <InitialsAvatar name={name} hue={hue} size="xs" />
             <span className="min-w-0 flex-1 truncate text-xs font-bold">{name}</span>
             {trailing ? <span className="shrink-0 text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
           </span>
           <span className={cn("mt-px block text-[11px] tabular-nums text-muted-foreground", removed && "line-through")}>
+            {diamond}
             {timeLine}
           </span>
+        </>
+      ) : (
+        // On a person's row the row already says who: when, then what (the role, if it differs).
+        <>
+          <span className="flex items-center gap-1.5">
+            <span className={cn("min-w-0 flex-1 truncate text-xs font-bold tabular-nums", removed && "line-through")}>
+              {diamond}
+              {time}
+            </span>
+            {trailing ? <span className="shrink-0 text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
+          </span>
+          {detail ? <span className="mt-px block truncate text-[11px] text-muted-foreground">{detail}</span> : null}
         </>
       )}
     </button>

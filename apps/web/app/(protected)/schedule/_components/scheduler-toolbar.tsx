@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@repo/ui/lib/utils";
 import { weekRangeLabel } from "@/lib/scheduler/format";
 import { ALL_DEPARTMENTS, type ViewMode } from "@/lib/scheduler/view-model";
+import type { Density } from "./shift-chip";
 
 export function SchedulerToolbar({
     week,
@@ -30,6 +31,8 @@ export function SchedulerToolbar({
     onDepartment,
     viewMode,
     onViewMode,
+    density,
+    onDensity,
     onOpenCounter,
     onRequests,
     onHelp,
@@ -48,6 +51,8 @@ export function SchedulerToolbar({
     onDepartment: (id: string) => void;
     viewMode: ViewMode;
     onViewMode: (mode: ViewMode) => void;
+    density: Density;
+    onDensity: (density: Density) => void;
     onOpenCounter: () => void;
     onRequests: () => void;
     onHelp: () => void;
@@ -203,6 +208,11 @@ export function SchedulerToolbar({
                         <DropdownMenuRadioGroup value={viewMode} onValueChange={(v) => onViewMode(v as ViewMode)}>
                             <DropdownMenuRadioItem value="people">People</DropdownMenuRadioItem>
                             <DropdownMenuRadioItem value="positions">Positions</DropdownMenuRadioItem>
+                        </DropdownMenuRadioGroup>
+                        <DropdownMenuLabel>Shift cards</DropdownMenuLabel>
+                        <DropdownMenuRadioGroup value={density} onValueChange={(v) => onDensity(v as Density)}>
+                            <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
+                            <DropdownMenuRadioItem value="compact">Compact (one line)</DropdownMenuRadioItem>
                         </DropdownMenuRadioGroup>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
