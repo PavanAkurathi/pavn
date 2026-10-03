@@ -105,6 +105,11 @@
   --hue-support: #eab308;
   --hue-default: #94a3b8;
 
+  /* Component shapes. These are today's pills and rounded panels; the app skin squares them off. */
+  --radius-button: 9999px;
+  --radius-field: 2rem;
+  --radius-surface: 1rem;
+
   --success: #16a34a;
   --success-foreground: #FFFFFF;
   --warning: #d97706;
@@ -187,9 +192,15 @@
   Add class "app-skin" to a wrapper; marketing and auth pages never get it and
   keep the brand red/navy above. Every shadcn component inside picks it up
   through the same variables, so nothing here needs per-component overrides.
+  Popovers, menus, dialogs and toasts render in a portal on <body>, outside the
+  wrapper, so the same variables also apply to any <body> that contains one.
 */
-.app-skin {
-  --radius: 0.5625rem;               /* 9px: buttons, inputs, popovers' controls */
+.app-skin,
+body:has(.app-skin) {
+  --radius: 0.5625rem;               /* 9px */
+  --radius-button: 9px;
+  --radius-field: 9px;
+  --radius-surface: 12px;            /* popovers, select menus */
 
   --background: #f7f7f8;
   --foreground: #18181b;
@@ -218,7 +229,8 @@
   --primary-edge: color-mix(in srgb, var(--primary) 30%, transparent);   /* banner border */
 }
 
-.dark .app-skin {
+.dark .app-skin,
+.dark body:has(.app-skin) {
   --background: #18181b;
   --foreground: #f4f4f5;
   --card: #202024;
