@@ -16,7 +16,14 @@ import { ScrollArea } from "@repo/ui/components/ui/scroll-area";
 // Mock Data removed
 const MOCK_NOTIFICATIONS: any[] = [];
 
-export function NotificationsPopover() {
+export function NotificationsPopover({
+    side = "bottom",
+    align = "end",
+}: {
+    /** Where the panel opens relative to the bell; the side rail opens it to the right. */
+    side?: "top" | "right" | "bottom" | "left";
+    align?: "start" | "center" | "end";
+} = {}) {
     const [open, setOpen] = useState(false);
     const [notifications, setNotifications] = useState<typeof MOCK_NOTIFICATIONS>([]);
     const [isMounted, setIsMounted] = useState(false);
@@ -56,7 +63,7 @@ export function NotificationsPopover() {
                     <span className="sr-only">Notifications</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0" align="end">
+            <PopoverContent className="w-80 p-0" side={side} align={align}>
                 <div className="flex items-center justify-between px-4 py-3 border-b">
                     <h4 className="font-semibold text-sm">Notifications</h4>
                     {unreadCount > 0 && (
