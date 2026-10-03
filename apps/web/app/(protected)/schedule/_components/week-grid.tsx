@@ -429,7 +429,7 @@ export function PeopleGrid({
                         <>
                             Nobody on the team yet.{" "}
                             <Link href={ROSTERS_PATH} className="font-medium text-primary underline-offset-2 hover:underline">
-                                Add people in Roster
+                                Add people in Team
                             </Link>
                         </>
                     ) : search.trim() ? (

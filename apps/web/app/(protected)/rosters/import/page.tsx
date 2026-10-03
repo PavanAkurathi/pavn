@@ -396,7 +396,7 @@ export default function BulkImportPage() {
                                 <Badge variant="destructive">Failed to add {importStats.failed} workers</Badge>
                             ) : null}
                             <Button onClick={() => router.push("/rosters")}>
-                                Back to Roster
+                                Back to Team
                             </Button>
                         </EmptyContent>
                     </Empty>

@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import { ColumnDef, Row } from "@tanstack/react-table"
-import { Badge } from "@repo/ui/components/ui/badge"
+import { InitialsAvatar } from "@repo/ui/components/app/initials-avatar"
+import { Pill } from "@repo/ui/components/app/pill"
+import { roleHue } from "@repo/ui/lib/role-hue"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { format } from "date-fns"
@@ -53,13 +55,11 @@ function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <button className="flex items-center gap-3 hover:opacity-80 transition-opacity text-left text-foreground">
-                    <Avatar className="h-8 w-8 border">
-                        <AvatarImage src={worker.image || undefined} alt={worker.name} />
-                        <AvatarFallback>{worker.name.charAt(0).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                        <span className="font-medium text-sm hover:underline">{worker.name}</span>
+                <button className="flex items-center gap-3 text-left text-foreground transition-opacity hover:opacity-80">
+                    <InitialsAvatar name={worker.name} hue={roleHue(worker.jobTitle ?? worker.role)} size="md" />
+                    <div className="flex min-w-0 flex-col">
+                        <span className="text-[13px] font-bold hover:underline">{worker.name}</span>
+                        <span className="truncate text-[11.5px] text-muted-foreground">{worker.phone || worker.email}</span>
                     </div>
                 </button>
             </SheetTrigger>
@@ -242,26 +242,15 @@ export const columns: ColumnDef<WorkerDetails>[] = [
         },
     },
     {
-        accessorKey: "email",
-        header: "Email",
-        cell: ({ row }) => {
-            return <span className="text-sm">{row.original.email}</span>
-        }
-    },
-    {
-        accessorKey: "phone",
-        header: "Phone",
-        cell: ({ row }) => {
-            return <span className="text-sm text-muted-foreground">{row.original.phone || "—"}</span>
-        }
-    },
-    {
         accessorKey: "jobTitle",
         header: "Role",
         cell: ({ row }) => {
             const worker = row.original;
+            const role = worker.jobTitle || worker.role || "Member";
             return (
-                <span className="text-sm font-medium capitalize">{worker.jobTitle || worker.role || "Member"}</span>
+                <Pill tone="role" hue={roleHue(role)}>
+                    {role}
+                </Pill>
             )
         }
     },
@@ -293,16 +282,10 @@ export const columns: ColumnDef<WorkerDetails>[] = [
         cell: ({ row }) => {
             const status = row.getValue("status") as string;
 
-            if (status === "active") {
-                return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Active</Badge>
-            }
-            if (status === "invited") {
-                return <Badge variant="secondary" className="bg-amber-100 text-amber-800 hover:bg-amber-200">Invited</Badge>
-            }
-            if (status === "uninvited") {
-                return <Badge variant="outline" className="text-slate-500">Uninvited</Badge>
-            }
-            return <Badge variant="outline">{status}</Badge>
+            if (status === "active") return <Pill>Active</Pill>
+            if (status === "invited") return <Pill tone="warning">Invite sent</Pill>
+            if (status === "uninvited") return <Pill>Not invited</Pill>
+            return <Pill>{status}</Pill>
         }
     },
     {

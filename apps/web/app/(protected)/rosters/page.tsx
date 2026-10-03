@@ -10,9 +10,11 @@ import {
     CardHeader,
     CardTitle,
 } from "@repo/ui/components/ui/card";
-import { ArrowRight, Upload, Users, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, Upload, Users, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { AddWorkerDialog } from "./_components/add-worker-dialog";
+import { InviteMemberPopover } from "./_components/invite-member-popover";
+import { SUBSCRIPTION } from "@repo/config";
+import { PageTopBar } from "@/components/app-shell/page-top-bar";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { getRosterWorkers } from "@/lib/api/organizations";
 import { getOnboardingHref } from "@/lib/routes";
@@ -50,28 +52,44 @@ export default async function RostersPage(props: {
             ? "Review the roles attached to your frontline workforce before you publish your first schedule."
             : onboardingMode === "roster"
               ? "This is your frontline workforce workspace. Add or import the people you plan to schedule."
-              : "Manage your frontline workforce and workers.";
+              : null;
+
+    const active = workers.filter((w) => w.status === "active").length;
+    const waiting = workers.length - active;
+    const summary = [`${active} active`, waiting > 0 ? `${waiting} ${waiting === 1 ? "invite" : "invites"} pending` : null].filter(Boolean).join(" · ");
 
     return (
-        <div className="flex max-w-5xl flex-col gap-6">
-            <div className="flex items-center justify-between">
+        <div className="max-w-5xl overflow-hidden rounded-card border bg-card">
+            <PageTopBar
+                title="Team"
+                subtitle={rosterHeaderDescription ?? summary}
+                actions={
+                    onboardingMode ? null : (
+                        <>
+                            <Button asChild variant="outline" size="sm">
+                                <Link href="/rosters/import">
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Import CSV
+                                </Link>
+                            </Button>
+                            <InviteMemberPopover />
+                        </>
+                    )
+                }
+            />
+            <div className="flex flex-col gap-4 bg-background p-4">
+            <div className="flex items-start gap-2.5 rounded-panel border border-(--primary-edge) bg-(--primary-soft) px-3.5 py-3">
+                <span aria-hidden className="mt-0.5 flex size-[22px] shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="size-3.5" strokeWidth={3} />
+                </span>
                 <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Roster</h2>
-                    <p className="text-muted-foreground">
-                        {rosterHeaderDescription}
+                    <p className="text-[13px] font-bold">
+                        ${SUBSCRIPTION.MONTHLY_PRICE_USD}/mo per location: unlimited team members.
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                        No per-seat fees. Invite the whole team; the price doesn&apos;t change with headcount.
                     </p>
                 </div>
-                {!onboardingMode && (
-                    <div className="flex items-center gap-2">
-                        <Link href="/rosters/import">
-                            <Button variant="outline" size="sm">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Import CSV
-                            </Button>
-                        </Link>
-                        <AddWorkerDialog />
-                    </div>
-                )}
             </div>
 
             {onboardingMode && (
@@ -105,10 +123,10 @@ export default async function RostersPage(props: {
                     <CardContent className="flex flex-col gap-4">
                         <Alert className="bg-background/70">
                             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-                            <AlertTitle>Keep Team and Roster separate</AlertTitle>
+                            <AlertTitle>Keep this page and Settings &gt; Team separate</AlertTitle>
                             <AlertDescription>
                                 <span className="font-medium text-foreground">
-                                    Roster
+                                    This page
                                 </span>{" "}
                                 is for your frontline workforce.{" "}
                                 <span>
@@ -124,7 +142,7 @@ export default async function RostersPage(props: {
                                     Import roster CSV
                                 </Button>
                             </Link>
-                            <AddWorkerDialog />
+                            <InviteMemberPopover />
                             <Link href={getOnboardingHref()}>
                                 <Button variant="ghost" className="gap-2">
                                     Return to onboarding
@@ -137,6 +155,7 @@ export default async function RostersPage(props: {
             )}
 
             <DataTable columns={columns} data={workers} />
+            </div>
         </div>
     );
 }
