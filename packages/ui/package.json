@@ -13,10 +13,12 @@
     "./globals.css": "./src/styles/globals.css",
     "./components/site/*": "./src/components/site/*.tsx",
     "./components/ui/*": "./src/components/ui/*.tsx",
+    "./components/app/*": "./src/components/app/*.tsx",
     "./lib/*": "./src/lib/*.ts",
     "./*": "./src/*.tsx"
   },
   "scripts": {
+    "test": "node ../../scripts/run-package-tests.mjs",
     "lint": "eslint . --max-warnings 10",
     "generate:component": "turbo gen react-component",
     "check-types": "tsc --noEmit"
