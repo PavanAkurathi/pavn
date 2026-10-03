@@ -39,6 +39,7 @@ import { ConflictDialog } from "./conflict-dialog";
 import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
 import { PublishDialog } from "./publish-dialog";
+import { WeekStats } from "./week-stats";
 import { QuickCreate, type QuickCreateTarget } from "./quick-create";
 import { ChipGhost, type Density } from "./shift-chip";
 import { ShiftDrawer } from "./shift-drawer";
@@ -301,89 +302,96 @@ export function Scheduler({
 
     return (
         <div className="flex flex-col gap-3">
-            <SchedulerToolbar
-                week={week}
-                locations={locations}
-                locationId={locationId}
-                onLocation={changeLocation}
-                onWeek={(step) => goToWeek(addDays(week.weekStart, step * 7))}
-                onThisWeek={() => goToWeek(null)}
-                department={department}
-                onDepartment={setDepartment}
-                viewMode={viewMode}
-                onViewMode={setViewMode}
-                density={density}
-                onDensity={setDensity}
-                onOpenCounter={showOpenRow}
-                onRequests={() => router.push(getRequestsHref())}
-                onHelp={() => setHelpOpen(true)}
-                busy={(isValidating && !isInitial) || edits.busy}
-                history={{
-                    canUndo: edits.canUndo,
-                    canRedo: edits.canRedo,
-                    undoLabel: edits.nextUndoLabel,
-                    onUndo: () => void edits.undo(),
-                    onRedo: () => void edits.redo(),
-                }}
-                tools={{
-                    onCopyWeek: () => setCopyWeekOpen(true),
-                    onTemplate: () => setTemplateOpen(true),
-                    onAddEvent: addEvent,
-                    onDiscard: () => setDiscardOpen(true),
-                }}
-                onPublish={() => void publish.start()}
-                publishPhase={publish.phase}
-            />
-
-            {error ? (
-                <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
-                    <span>Couldn&apos;t load this week: {error.message}</span>
-                    <Button size="sm" variant="outline" onClick={() => void mutate()}>
-                        Try again
-                    </Button>
+            <div className="overflow-hidden rounded-card border bg-card shadow-sm">
+                <div className="border-b bg-card px-3.5 py-2.5">
+                    <SchedulerToolbar
+                        week={week}
+                        locations={locations}
+                        locationId={locationId}
+                        onLocation={changeLocation}
+                        onWeek={(step) => goToWeek(addDays(week.weekStart, step * 7))}
+                        onThisWeek={() => goToWeek(null)}
+                        department={department}
+                        onDepartment={setDepartment}
+                        viewMode={viewMode}
+                        onViewMode={setViewMode}
+                        density={density}
+                        onDensity={setDensity}
+                        onRequests={() => router.push(getRequestsHref())}
+                        onHelp={() => setHelpOpen(true)}
+                        busy={(isValidating && !isInitial) || edits.busy}
+                        history={{
+                            canUndo: edits.canUndo,
+                            canRedo: edits.canRedo,
+                            undoLabel: edits.nextUndoLabel,
+                            onUndo: () => void edits.undo(),
+                            onRedo: () => void edits.redo(),
+                        }}
+                        tools={{
+                            onCopyWeek: () => setCopyWeekOpen(true),
+                            onTemplate: () => setTemplateOpen(true),
+                            onAddEvent: addEvent,
+                            onDiscard: () => setDiscardOpen(true),
+                        }}
+                        onPublish={() => void publish.start()}
+                        publishPhase={publish.phase}
+                    />
                 </div>
-            ) : null}
 
-            {week.shifts.length === 0 ? (
-                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                    Nothing scheduled yet.
-                    <button type="button" className="font-medium text-primary hover:underline" onClick={() => setCopyWeekOpen(true)}>
-                        Copy last week
-                    </button>
-                    <button type="button" className="font-medium text-primary hover:underline" onClick={() => setTemplateOpen(true)}>
-                        Use a template
-                    </button>
-                    <span>or click any day to add a shift.</span>
-                </p>
-            ) : null}
-
-            <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
-                <div
-                    ref={gridRef}
-                    aria-busy={isValidating || edits.busy}
-                    className={cn(
-                        "max-h-[calc(100vh-12rem)] min-h-[360px] overflow-auto overscroll-contain rounded-xl border bg-card shadow-sm transition-opacity",
-                        isValidating && !data && "opacity-60",
-                    )}
-                >
-                    {viewMode === "people" ? (
-                        <PeopleGrid
-                            week={week}
-                            view={peopleView}
-                            search={search}
-                            onSearch={setSearch}
-                            collapsed={collapsed}
-                            onToggleSection={toggleSection}
-                            flashOpenRow={flashOpen}
-                            openRowRef={openRowRef}
-                            editing={editing}
-                        />
-                    ) : (
-                        <PositionsGrid week={week} rows={positionRows} editing={editing} />
-                    )}
+                <div className="border-b px-3.5 py-2">
+                    <WeekStats week={week} onOpen={showOpenRow} onRequests={() => router.push(getRequestsHref())} />
                 </div>
-                <DragOverlay dropAnimation={null}>{dragging ? <ChipGhost shift={dragging.shift} copy={copyMode} /> : null}</DragOverlay>
-            </DndContext>
+
+                {error ? (
+                    <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+                        <span>Couldn&apos;t load this week: {error.message}</span>
+                        <Button size="sm" variant="outline" onClick={() => void mutate()}>
+                            Try again
+                        </Button>
+                    </div>
+                ) : null}
+
+                {week.shifts.length === 0 ? (
+                    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                        Nothing scheduled yet.
+                        <button type="button" className="font-medium text-primary hover:underline" onClick={() => setCopyWeekOpen(true)}>
+                            Copy last week
+                        </button>
+                        <button type="button" className="font-medium text-primary hover:underline" onClick={() => setTemplateOpen(true)}>
+                            Use a template
+                        </button>
+                        <span>or click any day to add a shift.</span>
+                    </p>
+                ) : null}
+
+                <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+                    <div
+                        ref={gridRef}
+                        aria-busy={isValidating || edits.busy}
+                        className={cn(
+                            "max-h-[calc(100vh-15rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity",
+                            isValidating && !data && "opacity-60",
+                        )}
+                    >
+                        {viewMode === "people" ? (
+                            <PeopleGrid
+                                week={week}
+                                view={peopleView}
+                                search={search}
+                                onSearch={setSearch}
+                                collapsed={collapsed}
+                                onToggleSection={toggleSection}
+                                flashOpenRow={flashOpen}
+                                openRowRef={openRowRef}
+                                editing={editing}
+                            />
+                        ) : (
+                            <PositionsGrid week={week} rows={positionRows} editing={editing} />
+                        )}
+                    </div>
+                    <DragOverlay dropAnimation={null}>{dragging ? <ChipGhost shift={dragging.shift} copy={copyMode} /> : null}</DragOverlay>
+                </DndContext>
+            </div>
 
             <p className="text-xs text-muted-foreground">
                 Times are {week.location.name}&apos;s local time ({week.location.timezone.replace(/_/g, " ")}). Changes stay drafts until you

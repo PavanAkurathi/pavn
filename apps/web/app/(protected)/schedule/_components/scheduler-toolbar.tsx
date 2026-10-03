@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Redo2, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleHelp, MoreHorizontal, Plus, Redo2, Undo2 } from "lucide-react";
 import type { SchedulerWeek } from "@repo/contracts/scheduler";
 import { Button } from "@repo/ui/components/ui/button";
 import {
@@ -34,7 +34,6 @@ export function SchedulerToolbar({
     onViewMode,
     density,
     onDensity,
-    onOpenCounter,
     onRequests,
     onHelp,
     busy,
@@ -55,7 +54,6 @@ export function SchedulerToolbar({
     onViewMode: (mode: ViewMode) => void;
     density: Density;
     onDensity: (density: Density) => void;
-    onOpenCounter: () => void;
     onRequests: () => void;
     onHelp: () => void;
     busy: boolean;
@@ -66,7 +64,7 @@ export function SchedulerToolbar({
 }) {
     const isThisWeek = week.days.some((d) => d.isToday);
     const today = week.days.find((d) => d.isToday)?.localDate;
-    const { openSlots, pendingChangeCount, pendingRequestCount } = week.summary;
+    const { pendingChangeCount } = week.summary;
     // Businesses that schedule around bookings get "Add event" on the toolbar itself.
     const eventsFirst = week.settings.scheduleStyle === "events";
 
@@ -76,7 +74,7 @@ export function SchedulerToolbar({
 
             {locations.length > 1 ? (
                 <Select value={locationId} onValueChange={onLocation}>
-                    <SelectTrigger aria-label="Location" className="h-9 w-auto min-w-40 font-semibold">
+                    <SelectTrigger aria-label="Location" className="h-8 w-auto min-w-40 text-[13px] font-semibold">
                         {/* Children, so the name shows before the menu has ever opened. */}
                         <SelectValue>{week.location.name}</SelectValue>
                     </SelectTrigger>
@@ -89,72 +87,46 @@ export function SchedulerToolbar({
                     </SelectContent>
                 </Select>
             ) : (
-                <span className="px-1 text-[15px] font-semibold">{week.location.name}</span>
+                <span className="px-1 text-[15px] font-bold tracking-tight">{week.location.name}</span>
             )}
 
-            <div className="flex h-9 items-center gap-0.5 rounded-md border bg-card px-0.5">
-                <Button variant="ghost" size="icon" className="size-8" aria-label="Previous week" onClick={() => onWeek(-1)}>
-                    <ChevronLeft />
-                </Button>
+            <div className="flex items-center gap-1.5">
+                <button type="button" aria-label="Previous week" onClick={() => onWeek(-1)} className={arrowButton}>
+                    <ChevronLeft aria-hidden className="size-4" />
+                </button>
                 <span
                     aria-live="polite"
-                    className={cn("min-w-32 text-center text-[13.5px] font-semibold tabular-nums", busy && "opacity-60")}
+                    className={cn("min-w-[148px] whitespace-nowrap text-center text-[13px] font-semibold tabular-nums", busy && "opacity-60")}
                 >
                     {weekRangeLabel(week.days[0]!.localDate, week.days[6]!.localDate, today ?? week.days[0]!.localDate)}
                 </span>
-                <Button variant="ghost" size="icon" className="size-8" aria-label="Next week" onClick={() => onWeek(1)}>
-                    <ChevronRight />
-                </Button>
-            </div>
-            {isThisWeek ? null : (
-                <Button variant="outline" size="sm" className="h-9" onClick={onThisWeek}>
-                    This week
-                </Button>
-            )}
-
-            <div role="group" aria-label="Board" className="flex h-9 items-center gap-0.5 rounded-control border bg-muted p-0.5">
-                {(
-                    [
-                        ["positions", "Roles"],
-                        ["people", "People"],
-                    ] as const
-                ).map(([mode, label]) => (
-                    <button
-                        key={mode}
-                        type="button"
-                        aria-pressed={viewMode === mode}
-                        onClick={() => onViewMode(mode)}
-                        className={cn(
-                            "h-full whitespace-nowrap rounded-chip px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground",
-                            viewMode === mode && "bg-card text-foreground shadow-sm",
-                        )}
-                    >
-                        {label}
+                <button type="button" aria-label="Next week" onClick={() => onWeek(1)} className={arrowButton}>
+                    <ChevronRight aria-hidden className="size-4" />
+                </button>
+                {isThisWeek ? null : (
+                    <button type="button" onClick={onThisWeek} className="px-1.5 py-1 text-[11px] font-semibold text-primary hover:underline">
+                        Today
                     </button>
-                ))}
+                )}
             </div>
+
+            <Segmented
+                label="Board"
+                value={viewMode}
+                onChange={(mode) => onViewMode(mode as ViewMode)}
+                options={[
+                    ["positions", "Roles"],
+                    ["people", "People"],
+                ]}
+            />
 
             {week.departments.length > 1 ? (
-                <div
-                    role="group"
-                    aria-label="Department"
-                    className="flex h-9 max-w-full items-center gap-0.5 overflow-x-auto rounded-md border bg-muted p-0.5"
-                >
-                    {[{ id: ALL_DEPARTMENTS, name: "All" }, ...week.departments].map((d) => (
-                        <button
-                            key={d.id}
-                            type="button"
-                            aria-pressed={department === d.id}
-                            onClick={() => onDepartment(d.id)}
-                            className={cn(
-                                "h-full whitespace-nowrap rounded px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:text-foreground",
-                                department === d.id && "bg-card text-foreground shadow-sm",
-                            )}
-                        >
-                            {d.name}
-                        </button>
-                    ))}
-                </div>
+                <Segmented
+                    label="Department"
+                    value={department}
+                    onChange={onDepartment}
+                    options={[[ALL_DEPARTMENTS, "All"], ...week.departments.map((d) => [d.id, d.name] as [string, string])]}
+                />
             ) : null}
 
             <div className="ml-auto flex flex-wrap items-center gap-2">
@@ -162,7 +134,7 @@ export function SchedulerToolbar({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="size-9"
+                        className="size-8"
                         aria-label={history.undoLabel ? `Undo: ${history.undoLabel}` : "Undo"}
                         title={history.undoLabel ? `Undo: ${history.undoLabel} (z)` : "Undo (z)"}
                         disabled={!history.canUndo}
@@ -173,7 +145,7 @@ export function SchedulerToolbar({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="size-9"
+                        className="size-8"
                         aria-label="Redo"
                         title="Redo (Shift+z)"
                         disabled={!history.canRedo}
@@ -182,42 +154,25 @@ export function SchedulerToolbar({
                         <Redo2 />
                     </Button>
                 </div>
-                {openSlots > 0 ? (
-                    <button
-                        type="button"
-                        onClick={onOpenCounter}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-[13.5px] font-semibold text-destructive hover:bg-muted"
-                    >
-                        <span aria-hidden className="size-2 rounded-full bg-current" />
-                        {openSlots} open
-                    </button>
-                ) : null}
-                {pendingRequestCount > 0 ? (
-                    <button
-                        type="button"
-                        onClick={onRequests}
-                        className="inline-flex h-9 items-center gap-1.5 rounded-md px-2 text-[13.5px] font-semibold text-foreground/80 hover:bg-muted hover:text-foreground"
-                    >
-                        <span aria-hidden className="grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] leading-5 text-primary-foreground">
-                            {pendingRequestCount}
-                        </span>
-                        {pendingRequestCount === 1 ? "request" : "requests"}
-                    </button>
-                ) : null}
                 {eventsFirst ? (
-                    <Button variant="outline" className="h-9" onClick={tools.onAddEvent}>
+                    <Button variant="outline" className={toolbarButton} onClick={tools.onAddEvent}>
                         <Plus data-icon="inline-start" />
                         Event
                     </Button>
                 ) : null}
+                <Button variant="outline" className={toolbarButton} onClick={tools.onCopyWeek}>
+                    Copy last week
+                </Button>
+                <Button variant="ghost" size="icon" className="size-8" aria-label="Help and shortcuts" title="Help and shortcuts (?)" onClick={onHelp}>
+                    <CircleHelp />
+                </Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon" className="size-9" aria-label="More">
+                        <Button variant="outline" size="icon" className="size-8" aria-label="More">
                             <MoreHorizontal />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-60">
-                        <DropdownMenuItem onSelect={tools.onCopyWeek}>Copy last week…</DropdownMenuItem>
                         <DropdownMenuItem onSelect={tools.onTemplate}>Use a template…</DropdownMenuItem>
                         <DropdownMenuItem onSelect={tools.onAddEvent}>Add event…</DropdownMenuItem>
                         <DropdownMenuItem onSelect={onRequests}>Requests…</DropdownMenuItem>
@@ -228,6 +183,7 @@ export function SchedulerToolbar({
                         >
                             Discard unpublished changes…
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuLabel>Shift cards</DropdownMenuLabel>
                         <DropdownMenuRadioGroup value={density} onValueChange={(v) => onDensity(v as Density)}>
                             <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
@@ -241,7 +197,7 @@ export function SchedulerToolbar({
                     </DropdownMenuContent>
                 </DropdownMenu>
                 <Button
-                    className="h-9"
+                    className={toolbarButton}
                     disabled={pendingChangeCount === 0 || publishPhase !== "idle"}
                     onClick={onPublish}
                     title={pendingChangeCount === 0 ? "Nothing to publish" : undefined}
@@ -255,6 +211,42 @@ export function SchedulerToolbar({
                                 : `Publish${pendingChangeCount > 0 ? ` ${pendingChangeCount}` : ""}`}
                 </Button>
             </div>
+        </div>
+    );
+}
+
+const toolbarButton = "h-8 px-3 text-xs font-semibold";
+const arrowButton =
+    "flex size-[26px] items-center justify-center rounded-chip border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring";
+
+/** A small pill switch: exactly one of a few options is on. */
+function Segmented({
+    label,
+    value,
+    onChange,
+    options,
+}: {
+    label: string;
+    value: string;
+    onChange: (value: string) => void;
+    options: [string, string][];
+}) {
+    return (
+        <div role="group" aria-label={label} className="flex h-8 max-w-full items-center gap-0.5 overflow-x-auto rounded-control border bg-muted p-0.5">
+            {options.map(([id, name]) => (
+                <button
+                    key={id}
+                    type="button"
+                    aria-pressed={value === id}
+                    onClick={() => onChange(id)}
+                    className={cn(
+                        "h-full whitespace-nowrap rounded-chip px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground",
+                        value === id && "bg-card text-foreground shadow-sm",
+                    )}
+                >
+                    {name}
+                </button>
+            ))}
         </div>
     );
 }
