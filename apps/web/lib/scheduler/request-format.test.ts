@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { shiftWhen, timeAgo, timeOffWhen, wallClock } from "./request-format";
+import { shiftWhen, timeAgo, timeOffHasShifts, timeOffWhen, wallClock } from "./request-format";
 
 const NY = "America/New_York";
 
@@ -27,5 +27,13 @@ describe("request times read the wall clock where they happen", () => {
         expect(timeAgo("2026-09-29T11:15:00.000Z", now)).toBe("45m ago");
         expect(timeAgo("2026-09-29T07:00:00.000Z", now)).toBe("5h ago");
         expect(timeAgo("2026-09-26T12:00:00.000Z", now)).toBe("3d ago");
+    });
+});
+
+describe("timeOffHasShifts", () => {
+    test("reads the server's first impact line", () => {
+        expect(timeOffHasShifts(["Nothing scheduled then"])).toBe(false);
+        expect(timeOffHasShifts(["On 2 shifts then: Server Tue 4p–11p; Host Tue 6p–10p", "Approving doesn't take them off"])).toBe(true);
+        expect(timeOffHasShifts([])).toBe(false);
     });
 });

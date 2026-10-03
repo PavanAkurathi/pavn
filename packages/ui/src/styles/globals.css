@@ -89,6 +89,31 @@
   --role-support: #fde047;   /* Pale Sand/Yellow */
   --role-default: #cbd5e1;   /* Pale Slate/Grey */
   --role-foreground: #0D0D0D;
+
+  /*
+    6. ROLE HUES + STATUS COLOURS (manager app)
+    Saturated, so a shift card can tint itself from one value:
+    background ~9% of the hue, border ~40%, 3px left bar at 100%.
+    The pale --role-* set above stays for the screens that still use it.
+  */
+  --hue-bartender: #f59e0b;
+  --hue-server: #3b82f6;
+  --hue-host: #10b981;
+  --hue-barback: #8b5cf6;
+  --hue-security: #64748b;
+  --hue-kitchen: #f43f5e;
+  --hue-support: #eab308;
+  --hue-default: #94a3b8;
+
+  /* Component shapes. These are today's pills and rounded panels; the app skin squares them off. */
+  --radius-button: 9999px;
+  --radius-field: 2rem;
+  --radius-surface: 1rem;
+
+  --success: #16a34a;
+  --success-foreground: #FFFFFF;
+  --warning: #d97706;
+  --warning-foreground: #FFFFFF;
 }
 
 /* 
@@ -146,6 +171,87 @@
   --role-support: #facc15;
   --role-default: #94a3b8;
   --role-foreground: #0D0D0D;
+
+  /* One step lighter so tints and bars hold up on dark surfaces. */
+  --hue-bartender: #fbbf24;
+  --hue-server: #60a5fa;
+  --hue-host: #34d399;
+  --hue-barback: #a78bfa;
+  --hue-security: #94a3b8;
+  --hue-kitchen: #fb7185;
+  --hue-support: #facc15;
+  --hue-default: #94a3b8;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+}
+
+/*
+  3b. APP SKIN: the signed-in manager app (Schedule, Team, Requests and the
+  shell around them), after docs/design/manager-scheduler/shiftly-phase1.html.
+  Add class "app-skin" to a wrapper; marketing and auth pages never get it and
+  keep the brand red/navy above. Every shadcn component inside picks it up
+  through the same variables, so nothing here needs per-component overrides.
+  Popovers, menus, dialogs and toasts render in a portal on <body>, outside the
+  wrapper, so the same variables also apply to any <body> that contains one.
+*/
+.app-skin,
+body:has(.app-skin) {
+  --radius: 0.5625rem;               /* 9px */
+  --radius-button: 9px;
+  --radius-field: 9px;
+  --radius-surface: 12px;            /* popovers, select menus */
+
+  --background: #f7f7f8;
+  --foreground: #18181b;
+  --card: #ffffff;                   /* "surface" in the mockup */
+  --card-foreground: #18181b;
+  --popover: #ffffff;
+  --popover-foreground: #18181b;
+
+  --primary: #6366f1;                /* indigo */
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1f3;
+  --secondary-foreground: #18181b;
+  --muted: #f1f1f3;                  /* "surface-muted" */
+  --muted-foreground: #71717a;
+  --accent: #f1f1f3;
+  --accent-foreground: #18181b;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #6366f1;
+
+  --brand-gradient: linear-gradient(135deg, #6366f1, #a855f7);
+  --primary-soft: color-mix(in srgb, var(--primary) 12%, transparent);   /* active nav item, notes */
+  --primary-edge: color-mix(in srgb, var(--primary) 30%, transparent);   /* banner border */
+}
+
+.dark .app-skin,
+.dark body:has(.app-skin) {
+  --background: #18181b;
+  --foreground: #f4f4f5;
+  --card: #202024;
+  --card-foreground: #f4f4f5;
+  --popover: #202024;
+  --popover-foreground: #f4f4f5;
+
+  --primary: #818cf8;
+  --primary-foreground: #18181b;
+  --secondary: #2a2a30;
+  --secondary-foreground: #f4f4f5;
+  --muted: #2a2a30;
+  --muted-foreground: #a1a1aa;
+  --accent: #2a2a30;
+  --accent-foreground: #f4f4f5;
+  --destructive: #f87171;
+  --destructive-foreground: #18181b;
+
+  --border: #3a3a42;
+  --input: #3a3a42;
+  --ring: #818cf8;
 }
 
 /* 
@@ -192,6 +298,17 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+
+  /* The manager app's radius scale: cards 14, panels 12, controls 9, chips 8 */
+  --radius-card: 14px;
+  --radius-panel: 12px;
+  --radius-control: 9px;
+  --radius-chip: 8px;
+
   /* Semantic Role Colors */
   --color-role-server: var(--role-server);
   --color-role-bartender: var(--role-bartender);
@@ -200,6 +317,16 @@
   --color-role-support: var(--role-support);
   --color-role-default: var(--role-default);
   --color-role-foreground: var(--role-foreground);
+
+  /* Saturated role hues (shift cards, role pills, dots) */
+  --color-hue-bartender: var(--hue-bartender);
+  --color-hue-server: var(--hue-server);
+  --color-hue-host: var(--hue-host);
+  --color-hue-barback: var(--hue-barback);
+  --color-hue-security: var(--hue-security);
+  --color-hue-kitchen: var(--hue-kitchen);
+  --color-hue-support: var(--hue-support);
+  --color-hue-default: var(--hue-default);
 
   /* Animations */
   --animate-accordion-down: accordion-down 0.2s ease-out;

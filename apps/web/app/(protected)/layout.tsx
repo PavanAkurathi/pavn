@@ -1,6 +1,6 @@
 // apps/web/app/(protected)/layout.tsx
 
-import { NavHeader } from "../../components/nav-header";
+import { AppShell } from "@/components/app-shell/app-shell";
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { getOrganizationSummary } from "@/lib/api/organizations";
@@ -23,19 +23,16 @@ export default async function ProtectedLayout({
         : null;
 
     return (
-        <div className="min-h-screen bg-slate-50">
-            <NavHeader
-                activeOrg={activeOrg}
-                trial={getTrialState(activeOrg)}
-                user={{
-                    name: sessionResponse.user.name,
-                    email: sessionResponse.user.email,
-                    image: sessionResponse.user.image,
-                }}
-            />
-            <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-                {children}
-            </main>
-        </div>
+        <AppShell
+            activeOrg={activeOrg}
+            trial={getTrialState(activeOrg)}
+            user={{
+                name: sessionResponse.user.name,
+                email: sessionResponse.user.email,
+                image: sessionResponse.user.image,
+            }}
+        >
+            {children}
+        </AppShell>
     );
 }

@@ -36,6 +36,36 @@ export const BusinessOnboardingStateSchema = z.object({
     settingsHref: z.string(),
 });
 
+/**
+ * What onboarding needs to know about an organization, as plain facts.
+ *
+ * The API reads them from the database; the web app turns them into steps and
+ * links. Keeping hrefs and copy out of this shape is what lets apps/web stay
+ * off the database.
+ */
+export const OnboardingFactsSchema = z.object({
+    orgId: z.string(),
+    name: z.string(),
+    timezone: z.string().nullable(),
+    attendanceVerificationPolicy: z.string().nullable(),
+    businessType: BusinessTypeSchema.nullable(),
+    scheduleStyle: z.string().nullable(),
+    openShiftClaimPolicy: z.string().nullable(),
+    /** Raw organization.metadata JSON string; the web app parses it. */
+    metadata: z.string().nullable(),
+    subscriptionStatus: z.string().nullable(),
+    /** The caller's role in this organization. */
+    memberRole: z.string(),
+    firstLocationName: z.string().nullable(),
+    hasLocation: z.boolean(),
+    hasPublishedShift: z.boolean(),
+    hasDraftShift: z.boolean(),
+    hasRosterEntry: z.boolean(),
+    hasWorkerMember: z.boolean(),
+    hasManagerMember: z.boolean(),
+    hasManagerInvite: z.boolean(),
+});
+
 export const OnboardingStatusSchema = z.object({
     hasOnboarding: z.boolean(),
     isComplete: z.boolean(),
@@ -47,4 +77,5 @@ export type OnboardingStep = z.infer<typeof OnboardingStepSchema>;
 export type BusinessOnboardingState = z.infer<
     typeof BusinessOnboardingStateSchema
 >;
+export type OnboardingFacts = z.infer<typeof OnboardingFactsSchema>;
 export type OnboardingStatus = z.infer<typeof OnboardingStatusSchema>;

@@ -96,7 +96,7 @@ test.describe('Dashboard', () => {
         const nav = page.getByRole('navigation');
         await expect(nav.getByRole('link', { name: /^Schedule/ })).toBeVisible();
         await expect(nav.getByRole('link', { name: 'Shifts', exact: true })).toBeVisible();
-        await expect(nav.getByRole('link', { name: 'Roster', exact: true })).toBeVisible();
+        await expect(nav.getByRole('link', { name: 'Team', exact: true })).toBeVisible();
         await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toBeVisible();
     });
 

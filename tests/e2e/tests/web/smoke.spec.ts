@@ -42,7 +42,7 @@ test.describe("Manager web smoke", () => {
         const nav = page.getByRole("navigation");
         await expect(nav.getByRole("link", { name: /^Schedule/ })).toBeVisible();
         await expect(nav.getByRole("link", { name: "Shifts", exact: true })).toBeVisible();
-        await expect(nav.getByRole("link", { name: "Roster", exact: true })).toBeVisible();
+        await expect(nav.getByRole("link", { name: "Team", exact: true })).toBeVisible();
         await expect(nav.getByRole("link", { name: "Reports", exact: true })).toBeVisible();
     });
 
@@ -56,13 +56,13 @@ test.describe("Manager web smoke", () => {
         await expect(page.getByRole("button", { name: /^Publish/ })).toBeVisible();
     });
 
-    test("roster page loads with workforce actions", async ({ page }) => {
+    test("team page loads with workforce actions", async ({ page }) => {
         await signIn(page);
 
-        await page.getByRole("link", { name: /roster/i }).click();
+        await page.getByRole("navigation").getByRole("link", { name: "Team", exact: true }).click();
 
         await expect(page).toHaveURL(/.*\/rosters.*/);
-        await expect(page.getByRole("heading", { name: "Roster" })).toBeVisible();
-        await expect(page.getByRole("button", { name: /add worker/i })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: /invite team member/i })).toBeVisible();
     });
 });

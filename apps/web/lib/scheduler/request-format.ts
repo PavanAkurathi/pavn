@@ -58,3 +58,13 @@ export function timeAgo(iso: string, now = new Date()) {
     if (hours < 24) return `${hours}h ago`;
     return `${Math.round(hours / 24)}d ago`;
 }
+
+/**
+ * Whether a time-off request lands on shifts the person already has. The
+ * server words that as the first impact line ("Nothing scheduled then" or "On 2
+ * shifts then: ..."), so the page can flag it without a new API field.
+ */
+export function timeOffHasShifts(impact: readonly string[]): boolean {
+    const first = impact[0];
+    return Boolean(first) && !/^nothing scheduled/i.test(first!);
+}

@@ -31,7 +31,7 @@ export default async function WorkerProfilePage({ params }: PageProps) {
                 <h2 className="text-xl font-semibold">Worker not found</h2>
                 <p className="text-muted-foreground mb-6">This worker does not exist or has been removed from your organization.</p>
                 <Link href="/rosters">
-                    <Button variant="outline">Back to Roster</Button>
+                    <Button variant="outline">Back to Team</Button>
                 </Link>
             </div>
         );

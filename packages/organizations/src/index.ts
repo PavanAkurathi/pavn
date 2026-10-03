@@ -9,6 +9,7 @@ export {
 export { getSettings } from "./modules/settings/get-settings";
 export { updateSettings } from "./modules/settings/update-settings";
 
+export { getOnboardingFacts } from "./modules/workspace/onboarding-facts";
 export { createLocation } from "./modules/locations/create-location";
 export { deleteLocation } from "./modules/locations/delete-location";
 export { getLocations } from "./modules/locations/get-locations";

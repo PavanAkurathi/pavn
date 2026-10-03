@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
 import {
@@ -31,21 +32,25 @@ import { addDays } from "@/lib/scheduler/format";
 import { planMove, planRemove, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
 import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
+import { usePublish } from "@/lib/scheduler/use-publish";
 import { ALL_DEPARTMENTS, buildPeopleView, buildPositionsView, type ViewMode } from "@/lib/scheduler/view-model";
-import { getSchedulerHref } from "@/lib/routes";
+import { getRequestsHref, getSchedulerHref } from "@/lib/routes";
 import { ConflictDialog } from "./conflict-dialog";
 import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
 import { PublishDialog } from "./publish-dialog";
-import { RequestsPanel } from "./requests-panel";
+import { WeekStats } from "./week-stats";
 import { QuickCreate, type QuickCreateTarget } from "./quick-create";
-import { ChipGhost } from "./shift-chip";
+import { ChipGhost, type Density } from "./shift-chip";
 import { ShiftDrawer } from "./shift-drawer";
 import { SchedulerToolbar } from "./scheduler-toolbar";
 import { CopyWeekDialog, TemplateDialog } from "./week-tools";
 import { PeopleGrid, PositionsGrid, type DropHint, type GridEditing } from "./week-grid";
 
 const isViewMode = (value: string): value is ViewMode => value === "people" || value === "positions";
+const isDensityChoice = (value: string): value is Density | "auto" => value === "comfortable" || value === "compact" || value === "auto";
+/** From this many people on, cards default to one line each. */
+const BIG_TEAM = 50;
 
 const typingIn = (target: EventTarget | null) =>
     target instanceof HTMLElement && (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName));
@@ -64,6 +69,7 @@ export function Scheduler({
     /** The ?week= the page was opened with; null means "this week". */
     initialWeekParam: string | null;
 }) {
+    const router = useRouter();
     const [locationId, setLocationId] = useState(initialLocationId);
     const [weekParam, setWeekParam] = useState<string | null>(initialWeekParam);
     const [search, setSearch] = useState("");
@@ -80,7 +86,6 @@ export function Scheduler({
     const [discardOpen, setDiscardOpen] = useState(false);
     const [publishOpen, setPublishOpen] = useState(false);
     const [eventTarget, setEventTarget] = useState<EventEditTarget | null>(null);
-    const [requestsOpen, setRequestsOpen] = useState(false);
     const openRowRef = useRef<HTMLDivElement | null>(null);
 
     const key = weekKey(locationId, weekParam);
@@ -94,6 +99,20 @@ export function Scheduler({
 
     const refresh = useCallback(() => mutate(), [mutate]);
     const edits = useSchedulerEdits(refresh);
+    const publish = usePublish({
+        week,
+        onNeedsReview: () => setPublishOpen(true),
+        onPublished: async () => {
+            // Undo can't reach past what staff have already been told.
+            edits.reset();
+            await mutate();
+        },
+    });
+    // A change while the publish is waiting means the toast no longer says what would go out.
+    const cancelPublish = publish.cancel;
+    useEffect(() => {
+        if (edits.busy) cancelPublish("Publish cancelled because the week changed. Publish again when you're ready.");
+    }, [edits.busy, cancelPublish]);
 
     const [storedDepartment, setDepartment] = usePersistentState<string>(`wh.scheduler.${orgId}.department`, ALL_DEPARTMENTS);
     const department =
@@ -102,9 +121,18 @@ export function Scheduler({
             : ALL_DEPARTMENTS;
     const [viewMode, setViewMode] = usePersistentState<ViewMode>(
         `wh.scheduler.${orgId}.view`,
-        week.settings.scheduleStyle === "events" ? "positions" : "people",
+        // Roles first: who is on each position, and what is still open, at a glance.
+        "positions",
         isViewMode,
     );
+    // Cards are comfortable until the team is big enough that rows would run long (50+),
+    // unless the manager has picked one.
+    const [storedDensity, setDensity] = usePersistentState<Density | "auto">(
+        `wh.scheduler.${orgId}.density`,
+        "auto",
+        isDensityChoice,
+    );
+    const density: Density = storedDensity === "auto" ? (week.people.length >= BIG_TEAM ? "compact" : "comfortable") : storedDensity;
     const [collapsedRaw, setCollapsedRaw] = usePersistentState<string>(`wh.scheduler.${orgId}.collapsed`, "");
     const collapsed = useMemo(() => new Set(collapsedRaw.split(",").filter(Boolean)), [collapsedRaw]);
 
@@ -135,12 +163,22 @@ export function Scheduler({
         syncUrl({ location: next, week: weekParam });
     };
 
+    const gridRef = useRef<HTMLDivElement | null>(null);
     const showOpenRow = () => {
-        if (viewMode !== "people") setViewMode("people");
         requestAnimationFrame(() => {
-            openRowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-            setFlashOpen(true);
-            window.setTimeout(() => setFlashOpen(false), 1400);
+            if (viewMode === "people") {
+                openRowRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                setFlashOpen(true);
+                window.setTimeout(() => setFlashOpen(false), 1400);
+                return;
+            }
+            // On the Roles board the open slots sit in their role's row: scroll to the first and mark them all.
+            const cards = [...(gridRef.current?.querySelectorAll<HTMLElement>('[data-kind="open"]') ?? [])];
+            cards[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
+            for (const card of cards) card.dataset.flash = "true";
+            window.setTimeout(() => {
+                for (const card of cards) delete card.dataset.flash;
+            }, 1600);
         });
     };
 
@@ -217,6 +255,7 @@ export function Scheduler({
         },
         hintFor,
         dragging: dragging !== null,
+        density,
         onOpenEvent: (eventId) => setEventTarget({ mode: "edit", eventId }),
     };
 
@@ -263,85 +302,96 @@ export function Scheduler({
 
     return (
         <div className="flex flex-col gap-3">
-            <SchedulerToolbar
-                week={week}
-                locations={locations}
-                locationId={locationId}
-                onLocation={changeLocation}
-                onWeek={(step) => goToWeek(addDays(week.weekStart, step * 7))}
-                onThisWeek={() => goToWeek(null)}
-                department={department}
-                onDepartment={setDepartment}
-                viewMode={viewMode}
-                onViewMode={setViewMode}
-                onOpenCounter={showOpenRow}
-                onRequests={() => setRequestsOpen(true)}
-                onHelp={() => setHelpOpen(true)}
-                busy={(isValidating && !isInitial) || edits.busy}
-                history={{
-                    canUndo: edits.canUndo,
-                    canRedo: edits.canRedo,
-                    undoLabel: edits.nextUndoLabel,
-                    onUndo: () => void edits.undo(),
-                    onRedo: () => void edits.redo(),
-                }}
-                tools={{
-                    onCopyWeek: () => setCopyWeekOpen(true),
-                    onTemplate: () => setTemplateOpen(true),
-                    onAddEvent: addEvent,
-                    onDiscard: () => setDiscardOpen(true),
-                }}
-                onPublish={() => setPublishOpen(true)}
-            />
-
-            {error ? (
-                <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
-                    <span>Couldn&apos;t load this week: {error.message}</span>
-                    <Button size="sm" variant="outline" onClick={() => void mutate()}>
-                        Try again
-                    </Button>
+            <div className="overflow-hidden rounded-card border bg-card shadow-sm">
+                <div className="border-b bg-card px-3.5 py-2.5">
+                    <SchedulerToolbar
+                        week={week}
+                        locations={locations}
+                        locationId={locationId}
+                        onLocation={changeLocation}
+                        onWeek={(step) => goToWeek(addDays(week.weekStart, step * 7))}
+                        onThisWeek={() => goToWeek(null)}
+                        department={department}
+                        onDepartment={setDepartment}
+                        viewMode={viewMode}
+                        onViewMode={setViewMode}
+                        density={density}
+                        onDensity={setDensity}
+                        onRequests={() => router.push(getRequestsHref())}
+                        onHelp={() => setHelpOpen(true)}
+                        busy={(isValidating && !isInitial) || edits.busy}
+                        history={{
+                            canUndo: edits.canUndo,
+                            canRedo: edits.canRedo,
+                            undoLabel: edits.nextUndoLabel,
+                            onUndo: () => void edits.undo(),
+                            onRedo: () => void edits.redo(),
+                        }}
+                        tools={{
+                            onCopyWeek: () => setCopyWeekOpen(true),
+                            onTemplate: () => setTemplateOpen(true),
+                            onAddEvent: addEvent,
+                            onDiscard: () => setDiscardOpen(true),
+                        }}
+                        onPublish={() => void publish.start()}
+                        publishPhase={publish.phase}
+                    />
                 </div>
-            ) : null}
 
-            {week.shifts.length === 0 ? (
-                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                    Nothing scheduled yet.
-                    <button type="button" className="font-medium text-primary hover:underline" onClick={() => setCopyWeekOpen(true)}>
-                        Copy last week
-                    </button>
-                    <button type="button" className="font-medium text-primary hover:underline" onClick={() => setTemplateOpen(true)}>
-                        Use a template
-                    </button>
-                    <span>or click any day to add a shift.</span>
-                </p>
-            ) : null}
-
-            <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
-                <div
-                    aria-busy={isValidating || edits.busy}
-                    className={cn(
-                        "max-h-[calc(100vh-12rem)] min-h-[360px] overflow-auto overscroll-contain rounded-xl border bg-card shadow-sm transition-opacity",
-                        isValidating && !data && "opacity-60",
-                    )}
-                >
-                    {viewMode === "people" ? (
-                        <PeopleGrid
-                            week={week}
-                            view={peopleView}
-                            search={search}
-                            onSearch={setSearch}
-                            collapsed={collapsed}
-                            onToggleSection={toggleSection}
-                            flashOpenRow={flashOpen}
-                            openRowRef={openRowRef}
-                            editing={editing}
-                        />
-                    ) : (
-                        <PositionsGrid week={week} rows={positionRows} editing={editing} />
-                    )}
+                <div className="border-b px-3.5 py-2">
+                    <WeekStats week={week} onOpen={showOpenRow} onRequests={() => router.push(getRequestsHref())} />
                 </div>
-                <DragOverlay dropAnimation={null}>{dragging ? <ChipGhost shift={dragging.shift} copy={copyMode} /> : null}</DragOverlay>
-            </DndContext>
+
+                {error ? (
+                    <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+                        <span>Couldn&apos;t load this week: {error.message}</span>
+                        <Button size="sm" variant="outline" onClick={() => void mutate()}>
+                            Try again
+                        </Button>
+                    </div>
+                ) : null}
+
+                {week.shifts.length === 0 ? (
+                    <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                        Nothing scheduled yet.
+                        <button type="button" className="font-medium text-primary hover:underline" onClick={() => setCopyWeekOpen(true)}>
+                            Copy last week
+                        </button>
+                        <button type="button" className="font-medium text-primary hover:underline" onClick={() => setTemplateOpen(true)}>
+                            Use a template
+                        </button>
+                        <span>or click any day to add a shift.</span>
+                    </p>
+                ) : null}
+
+                <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
+                    <div
+                        ref={gridRef}
+                        aria-busy={isValidating || edits.busy}
+                        className={cn(
+                            "max-h-[calc(100vh-15rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity",
+                            isValidating && !data && "opacity-60",
+                        )}
+                    >
+                        {viewMode === "people" ? (
+                            <PeopleGrid
+                                week={week}
+                                view={peopleView}
+                                search={search}
+                                onSearch={setSearch}
+                                collapsed={collapsed}
+                                onToggleSection={toggleSection}
+                                flashOpenRow={flashOpen}
+                                openRowRef={openRowRef}
+                                editing={editing}
+                            />
+                        ) : (
+                            <PositionsGrid week={week} rows={positionRows} editing={editing} />
+                        )}
+                    </div>
+                    <DragOverlay dropAnimation={null}>{dragging ? <ChipGhost shift={dragging.shift} copy={copyMode} /> : null}</DragOverlay>
+                </DndContext>
+            </div>
 
             <p className="text-xs text-muted-foreground">
                 Times are {week.location.name}&apos;s local time ({week.location.timezone.replace(/_/g, " ")}). Changes stay drafts until you
@@ -377,15 +427,6 @@ export function Scheduler({
                 onStaff={(shiftId) => {
                     setEventTarget(null);
                     setOpenShiftId(shiftId);
-                }}
-            />
-            <RequestsPanel
-                open={requestsOpen}
-                onOpenChange={setRequestsOpen}
-                onDecided={() => {
-                    // Approvals change who is on shifts; the undo stack can't reach past them.
-                    edits.reset();
-                    void mutate();
                 }}
             />
             <ConflictDialog conflict={edits.conflict} />

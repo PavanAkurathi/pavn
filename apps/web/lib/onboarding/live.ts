@@ -4,15 +4,7 @@ import type {
     BusinessOnboardingState,
     OnboardingStep,
 } from "@repo/contracts/onboarding";
-import { db, eq, and, ne } from "@repo/database";
-import {
-    invitation,
-    location,
-    member,
-    organization,
-    rosterEntry,
-    shift,
-} from "@repo/database/schema";
+import { getOnboardingFacts } from "@/lib/api/organizations";
 import type { AttendanceVerificationPolicy } from "@repo/config";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 import { parseOrganizationMetadata } from "@/lib/organization-metadata";
@@ -20,6 +12,9 @@ import { getOnboardingHref } from "@/lib/routes";
 import { requiresBusinessOnboarding } from "@/lib/server/organization-roles";
 import { getApiSession } from "@/lib/server/auth-session";
 import type { CurrentBusinessOnboardingStateResult } from "./types";
+
+/** The API's answer when the caller isn't in the organization (apps/api/src/index.ts). */
+const NOT_A_MEMBER = "Not a member of this organization";
 
 type ApiSession = NonNullable<Awaited<ReturnType<typeof getApiSession>>>;
 type ApiSessionWithActiveOrganization = ApiSession & {
@@ -62,125 +57,46 @@ export async function getLiveBusinessOnboardingState(_options?: {
         };
     }
 
-    const [
-        org,
-        currentMember,
-        firstLocation,
-        firstPublishedShift,
-        firstDraftShift,
-        firstRosterEntry,
-        firstWorkerMember,
-        firstManagerMember,
-        firstManagerInvite,
-    ] = await Promise.all([
-        db.query.organization.findFirst({
-            where: eq(organization.id, activeOrgId),
-            columns: {
-                id: true,
-                name: true,
-                timezone: true,
-                attendanceVerificationPolicy: true,
-                businessType: true,
-                scheduleStyle: true,
-                openShiftClaimPolicy: true,
-                metadata: true,
-                subscriptionStatus: true,
-            },
-        }),
-        db.query.member.findFirst({
-            where: and(
-                eq(member.organizationId, activeOrgId),
-                eq(member.userId, session.user.id)
-            ),
-            columns: {
-                role: true,
-            },
-        }),
-        db.query.location.findFirst({
-            where: eq(location.organizationId, activeOrgId),
-            columns: {
-                id: true,
-                name: true,
-            },
-        }),
-        db.query.shift.findFirst({
-            where: and(
-                eq(shift.organizationId, activeOrgId),
-                ne(shift.status, "draft")
-            ),
-            columns: {
-                id: true,
-                status: true,
-            },
-        }),
-        db.query.shift.findFirst({
-            where: and(
-                eq(shift.organizationId, activeOrgId),
-                eq(shift.status, "draft")
-            ),
-            columns: {
-                id: true,
-            },
-        }),
-        db.query.rosterEntry.findFirst({
-            where: eq(rosterEntry.organizationId, activeOrgId),
-            columns: {
-                id: true,
-            },
-        }),
-        db.query.member.findFirst({
-            where: and(
-                eq(member.organizationId, activeOrgId),
-                ne(member.role, "owner"),
-                ne(member.role, "admin"),
-                ne(member.role, "manager")
-            ),
-            columns: {
-                id: true,
-            },
-        }),
-        db.query.member.findFirst({
-            where: and(
-                eq(member.organizationId, activeOrgId),
-                eq(member.role, "manager")
-            ),
-            columns: {
-                id: true,
-            },
-        }),
-        db.query.invitation.findFirst({
-            where: and(
-                eq(invitation.organizationId, activeOrgId),
-                eq(invitation.role, "manager"),
-                eq(invitation.status, "pending")
-            ),
-            columns: {
-                id: true,
-            },
-        }),
-    ]);
+    let facts: Awaited<ReturnType<typeof getOnboardingFacts>>;
+    try {
+        facts = await getOnboardingFacts(activeOrgId);
+    } catch (error) {
+        // A session pointing at an organization the user has since left: no onboarding to show.
+        if (error instanceof Error && error.message === NOT_A_MEMBER) {
+            return {
+                session,
+                onboarding: null as BusinessOnboardingState | null,
+                memberRole: null as string | null,
+                shouldEnforceOnboarding: false,
+            };
+        }
+        throw error;
+    }
 
-    if (!org) {
+    if (!facts) {
         return {
             session,
             onboarding: null as BusinessOnboardingState | null,
-            memberRole: currentMember?.role ?? null,
+            memberRole: null as string | null,
             shouldEnforceOnboarding: false,
         };
     }
 
+    const org = facts;
+    const firstLocation = facts.hasLocation ? { name: facts.firstLocationName ?? "" } : null;
+
     const metadata = parseOrganizationMetadata(org.metadata);
-    const hasExistingOperationalSetup = Boolean(firstLocation) || Boolean(firstPublishedShift);
+    const hasExistingOperationalSetup = facts.hasLocation || facts.hasPublishedShift;
     const businessInformationComplete =
         Boolean(metadata.onboarding?.businessInformationCompleted) || hasExistingOperationalSetup;
     const billingHandled =
         Boolean(metadata.onboarding?.billingPromptHandled) ||
         org.subscriptionStatus === "active" ||
         org.subscriptionStatus === "trialing";
-    const hasWorkforceAccess = Boolean(firstRosterEntry) || Boolean(firstWorkerMember);
-    const hasPublishedShift = Boolean(firstPublishedShift);
-    const hasDraftShift = Boolean(firstDraftShift);
-    const hasManagerSupport = Boolean(firstManagerMember) || Boolean(firstManagerInvite);
+    const hasWorkforceAccess = facts.hasRosterEntry || facts.hasWorkerMember;
+    const hasPublishedShift = facts.hasPublishedShift;
+    const hasDraftShift = facts.hasDraftShift;
+    const hasManagerSupport = facts.hasManagerMember || facts.hasManagerInvite;
     // A business that already published a shift finished onboarding before this
     // step existed; it keeps the defaults rather than being sent back through.
     const schedulingAnswered = Boolean(org.businessType) || hasPublishedShift;
@@ -209,7 +125,7 @@ export async function getLiveBusinessOnboardingState(_options?: {
             title: "First location",
             description: "Add the first place where schedules will be created and workers usually clock in.",
             href: getOnboardingHref({ step: "location" }),
-            complete: Boolean(firstLocation),
+            complete: facts.hasLocation,
             supportingText: firstLocation
                 ? `Location ready: ${firstLocation.name}`
                 : "Choose the main address",
@@ -275,7 +191,7 @@ export async function getLiveBusinessOnboardingState(_options?: {
 
     const completedCount = steps.filter((step) => step.complete).length;
     const totalCount = steps.length;
-    const memberRole = currentMember?.role ?? "member";
+    const memberRole = facts.memberRole;
     const shouldEnforceOnboarding =
         requiresBusinessOnboarding(memberRole) && completedCount !== totalCount;
 

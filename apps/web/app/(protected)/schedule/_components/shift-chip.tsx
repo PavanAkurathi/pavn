@@ -1,21 +1,25 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import type { SchedulerAssignee, SchedulerShift } from "@repo/contracts/scheduler";
+import type { SchedulerAssignee, SchedulerPerson, SchedulerShift } from "@repo/contracts/scheduler";
+import { ShiftCard } from "@repo/ui/components/app/shift-card";
+import { roleHue } from "@repo/ui/lib/role-hue";
 import { cn } from "@repo/ui/lib/utils";
 import { compactRange } from "@/lib/scheduler/format";
-import { roleColor } from "@/lib/scheduler/role-color";
 import type { DragSource } from "@/lib/scheduler/plans";
 import { isBlocking } from "@/lib/scheduler/view-model";
-import styles from "./scheduler.module.css";
+
+export type Density = "comfortable" | "compact";
 
 type ChipVariant =
     /** On a person's row: this person's assignment. */
     | { kind: "assignment"; assignee: SchedulerAssignee; showRole: boolean }
     /** On the Open row: the slots nobody has yet. */
     | { kind: "open" }
-    /** On a position row: the whole shift with its fill. */
-    | { kind: "position" };
+    /** On a position row: one person on the shift, with their name. */
+    | { kind: "person"; assignee: SchedulerAssignee; person: SchedulerPerson | undefined }
+    /** On a position row: the slots on that shift nobody has yet. */
+    | { kind: "open-slots" };
 
 export interface ChipActions {
     onOpen: (shiftId: string) => void;
@@ -28,12 +32,14 @@ export function ShiftChip({
     variant,
     actions,
     dragId,
+    density = "comfortable",
 }: {
     shift: SchedulerShift;
     variant: ChipVariant;
     actions: ChipActions;
     /** Unique per chip on screen; chips on the Positions view aren't dragged. */
     dragId?: string;
+    density?: Density;
 }) {
     const source: DragSource | null =
         variant.kind === "assignment"
@@ -48,17 +54,20 @@ export function ShiftChip({
         disabled: !draggable,
     });
 
-    const draft = shift.status === "draft" || (variant.kind === "assignment" && variant.assignee.pendingState === "add");
-    const removed = shift.pendingRemoval || (variant.kind === "assignment" && variant.assignee.pendingState === "remove");
-    const blocking = variant.kind === "assignment" ? isBlocking(variant.assignee) : shift.assignees.some(isBlocking);
-    const softWarnings = variant.kind === "assignment" ? variant.assignee.warnings.filter((w) => w.severity === "warn") : [];
+    const assignee = variant.kind === "assignment" || variant.kind === "person" ? variant.assignee : null;
+    const draft = shift.status === "draft" || assignee?.pendingState === "add";
+    const removed = shift.pendingRemoval || assignee?.pendingState === "remove";
+    const blocking = assignee ? isBlocking(assignee) : false;
+    const softWarnings = assignee ? assignee.warnings.filter((w) => w.severity === "warn") : [];
     const range = compactRange(shift.startLocal, shift.endLocal);
+    const open = variant.kind === "open" || variant.kind === "open-slots";
+    const who = variant.kind === "person" ? (variant.person?.name ?? "Someone") : undefined;
 
     const label = [
+        who,
         range,
         shift.role,
-        variant.kind === "open" ? `${shift.open} open` : null,
-        variant.kind === "position" ? `${shift.filled} of ${shift.capacity} filled` : null,
+        open ? `${shift.open} open` : null,
         draft ? "draft" : null,
         removed ? "being removed" : null,
         blocking ? "has a conflict" : null,
@@ -66,10 +75,17 @@ export function ShiftChip({
         .filter(Boolean)
         .join(", ");
 
+    // What follows the time: the role where the row doesn't already say it, and whether staff can see it yet.
+    const detail = [
+        variant.kind === "open" || (variant.kind === "assignment" && variant.showRole) ? shift.role : null,
+        draft ? "draft" : null,
+    ]
+        .filter(Boolean)
+        .join(" · ");
+
     return (
-        <button
+        <ShiftCard
             ref={setNodeRef}
-            type="button"
             {...attributes}
             {...listeners}
             // dnd-kit's role/description are for keyboard dragging, which this grid does with c and v instead.
@@ -94,47 +110,37 @@ export function ShiftChip({
                     actions.onCopy(source);
                 }
             }}
-            className={cn(
-                styles.chip,
-                draggable && "cursor-grab active:cursor-grabbing",
-                variant.kind === "open" && styles.open,
-                draft && styles.draft,
-                removed && styles.removed,
-                isDragging && "opacity-40",
-            )}
-            style={{ ["--rc" as string]: roleColor(shift.role) }}
-        >
-            {shift.eventId ? <span aria-hidden className="text-[10px]">◆</span> : null}
-            <span className={styles.time}>{range}</span>
-            {variant.kind === "assignment" && variant.showRole ? <span className={styles.sub}>{shift.role}</span> : null}
-            {variant.kind === "open" ? (
-                <>
-                    <span className={styles.sub}>{shift.role}</span>
-                    <span className={cn(styles.fill, "text-destructive")}>{shift.open}</span>
-                </>
-            ) : null}
-            {variant.kind === "position" ? (
-                <span className={cn(styles.fill, shift.open > 0 && "text-destructive")}>
-                    {shift.filled}/{shift.capacity}
-                </span>
-            ) : null}
-            {shift.hasUnpublishedEdits && !draft ? <span aria-hidden className={styles.edited} /> : null}
-            {blocking ? (
-                <span aria-hidden className={styles.flag}>
-                    !
-                </span>
-            ) : null}
-        </button>
+            hue={roleHue(shift.role)}
+            kind={open ? "open" : "assigned"}
+            name={who}
+            time={range}
+            detail={detail || undefined}
+            draft={draft}
+            removed={removed}
+            conflict={blocking}
+            edited={shift.hasUnpublishedEdits}
+            event={Boolean(shift.eventId)}
+            density={density}
+            openLabel={`OPEN · ${shift.open > 1 ? `${shift.open} to fill` : "tap to assign"}`}
+            className={cn(draggable && "cursor-grab active:cursor-grabbing", isDragging && "opacity-40")}
+        />
     );
 }
 
 /** What follows the pointer while dragging. */
 export function ChipGhost({ shift, copy }: { shift: SchedulerShift; copy: boolean }) {
     return (
-        <div className={cn(styles.chip, "w-36 shadow-lg")} style={{ ["--rc" as string]: roleColor(shift.role) }}>
-            <span className={styles.time}>{compactRange(shift.startLocal, shift.endLocal)}</span>
-            <span className={styles.sub}>{shift.role}</span>
-            {copy ? <span className="ml-auto rounded bg-foreground px-1 text-[10px] font-bold text-background">+ copy</span> : null}
+        <div className="relative w-40">
+            <ShiftCard
+                tabIndex={-1}
+                hue={roleHue(shift.role)}
+                time={compactRange(shift.startLocal, shift.endLocal)}
+                detail={shift.role}
+                className="shadow-lg"
+            />
+            {copy ? (
+                <span className="absolute -right-1 -top-2 rounded bg-foreground px-1 text-[10px] font-bold text-background">+ copy</span>
+            ) : null}
         </div>
     );
 }

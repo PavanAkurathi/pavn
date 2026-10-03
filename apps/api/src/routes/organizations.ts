@@ -18,6 +18,7 @@ import {
     OrganizationSettingsSchema,
     UpdateOrganizationSettingsSchema,
 } from "@repo/contracts/organizations";
+import { OnboardingFactsSchema } from "@repo/contracts/onboarding";
 import {
     BulkWorkerInviteInputSchema,
     BulkImportWorkersInputSchema,
@@ -68,6 +69,7 @@ import {
     updateLocation,
     updateOrganizationProfile,
     getLocations,
+    getOnboardingFacts,
     updateSettings,
 } from "@repo/organizations";
 import {
@@ -694,6 +696,29 @@ organizationsRouter.openapi(getSummaryRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const result = await getOrganizationSummary(orgId);
+    return c.json(result, 200);
+});
+
+const getOnboardingFactsRoute = createRoute({
+    method: "get",
+    path: "/onboarding-facts",
+    summary: "Get Onboarding Facts",
+    description: "The raw facts onboarding is computed from. The web app turns them into steps.",
+    responses: {
+        200: {
+            content: {
+                "application/json": {
+                    schema: OnboardingFactsSchema.nullable(),
+                },
+            },
+            description: "Onboarding facts, or null when the organization is gone",
+        },
+    },
+});
+
+organizationsRouter.openapi(getOnboardingFactsRoute, async (c) => {
+    // Any member may ask: the web app decides from memberRole whether onboarding applies.
+    const result = await getOnboardingFacts(c.get("orgId"), c.get("userRole") ?? "member");
     return c.json(result, 200);
 });
 

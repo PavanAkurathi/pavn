@@ -21,6 +21,7 @@ export const DASHBOARD_SHIFTS_PATH = "/dashboard/shifts";
 export const SCHEDULER_PATH = "/schedule";
 export const DASHBOARD_ONBOARDING_PATH = "/dashboard/onboarding";
 export const ROSTERS_PATH = "/rosters";
+export const REQUESTS_PATH = "/requests";
 export const AUTH_LOGIN_PATH = "/auth/login";
 export const AUTH_VERIFY_EMAIL_PATH = "/auth/verify-email";
 export const AUTH_SIGN_UP_EMAIL_API_PATH = "/api/auth/sign-up/email";
@@ -39,6 +40,11 @@ export function getSchedulerHref(options?: {
         location: options?.location,
         week: options?.week,
     });
+}
+
+/** Time off, swaps, drops and open-shift claims waiting on a manager. */
+export function getRequestsHref() {
+    return REQUESTS_PATH;
 }
 
 export function isSchedulerPath(pathname: string) {

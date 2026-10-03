@@ -18,6 +18,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { authClient } from "@repo/auth/client";
 
 interface NavUserProps {
+    /** Just the avatar, with the menu opening to the right: for the side rail. */
+    compact?: boolean;
     user?: {
         name?: string | null;
         email?: string | null;
@@ -25,7 +27,7 @@ interface NavUserProps {
     } | null;
 }
 
-export function NavUser({ user }: NavUserProps) {
+export function NavUser({ user, compact = false }: NavUserProps) {
     const router = useRouter();
 
     const handleSignOut = async () => {
@@ -43,20 +45,33 @@ export function NavUser({ user }: NavUserProps) {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-1 h-auto py-1.5 rounded-full hover:bg-slate-100 data-[state=open]:bg-slate-100" data-testid="user-menu">
+                <Button
+                    variant="ghost"
+                    className={
+                        compact
+                            ? "h-auto rounded-full p-1 hover:bg-muted data-[state=open]:bg-muted"
+                            : "flex items-center gap-2 pl-2 pr-1 h-auto py-1.5 rounded-full hover:bg-slate-100 data-[state=open]:bg-slate-100"
+                    }
+                    aria-label={compact ? `Account menu for ${user.name ?? "you"}` : undefined}
+                    data-testid="user-menu"
+                >
                     <Avatar className="h-8 w-8 border border-slate-200">
                         <AvatarImage src={user.image || undefined} />
                         <AvatarFallback className="bg-slate-100 text-slate-600 font-medium">
                             {user.name?.slice(0, 2).toUpperCase() || "ME"}
                         </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium text-slate-700 hidden sm:block truncate max-w-[120px]">
-                        {user.name}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-slate-400" />
+                    {compact ? null : (
+                        <>
+                            <span className="text-sm font-medium text-slate-700 hidden sm:block truncate max-w-[120px]">
+                                {user.name}
+                            </span>
+                            <ChevronDown className="w-4 h-4 text-slate-400" />
+                        </>
+                    )}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent side={compact ? "right" : "bottom"} align="end" className="w-56">
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{user.name}</p>

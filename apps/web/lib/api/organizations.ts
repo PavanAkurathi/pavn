@@ -6,6 +6,7 @@ import type {
     OrganizationSummary,
     OrganizationWorkspace,
 } from "@repo/contracts/organizations";
+import type { OnboardingFacts } from "@repo/contracts/onboarding";
 import type { SecurityOverview } from "@repo/contracts/preferences";
 import type {
     Contact,
@@ -19,6 +20,15 @@ export async function getOrganizationSummary(
     organizationId?: string,
 ): Promise<OrganizationSummary | null> {
     return apiJsonRequest<OrganizationSummary | null>("/organizations/summary", {
+        organizationScoped: true,
+        organizationId,
+    });
+}
+
+export async function getOnboardingFacts(
+    organizationId?: string,
+): Promise<OnboardingFacts | null> {
+    return apiJsonRequest<OnboardingFacts | null>("/organizations/onboarding-facts", {
         organizationScoped: true,
         organizationId,
     });

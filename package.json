@@ -20,8 +20,8 @@
     "release:lifecycle:local": "node scripts/run-lifecycle-local.mjs",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
-    "db:reset": "bun run --filter @repo/database reset",
-    "db:seed": "bun run --filter @repo/database seed"
+    "db:reset": "bun run --cwd packages/database reset",
+    "db:seed": "bun run --cwd packages/database seed"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
