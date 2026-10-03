@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@repo/ui/lib/utils";
 import { weekRangeLabel } from "@/lib/scheduler/format";
 import { ALL_DEPARTMENTS, type ViewMode } from "@/lib/scheduler/view-model";
+import type { PublishPhase } from "@/lib/scheduler/use-publish";
 import type { Density } from "./shift-chip";
 
 export function SchedulerToolbar({
@@ -40,6 +41,7 @@ export function SchedulerToolbar({
     history,
     tools,
     onPublish,
+    publishPhase,
 }: {
     week: SchedulerWeek;
     locations: { id: string; name: string }[];
@@ -60,6 +62,7 @@ export function SchedulerToolbar({
     history: { canUndo: boolean; canRedo: boolean; undoLabel?: string; onUndo: () => void; onRedo: () => void };
     tools: { onCopyWeek: () => void; onTemplate: () => void; onAddEvent: () => void; onDiscard: () => void };
     onPublish: () => void;
+    publishPhase: PublishPhase;
 }) {
     const isThisWeek = week.days.some((d) => d.isToday);
     const today = week.days.find((d) => d.isToday)?.localDate;
@@ -239,11 +242,17 @@ export function SchedulerToolbar({
                 </DropdownMenu>
                 <Button
                     className="h-9"
-                    disabled={pendingChangeCount === 0}
+                    disabled={pendingChangeCount === 0 || publishPhase !== "idle"}
                     onClick={onPublish}
                     title={pendingChangeCount === 0 ? "Nothing to publish" : undefined}
                 >
-                    Publish{pendingChangeCount > 0 ? ` ${pendingChangeCount}` : ""}
+                    {publishPhase === "checking"
+                        ? "Checking…"
+                        : publishPhase === "waiting"
+                            ? "Publishing…"
+                            : publishPhase === "sending"
+                                ? "Sending…"
+                                : `Publish${pendingChangeCount > 0 ? ` ${pendingChangeCount}` : ""}`}
                 </Button>
             </div>
         </div>

@@ -32,6 +32,7 @@ import { addDays } from "@/lib/scheduler/format";
 import { planMove, planRemove, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
 import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
+import { usePublish } from "@/lib/scheduler/use-publish";
 import { ALL_DEPARTMENTS, buildPeopleView, buildPositionsView, type ViewMode } from "@/lib/scheduler/view-model";
 import { getRequestsHref, getSchedulerHref } from "@/lib/routes";
 import { ConflictDialog } from "./conflict-dialog";
@@ -97,6 +98,20 @@ export function Scheduler({
 
     const refresh = useCallback(() => mutate(), [mutate]);
     const edits = useSchedulerEdits(refresh);
+    const publish = usePublish({
+        week,
+        onNeedsReview: () => setPublishOpen(true),
+        onPublished: async () => {
+            // Undo can't reach past what staff have already been told.
+            edits.reset();
+            await mutate();
+        },
+    });
+    // A change while the publish is waiting means the toast no longer says what would go out.
+    const cancelPublish = publish.cancel;
+    useEffect(() => {
+        if (edits.busy) cancelPublish("Publish cancelled because the week changed. Publish again when you're ready.");
+    }, [edits.busy, cancelPublish]);
 
     const [storedDepartment, setDepartment] = usePersistentState<string>(`wh.scheduler.${orgId}.department`, ALL_DEPARTMENTS);
     const department =
@@ -316,7 +331,8 @@ export function Scheduler({
                     onAddEvent: addEvent,
                     onDiscard: () => setDiscardOpen(true),
                 }}
-                onPublish={() => setPublishOpen(true)}
+                onPublish={() => void publish.start()}
+                publishPhase={publish.phase}
             />
 
             {error ? (
