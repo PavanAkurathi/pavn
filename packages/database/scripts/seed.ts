@@ -9,7 +9,7 @@ import {
 
 /**
  * Local-development data: one organization, an owner, three workers and a
- * fortnight of shifts around today. Safe to run again at any time: accounts are
+ * three weeks of shifts (last, this and next). Safe to run again at any time: accounts are
  * upserted and the shifts are rebuilt relative to today, so the Scheduler is
  * never empty and never stale.
  *
@@ -134,51 +134,73 @@ export async function seed() {
             .delete(shift)
             .where(and(eq(shift.organizationId, DEV_SEED_ORGANIZATION.id), like(shift.id, `${SHIFT_ID_PREFIX}%`)));
 
-        const workers = DEV_SEED_ACCOUNTS.filter((account) => account.memberRole === "member");
-        if (workers.length === 0) {
-            throw new Error("DEV_SEED_ACCOUNTS has no workers to schedule.");
-        }
+        // Last week, this week and next, in the shape of a small restaurant. A shift's title is its
+        // role: the Scheduler's Roles board has one row per title.
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // the org's weeks start on Sunday
+        weekStart.setHours(0, 0, 0, 0);
+
+        type Pattern = {
+            title: string;
+            alias: string;
+            startHour: number;
+            endHour: number;
+            /** Days of the week it runs, 0 = Sunday. */
+            days: number[];
+            /** Weekdays (0 = Sunday) left unstaffed, so there is something to fill. */
+            open?: number[];
+        };
+        const patterns: Pattern[] = [
+            { title: "Server", alias: "alex", startHour: 11, endHour: 16, days: [1, 2, 3, 4, 5] },
+            { title: "Server", alias: "alex", startHour: 17, endHour: 23, days: [1, 2, 5, 6], open: [5, 6] },
+            { title: "Bartender", alias: "sam", startHour: 17, endHour: 23, days: [3, 4, 5, 6, 0] },
+            { title: "Host", alias: "jordan", startHour: 17, endHour: 23, days: [4, 5, 6, 0], open: [6] },
+        ];
+
         let n = 0;
+        for (const weekOffset of [-1, 0, 1]) {
+            for (const pattern of patterns) {
+                for (const weekday of pattern.days) {
+                    const dayOffset = weekOffset * 7 + weekday;
+                    const day = new Date(weekStart);
+                    day.setDate(day.getDate() + dayOffset);
+                    const start = atHour(day, 0, pattern.startHour);
+                    const end = atHour(day, 0, pattern.endHour);
+                    const past = end < now;
+                    const open = !past && (pattern.open ?? []).includes(weekday);
+                    // Two shifts this week are still drafts, so Publish has something to say.
+                    const draft = weekOffset === 0 && !past && !open && n % 9 === 4;
+                    const id = `${SHIFT_ID_PREFIX}${String(n).padStart(3, "0")}`;
 
-        // Yesterday through next week: one lunch and one dinner shift a day.
-        for (let dayOffset = -1; dayOffset <= 7; dayOffset++) {
-            for (const [title, startHour, endHour] of [
-                ["Lunch service", 11, 16],
-                ["Dinner service", 17, 23],
-            ] as const) {
-                const worker = workers[n % workers.length]!;
-                const id = `${SHIFT_ID_PREFIX}${String(n).padStart(3, "0")}`;
-                const start = atHour(now, dayOffset, startHour);
-                const past = dayOffset < 0;
-                // Every fourth future shift is left open so the Scheduler has something to fill.
-                const open = !past && n % 4 === 3;
-
-                await tx.insert(shift).values({
-                    id,
-                    organizationId: DEV_SEED_ORGANIZATION.id,
-                    locationId: LOCATION_ID,
-                    title,
-                    startTime: start,
-                    endTime: atHour(now, dayOffset, endHour),
-                    timezone: DEV_SEED_ORGANIZATION.timezone,
-                    capacityTotal: 1,
-                    status: past ? "completed" : open ? "published" : "assigned",
-                    publishedAt: now,
-                    createdAt: now,
-                    updatedAt: now,
-                });
-
-                if (!open) {
-                    await tx.insert(shiftAssignment).values({
-                        id: `asg_dev_${String(n).padStart(3, "0")}`,
-                        shiftId: id,
-                        workerId: userIdFor(worker.alias),
-                        status: "active",
+                    await tx.insert(shift).values({
+                        id,
+                        organizationId: DEV_SEED_ORGANIZATION.id,
+                        locationId: LOCATION_ID,
+                        title: pattern.title,
+                        startTime: start,
+                        endTime: end,
+                        timezone: DEV_SEED_ORGANIZATION.timezone,
+                        capacityTotal: 1,
+                        status: past ? "completed" : draft ? "draft" : open ? "published" : "assigned",
+                        publishedAt: draft ? null : now,
                         createdAt: now,
                         updatedAt: now,
                     });
+
+                    if (!open) {
+                        await tx.insert(shiftAssignment).values({
+                            id: `asg_dev_${String(n).padStart(3, "0")}`,
+                            shiftId: id,
+                            workerId: userIdFor(pattern.alias),
+                            status: "active",
+                            // A draft's people are staged too: nobody has been told yet.
+                            pendingState: draft ? "add" : null,
+                            createdAt: now,
+                            updatedAt: now,
+                        });
+                    }
+                    n++;
                 }
-                n++;
             }
         }
     });
