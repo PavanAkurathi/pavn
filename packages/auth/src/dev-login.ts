@@ -7,8 +7,13 @@
  * account and lands on the app, so the owner can test the product without the
  * email, password or code screens in the way.
  *
+ * Add &as=owner|alex|sam|jordan to sign in as one of the accounts `db:seed`
+ * creates instead. `as` only ever resolves to the seed domain, so it can't be
+ * pointed at a real account, and it still needs the token.
+ *
  * Where the secret comes from, first match wins:
- *   1. DEV_LOGIN_TOKEN + DEV_LOGIN_EMAIL env vars on the API.
+ *   1. DEV_LOGIN_TOKEN env var on the API (min 32 characters). DEV_LOGIN_EMAIL
+ *      picks the default account; without it the seeded owner is the default.
  *   2. DEVELOPMENT_SIGN_IN below: only a SHA-256 fingerprint of the secret is
  *      committed. A fingerprint of a 256-bit random value can't be turned back
  *      into it, so the link itself never appears in the repo.
@@ -21,6 +26,7 @@ import type { BetterAuthPlugin } from "better-auth";
 import { APIError, createAuthEndpoint } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
 import { logMessage } from "@repo/observability";
+import { DEV_SEED_DEFAULT_ALIAS, devSeedEmail } from "@repo/database/dev-seed";
 
 const MIN_TOKEN_LENGTH = 32;
 const DEFAULT_NEXT = "/schedule";
@@ -48,7 +54,7 @@ export function readDevLoginConfig(
     if (env.DEV_LOGIN?.trim().toLowerCase() === "off") return null;
 
     const token = env.DEV_LOGIN_TOKEN?.trim();
-    const email = env.DEV_LOGIN_EMAIL?.trim().toLowerCase();
+    const email = env.DEV_LOGIN_EMAIL?.trim().toLowerCase() || devSeedEmail(DEV_SEED_DEFAULT_ALIAS);
     if (token && email) {
         if (token.length < MIN_TOKEN_LENGTH) {
             console.warn(`[AUTH] DEV_LOGIN_TOKEN is shorter than ${MIN_TOKEN_LENGTH} characters; the sign-in link stays off.`);
@@ -92,8 +98,10 @@ export function devLogin(config: DevLoginConfig) {
                     }
 
                     const { internalAdapter } = ctx.context;
-                    const user =
-                        "email" in config.account
+                    const seededEmail = devSeedEmail(query.as);
+                    const user = seededEmail
+                        ? (await internalAdapter.findUserByEmail(seededEmail))?.user
+                        : "email" in config.account
                             ? (await internalAdapter.findUserByEmail(config.account.email))?.user
                             : await internalAdapter.findUserById(config.account.userId);
                     if (!user) {

@@ -18,6 +18,12 @@
             "import": "./src/schema.ts",
             "default": "./src/schema.ts"
         },
+        "./dev-seed": {
+            "types": "./src/dev-seed-accounts.ts",
+            "bun": "./src/dev-seed-accounts.ts",
+            "import": "./src/dev-seed-accounts.ts",
+            "default": "./src/dev-seed-accounts.ts"
+        },
         "./scheduling": {
             "types": "./src/scheduling.ts",
             "bun": "./src/scheduling.ts",
@@ -32,6 +38,8 @@
         "db:migrate:manual": "bun ./scripts/apply-manual-migrations.ts",
         "db:push": "drizzle-kit push",
         "db:studio": "drizzle-kit studio",
+        "reset": "bun --env-file=../../.env ./scripts/reset.ts",
+        "seed": "bun --env-file=../../.env ./scripts/seed.ts",
         "lint": "eslint . --max-warnings 30",
         "check-types": "tsc --noEmit"
     },

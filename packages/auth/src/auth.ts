@@ -86,6 +86,13 @@ const memberOrganizationRole = organizationAccess.newRole({
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
+function sessionLifetimeSeconds(): number {
+    const days = Number(process.env.AUTH_SESSION_DAYS);
+    const fallbackDays = isAuthProd ? 7 : 30;
+    const effectiveDays = Number.isFinite(days) && days >= 1 && days <= 90 ? Math.floor(days) : fallbackDays;
+    return effectiveDays * 24 * 60 * 60;
+}
+
 export const auth = betterAuth({
     appName: "Workers Hive",
     secret: authSecret,
@@ -119,6 +126,11 @@ export const auth = betterAuth({
     // Cache the session in a short-lived signed cookie so repeated
     // get-session calls (client hooks, server layouts) don't each hit the DB.
     session: {
+        // Stay signed in for a month while building (re-login after a week is
+        // pure friction for a two-person team). Production keeps Better-Auth's
+        // 7-day default; AUTH_SESSION_DAYS overrides either, e.g. on a
+        // development deployment that runs with NODE_ENV=production.
+        expiresIn: sessionLifetimeSeconds(),
         cookieCache: {
             enabled: true,
             maxAge: 5 * 60, // 5 minutes
