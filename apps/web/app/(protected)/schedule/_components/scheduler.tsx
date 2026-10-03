@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { toast } from "sonner";
 import {
@@ -32,12 +33,11 @@ import { planMove, planRemove, type DragSource, type DropTarget, type Plan } fro
 import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
 import { ALL_DEPARTMENTS, buildPeopleView, buildPositionsView, type ViewMode } from "@/lib/scheduler/view-model";
-import { getSchedulerHref } from "@/lib/routes";
+import { getRequestsHref, getSchedulerHref } from "@/lib/routes";
 import { ConflictDialog } from "./conflict-dialog";
 import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
 import { PublishDialog } from "./publish-dialog";
-import { RequestsPanel } from "./requests-panel";
 import { QuickCreate, type QuickCreateTarget } from "./quick-create";
 import { ChipGhost } from "./shift-chip";
 import { ShiftDrawer } from "./shift-drawer";
@@ -64,6 +64,7 @@ export function Scheduler({
     /** The ?week= the page was opened with; null means "this week". */
     initialWeekParam: string | null;
 }) {
+    const router = useRouter();
     const [locationId, setLocationId] = useState(initialLocationId);
     const [weekParam, setWeekParam] = useState<string | null>(initialWeekParam);
     const [search, setSearch] = useState("");
@@ -80,7 +81,6 @@ export function Scheduler({
     const [discardOpen, setDiscardOpen] = useState(false);
     const [publishOpen, setPublishOpen] = useState(false);
     const [eventTarget, setEventTarget] = useState<EventEditTarget | null>(null);
-    const [requestsOpen, setRequestsOpen] = useState(false);
     const openRowRef = useRef<HTMLDivElement | null>(null);
 
     const key = weekKey(locationId, weekParam);
@@ -275,7 +275,7 @@ export function Scheduler({
                 viewMode={viewMode}
                 onViewMode={setViewMode}
                 onOpenCounter={showOpenRow}
-                onRequests={() => setRequestsOpen(true)}
+                onRequests={() => router.push(getRequestsHref())}
                 onHelp={() => setHelpOpen(true)}
                 busy={(isValidating && !isInitial) || edits.busy}
                 history={{
@@ -377,15 +377,6 @@ export function Scheduler({
                 onStaff={(shiftId) => {
                     setEventTarget(null);
                     setOpenShiftId(shiftId);
-                }}
-            />
-            <RequestsPanel
-                open={requestsOpen}
-                onOpenChange={setRequestsOpen}
-                onDecided={() => {
-                    // Approvals change who is on shifts; the undo stack can't reach past them.
-                    edits.reset();
-                    void mutate();
                 }}
             />
             <ConflictDialog conflict={edits.conflict} />
