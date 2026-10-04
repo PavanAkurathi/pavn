@@ -9,7 +9,7 @@ import styles from "./scheduler.module.css";
 function Sample(props: Omit<React.ComponentProps<typeof ShiftCard>, "time">) {
     return (
         <div className="w-32 shrink-0">
-            <ShiftCard tabIndex={-1} aria-hidden title="Server" time="4p–11p" detail="3/4" {...props} />
+            <ShiftCard tabIndex={-1} aria-hidden leadWith="time" title="Alumni reception" time="4p–11p" {...props} />
         </div>
     );
 }
@@ -19,7 +19,6 @@ const MARKINGS: { sample: React.ReactNode; text: string }[] = [
     { sample: <Sample draft />, text: "Dashed, tagged DRAFT: not published yet. Staff can't see it." },
     { sample: <Sample edited />, text: "Amber dot: published, with changes staff can't see yet." },
     { sample: <Sample conflict />, text: "Red ring and !: a real problem, like a double booking or approved time off." },
-    { sample: <Sample kind="open" openLabel="OPEN · 2 to fill" />, text: "Dashed OPEN card: slots nobody has taken yet." },
     { sample: <Sample event />, text: "◆: part of an event. Click the event's name above the day to staff it." },
     { sample: <span className={cn(styles.off, "w-32 shrink-0 text-center")}>Off</span>, text: "Approved time off. Off? means it's still a request." },
     {
@@ -29,9 +28,10 @@ const MARKINGS: { sample: React.ReactNode; text: string }[] = [
 ];
 
 const SHORTCUTS: [string, string][] = [
-    ["Click a day", "Add a shift. Type times like 9-5, 4p-11p or 17-23."],
+    ["Plus on a day", "Add a shift for that person on that day."],
+    ["A date heading", "Open that day in the Day plan."],
+    ["Unfilled positions", "Open the day's events that still need people."],
     ["Drag a shift", "Move it to another day or person. Hold Alt (Option) to copy instead."],
-    ["Drag to Open", "Take the person off; the spot stays open to fill."],
     ["Arrow keys", "Move between days and people. Enter adds or opens."],
     ["c then v", "Copy the focused shift, paste it on the focused day."],
     ["Delete", "Take the person off the focused shift."],

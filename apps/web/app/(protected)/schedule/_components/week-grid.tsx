@@ -1,26 +1,26 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useDroppable } from "@dnd-kit/core";
 import { ChevronDown, Plus } from "lucide-react";
 import type { SchedulerPerson, SchedulerWeek } from "@repo/contracts/scheduler";
 import { InitialsAvatar } from "@repo/ui/components/app/initials-avatar";
 import { cn } from "@repo/ui/lib/utils";
-import { compactRange, dayOfMonth, formatHours, weekdayShort } from "@/lib/scheduler/format";
+import { compactRange, dayOfMonth, formatHours, longDate, weekdayShort } from "@/lib/scheduler/format";
 import type { DropTarget } from "@/lib/scheduler/plans";
-import { hoursTone, type PeopleView, type PersonRow, type PositionRow } from "@/lib/scheduler/view-model";
+import { hoursTone, type PeopleView, type PersonRow } from "@/lib/scheduler/view-model";
+import type { UnfilledDay } from "@/lib/scheduler/workspace";
 import { ROSTERS_PATH } from "@/lib/routes";
 import { ShiftChip, type ChipActions, type Density } from "./shift-chip";
 import styles from "./scheduler.module.css";
 
 const MAX_CHIPS = 2;
 
-const headerCell =
-    "sticky top-0 z-20 flex min-h-[52px] flex-col justify-center gap-1 border-b border-r bg-muted px-2.5 py-1.5 text-xs";
+const headerCell = "sticky top-0 z-20 flex min-h-[52px] flex-col justify-center gap-1 border-b border-r bg-muted px-2.5 py-1.5 text-xs";
 const labelCell = "sticky left-0 z-10 flex min-w-0 items-center gap-2 border-b border-r bg-card px-2.5 py-1";
 const dayCell =
-    "group/cell relative flex min-h-[44px] min-w-0 cursor-cell flex-col justify-center gap-1 border-b border-r bg-card p-1 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--primary)]";
-const hoursCell = "flex flex-col items-end justify-center border-b bg-card px-2.5 py-1 tabular-nums";
+    "group/cell relative flex min-h-[64px] min-w-0 cursor-cell flex-col justify-center gap-1 border-b border-r bg-card p-1 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--primary)]";
 
 export interface DropHint {
     tone: "ok" | "warn" | "block";
@@ -29,17 +29,19 @@ export interface DropHint {
 
 export interface GridEditing {
     chips: ChipActions;
-    /** Click or Enter on a cell: quick-create there. */
-    onCreateAt: (anchor: HTMLElement, target: DropTarget, role?: string) => void;
+    /** Click or Enter on a cell, or its plus: add a shift for that person on that day. */
+    onAddAt: (target: DropTarget) => void;
     /** "v" on a cell: paste what "c" copied. */
     onPasteAt: (target: DropTarget) => void;
     /** While dragging: what dropping here would mean. */
     hintFor: (target: DropTarget) => DropHint | null;
     dragging: boolean;
-    /** Comfortable cards, or one line each for a big team. */
+    /** Comfortable entries, or one line each for a big team. */
     density: Density;
-    /** Click on a day header's event tag. */
-    onOpenEvent: (eventId: string) => void;
+    /** Several sites are in view, so entries say where. */
+    showSite: boolean;
+    siteNames: Map<string, string>;
+    eventNames: Map<string, string>;
 }
 
 /** Arrow keys walk the cells; Home/End jump along the row. */
@@ -67,58 +69,32 @@ export function moveCellFocus(event: React.KeyboardEvent<HTMLElement>) {
 function Header({
     week,
     corner,
-    endLabel = "Hours",
-    onOpenEvent,
+    onOpenDay,
 }: {
     week: SchedulerWeek;
     corner: React.ReactNode;
-    endLabel?: string;
-    onOpenEvent: (eventId: string) => void;
+    /** A date heading opens that day in the Day plan. */
+    onOpenDay: (dayIndex: number) => void;
 }) {
     return (
         <div role="row" className="contents">
-            <div role="columnheader" className={cn(headerCell, "left-0 z-30")}>
+            <div role="columnheader" className={cn(headerCell, "left-0 z-30 gap-1.5")}>
                 {corner}
             </div>
-            {week.days.map((day) => {
-                const events = week.events.filter((e) => e.dayIndex === day.index);
-                return (
-                    <div
-                        key={day.localDate}
-                        role="columnheader"
-                        aria-label={`${weekdayShort(day.localDate)} ${day.localDate}${day.isToday ? ", today" : ""}`}
-                        className={headerCell}
+            {week.days.map((day) => (
+                <div key={day.localDate} role="columnheader" aria-label={`${longDate(day.localDate)}${day.isToday ? ", today" : ""}`} className={headerCell}>
+                    <button
+                        type="button"
+                        onClick={() => onOpenDay(day.index)}
+                        title={`Open ${longDate(day.localDate)} in the Day plan`}
+                        className="-mx-1 flex items-baseline gap-1.5 rounded px-1 text-left hover:bg-card focus-visible:outline-2 focus-visible:outline-primary"
                     >
-                        <div className="flex items-baseline gap-1.5">
-                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                {weekdayShort(day.localDate)}
-                            </span>
-                            <span className={cn("text-[13.5px] font-semibold tabular-nums", day.isToday && "text-primary")}>
-                                {dayOfMonth(day.localDate)}
-                            </span>
-                            {day.isToday ? <span aria-hidden className="size-[7px] self-center rounded-full bg-primary" /> : null}
-                        </div>
-                        {events.map((e) => (
-                            <button
-                                type="button"
-                                key={e.id}
-                                onClick={() => onOpenEvent(e.id)}
-                                title={`${e.name}, ${compactRange(e.startLocal, e.endLocal)}: ${e.filled} of ${e.needed} filled`}
-                                className="flex max-w-full items-center gap-1 rounded-full border bg-card px-2 py-px text-left text-[11px] font-semibold leading-4 hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
-                            >
-                                <span aria-hidden>◆</span>
-                                <span className="min-w-0 truncate text-foreground">{e.name}</span>
-                                <span className="ml-auto tabular-nums">
-                                    {e.filled}/{e.needed}
-                                </span>
-                            </button>
-                        ))}
-                    </div>
-                );
-            })}
-            <div role="columnheader" className={cn(headerCell, "items-end border-r-0")}>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{endLabel}</span>
-            </div>
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{weekdayShort(day.localDate)}</span>
+                        <span className={cn("text-[13.5px] font-semibold tabular-nums", day.isToday && "text-primary")}>{dayOfMonth(day.localDate)}</span>
+                        {day.isToday ? <span aria-hidden className="size-[7px] self-center rounded-full bg-primary" /> : null}
+                    </button>
+                </div>
+            ))}
         </div>
     );
 }
@@ -130,7 +106,7 @@ function DayCell({
     editing,
     className,
     title,
-    role,
+    addLabel,
     children,
 }: {
     target: DropTarget;
@@ -139,11 +115,12 @@ function DayCell({
     editing: GridEditing;
     className?: string;
     title?: string;
-    role?: string;
+    /** What the visible plus says to a screen reader. */
+    addLabel: string;
     children: React.ReactNode;
 }) {
-    const id = `cell:${target.personId ?? `open${role ? `:${role}` : ""}`}:${target.dayIndex}`;
-    const { setNodeRef, isOver } = useDroppable({ id, data: { target }, disabled: Boolean(role) });
+    const id = `cell:${target.personId ?? "open"}:${target.dayIndex}`;
+    const { setNodeRef, isOver } = useDroppable({ id, data: { target } });
     const hint = isOver ? editing.hintFor(target) : null;
     const empty = !children || (Array.isArray(children) && children.every((c) => !c || (Array.isArray(c) && c.length === 0)));
 
@@ -155,8 +132,8 @@ function DayCell({
             data-cell={`${position[0]},${position[1]}`}
             title={title}
             onClick={(event) => {
-                if ((event.target as HTMLElement).closest("[data-chip]")) return;
-                editing.onCreateAt(event.currentTarget, target, role);
+                if ((event.target as HTMLElement).closest("[data-chip],button")) return;
+                editing.onAddAt(target);
             }}
             onKeyDown={(event) => {
                 if (event.target !== event.currentTarget) return;
@@ -164,7 +141,7 @@ function DayCell({
                     event.preventDefault();
                     const chip = event.currentTarget.querySelector<HTMLElement>("[data-chip]");
                     if (chip) chip.click();
-                    else editing.onCreateAt(event.currentTarget, target, role);
+                    else editing.onAddAt(target);
                 } else if (event.key === "v" && !event.metaKey && !event.ctrlKey) {
                     editing.onPasteAt(target);
                 }
@@ -179,12 +156,14 @@ function DayCell({
         >
             {children}
             {empty && !editing.dragging ? (
-                <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-1 grid place-items-center rounded-md border border-dashed border-border text-muted-foreground opacity-0 transition-opacity group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100"
+                <button
+                    type="button"
+                    aria-label={addLabel}
+                    onClick={() => editing.onAddAt(target)}
+                    className="absolute inset-1 grid place-items-center rounded-md border border-transparent text-muted-foreground/45 transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary focus-visible:border-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-primary"
                 >
-                    <Plus className="size-4" />
-                </span>
+                    <Plus aria-hidden className="size-4" />
+                </button>
             ) : null}
             {hint?.message ? (
                 <span
@@ -200,117 +179,136 @@ function DayCell({
     );
 }
 
-function PersonLabel({ person }: { person: SchedulerPerson }) {
+function PersonLabel({ person, policy }: { person: SchedulerPerson; policy: SchedulerWeek["settings"]["overtimePolicy"] }) {
+    const tone = hoursTone(person, policy);
     return (
-        <div role="rowheader" className={labelCell}>
-            <InitialsAvatar name={person.name} size="sm" />
-            <div className="flex min-w-0 flex-col leading-tight">
-                <span className="truncate text-[13px] font-semibold">{person.name}</span>
-                <span className="flex min-w-0 items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
-                    {person.primaryRole ?? "No role yet"}
-                    {person.kind === "invited" ? (
-                        <span className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">
-                            Invited
-                        </span>
-                    ) : null}
-                    {person.kind === "agency" ? (
-                        <span
-                            title={person.agencyName ?? undefined}
-                            className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground"
-                        >
-                            Agency
-                        </span>
-                    ) : null}
+        <div role="rowheader" className={cn(labelCell, "justify-between gap-2")}>
+            <div className="flex min-w-0 items-center gap-2">
+                <InitialsAvatar name={person.name} size="sm" />
+                <div className="flex min-w-0 flex-col leading-tight">
+                    <span className="truncate text-[13px] font-semibold">{person.name}</span>
+                    <span className="flex min-w-0 items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
+                        {person.primaryRole ?? "No role yet"}
+                        {person.kind === "invited" ? <span className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">Invited</span> : null}
+                        {person.kind === "agency" ? (
+                            <span title={person.agencyName ?? undefined} className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">
+                                Agency
+                            </span>
+                        ) : null}
+                    </span>
+                </div>
+            </div>
+            <div className="flex shrink-0 flex-col items-end leading-tight tabular-nums">
+                <span className={cn("text-[13px] font-semibold", tone === "near" && "text-amber-700", tone === "over" && "text-destructive")}>
+                    {formatHours(person.scheduledMinutes)}
                 </span>
+                {tone === "over" ? <span className="text-[11px] font-semibold text-destructive">{formatHours(person.overtimeMinutes)} OT</span> : null}
             </div>
         </div>
     );
 }
 
-/** Event id to name, so a shift in an event is titled by it. */
-const eventNamesOf = (week: SchedulerWeek) => new Map(week.events.map((e) => [e.id, e.name]));
-
-function PersonRowCells({
+function PersonDayCell({
+    person,
     row,
+    index,
     rowIndex,
     week,
     editing,
-    eventNames,
 }: {
+    person: SchedulerPerson;
     row: PersonRow;
+    index: number;
     rowIndex: number;
     week: SchedulerWeek;
     editing: GridEditing;
-    eventNames: Map<string, string>;
 }) {
-    const { person } = row;
-    const tone = hoursTone(person, week.settings.overtimePolicy);
+    const day = row.days[index]!;
+    const [showAll, setShowAll] = useState(false);
+    const date = week.days[index]!.localDate;
+    const unavailableTitle = day.unavailable.length
+        ? `Unavailable ${day.unavailable.map((s) => (s.wholeDay ? "all day" : compactRange(s.startLocal, s.endLocal))).join(", ")}`
+        : undefined;
+    const shown = showAll ? day.shifts : day.shifts.slice(0, MAX_CHIPS);
+    const hidden = day.shifts.length - shown.length;
+
+    return (
+        <DayCell
+            target={{ personId: person.id, dayIndex: index }}
+            position={[rowIndex, index]}
+            editing={editing}
+            title={unavailableTitle}
+            addLabel={`Add a shift for ${person.name} on ${longDate(date)}`}
+            className={cn(day.unavailable.length > 0 && styles.unavailable)}
+        >
+            {day.unavailable.length ? <span className="sr-only">{unavailableTitle}</span> : null}
+            {day.timeOff.map((t) => (
+                <span
+                    key={`${t.id}-${t.span.dayIndex}`}
+                    className={cn(styles.off, t.status === "pending" && styles.offPending)}
+                    title={[t.status === "approved" ? "Time off" : "Time off requested", t.span.wholeDay ? "all day" : compactRange(t.span.startLocal, t.span.endLocal), t.reason]
+                        .filter(Boolean)
+                        .join(" · ")}
+                >
+                    <span className="sr-only">{t.status === "approved" ? "Time off" : "Time off requested"} </span>
+                    <span aria-hidden>{t.status === "approved" ? "Off" : "Off?"}</span>
+                    {t.span.wholeDay ? null : ` ${compactRange(t.span.startLocal, t.span.endLocal)}`}
+                </span>
+            ))}
+            {shown.map(({ shift, assignee }) => (
+                <ShiftChip
+                    key={shift.id}
+                    shift={shift}
+                    assignee={assignee}
+                    actions={editing.chips}
+                    dragId={`chip:${shift.id}:${person.id}`}
+                    density={editing.density}
+                    eventName={shift.eventId ? editing.eventNames.get(shift.eventId) : undefined}
+                    siteName={editing.showSite ? editing.siteNames.get(shift.locationId) : undefined}
+                />
+            ))}
+            {hidden > 0 || showAll ? (
+                <button
+                    type="button"
+                    onClick={() => setShowAll((open) => !open)}
+                    aria-expanded={showAll}
+                    className="w-fit rounded px-1 text-left text-[11px] font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                >
+                    {showAll ? "Show fewer" : `+${hidden} more`}
+                </button>
+            ) : null}
+        </DayCell>
+    );
+}
+
+/** The one compact row of what still needs people, per day, instead of a card for every empty position. */
+function UnfilledRow({ unfilled, week, onNeedsPeople }: { unfilled: UnfilledDay[]; week: SchedulerWeek; onNeedsPeople: (dayIndex: number) => void }) {
+    const total = unfilled.reduce((sum, d) => sum + d.unfilled, 0);
     return (
         <div role="row" className="contents">
-            <PersonLabel person={person} />
-            {row.days.map((day, index) => {
-                const unavailableTitle = day.unavailable.length
-                    ? `Unavailable ${day.unavailable.map((s) => (s.wholeDay ? "all day" : compactRange(s.startLocal, s.endLocal))).join(", ")}`
-                    : undefined;
-                const hidden = day.shifts.length - MAX_CHIPS;
-                return (
-                    <DayCell
-                        key={index}
-                        target={{ personId: person.id, dayIndex: index }}
-                        position={[rowIndex, index]}
-                        editing={editing}
-                        title={unavailableTitle}
-                        className={cn(day.unavailable.length > 0 && styles.unavailable)}
-                    >
-                        {day.unavailable.length ? <span className="sr-only">{unavailableTitle}</span> : null}
-                        {day.timeOff.map((t) => (
-                            <span
-                                key={`${t.id}-${t.span.dayIndex}`}
-                                className={cn(styles.off, t.status === "pending" && styles.offPending)}
-                                title={[
-                                    t.status === "approved" ? "Time off" : "Time off requested",
-                                    t.span.wholeDay ? "all day" : compactRange(t.span.startLocal, t.span.endLocal),
-                                    t.reason,
-                                ]
-                                    .filter(Boolean)
-                                    .join(" · ")}
-                            >
-                                <span className="sr-only">{t.status === "approved" ? "Time off" : "Time off requested"} </span>
-                                <span aria-hidden>{t.status === "approved" ? "Off" : "Off?"}</span>
-                                {t.span.wholeDay ? null : ` ${compactRange(t.span.startLocal, t.span.endLocal)}`}
-                            </span>
-                        ))}
-                        {day.shifts.slice(0, MAX_CHIPS).map(({ shift, assignee }) => (
-                            <ShiftChip
-                                key={shift.id}
-                                shift={shift}
-                                actions={editing.chips}
-                                dragId={`chip:${shift.id}:${person.id}`}
-                                density={editing.density}
-                                eventName={eventNames.get(shift.eventId ?? "")}
-                                variant={{ kind: "assignment", assignee }}
-                            />
-                        ))}
-                        {hidden > 0 ? (
-                            <span className="px-1 text-[11px] font-medium text-muted-foreground">+{hidden} more</span>
-                        ) : null}
-                    </DayCell>
-                );
-            })}
-            <div role="cell" className={hoursCell}>
-                <span
-                    className={cn(
-                        "text-[13px] font-semibold",
-                        tone === "near" && "text-amber-700",
-                        tone === "over" && "text-destructive",
-                    )}
-                >
-                    {formatHours(person.scheduledMinutes)}
-                </span>
-                {tone === "over" ? (
-                    <span className="text-[11px] font-semibold text-destructive">{formatHours(person.overtimeMinutes)} OT</span>
-                ) : null}
+            <div role="rowheader" className={cn(labelCell, "bg-muted/70")}>
+                <div className="flex flex-col leading-tight">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Unfilled positions</span>
+                    <span className="text-[11.5px] font-medium text-muted-foreground">{total > 0 ? `${total} this week` : "None this week"}</span>
+                </div>
             </div>
+            {unfilled.map((day, index) => (
+                <div key={index} role="cell" className="flex min-h-[44px] items-center border-b border-r bg-muted/30 px-2">
+                    {day.unfilled > 0 ? (
+                        <button
+                            type="button"
+                            onClick={() => onNeedsPeople(index)}
+                            title="Open this day in the Day plan, showing events that need people"
+                            className="rounded px-1 py-0.5 text-left text-[12px] font-semibold text-foreground hover:bg-card hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                        >
+                            {day.unfilled} unfilled · {day.events} {day.events === 1 ? "event" : "events"}
+                            <span className="sr-only"> on {longDate(week.days[index]!.localDate)}</span>
+                        </button>
+                    ) : (
+                        <span className="px-1 text-[12px] text-muted-foreground">All filled</span>
+                    )}
+                </div>
+            ))}
         </div>
     );
 }
@@ -318,74 +316,48 @@ function PersonRowCells({
 export function PeopleGrid({
     week,
     view,
+    unfilled,
     search,
     onSearch,
     collapsed,
     onToggleSection,
-    flashOpenRow,
-    openRowRef,
+    onOpenDay,
+    onNeedsPeople,
     editing,
 }: {
     week: SchedulerWeek;
     view: PeopleView;
+    unfilled: UnfilledDay[];
     search: string;
     onSearch: (value: string) => void;
     collapsed: Set<string>;
     onToggleSection: (id: string) => void;
-    flashOpenRow: boolean;
-    openRowRef: React.RefObject<HTMLDivElement | null>;
+    onOpenDay: (dayIndex: number) => void;
+    onNeedsPeople: (dayIndex: number) => void;
     editing: GridEditing;
 }) {
-    const openTotal = view.open.flat().reduce((sum, s) => sum + s.open, 0);
-    const eventNames = eventNamesOf(week);
-    let rowIndex = 0;
+    let rowIndex = -1;
     return (
-        <div role="table" aria-label={`Schedule for ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
+        <div role="table" aria-label={`Team week, ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
             <Header
                 week={week}
-                onOpenEvent={editing.onOpenEvent}
+                onOpenDay={onOpenDay}
                 corner={
-                    <input
-                        type="search"
-                        value={search}
-                        onChange={(event) => onSearch(event.target.value)}
-                        placeholder="Find person"
-                        aria-label="Find a person"
-                        className="h-8 w-full rounded-md border bg-card px-2.5 text-[13px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
-                    />
+                    <>
+                        <input
+                            type="search"
+                            value={search}
+                            onChange={(event) => onSearch(event.target.value)}
+                            placeholder="Find person"
+                            aria-label="Find a person"
+                            className="h-8 w-full rounded-md border bg-card px-2.5 text-[13px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+                        />
+                        <span className="text-[11px] font-normal text-muted-foreground">Hours are this week, at every site</span>
+                    </>
                 }
             />
 
-            <div role="row" className="contents">
-                <div role="rowheader" ref={openRowRef} className={cn(labelCell, "bg-muted/70", flashOpenRow && styles.flash)}>
-                    <div className="flex flex-col leading-tight">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Open</span>
-                        {openTotal ? <span className="text-[11.5px] font-medium text-muted-foreground">{openTotal} to fill</span> : null}
-                    </div>
-                </div>
-                {view.open.map((shifts, index) => (
-                    <DayCell
-                        key={index}
-                        target={{ personId: null, dayIndex: index }}
-                        position={[rowIndex, index]}
-                        editing={editing}
-                        className={cn("bg-muted/30", flashOpenRow && styles.flash)}
-                    >
-                        {shifts.map((shift) => (
-                            <ShiftChip
-                                key={shift.id}
-                                shift={shift}
-                                actions={editing.chips}
-                                dragId={`open:${shift.id}`}
-                                density={editing.density}
-                                eventName={eventNames.get(shift.eventId ?? "")}
-                                variant={{ kind: "open" }}
-                            />
-                        ))}
-                    </DayCell>
-                ))}
-                <div role="cell" className={cn(hoursCell, "bg-muted/30")} />
-            </div>
+            <UnfilledRow unfilled={unfilled} week={week} onNeedsPeople={onNeedsPeople} />
 
             {view.sections.map((section) => {
                 const isCollapsed = collapsed.has(section.id);
@@ -403,17 +375,22 @@ export function PeopleGrid({
                                 <span className="font-normal text-muted-foreground">
                                     · {section.people.length} {section.people.length === 1 ? "person" : "people"}
                                 </span>
-                                {section.openSlots ? <span className="font-semibold text-foreground/80">· {section.openSlots} open</span> : null}
-                                {isCollapsed ? (
-                                    <span className="font-normal text-muted-foreground">· {formatHours(section.scheduledMinutes)}</span>
-                                ) : null}
+                                {isCollapsed ? <span className="font-normal text-muted-foreground">· {formatHours(section.scheduledMinutes)}</span> : null}
                             </button>
                         </div>
                         {isCollapsed
                             ? null
-                            : section.people.map((row) => (
-                                  <PersonRowCells key={row.person.id} row={row} rowIndex={++rowIndex} week={week} editing={editing} eventNames={eventNames} />
-                              ))}
+                            : section.people.map((row) => {
+                                  const index = ++rowIndex;
+                                  return (
+                                      <div key={row.person.id} role="row" className="contents">
+                                          <PersonLabel person={row.person} policy={week.settings.overtimePolicy} />
+                                          {row.days.map((_, dayIndex) => (
+                                              <PersonDayCell key={dayIndex} person={row.person} row={row} index={dayIndex} rowIndex={index} week={week} editing={editing} />
+                                          ))}
+                                      </div>
+                                  );
+                              })}
                     </div>
                 );
             })}
@@ -432,74 +409,6 @@ export function PeopleGrid({
                     ) : (
                         <>Nobody in this department yet.</>
                     )}
-                </div>
-            ) : null}
-        </div>
-    );
-}
-
-export function PositionsGrid({
-    week,
-    rows,
-    editing,
-}: {
-    week: SchedulerWeek;
-    rows: PositionRow[];
-    editing: GridEditing;
-}) {
-    const eventNames = eventNamesOf(week);
-    return (
-        <div role="table" aria-label={`Positions at ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
-            <Header
-                week={week}
-                onOpenEvent={editing.onOpenEvent}
-                corner={<span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Role</span>}
-                endLabel="Filled"
-            />
-            {rows.map((row, rowIndex) => {
-                const needed = row.days.flat().reduce((sum, s) => sum + (s.pendingRemoval ? 0 : s.capacity), 0);
-                const filled = row.days.flat().reduce((sum, s) => sum + (s.pendingRemoval ? 0 : s.filled), 0);
-                return (
-                    <div key={row.role} role="row" className="contents">
-                        <div role="rowheader" className={labelCell}>
-                            <div className="flex min-w-0 flex-col leading-tight">
-                                <span className="truncate text-[13px] font-semibold">{row.role}</span>
-                                <span className="text-[11.5px] text-muted-foreground">
-                                    {row.open ? `${row.open} open` : "All filled"}
-                                </span>
-                            </div>
-                        </div>
-                        {row.days.map((shifts, index) => (
-                            <DayCell
-                                key={index}
-                                target={{ personId: null, dayIndex: index }}
-                                position={[rowIndex, index]}
-                                editing={editing}
-                                role={row.role}
-                            >
-                                {shifts.map((shift) => (
-                                    <ShiftChip
-                                        key={shift.id}
-                                        shift={shift}
-                                        actions={editing.chips}
-                                        density={editing.density}
-                                        eventName={eventNames.get(shift.eventId ?? "")}
-                                        variant={{ kind: "shift" }}
-                                    />
-                                ))}
-                            </DayCell>
-                        ))}
-                        <div role="cell" className={hoursCell}>
-                            <span className="text-[13px] font-semibold">
-                                {filled}/{needed}
-                            </span>
-                        </div>
-                    </div>
-                );
-            })}
-            {rows.length === 0 ? (
-                <div role="row" className="col-span-full border-b bg-card px-4 py-6 text-sm text-muted-foreground">
-                    No shifts this week. Switch to People and click a day to add one.
                 </div>
             ) : null}
         </div>

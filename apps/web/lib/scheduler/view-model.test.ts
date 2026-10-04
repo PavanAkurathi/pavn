@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { SchedulerShift, SchedulerWeek } from "@repo/contracts/scheduler";
 import { compactRange, compactTime, formatHours, addDays, weekRangeLabel, weekdayShort } from "./format";
 import { roleColor } from "./role-color";
-import { ALL_DEPARTMENTS, NO_DEPARTMENT, buildPeopleView, buildPositionsView, hoursTone } from "./view-model";
+import { ALL_DEPARTMENTS, NO_DEPARTMENT, buildPeopleView, hoursTone } from "./view-model";
 
 const shift = (over: Partial<SchedulerShift>): SchedulerShift => ({
     id: "s",
@@ -149,17 +149,6 @@ describe("buildPeopleView", () => {
         const view = buildPeopleView(week(), { department: ALL_DEPARTMENTS, search: " BEN " });
         expect(view.sections.flatMap((s) => s.people.map((p) => p.person.id))).toEqual(["ben"]);
         expect(view.open.flat()).toHaveLength(2);
-    });
-});
-
-describe("buildPositionsView", () => {
-    test("one row per role, in department and role order, counting open slots", () => {
-        const rows = buildPositionsView(week(), { department: ALL_DEPARTMENTS });
-        expect(rows.map((r) => [r.role, r.departmentId, r.open])).toEqual([
-            ["Server", "foh", 2],
-            ["Line Cook", "boh", 1],
-        ]);
-        expect(rows[0]!.days[2]!.map((s) => s.id)).toEqual(["tue-early", "tue-late"]);
     });
 });
 

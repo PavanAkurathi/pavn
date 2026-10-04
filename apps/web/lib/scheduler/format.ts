@@ -61,3 +61,14 @@ export function weekRangeLabel(firstDay: string, lastDay: string, today?: string
     const end = a.m === b.m && a.y === b.y ? `${b.d}` : `${MONTHS_SHORT[b.m - 1]} ${b.d}`;
     return `${start} – ${end}${year}`;
 }
+
+/** "Friday, October 16": the calendar day in words, whatever the browser's time zone. */
+export function longDate(localDate: string): string {
+    return toUtc(localDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+}
+
+/** "Fri, Oct 16". */
+export function shortDate(localDate: string): string {
+    const { m, d } = parts(localDate);
+    return `${weekdayShort(localDate)}, ${MONTHS_SHORT[m - 1]} ${d}`;
+}

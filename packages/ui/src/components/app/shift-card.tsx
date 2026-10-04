@@ -5,10 +5,16 @@ import { cn } from "../../lib/utils"
 export interface ShiftCardProps extends Omit<React.ComponentPropsWithRef<"button">, "children" | "title"> {
   /** "assigned" is a shift; "open" is the dashed slot nobody has yet. */
   kind?: "assigned" | "open"
-  /** The bold first line: what the shift is, e.g. its role or the event it belongs to. */
+  /** What the shift is, e.g. its role or the event it belongs to. Bold, unless `leadWith` is "time". */
   title?: string
   /** "4p–11p". */
   time: string
+  /** Which line is strongest. A worker's entry leads with the time; a shift on its own leads with its title. */
+  leadWith?: "title" | "time"
+  /** Where it is, shown under the title when the board spans more than one site. */
+  site?: string
+  /** Ends the next day: "+1" after the time. */
+  overnight?: boolean
   /** Small text after the time: "3/4" filled, or the role. */
   detail?: string
   /** Not published yet: dashed, with a DRAFT tag. Staff can't see it. */
@@ -50,6 +56,9 @@ function ShiftCard({
   kind = "assigned",
   title,
   time,
+  leadWith = "title",
+  site,
+  overnight,
   detail,
   draft,
   conflict,
@@ -71,6 +80,7 @@ function ShiftCard({
     </span>
   ) : null
   const sub = detail ? `${time} · ${detail}` : time
+  const timeText = overnight ? `${time} +1` : time
 
   return (
     <button
@@ -128,16 +138,31 @@ function ShiftCard({
         <span className="flex items-center gap-1.5">
           <span className={cn("whitespace-nowrap font-semibold tabular-nums", removed && "line-through")}>
             {diamond}
-            {time}
+            {timeText}
           </span>
-          {title || detail ? (
+          {title || detail || site ? (
             <span className="min-w-0 truncate text-[11px] text-muted-foreground">
-              {[title, detail].filter(Boolean).join(" · ")}
+              {[title, site, detail].filter(Boolean).join(" · ")}
               {draft ? " · draft" : ""}
             </span>
           ) : null}
           {trailing ? <span className="ml-auto text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
         </span>
+      ) : leadWith === "time" ? (
+        <>
+          {draft ? (
+            <span className="mb-0.5 block text-[9px] font-extrabold uppercase tracking-[0.06em] text-muted-foreground/70">Draft</span>
+          ) : null}
+          <span className="flex items-center gap-1.5">
+            <span className={cn("min-w-0 flex-1 truncate text-[12.5px] font-bold tabular-nums", removed && "line-through")}>
+              {diamond}
+              {timeText}
+            </span>
+            {trailing ? <span className="shrink-0 text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
+          </span>
+          {title ? <span className="mt-px block truncate text-[11.5px] text-foreground/80">{title}</span> : null}
+          {site ? <span className="block truncate text-[11px] text-muted-foreground">{site}</span> : null}
+        </>
       ) : (
         <>
           {draft ? (
