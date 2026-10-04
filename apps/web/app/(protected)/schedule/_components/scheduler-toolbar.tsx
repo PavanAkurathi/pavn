@@ -70,8 +70,6 @@ export function SchedulerToolbar({
 
     return (
         <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="sr-only">Schedule</h1>
-
             {locations.length > 1 ? (
                 <Select value={locationId} onValueChange={onLocation}>
                     <SelectTrigger aria-label="Location" className="h-8 w-auto min-w-40 text-[13px] font-semibold">
@@ -103,12 +101,11 @@ export function SchedulerToolbar({
                 <button type="button" aria-label="Next week" onClick={() => onWeek(1)} className={arrowButton}>
                     <ChevronRight aria-hidden className="size-4" />
                 </button>
-                {isThisWeek ? null : (
-                    <button type="button" onClick={onThisWeek} className="px-1.5 py-1 text-[11px] font-semibold text-primary hover:underline">
-                        Today
-                    </button>
-                )}
             </div>
+
+            <Button variant="outline" className={toolbarButton} onClick={onThisWeek} disabled={isThisWeek} title={isThisWeek ? "You're on this week" : undefined}>
+                Today
+            </Button>
 
             <Segmented
                 label="Board"
@@ -208,7 +205,7 @@ export function SchedulerToolbar({
                             ? "Publishing…"
                             : publishPhase === "sending"
                                 ? "Sending…"
-                                : `Publish${pendingChangeCount > 0 ? ` ${pendingChangeCount}` : ""}`}
+                                : `Publish${pendingChangeCount > 0 ? ` (${pendingChangeCount})` : ""}`}
                 </Button>
             </div>
         </div>

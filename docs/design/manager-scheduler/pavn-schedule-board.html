@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pavn — Schedule</title>
+<style>
+:root{
+  --pri:#6366f1; --pri-d:#4f46e5; --pri-soft:rgba(99,102,241,.09);
+  --bg:#f6f6f8; --surface:#fff; --text:#1b1b22; --muted:#6d6d7d; --faint:#a5a5b3;
+  --border:#e4e4ea;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:30px 26px 90px}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--pri-d);margin-bottom:6px}
+h1{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.lede{color:var(--muted);font-size:13.5px;margin-top:5px;max-width:600px}
+/* toolbar */
+.toolbar{display:flex;align-items:center;gap:12px;margin:22px 0 14px;flex-wrap:wrap}
+.weeknav{display:flex;align-items:center;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px}
+.weeknav button{border:none;background:none;font-family:inherit;font-size:15px;color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer}
+.weeknav button:hover{background:#f1f1f4;color:var(--text)}
+.weeknav .wl{font-size:13.5px;font-weight:700;padding:0 10px;white-space:nowrap;min-width:170px;text-align:center}
+.todaybtn{font-family:inherit;font-size:12.5px;font-weight:700;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:8px 14px;cursor:pointer;color:var(--text)}
+.seg{display:inline-flex;background:#ececf1;border-radius:11px;padding:4px}
+.seg button{border:none;background:none;font-family:inherit;font-size:13px;font-weight:600;color:#55556a;padding:8px 20px;border-radius:8px;cursor:pointer}
+.seg button.on{background:#fff;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.13);font-weight:700}
+.toolbar select{font-family:inherit;font-size:13px;font-weight:600;border:1px solid var(--border);border-radius:11px;padding:9px 13px;background:var(--surface);color:var(--text);cursor:pointer}
+.pubbtn{margin-left:auto;font-family:inherit;font-size:13.5px;font-weight:700;padding:11px 22px;border-radius:11px;border:none;background:var(--pri);color:#fff;cursor:pointer;box-shadow:0 3px 12px rgba(99,102,241,.3)}
+.pubbtn:hover{background:var(--pri-d)}
+.pubbtn:disabled{background:#d8d8e0;color:#8a8a96;box-shadow:none;cursor:default}
+/* draft banner */
+.draftbar{display:none;align-items:center;gap:12px;background:#fbfbfe;border:1.5px dashed #d4d4dc;border-radius:14px;padding:12px 18px;margin-bottom:14px;flex-wrap:wrap}
+.draftbar.show{display:flex}
+.draftbar .dot{width:9px;height:9px;border-radius:50%;background:#3a3a48;flex:none}
+.draftbar p{font-size:13.5px;flex:1;min-width:200px}
+.draftbar p b{font-weight:800}
+.btn-ghost{font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 15px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer}
+.btn-primary-sm{font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 16px;border-radius:10px;border:none;background:var(--pri);color:#fff;cursor:pointer}
+/* board */
+.bscroll{overflow-x:auto;border:1px solid var(--border);border-radius:16px;background:var(--surface)}
+.board{display:grid;grid-template-columns:168px repeat(7,minmax(128px,1fr));min-width:1060px}
+.bcorner{border-bottom:1px solid var(--border);background:#fafafc}
+.dhead{padding:12px 10px;border-bottom:1px solid var(--border);border-left:1px solid var(--border);text-align:center;background:#fafafc}
+.dhead b{display:block;font-size:13px}
+.dhead span{font-size:11.5px;color:var(--muted)}
+.dhead.today b{color:var(--pri-d)}
+.dhead.today .tdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--pri);margin-left:5px}
+.rlabel{padding:12px 14px;border-top:1px solid var(--border);font-size:13px;font-weight:700;display:flex;align-items:center}
+.rlabel .tname{display:flex;align-items:center;gap:10px}
+.rlabel .tname b{display:block;font-size:13px}
+.rlabel .tname span{font-size:11.5px;color:var(--muted)}
+.cell{border-top:1px solid var(--border);border-left:1px solid var(--border);padding:7px 6px 6px;min-height:92px;position:relative;vertical-align:top}
+.cell:hover{background:#fbfbfe}
+.celladd{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--muted);font-size:15px;line-height:1;cursor:pointer;opacity:0;transition:opacity .12s;font-family:inherit}
+.cell:hover .celladd{opacity:1}
+.celladd:hover{border-color:var(--pri);color:var(--pri-d)}
+.chip{background:#fff;border:1px solid var(--border);border-radius:10px;padding:7px 9px;margin-bottom:6px;cursor:pointer;transition:box-shadow .12s}
+.chip:hover{box-shadow:0 4px 14px rgba(20,16,60,.1)}
+.chip b{display:block;font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip span{font-size:11.5px;color:var(--muted)}
+.chip.draft{border-style:dashed;background:#fbfbfe}
+.chip .dt{font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--faint);display:block;margin-bottom:2px}
+.av{width:32px;height:32px;border-radius:50%;background:#ececf1;color:#4a4a5c;font-weight:800;font-size:11.5px;display:flex;align-items:center;justify-content:center;flex:none}
+/* quick-add popover */
+.qapop{position:fixed;z-index:80;width:270px;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 18px 50px rgba(20,16,60,.18);padding:18px;display:none}
+.qapop.show{display:block;animation:fade .15s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.qapop h4{font-size:14px;font-weight:800;margin-bottom:12px}
+.qapop label{display:block;font-size:11.5px;font-weight:700;color:var(--muted);margin:10px 0 5px}
+.qapop input{font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:9px;padding:9px 11px;width:100%;color:var(--text)}
+.qapop select{font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:9px;padding:9px 11px;width:100%;color:var(--text);background:#fff}
+.qapop .f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qapop .btn-primary-sm{width:100%;margin-top:14px;padding:10px}
+.legend{display:flex;gap:18px;margin-top:14px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:22px;height:12px;border:1px solid var(--border);border-radius:4px;margin-right:6px;vertical-align:-1px;background:#fff}
+.legend i.d{border-style:dashed;background:#fbfbfe}
+#toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:#221f33;color:#fff;font-size:13.5px;font-weight:600;padding:13px 24px;border-radius:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:99;max-width:92vw;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast b{color:#a5b4fc}
+@media(max-width:700px){.wrap{padding:20px 12px 70px}.pubbtn{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Pavn · Schedule</div>
+  <h1>Schedule</h1>
+  <p class="lede">Build the week. Dashed shifts are drafts — invisible to staff until published.</p>
+
+  <div class="toolbar">
+    <div class="weeknav">
+      <button onclick="moveWeek(-1)" aria-label="Previous week">‹</button>
+      <span class="wl" id="weekLabel">–</span>
+      <button onclick="moveWeek(1)" aria-label="Next week">›</button>
+    </div>
+    <button class="todaybtn" onclick="goToday()">Today</button>
+    <div class="seg" id="modeSeg">
+      <button class="on" data-m="roles" onclick="setMode('roles')">Roles</button>
+      <button data-m="people" onclick="setMode('people')">People</button>
+    </div>
+    <select id="locF" onchange="render()"><option value="">All locations</option><option>Downtown Venue</option><option>Charles Catering</option></select>
+    <button class="pubbtn" id="pubBtn" onclick="publishWeek()">Publish</button>
+  </div>
+
+  <div class="draftbar" id="draftBar"></div>
+
+  <div class="bscroll"><div class="board" id="board"></div></div>
+
+  <div class="legend">
+    <span><i></i>Published — visible to staff</span>
+    <span><i class="d"></i>Draft — only you can see it</span>
+    <span>Hover any day cell for ＋ quick-add</span>
+  </div>
+</div>
+
+<div class="qapop" id="qapop">
+  <h4 id="qaTitle">New draft</h4>
+  <label>Shift title</label><input id="qaName" placeholder="e.g. Dinner service">
+  <div class="f2">
+    <div><label>Start</label><input id="qaStart" type="time" value="17:00"></div>
+    <div><label>End</label><input id="qaEnd" type="time" value="23:00"></div>
+  </div>
+  <label>Workers needed</label><input id="qaNeed" type="number" min="1" value="3">
+  <label>Assign to <span style="font-weight:400;color:var(--faint)">(optional)</span></label>
+  <select id="qaWorker"></select>
+  <button class="btn-primary-sm" onclick="qaSave()">Add as draft</button>
+</div>
+
+<div id="toast"></div>
+<script>
+const TODAY='2026-10-04';
+const ROSTER=[
+ {id:'w1',name:'Marcus Bell',role:'Server'},{id:'w2',name:'Priya Nair',role:'Server'},
+ {id:'w3',name:'Dana Whitfield',role:'Bartender'},{id:'w4',name:'Leo Martins',role:'Bartender'},
+ {id:'w5',name:'Sofia Reyes',role:'Event Server'},{id:'w6',name:'James Okafor',role:'Event Server'},
+ {id:'w7',name:'Nina Petrova',role:'Server'},{id:'w8',name:'Tom Alvarez',role:'Prep Cook'},
+];
+const byRole={};ROSTER.forEach(w=>{(byRole[w.role]=byRole[w.role]||[]).push(w)});
+const ROLES=['Server','Bartender','Event Server','Prep Cook'];
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const initials=n=>n.split(' ').map(x=>x[0]).join('');
+function toast(h){const t=document.getElementById('toast');t.innerHTML=h;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2800)}
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const short=t=>t.replace(':00','').replace(' AM','a').replace(' PM','p');
+function t12(t){let[h,m]=t.split(':').map(Number);const ap=h>=12?'PM':'AM';h=h%12||12;return `${h}:${String(m).padStart(2,'0')} ${ap}`}
+
+const TEMPLATES=[
+ {day:0,title:'Brunch service',role:'Server',start:'10:00 AM',end:'3:00 PM',need:5,rate:36,loc:'Downtown Venue'},
+ {day:0,title:'Dinner service',role:'Server',start:'5:00 PM',end:'10:00 PM',need:4,rate:38,loc:'Downtown Venue'},
+ {day:1,title:'Lunch service',role:'Server',start:'11:00 AM',end:'4:00 PM',need:4,rate:36,loc:'Downtown Venue'},
+ {day:1,title:'Dinner service',role:'Server',start:'5:00 PM',end:'11:00 PM',need:5,rate:38,loc:'Downtown Venue'},
+ {day:2,title:'Lunch service',role:'Server',start:'11:00 AM',end:'4:00 PM',need:4,rate:36,loc:'Downtown Venue'},
+ {day:2,title:'Bar evening',role:'Bartender',start:'4:00 PM',end:'11:00 PM',need:2,rate:40,loc:'Downtown Venue'},
+ {day:3,title:'Lunch service',role:'Server',start:'11:00 AM',end:'4:00 PM',need:4,rate:36,loc:'Downtown Venue'},
+ {day:3,title:'Dinner service',role:'Server',start:'5:00 PM',end:'11:00 PM',need:5,rate:38,loc:'Downtown Venue'},
+ {day:3,title:'Morning prep',role:'Prep Cook',start:'8:00 AM',end:'2:00 PM',need:2,rate:32,loc:'Downtown Venue'},
+ {day:4,title:'Corporate lunch',role:'Bartender',start:'10:00 AM',end:'3:00 PM',need:3,rate:40,loc:'Charles Catering'},
+ {day:4,title:'Dinner service',role:'Server',start:'5:00 PM',end:'11:00 PM',need:5,rate:38,loc:'Downtown Venue'},
+ {day:5,title:'Dinner service',role:'Server',start:'5:00 PM',end:'11:00 PM',need:6,rate:38,loc:'Downtown Venue'},
+ {day:5,title:'Late night bar',role:'Bartender',start:'9:00 PM',end:'2:00 AM',need:3,rate:42,loc:'Downtown Venue'},
+ {day:6,title:'Smith Wedding',role:'Event Server',start:'4:00 PM',end:'11:00 PM',need:6,rate:42,loc:'Downtown Venue'},
+ {day:6,title:'Brunch service',role:'Server',start:'10:00 AM',end:'3:00 PM',need:4,rate:36,loc:'Downtown Venue'},
+ {day:6,title:'Gala dinner',role:'Event Server',start:'6:00 PM',end:'11:00 PM',need:8,rate:45,loc:'Charles Catering'},
+];
+const DRAFT_TITLES=new Set(['Gala dinner','Late night bar','Corporate lunch','Morning prep']);
+const WEEKS=['2026-10-04','2026-10-11','2026-10-18'];
+let cur=1, mode='roles', qaCtx=null, undoSnap=null, justPublished=false;
+const cache={};
+
+function genWeek(startISO){
+  const [y,m,dd]=startISO.split('-').map(Number), base=new Date(y,m-1,dd);
+  const isBuild=startISO==='2026-10-11';
+  let n=0;const shifts=[];
+  TEMPLATES.forEach(t=>{
+    const dt=new Date(base);dt.setDate(dt.getDate()+t.day);
+    const draft=isBuild&&DRAFT_TITLES.has(t.title);
+    const pool=byRole[t.role]||[];
+    const want=draft?Math.max(0,t.need-2):t.need;
+    shifts.push({id:'s'+(n++),title:t.title,role:t.role,day:t.day,date:iso(dt),
+      start:t.start,end:t.end,need:t.need,rate:t.rate,loc:t.loc,
+      assigned:pool.slice(0,Math.min(want,pool.length)).map(w=>w.id),draft});
+  });
+  return {start:startISO,shifts};
+}
+const curWeek=()=>cache[cur]||(cache[cur]=genWeek(WEEKS[cur]));
+const weekLabel=()=>{const[y,m,d]=WEEKS[cur].split('-').map(Number);const a=new Date(y,m-1,d),b=new Date(y,m-1,d+6);
+  return `${MN[a.getMonth()]} ${a.getDate()} – ${MN[b.getMonth()]} ${b.getDate()}, ${b.getFullYear()}`};
+
+function chipHTML(s){
+  const n=s.assigned.length;
+  return `<div class="chip ${s.draft?'draft':''}" onclick="toast('Opening shift details…')">
+    ${s.draft?'<span class="dt">DRAFT</span>':''}<b>${s.title}</b><span>${short(s.start)}–${short(s.end)} · ${n}/${s.need}</span></div>`;
+}
+function render(){
+  const w=curWeek(), locF=document.getElementById('locF').value;
+  document.getElementById('weekLabel').textContent=weekLabel();
+  /* banner + publish button */
+  const drafts=w.shifts.filter(s=>s.draft);
+  const bar=document.getElementById('draftBar'), pub=document.getElementById('pubBtn');
+  if(justPublished){
+    bar.classList.add('show');
+    bar.innerHTML=`<span class="dot" style="background:var(--pri)"></span><p><b>Published ✓</b> — the team has been notified.</p><button class="btn-ghost" onclick="undoPublish()">Undo</button>`;
+    pub.disabled=true;pub.textContent='Publish';
+  }else if(drafts.length){
+    bar.classList.add('show');
+    bar.innerHTML=`<span class="dot"></span><p><b>${drafts.length} unpublished shift${drafts.length>1?'s':''}</b> — only you can see ${drafts.length>1?'them':'it'} until published.</p>
+      <button class="btn-ghost" onclick="discardDrafts(this)">Discard</button>
+      <button class="btn-primary-sm" onclick="publishWeek()">Publish</button>`;
+    pub.disabled=false;pub.textContent=`Publish (${drafts.length})`;
+  }else{bar.classList.remove('show');pub.disabled=true;pub.textContent='Publish'}
+  /* board */
+  const [y,m,dd]=WEEKS[cur].split('-').map(Number);
+  let h=`<div class="bcorner"></div>`;
+  for(let d=0;d<7;d++){const dt=new Date(y,m-1,dd+d),id=iso(dt);
+    h+=`<div class="dhead ${id===TODAY?'today':''}"><b>${DW[d]} ${dt.getDate()}${id===TODAY?'<span class="tdot"></span>':''}</b><span>${MN[dt.getMonth()]}</span></div>`}
+  const filt=s=>!locF||s.loc===locF;
+  if(mode==='roles'){
+    ROLES.forEach(r=>{
+      h+=`<div class="rlabel">${r}</div>`;
+      for(let d=0;d<7;d++){
+        const chips=w.shifts.filter(s=>s.role===r&&s.day===d&&filt(s));
+        h+=`<div class="cell">${chips.map(chipHTML).join('')}<button class="celladd" onclick="event.stopPropagation();qaOpen(event,'${r}',${d},null)" title="Quick-add">+</button></div>`;
+      }
+    });
+  }else{
+    ROSTER.forEach(p=>{
+      h+=`<div class="rlabel"><div class="tname"><div class="av">${initials(p.name)}</div><div><b>${p.name}</b><span>${p.role}</span></div></div></div>`;
+      for(let d=0;d<7;d++){
+        const chips=w.shifts.filter(s=>s.day===d&&s.assigned.includes(p.id)&&filt(s));
+        h+=`<div class="cell">${chips.map(chipHTML).join('')}<button class="celladd" onclick="event.stopPropagation();qaOpen(event,'${p.role}',${d},'${p.id}')" title="Quick-add">+</button></div>`;
+      }
+    });
+  }
+  document.getElementById('board').innerHTML=h;
+}
+function moveWeek(d){const n=cur+d;if(n<0||n>2){toast('Demo: three weeks of data');return}cur=n;justPublished=false;render()}
+function goToday(){cur=0;justPublished=false;render()}
+function setMode(mm){mode=mm;document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.m===mm));render()}
+function publishWeek(){
+  const w=curWeek();
+  undoSnap=JSON.stringify(w.shifts);
+  w.shifts.forEach(s=>s.draft=false);
+  justPublished=true;render();
+  toast(`<b>${weekLabel()}</b> published — team notified`);
+}
+function undoPublish(){
+  if(!undoSnap)return;
+  curWeek().shifts=JSON.parse(undoSnap);undoSnap=null;justPublished=false;render();
+  toast('Publish undone — drafts restored');
+}
+function discardDrafts(btn){
+  if(!btn.dataset.arm){btn.dataset.arm='1';btn.textContent='Confirm?';setTimeout(()=>{btn.dataset.arm='';btn.textContent='Discard'},2600);return}
+  const w=curWeek();w.shifts=w.shifts.filter(s=>!s.draft);justPublished=false;render();
+  toast('Drafts discarded');
+}
+/* quick-add */
+function qaOpen(e,role,day,personId){
+  qaCtx={role,day,personId};
+  const[y,m,d]=WEEKS[cur].split('-').map(Number),dt=new Date(y,m-1,d+day);
+  document.getElementById('qaTitle').textContent=`New draft — ${role} · ${DW[day]} ${MN[dt.getMonth()]} ${dt.getDate()}`;
+  document.getElementById('qaName').value='';
+  const pool0=byRole[role]||[];
+  document.getElementById('qaWorker').innerHTML=`<option value="">Auto-assign</option>`+pool0.map(w=>`<option value="${w.id}"${w.id===personId?' selected':''}>${w.name}</option>`).join('');
+  const pop=document.getElementById('qapop');
+  pop.style.left=Math.min(e.clientX,window.innerWidth-290)+'px';
+  pop.style.top=Math.min(e.clientY+10,window.innerHeight-340)+'px';
+  pop.classList.add('show');
+  setTimeout(()=>document.getElementById('qaName').focus(),50);
+}
+function qaClose(){document.getElementById('qapop').classList.remove('show');qaCtx=null}
+document.addEventListener('click',e=>{const p=document.getElementById('qapop');if(p.classList.contains('show')&&!p.contains(e.target))qaClose()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')qaClose()});
+function qaSave(){
+  if(!qaCtx)return;
+  const title=document.getElementById('qaName').value.trim()||'Untitled shift';
+  const start=t12(document.getElementById('qaStart').value||'17:00'),end=t12(document.getElementById('qaEnd').value||'23:00');
+  const need=Math.max(1,+document.getElementById('qaNeed').value||3);
+  const [y,m,d]=WEEKS[cur].split('-').map(Number),dt=new Date(y,m-1,d+qaCtx.day);
+  const pool=byRole[qaCtx.role]||[];
+  const picked=document.getElementById('qaWorker').value;
+  const assigned=picked?[picked]:(qaCtx.personId?[qaCtx.personId]:pool.slice(0,Math.min(1,pool.length)).map(w=>w.id));
+  curWeek().shifts.push({id:'s'+Date.now(),title,role:qaCtx.role,day:qaCtx.day,date:iso(dt),
+    start,end,need,rate:38,loc:document.getElementById('locF').value||'Downtown Venue',assigned,draft:true});
+  qaClose();justPublished=false;render();
+  toast(`Draft added — publish when ready`);
+}
+render();
+</script>
+</body>
+</html>

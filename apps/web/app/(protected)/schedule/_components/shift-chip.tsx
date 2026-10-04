@@ -1,9 +1,8 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
-import type { SchedulerAssignee, SchedulerPerson, SchedulerShift } from "@repo/contracts/scheduler";
+import type { SchedulerAssignee, SchedulerShift } from "@repo/contracts/scheduler";
 import { ShiftCard } from "@repo/ui/components/app/shift-card";
-import { roleHue } from "@repo/ui/lib/role-hue";
 import { cn } from "@repo/ui/lib/utils";
 import { compactRange } from "@/lib/scheduler/format";
 import type { DragSource } from "@/lib/scheduler/plans";
@@ -13,18 +12,21 @@ export type Density = "comfortable" | "compact";
 
 type ChipVariant =
     /** On a person's row: this person's assignment. */
-    | { kind: "assignment"; assignee: SchedulerAssignee; showRole: boolean }
+    | { kind: "assignment"; assignee: SchedulerAssignee }
     /** On the Open row: the slots nobody has yet. */
     | { kind: "open" }
-    /** On a position row: one person on the shift, with their name. */
-    | { kind: "person"; assignee: SchedulerAssignee; person: SchedulerPerson | undefined }
-    /** On a position row: the slots on that shift nobody has yet. */
-    | { kind: "open-slots" };
+    /** On a role row: the shift itself, with how full it is. */
+    | { kind: "shift" };
 
 export interface ChipActions {
     onOpen: (shiftId: string) => void;
     onRemove: (source: DragSource) => void;
     onCopy: (source: DragSource) => void;
+}
+
+/** What a shift is called on the board: the event it belongs to, else its role. */
+export function shiftTitle(shift: SchedulerShift, eventName?: string) {
+    return eventName ?? shift.role;
 }
 
 export function ShiftChip({
@@ -33,13 +35,16 @@ export function ShiftChip({
     actions,
     dragId,
     density = "comfortable",
+    eventName,
 }: {
     shift: SchedulerShift;
     variant: ChipVariant;
     actions: ChipActions;
-    /** Unique per chip on screen; chips on the Positions view aren't dragged. */
+    /** Unique per chip on screen; chips on the role rows aren't dragged. */
     dragId?: string;
     density?: Density;
+    /** The event this shift belongs to, if any. */
+    eventName?: string;
 }) {
     const source: DragSource | null =
         variant.kind === "assignment"
@@ -54,34 +59,27 @@ export function ShiftChip({
         disabled: !draggable,
     });
 
-    const assignee = variant.kind === "assignment" || variant.kind === "person" ? variant.assignee : null;
+    const assignee = variant.kind === "assignment" ? variant.assignee : null;
     const draft = shift.status === "draft" || assignee?.pendingState === "add";
     const removed = shift.pendingRemoval || assignee?.pendingState === "remove";
-    const blocking = assignee ? isBlocking(assignee) : false;
-    const softWarnings = assignee ? assignee.warnings.filter((w) => w.severity === "warn") : [];
+    const assignees = assignee ? [assignee] : variant.kind === "shift" ? shift.assignees : [];
+    const blocking = assignees.some(isBlocking);
+    const softWarnings = assignees.flatMap((a) => a.warnings.filter((w) => w.severity === "warn"));
     const range = compactRange(shift.startLocal, shift.endLocal);
-    const open = variant.kind === "open" || variant.kind === "open-slots";
-    const who = variant.kind === "person" ? (variant.person?.name ?? "Someone") : undefined;
+    const open = variant.kind === "open";
+    const fill = `${shift.filled}/${shift.capacity}`;
+    const title = shiftTitle(shift, eventName);
 
     const label = [
-        who,
+        title,
         range,
-        shift.role,
-        open ? `${shift.open} open` : null,
+        open ? `${shift.open} open` : `${shift.filled} of ${shift.capacity} filled`,
         draft ? "draft" : null,
         removed ? "being removed" : null,
         blocking ? "has a conflict" : null,
     ]
         .filter(Boolean)
         .join(", ");
-
-    // What follows the time: the role where the row doesn't already say it, and whether staff can see it yet.
-    const detail = [
-        variant.kind === "open" || (variant.kind === "assignment" && variant.showRole) ? shift.role : null,
-        draft ? "draft" : null,
-    ]
-        .filter(Boolean)
-        .join(" · ");
 
     return (
         <ShiftCard
@@ -93,8 +91,9 @@ export function ShiftChip({
             aria-roledescription={undefined}
             aria-describedby={undefined}
             aria-label={label}
-            title={[label, ...softWarnings.map((w) => w.message)].join("\n")}
+            tooltip={[label, ...softWarnings.map((w) => w.message)].join("\n")}
             data-chip
+            data-open={shift.open > 0 && !shift.pendingRemoval ? "true" : undefined}
             onClick={(event) => {
                 event.stopPropagation();
                 actions.onOpen(shift.id);
@@ -110,11 +109,10 @@ export function ShiftChip({
                     actions.onCopy(source);
                 }
             }}
-            hue={roleHue(shift.role)}
             kind={open ? "open" : "assigned"}
-            name={who}
+            title={open ? undefined : title}
             time={range}
-            detail={detail || undefined}
+            detail={open ? shift.role : fill}
             draft={draft}
             removed={removed}
             conflict={blocking}
@@ -131,13 +129,7 @@ export function ShiftChip({
 export function ChipGhost({ shift, copy }: { shift: SchedulerShift; copy: boolean }) {
     return (
         <div className="relative w-40">
-            <ShiftCard
-                tabIndex={-1}
-                hue={roleHue(shift.role)}
-                time={compactRange(shift.startLocal, shift.endLocal)}
-                detail={shift.role}
-                className="shadow-lg"
-            />
+            <ShiftCard tabIndex={-1} title={shift.role} time={compactRange(shift.startLocal, shift.endLocal)} className="shadow-lg" />
             {copy ? (
                 <span className="absolute -right-1 -top-2 rounded bg-foreground px-1 text-[10px] font-bold text-background">+ copy</span>
             ) : null}

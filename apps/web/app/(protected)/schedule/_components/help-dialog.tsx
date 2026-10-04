@@ -5,20 +5,18 @@ import { ShiftCard } from "@repo/ui/components/app/shift-card";
 import { cn } from "@repo/ui/lib/utils";
 import styles from "./scheduler.module.css";
 
-const HUE = "var(--hue-server)";
-
 /** A real card, only not clickable: the legend shows exactly what the grid draws. */
-function Sample(props: Omit<React.ComponentProps<typeof ShiftCard>, "hue" | "time">) {
+function Sample(props: Omit<React.ComponentProps<typeof ShiftCard>, "time">) {
     return (
         <div className="w-32 shrink-0">
-            <ShiftCard tabIndex={-1} aria-hidden hue={HUE} time="4p–11p" detail="Server" {...props} />
+            <ShiftCard tabIndex={-1} aria-hidden title="Server" time="4p–11p" detail="3/4" {...props} />
         </div>
     );
 }
 
 const MARKINGS: { sample: React.ReactNode; text: string }[] = [
     { sample: <Sample />, text: "Published. Staff see it in the app." },
-    { sample: <Sample draft />, text: "Dashed and faded: not published yet. Staff can't see it." },
+    { sample: <Sample draft />, text: "Dashed, tagged DRAFT: not published yet. Staff can't see it." },
     { sample: <Sample edited />, text: "Amber dot: published, with changes staff can't see yet." },
     { sample: <Sample conflict />, text: "Red ring and !: a real problem, like a double booking or approved time off." },
     { sample: <Sample kind="open" openLabel="OPEN · 2 to fill" />, text: "Dashed OPEN card: slots nobody has taken yet." },
