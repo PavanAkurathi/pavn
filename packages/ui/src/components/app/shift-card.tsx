@@ -11,8 +11,12 @@ export interface ShiftCardProps extends Omit<React.ComponentPropsWithRef<"button
   time: string
   /** Which line is strongest. A worker's entry leads with the time; a shift on its own leads with its title. */
   leadWith?: "title" | "time"
+  /** A third line, e.g. the role. */
+  subtitle?: string
   /** Where it is, shown under the title when the board spans more than one site. */
   site?: string
+  /** The role's colour (roleHue(role)): a light tint, and a coloured dashed edge for a draft. Leave it out for black and white. */
+  hue?: string
   /** Ends the next day: "+1" after the time. */
   overnight?: boolean
   /** Small text after the time: "3/4" filled, or the role. */
@@ -57,7 +61,9 @@ function ShiftCard({
   title,
   time,
   leadWith = "title",
+  subtitle,
   site,
+  hue,
   overnight,
   detail,
   draft,
@@ -70,6 +76,7 @@ function ShiftCard({
   trailing,
   openLabel = "OPEN · tap to assign",
   className,
+  style,
   ...props
 }: ShiftCardProps) {
   const open = kind === "open"
@@ -88,14 +95,16 @@ function ShiftCard({
       data-shift-card
       data-kind={kind}
       className={cn(
-        "relative block w-full min-w-0 rounded-chip border border-border bg-card text-left text-xs leading-tight transition-shadow",
+        "relative block w-full min-w-0 rounded-chip border text-left text-xs leading-tight transition-shadow",
+        hue ? "border-transparent" : "border-border bg-card",
         "hover:shadow-[0_4px_14px_rgba(20,16,60,0.1)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-        compact ? "px-1.5 py-0.5" : "px-[9px] py-[7px]",
+        compact ? "px-1.5 py-0.5" : "px-2.5 py-2",
         // Open: no fill, a firm dashed outline, centred text.
         open && "border-dashed border-foreground bg-transparent text-center",
         open && !compact && "px-[5px] py-2",
-        // Draft: a dashed edge and a faint fill.
-        draft && "border-dashed bg-muted/40",
+        // Draft: a dashed edge and a lighter fill.
+        draft && "border-dashed",
+        draft && !hue && "bg-muted/40",
         // Removed at next publish.
         removed && "border-dashed border-destructive bg-muted opacity-60",
         conflict && "shadow-[0_0_0_2px_var(--destructive)]",
@@ -104,6 +113,15 @@ function ShiftCard({
         className
       )}
       title={tooltip}
+      style={
+        hue
+          ? ({
+              background: `color-mix(in srgb, ${hue} ${draft ? 8 : 15}%, var(--card))`,
+              borderColor: draft ? `color-mix(in srgb, ${hue} 60%, transparent)` : undefined,
+              ...style,
+            } as React.CSSProperties)
+          : style
+      }
       {...props}
     >
       {conflict ? (
@@ -151,16 +169,22 @@ function ShiftCard({
       ) : leadWith === "time" ? (
         <>
           {draft ? (
-            <span className="mb-0.5 block text-[9px] font-extrabold uppercase tracking-[0.06em] text-muted-foreground/70">Draft</span>
+            <span
+              className="absolute right-1.5 top-1 text-[10px] font-bold"
+              style={hue ? { color: `color-mix(in srgb, ${hue} 75%, #000)` } : undefined}
+            >
+              Draft
+            </span>
           ) : null}
           <span className="flex items-center gap-1.5">
-            <span className={cn("min-w-0 flex-1 truncate text-[12.5px] font-bold tabular-nums", removed && "line-through")}>
+            <span className={cn("min-w-0 flex-1 truncate text-[13px] font-bold tabular-nums", removed && "line-through")}>
               {diamond}
               {timeText}
             </span>
             {trailing ? <span className="shrink-0 text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
           </span>
-          {title ? <span className="mt-px block truncate text-[11.5px] text-foreground/80">{title}</span> : null}
+          {title ? <span className="mt-0.5 block truncate text-[12px] text-foreground/85">{title}</span> : null}
+          {subtitle ? <span className="block truncate text-[11.5px] text-muted-foreground">{subtitle}</span> : null}
           {site ? <span className="block truncate text-[11px] text-muted-foreground">{site}</span> : null}
         </>
       ) : (

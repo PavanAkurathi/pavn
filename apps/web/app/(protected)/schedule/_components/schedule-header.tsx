@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, CircleHelp, MoreHorizontal, Plus, Redo2, Undo2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, CircleHelp, MapPin, MoreHorizontal, Plus, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     DropdownMenu,
@@ -23,10 +23,9 @@ export type ScheduleView = "week" | "day";
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /**
- * The same header for both views: what this is, which view, which dates,
- * which site, and the two things a manager does most: add a shift and review
- * what staff will see. What is unpublished is said quietly under the title,
- * not in a banner.
+ * The same header for both views: what this is, which view, which dates, which
+ * site, and the two things a manager does most: add a shift and review what
+ * staff will see. What is unpublished is one quiet line, not a banner.
  */
 export function ScheduleHeader({
     view,
@@ -40,11 +39,13 @@ export function ScheduleHeader({
     scope,
     onScope,
     onAddShift,
+    drafts,
+    edited,
     pending,
     elsewhere,
+    hasShifts,
     onReview,
     reviewBusy,
-    hasShifts,
     busy,
     history,
     tools,
@@ -65,14 +66,18 @@ export function ScheduleHeader({
     scope: string;
     onScope: (scope: string) => void;
     onAddShift: () => void;
-    /** Unpublished changes at the sites in view. */
+    /** Draft shifts at the sites in view. */
+    drafts: number;
+    /** Published shifts at the sites in view with changes staff can't see yet. */
+    edited: number;
+    /** Everything unpublished at the sites in view (drafts, edits and removals). */
     pending: number;
     /** Unpublished changes at sites the filter leaves out. */
     elsewhere: { name: string; count: number }[];
-    onReview: () => void;
-    reviewBusy: boolean;
     /** Something is scheduled in view, so "everything is published" says something. */
     hasShifts: boolean;
+    onReview: () => void;
+    reviewBusy: boolean;
     busy: boolean;
     history: { canUndo: boolean; canRedo: boolean; undoLabel?: string; onUndo: () => void; onRedo: () => void };
     /** Copy and templates work on one site; discard works on the sites in view. */
@@ -84,77 +89,18 @@ export function ScheduleHeader({
     onHelp: () => void;
 }) {
     const elsewhereCount = elsewhere.reduce((sum, s) => sum + s.count, 0);
+    const parts = [
+        drafts > 0 ? plural(drafts, "draft shift") : null,
+        edited > 0 ? `${plural(edited, "published shift")} changed` : null,
+        // Removals and staged people changes are counted in `pending` but are neither drafts nor edits.
+        drafts === 0 && edited === 0 && pending > 0 ? plural(pending, "unpublished change") : null,
+    ].filter(Boolean);
 
     return (
-        <header className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Schedule</h1>
-                    <p className="mt-0.5 min-h-5 text-sm text-muted-foreground" aria-live="polite">
-                        {pending > 0 ? `${plural(pending, "unpublished change")}` : null}
-                        {pending > 0 && elsewhereCount > 0 ? " · " : null}
-                        {elsewhereCount > 0
-                            ? `${plural(elsewhereCount, "more change")} at ${elsewhere.map((s) => s.name).join(", ")} not in view`
-                            : null}
-                        {pending === 0 && elsewhereCount === 0 && hasShifts ? "Everything here is published." : null}
-                    </p>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={onAddShift}>
-                        <Plus data-icon="inline-start" aria-hidden />
-                        Add shift
-                    </Button>
-                    <Button onClick={onReview} disabled={pending === 0 || reviewBusy} title={pending === 0 ? "Nothing to publish in this view" : undefined}>
-                        Review &amp; publish
-                    </Button>
-                </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5">
-                <Segmented
-                    label="View"
-                    value={view}
-                    onChange={(v) => onView(v as ScheduleView)}
-                    options={[
-                        ["week", "Team week"],
-                        ["day", "Day plan"],
-                    ]}
-                />
-
-                <div className="flex items-center gap-1.5">
-                    <button type="button" aria-label={view === "week" ? "Previous week" : "Previous day"} onClick={onPrev} className={arrowButton}>
-                        <ChevronLeft aria-hidden className="size-4" />
-                    </button>
-                    <span aria-live="polite" className={cn("min-w-[140px] whitespace-nowrap text-center text-[13px] font-semibold tabular-nums", busy && "opacity-60")}>
-                        {dateLabel}
-                    </span>
-                    <button type="button" aria-label={view === "week" ? "Next week" : "Next day"} onClick={onNext} className={arrowButton}>
-                        <ChevronRight aria-hidden className="size-4" />
-                    </button>
-                </div>
-                <Button variant="outline" className="h-8 px-3 text-xs font-semibold" onClick={onToday} disabled={onThisPeriod}>
-                    Today
-                </Button>
-
-                {sites.length > 1 ? (
-                    <Select value={scope} onValueChange={onScope}>
-                        <SelectTrigger aria-label="Site" className="h-8 w-auto min-w-36 text-[13px] font-semibold">
-                            <SelectValue>{scope === ALL_SITES ? "All sites" : (sites.find((s) => s.id === scope)?.name ?? "All sites")}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL_SITES}>All sites</SelectItem>
-                            {sites.map((s) => (
-                                <SelectItem key={s.id} value={s.id}>
-                                    {s.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                ) : (
-                    <span className="px-1 text-[13px] font-semibold text-muted-foreground">{sites[0]?.name}</span>
-                )}
-
-                <div className="ml-auto flex items-center gap-1">
+        <header className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">Schedule</h1>
+                <div className="flex items-center gap-1">
                     <Button
                         variant="ghost"
                         size="icon"
@@ -213,14 +159,87 @@ export function ScheduleHeader({
                     </DropdownMenu>
                 </div>
             </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+                <Segmented
+                    label="View"
+                    value={view}
+                    onChange={(v) => onView(v as ScheduleView)}
+                    options={[
+                        ["week", "Team week"],
+                        ["day", "Day plan"],
+                    ]}
+                />
+
+                <div className="flex items-center gap-2">
+                    <button type="button" aria-label="Previous week" onClick={onPrev} className={squareButton}>
+                        <ChevronLeft aria-hidden className="size-4" />
+                    </button>
+                    <span
+                        aria-live="polite"
+                        className={cn("flex h-10 min-w-[11.5rem] items-center justify-center whitespace-nowrap rounded-lg border bg-card px-4 text-sm font-medium tabular-nums", busy && "opacity-60")}
+                    >
+                        {dateLabel}
+                    </span>
+                    <button type="button" aria-label="Next week" onClick={onNext} className={squareButton}>
+                        <ChevronRight aria-hidden className="size-4" />
+                    </button>
+                    <Button variant="ghost" className="h-10 px-2 text-sm font-semibold text-primary hover:text-primary" onClick={onToday} disabled={onThisPeriod}>
+                        Today
+                    </Button>
+                </div>
+
+                {sites.length > 1 ? (
+                    <Select value={scope} onValueChange={onScope}>
+                        <SelectTrigger aria-label="Site" className="h-10 w-auto min-w-44 rounded-lg bg-card text-sm font-medium">
+                            <MapPin aria-hidden className="size-4 text-muted-foreground" />
+                            <SelectValue>{scope === ALL_SITES ? "All sites" : (sites.find((s) => s.id === scope)?.name ?? "All sites")}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={ALL_SITES}>All sites</SelectItem>
+                            {sites.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>
+                                    {s.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <span className="flex h-10 items-center gap-1.5 rounded-lg border bg-card px-3.5 text-sm font-medium">
+                        <MapPin aria-hidden className="size-4 text-muted-foreground" />
+                        {sites[0]?.name}
+                    </span>
+                )}
+
+                <div className="ml-auto flex items-center gap-2.5">
+                    <Button
+                        variant="outline"
+                        className="h-10 rounded-lg border-primary/30 bg-primary/5 px-4 text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary"
+                        onClick={onAddShift}
+                    >
+                        <Plus data-icon="inline-start" aria-hidden />
+                        Add shift
+                    </Button>
+                    <Button className="h-10 rounded-lg px-5 text-sm font-semibold" onClick={onReview} disabled={pending === 0 || reviewBusy} title={pending === 0 ? "Nothing to publish in this view" : undefined}>
+                        Review &amp; publish
+                    </Button>
+                </div>
+            </div>
+
+            <p className="min-h-5 text-sm text-muted-foreground" aria-live="polite">
+                {parts.length > 0 ? `${parts.join(" · ")} · Only managers can see ${drafts > 0 && edited === 0 ? "drafts" : "these changes"}` : null}
+                {parts.length > 0 && elsewhereCount > 0 ? " · " : null}
+                {elsewhereCount > 0 ? `${plural(elsewhereCount, "more change")} at ${elsewhere.map((s) => s.name).join(", ")} not in view` : null}
+                {pending === 0 && elsewhereCount === 0 && hasShifts ? "Everything here is published." : null}
+            </p>
         </header>
     );
 }
 
-const arrowButton =
-    "flex size-[26px] items-center justify-center rounded-chip border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring";
+const squareButton =
+    "flex size-10 items-center justify-center rounded-lg border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring";
 
-/** A small pill switch: exactly one of a few options is on. */
+/** A small switch: exactly one of a few options is on. */
 export function Segmented({
     label,
     value,
@@ -233,7 +252,7 @@ export function Segmented({
     options: [string, string][];
 }) {
     return (
-        <div role="group" aria-label={label} className="flex h-8 max-w-full items-center gap-0.5 overflow-x-auto rounded-control border bg-muted p-0.5">
+        <div role="group" aria-label={label} className="flex h-10 max-w-full items-center gap-1 overflow-x-auto rounded-lg border bg-card p-1">
             {options.map(([id, name]) => (
                 <button
                     key={id}
@@ -241,8 +260,8 @@ export function Segmented({
                     aria-pressed={value === id}
                     onClick={() => onChange(id)}
                     className={cn(
-                        "h-full whitespace-nowrap rounded-chip px-3 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground",
-                        value === id && "bg-card text-foreground shadow-sm",
+                        "h-full whitespace-nowrap rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                        value === id && "bg-primary/10 font-semibold text-primary hover:text-primary",
                     )}
                 >
                     {name}

@@ -26,13 +26,14 @@ import { Button } from "@repo/ui/components/ui/button";
 import type { AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import { checkPerson } from "@/lib/scheduler/candidates";
 import { discardWeek } from "@/lib/scheduler/client";
-import { addDays, shortDate, weekRangeLabel } from "@/lib/scheduler/format";
+import { addDays, weekRangeFull } from "@/lib/scheduler/format";
 import { planMove, planRemove, staying, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
+import { shortDate } from "@/lib/scheduler/format";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
 import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
 import { useWorkspace } from "@/lib/scheduler/use-workspace";
 import { ALL_DEPARTMENTS, buildPeopleView } from "@/lib/scheduler/view-model";
-import { ALL_SITES, publishScope, unfilledByDay, type Site } from "@/lib/scheduler/workspace";
+import { ALL_SITES, openShiftsByDay, publishScope, unfilledByDay, type Site } from "@/lib/scheduler/workspace";
 import { localToday } from "@/lib/scheduler/zoned";
 import { weekStartOf } from "@/lib/shifts/draft-groups";
 import { getSchedulerHref } from "@/lib/routes";
@@ -88,6 +89,7 @@ export function ScheduleWorkspace({
     const [eventTarget, setEventTarget] = useState<EventEditTarget | null>(null);
     const [dayFilter, setDayFilter] = useState<DayFilter>("all");
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
+    const [assignShiftId, setAssignShiftId] = useState<string | null>(null);
 
     // ---- What is remembered: the view and the site -------------------------------
     const defaultScope = sites.length > 1 ? ALL_SITES : sites[0]!.id;
@@ -133,6 +135,9 @@ export function ScheduleWorkspace({
 
     const peopleView = useMemo(() => buildPeopleView(week, { department, search }), [week, department, search]);
     const unfilled = useMemo(() => unfilledByDay(ws), [ws]);
+    const openShifts = useMemo(() => openShiftsByDay(ws), [ws]);
+    const draftCount = week.shifts.filter((s) => s.status === "draft").length;
+    const editedCount = week.shifts.filter((s) => s.status !== "draft" && (s.hasUnpublishedEdits || s.pendingRemoval)).length;
 
     // ---- What publishing would include ----------------------------------------
     const inScopeIds = ws.sites.map((s) => s.id);
@@ -154,10 +159,21 @@ export function ScheduleWorkspace({
     }, [view, date, scope, today, defaultScope]);
 
     // ---- Moving around ---------------------------------------------------------
-    const step = (direction: -1 | 1) => setDate(view === "week" ? addDays(weekStart, direction * 7) : addDays(date, direction));
+    // The arrows move a week in both views (the date stays on the same weekday); the day strip picks the day.
+    const step = (direction: -1 | 1) => setDate(addDays(date, direction * 7));
     const openDay = (localDate: string, filter: DayFilter = "all") => {
         setDate(localDate);
         setDayFilter(filter);
+        setAssignShiftId(null);
+        setView("day");
+    };
+    /** Filling a position happens in the Day plan, beside the day it is on. */
+    const startAssign = (shiftId: string) => {
+        const shift = week.shifts.find((s) => s.id === shiftId);
+        if (!shift) return;
+        setDate(shift.localDate);
+        setDayFilter("all");
+        setAssignShiftId(shiftId);
         setView("day");
     };
     const toggleExpanded = (key: string) =>
@@ -178,7 +194,7 @@ export function ScheduleWorkspace({
         edits.reset();
     };
 
-    const dateLabel = view === "week" ? weekRangeLabel(week.days[0]!.localDate, week.days[6]!.localDate, today) : shortDate(date);
+    const dateLabel = weekRangeFull(week.days[0]!.localDate, week.days[6]!.localDate);
     const onThisPeriod = view === "week" ? week.days.some((d) => d.localDate === today) : date === today;
 
     // ---- Adding ----------------------------------------------------------------
@@ -325,6 +341,8 @@ export function ScheduleWorkspace({
                 scope={scope}
                 onScope={changeScope}
                 onAddShift={() => addShift()}
+                drafts={draftCount}
+                edited={editedCount}
                 pending={pending}
                 elsewhere={elsewhere}
                 onReview={() => setReviewOpen(true)}
@@ -376,7 +394,7 @@ export function ScheduleWorkspace({
                         <p className="mt-1 text-sm text-muted-foreground">
                             {siteScoped && otherSitesShifts > 0
                                 ? `Other sites have ${otherSitesShifts} ${otherSitesShifts === 1 ? "shift" : "shifts"}.`
-                                : `${weekRangeLabel(week.days[0]!.localDate, week.days[6]!.localDate, today)}${siteScoped ? ` · ${ws.sites[0]!.name}` : ""}`}
+                                : `${weekRangeFull(week.days[0]!.localDate, week.days[6]!.localDate)}${siteScoped ? ` · ${ws.sites[0]!.name}` : ""}`}
                         </p>
                         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
                             <Button variant="outline" onClick={() => addShift()}>
@@ -407,12 +425,14 @@ export function ScheduleWorkspace({
                                     week={week}
                                     view={peopleView}
                                     unfilled={unfilled}
+                                    openShifts={openShifts}
                                     search={search}
                                     onSearch={setSearch}
                                     collapsed={collapsed}
                                     onToggleSection={toggleSection}
                                     onOpenDay={(index) => openDay(week.days[index]!.localDate)}
                                     onNeedsPeople={(index) => openDay(week.days[index]!.localDate, "needs")}
+                                    onAssign={startAssign}
                                     editing={editing}
                                 />
                             </div>
@@ -426,9 +446,16 @@ export function ScheduleWorkspace({
                     date={date}
                     filter={dayFilter}
                     onFilter={setDayFilter}
-                    onDate={setDate}
+                    onDate={(next) => {
+                        setDate(next);
+                        setAssignShiftId(null);
+                    }}
                     expanded={expanded}
                     onToggle={toggleExpanded}
+                    assignShiftId={assignShiftId}
+                    onAssign={startAssign}
+                    onCloseAssign={() => setAssignShiftId(null)}
+                    run={(plan) => edits.run(plan)}
                     onOpenShift={setOpenShiftId}
                     onAddShift={addShift}
                     onRemovePerson={removePerson}

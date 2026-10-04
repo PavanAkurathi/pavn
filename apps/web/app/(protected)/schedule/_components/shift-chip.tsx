@@ -3,8 +3,9 @@
 import { useDraggable } from "@dnd-kit/core";
 import type { SchedulerAssignee, SchedulerShift } from "@repo/contracts/scheduler";
 import { ShiftCard } from "@repo/ui/components/app/shift-card";
+import { roleHue } from "@repo/ui/lib/role-hue";
 import { cn } from "@repo/ui/lib/utils";
-import { compactRange } from "@/lib/scheduler/format";
+import { clockRange } from "@/lib/scheduler/format";
 import type { DragSource } from "@/lib/scheduler/plans";
 import { isBlocking } from "@/lib/scheduler/view-model";
 
@@ -58,7 +59,7 @@ export function ShiftChip({
     const removed = shift.pendingRemoval || assignee.pendingState === "remove";
     const blocking = isBlocking(assignee);
     const softWarnings = assignee.warnings.filter((w) => w.severity === "warn");
-    const range = compactRange(shift.startLocal, shift.endLocal);
+    const range = clockRange(shift.startLocal, shift.endLocal);
     const title = shiftTitle(shift, eventName);
 
     const label = [
@@ -103,6 +104,8 @@ export function ShiftChip({
             time={range}
             overnight={shift.overnight}
             title={title}
+            subtitle={eventName ? shift.role : undefined}
+            hue={roleHue(shift.role)}
             site={siteName}
             draft={draft}
             removed={removed}
@@ -119,7 +122,7 @@ export function ShiftChip({
 export function ChipGhost({ shift, copy }: { shift: SchedulerShift; copy: boolean }) {
     return (
         <div className="relative w-40">
-            <ShiftCard tabIndex={-1} leadWith="time" title={shift.role} time={compactRange(shift.startLocal, shift.endLocal)} overnight={shift.overnight} className="shadow-lg" />
+            <ShiftCard tabIndex={-1} leadWith="time" title={shift.role} hue={roleHue(shift.role)} time={clockRange(shift.startLocal, shift.endLocal)} overnight={shift.overnight} className="shadow-lg" />
             {copy ? (
                 <span className="absolute -right-1 -top-2 rounded bg-foreground px-1 text-[10px] font-bold text-background">+ copy</span>
             ) : null}

@@ -142,7 +142,7 @@ test.describe('Schedule Management', () => {
             await page.getByRole('option').first().click();
         }
         await panel.getByRole('button', { name: 'Save draft' }).click();
-        await expect(page.getByText('1 unpublished change')).toBeVisible({ timeout: 15000 });
+        await expect(page.getByText('1 draft shift')).toBeVisible({ timeout: 15000 });
 
         // Review what would change, then publish it.
         await page.getByRole('button', { name: 'Review & publish' }).click();

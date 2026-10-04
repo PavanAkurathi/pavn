@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { SchedulerEvent, SchedulerShift, SchedulerWeek } from "@repo/contracts/scheduler";
 import { addDays } from "./format";
-import { ALL_SITES, buildDayPlan, mergeWeeks, publishScope, rangeLabel, unfilledByDay } from "./workspace";
+import { ALL_SITES, buildDayPlan, mergeWeeks, openShiftsByDay, publishScope, rangeLabel, unfilledByDay } from "./workspace";
 
 // The planning week from the brief: Sunday October 11 to Saturday October 17, 2026.
 const WEEK_START = "2026-10-11";
@@ -213,9 +213,30 @@ describe("unfilledByDay", () => {
             [GSU],
         );
         const days = unfilledByDay(ws);
-        expect(days[5]).toEqual({ unfilled: 4, events: 2 });
-        expect(days[2]).toEqual({ unfilled: 0, events: 0 });
+        expect(days[5]).toEqual({ unfilled: 4, events: 2, items: 2 });
+        expect(days[2]).toEqual({ unfilled: 0, events: 0, items: 1 });
         expect(days).toHaveLength(7);
+    });
+});
+
+describe("openShiftsByDay", () => {
+    test("shifts with empty positions, in time order, on their own day", () => {
+        const ws = mergeWeeks(
+            [
+                week(GSU, [
+                    shift({ id: "late", startLocal: "17:00", endLocal: "23:00", capacity: 2, filled: 1, open: 1 }),
+                    shift({ id: "early", startLocal: "11:00", endLocal: "16:00", capacity: 1, filled: 0, open: 1 }),
+                    shift({ id: "full", capacity: 1, filled: 1, open: 0 }),
+                    shift({ id: "gone", open: 2, pendingRemoval: true }),
+                    shift({ id: "tue", localDate: "2026-10-13", dayIndex: 2, open: 1, capacity: 1, filled: 0 }),
+                ]),
+            ],
+            [GSU],
+        );
+        const days = openShiftsByDay(ws);
+        expect(days[5]!.map((s) => s.id)).toEqual(["early", "late"]);
+        expect(days[2]!.map((s) => s.id)).toEqual(["tue"]);
+        expect(days[0]).toEqual([]);
     });
 });
 

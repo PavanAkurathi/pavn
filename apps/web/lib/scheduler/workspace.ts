@@ -181,14 +181,26 @@ export interface UnfilledDay {
     unfilled: number;
     /** Events and services those positions belong to. */
     events: number;
+    /** Everything on the day, staffed or not. */
+    items: number;
 }
 
-/** The Unfilled positions row: per day, how many positions and across how many events. */
+/** Per day: how many positions and events still need people, and how much is on at all. */
 export function unfilledByDay(ws: Workspace): UnfilledDay[] {
     return ws.week.days.map((day) => {
-        const needing = buildDayPlan(ws, day.localDate, { needsPeopleOnly: true });
-        return { unfilled: needing.reduce((sum, item) => sum + item.unfilled, 0), events: needing.length };
+        const all = buildDayPlan(ws, day.localDate);
+        const needing = all.filter((item) => item.unfilled > 0);
+        return { unfilled: needing.reduce((sum, item) => sum + item.unfilled, 0), events: needing.length, items: all.length };
     });
+}
+
+/** Shifts that still have empty positions, per day of the week, in time order: the Open shifts row. */
+export function openShiftsByDay(ws: Workspace): SchedulerShift[][] {
+    const days: SchedulerShift[][] = ws.week.days.map(() => []);
+    for (const shift of ws.week.shifts) {
+        if (shift.open > 0 && !shift.pendingRemoval && shift.dayIndex >= 0 && shift.dayIndex < 7) days[shift.dayIndex]!.push(shift);
+    }
+    return days.map((list) => list.sort(byTime));
 }
 
 /** "11a–4p", with the next-day mark when it ends after midnight: "9p–2a +1". */

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useDroppable } from "@dnd-kit/core";
-import { ChevronDown, Plus } from "lucide-react";
-import type { SchedulerPerson, SchedulerWeek } from "@repo/contracts/scheduler";
+import { CalendarDays, ChevronDown, Plus, Search } from "lucide-react";
+import type { SchedulerPerson, SchedulerShift, SchedulerWeek } from "@repo/contracts/scheduler";
 import { InitialsAvatar } from "@repo/ui/components/app/initials-avatar";
+import { roleHue } from "@repo/ui/lib/role-hue";
 import { cn } from "@repo/ui/lib/utils";
-import { compactRange, dayOfMonth, formatHours, longDate, weekdayShort } from "@/lib/scheduler/format";
+import { clockRange, compactRange, dayOfMonth, hoursLabel, longDate, weekdayShort } from "@/lib/scheduler/format";
 import type { DropTarget } from "@/lib/scheduler/plans";
 import { hoursTone, type PeopleView, type PersonRow } from "@/lib/scheduler/view-model";
 import type { UnfilledDay } from "@/lib/scheduler/workspace";
@@ -17,10 +18,10 @@ import styles from "./scheduler.module.css";
 
 const MAX_CHIPS = 2;
 
-const headerCell = "sticky top-0 z-20 flex min-h-[52px] flex-col justify-center gap-1 border-b border-r bg-muted px-2.5 py-1.5 text-xs";
-const labelCell = "sticky left-0 z-10 flex min-w-0 items-center gap-2 border-b border-r bg-card px-2.5 py-1";
+const headerCell = "sticky top-0 z-20 flex min-h-[56px] flex-col justify-center gap-1 border-b border-r bg-card px-3 py-2 text-sm";
+const labelCell = "sticky left-0 z-10 flex min-w-0 items-center gap-3 border-b border-r bg-card px-3 py-2";
 const dayCell =
-    "group/cell relative flex min-h-[64px] min-w-0 cursor-cell flex-col justify-center gap-1 border-b border-r bg-card p-1 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--primary)]";
+    "group/cell relative flex min-h-[84px] min-w-0 cursor-cell flex-col justify-center gap-1.5 border-b border-r bg-card p-1.5 outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--primary)]";
 
 export interface DropHint {
     tone: "ok" | "warn" | "block";
@@ -69,32 +70,52 @@ export function moveCellFocus(event: React.KeyboardEvent<HTMLElement>) {
 function Header({
     week,
     corner,
+    unfilled,
     onOpenDay,
+    onNeedsPeople,
 }: {
     week: SchedulerWeek;
     corner: React.ReactNode;
+    unfilled: UnfilledDay[];
     /** A date heading opens that day in the Day plan. */
     onOpenDay: (dayIndex: number) => void;
+    /** The "N open" pill opens that day, showing what needs people. */
+    onNeedsPeople: (dayIndex: number) => void;
 }) {
     return (
         <div role="row" className="contents">
-            <div role="columnheader" className={cn(headerCell, "left-0 z-30 gap-1.5")}>
+            <div role="columnheader" className={cn(headerCell, "left-0 z-30 justify-center gap-1.5")}>
                 {corner}
             </div>
-            {week.days.map((day) => (
-                <div key={day.localDate} role="columnheader" aria-label={`${longDate(day.localDate)}${day.isToday ? ", today" : ""}`} className={headerCell}>
-                    <button
-                        type="button"
-                        onClick={() => onOpenDay(day.index)}
-                        title={`Open ${longDate(day.localDate)} in the Day plan`}
-                        className="-mx-1 flex items-baseline gap-1.5 rounded px-1 text-left hover:bg-card focus-visible:outline-2 focus-visible:outline-primary"
-                    >
-                        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{weekdayShort(day.localDate)}</span>
-                        <span className={cn("text-[13.5px] font-semibold tabular-nums", day.isToday && "text-primary")}>{dayOfMonth(day.localDate)}</span>
-                        {day.isToday ? <span aria-hidden className="size-[7px] self-center rounded-full bg-primary" /> : null}
-                    </button>
-                </div>
-            ))}
+            {week.days.map((day) => {
+                const open = unfilled[day.index]?.unfilled ?? 0;
+                return (
+                    <div key={day.localDate} role="columnheader" aria-label={`${longDate(day.localDate)}${day.isToday ? ", today" : ""}`} className={headerCell}>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => onOpenDay(day.index)}
+                                title={`Open ${longDate(day.localDate)} in the Day plan`}
+                                className="-mx-1 flex items-baseline gap-1.5 rounded px-1 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                                <span className="text-[14px] font-semibold">{weekdayShort(day.localDate)}</span>
+                                <span className={cn("text-[14px] font-semibold tabular-nums", day.isToday && "text-primary")}>{dayOfMonth(day.localDate)}</span>
+                                {day.isToday ? <span aria-hidden className="size-[7px] self-center rounded-full bg-primary" /> : null}
+                            </button>
+                            {open > 0 ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onNeedsPeople(day.index)}
+                                    title="Open this day in the Day plan, showing what needs people"
+                                    className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800 hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-primary"
+                                >
+                                    {open} open
+                                </button>
+                            ) : null}
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -160,9 +181,10 @@ function DayCell({
                     type="button"
                     aria-label={addLabel}
                     onClick={() => editing.onAddAt(target)}
-                    className="absolute inset-1 grid place-items-center rounded-md border border-transparent text-muted-foreground/45 transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary focus-visible:border-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+                    className="absolute inset-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-transparent text-sm text-muted-foreground/45 transition-colors hover:border-border hover:bg-card hover:text-foreground focus-visible:border-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-primary"
                 >
                     <Plus aria-hidden className="size-4" />
+                    <span className="hidden group-hover/cell:inline group-focus-within/cell:inline">Add</span>
                 </button>
             ) : null}
             {hint?.message ? (
@@ -182,27 +204,23 @@ function DayCell({
 function PersonLabel({ person, policy }: { person: SchedulerPerson; policy: SchedulerWeek["settings"]["overtimePolicy"] }) {
     const tone = hoursTone(person, policy);
     return (
-        <div role="rowheader" className={cn(labelCell, "justify-between gap-2")}>
-            <div className="flex min-w-0 items-center gap-2">
-                <InitialsAvatar name={person.name} size="sm" />
-                <div className="flex min-w-0 flex-col leading-tight">
-                    <span className="truncate text-[13px] font-semibold">{person.name}</span>
-                    <span className="flex min-w-0 items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
-                        {person.primaryRole ?? "No role yet"}
-                        {person.kind === "invited" ? <span className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">Invited</span> : null}
-                        {person.kind === "agency" ? (
-                            <span title={person.agencyName ?? undefined} className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">
-                                Agency
-                            </span>
-                        ) : null}
-                    </span>
-                </div>
-            </div>
-            <div className="flex shrink-0 flex-col items-end leading-tight tabular-nums">
-                <span className={cn("text-[13px] font-semibold", tone === "near" && "text-amber-700", tone === "over" && "text-destructive")}>
-                    {formatHours(person.scheduledMinutes)}
+        <div role="rowheader" className={labelCell}>
+            <InitialsAvatar name={person.name} size="lg" tone="soft" hue={roleHue(person.primaryRole)} />
+            <div className="flex min-w-0 flex-col leading-snug">
+                <span className="truncate text-[14.5px] font-semibold">{person.name}</span>
+                <span className="flex min-w-0 items-center gap-1.5 truncate text-[13px] text-muted-foreground">
+                    {person.primaryRole ?? "No role yet"}
+                    {person.kind === "invited" ? <span className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">Invited</span> : null}
+                    {person.kind === "agency" ? (
+                        <span title={person.agencyName ?? undefined} className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">
+                            Agency
+                        </span>
+                    ) : null}
                 </span>
-                {tone === "over" ? <span className="text-[11px] font-semibold text-destructive">{formatHours(person.overtimeMinutes)} OT</span> : null}
+                <span className={cn("text-[13px] tabular-nums text-muted-foreground", tone === "near" && "font-semibold text-amber-700", tone === "over" && "font-semibold text-destructive")}>
+                    {hoursLabel(person.scheduledMinutes)}
+                    {tone === "over" ? ` · ${hoursLabel(person.overtimeMinutes)} OT` : ""}
+                </span>
             </div>
         </div>
     );
@@ -281,34 +299,79 @@ function PersonDayCell({
     );
 }
 
-/** The one compact row of what still needs people, per day, instead of a card for every empty position. */
-function UnfilledRow({ unfilled, week, onNeedsPeople }: { unfilled: UnfilledDay[]; week: SchedulerWeek; onNeedsPeople: (dayIndex: number) => void }) {
-    const total = unfilled.reduce((sum, d) => sum + d.unfilled, 0);
+const OPEN_CARDS_SHOWN = 2;
+
+/** One open shift, in the Open shifts row: when, what, and the way to fill it. */
+function OpenCard({ shift, eventName, siteName, onAssign }: { shift: SchedulerShift; eventName?: string; siteName?: string; onAssign: (shiftId: string) => void }) {
+    const draft = shift.status === "draft";
+    return (
+        <div className={cn("relative rounded-lg bg-[#fdebd3] px-2.5 py-2 text-left leading-tight", draft && "border border-dashed border-orange-400/70")}>
+            {draft ? <span className="absolute right-1.5 top-1 text-[10px] font-bold text-orange-800">Draft</span> : null}
+            <span className="block text-[13px] font-bold tabular-nums">{clockRange(shift.startLocal, shift.endLocal)}{shift.overnight ? " +1" : ""}</span>
+            {eventName ? <span className="mt-0.5 block truncate text-[12px] text-foreground/85">{eventName}</span> : null}
+            <span className="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">
+                {shift.role}
+                {shift.open > 1 ? ` · ${shift.open} needed` : ""}
+                {siteName ? ` · ${siteName}` : ""}
+                {" · "}
+                <button
+                    type="button"
+                    onClick={() => onAssign(shift.id)}
+                    className="font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                    aria-label={`Assign ${shift.role}, ${clockRange(shift.startLocal, shift.endLocal)}`}
+                >
+                    Assign
+                </button>
+            </span>
+        </div>
+    );
+}
+
+/** What still needs people, per day, as a few compact cards: the rest are one click away in the Day plan. */
+function OpenRow({
+    openShifts,
+    editing,
+    onAssign,
+    onNeedsPeople,
+}: {
+    openShifts: SchedulerShift[][];
+    editing: GridEditing;
+    onAssign: (shiftId: string) => void;
+    onNeedsPeople: (dayIndex: number) => void;
+}) {
     return (
         <div role="row" className="contents">
-            <div role="rowheader" className={cn(labelCell, "bg-muted/70")}>
-                <div className="flex flex-col leading-tight">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Unfilled positions</span>
-                    <span className="text-[11.5px] font-medium text-muted-foreground">{total > 0 ? `${total} this week` : "None this week"}</span>
-                </div>
+            <div role="rowheader" className={cn(labelCell, "bg-[#fff6ea]")}>
+                <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-full bg-[#fdebd3] text-orange-700">
+                    <CalendarDays className="size-5" />
+                </span>
+                <span className="text-[14.5px] font-semibold">Open shifts</span>
             </div>
-            {unfilled.map((day, index) => (
-                <div key={index} role="cell" className="flex min-h-[44px] items-center border-b border-r bg-muted/30 px-2">
-                    {day.unfilled > 0 ? (
-                        <button
-                            type="button"
-                            onClick={() => onNeedsPeople(index)}
-                            title="Open this day in the Day plan, showing events that need people"
-                            className="rounded px-1 py-0.5 text-left text-[12px] font-semibold text-foreground hover:bg-card hover:underline focus-visible:outline-2 focus-visible:outline-primary"
-                        >
-                            {day.unfilled} unfilled · {day.events} {day.events === 1 ? "event" : "events"}
-                            <span className="sr-only"> on {longDate(week.days[index]!.localDate)}</span>
-                        </button>
-                    ) : (
-                        <span className="px-1 text-[12px] text-muted-foreground">All filled</span>
-                    )}
-                </div>
-            ))}
+            {openShifts.map((shifts, index) => {
+                const hidden = shifts.length - OPEN_CARDS_SHOWN;
+                return (
+                    <div key={index} role="cell" className="flex min-h-[64px] min-w-0 flex-col justify-center gap-1.5 border-b border-r bg-[#fff6ea] p-1.5">
+                        {shifts.slice(0, OPEN_CARDS_SHOWN).map((shift) => (
+                            <OpenCard
+                                key={shift.id}
+                                shift={shift}
+                                eventName={shift.eventId ? editing.eventNames.get(shift.eventId) : undefined}
+                                siteName={editing.showSite ? editing.siteNames.get(shift.locationId) : undefined}
+                                onAssign={onAssign}
+                            />
+                        ))}
+                        {hidden > 0 ? (
+                            <button
+                                type="button"
+                                onClick={() => onNeedsPeople(index)}
+                                className="w-fit rounded px-1 text-left text-[11.5px] font-semibold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                                +{hidden} more open
+                            </button>
+                        ) : null}
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -317,47 +380,61 @@ export function PeopleGrid({
     week,
     view,
     unfilled,
+    openShifts,
     search,
     onSearch,
     collapsed,
     onToggleSection,
     onOpenDay,
     onNeedsPeople,
+    onAssign,
     editing,
 }: {
     week: SchedulerWeek;
     view: PeopleView;
     unfilled: UnfilledDay[];
+    openShifts: SchedulerShift[][];
     search: string;
     onSearch: (value: string) => void;
     collapsed: Set<string>;
     onToggleSection: (id: string) => void;
     onOpenDay: (dayIndex: number) => void;
     onNeedsPeople: (dayIndex: number) => void;
+    /** Assign someone to an open shift: opens it in the Day plan. */
+    onAssign: (shiftId: string) => void;
     editing: GridEditing;
 }) {
     let rowIndex = -1;
+    // A short team needs no search; a long one does.
+    const searchable = week.people.length > 12 || search.length > 0;
     return (
         <div role="table" aria-label={`Team week, ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
             <Header
                 week={week}
+                unfilled={unfilled}
                 onOpenDay={onOpenDay}
+                onNeedsPeople={onNeedsPeople}
                 corner={
                     <>
-                        <input
-                            type="search"
-                            value={search}
-                            onChange={(event) => onSearch(event.target.value)}
-                            placeholder="Find person"
-                            aria-label="Find a person"
-                            className="h-8 w-full rounded-md border bg-card px-2.5 text-[13px] outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
-                        />
-                        <span className="text-[11px] font-normal text-muted-foreground">Hours are this week, at every site</span>
+                        <span className="text-[14px] font-semibold">People</span>
+                        {searchable ? (
+                            <div className="relative">
+                                <Search aria-hidden className="pointer-events-none absolute left-2 top-2 size-3.5 text-muted-foreground" />
+                                <input
+                                    type="search"
+                                    value={search}
+                                    onChange={(event) => onSearch(event.target.value)}
+                                    placeholder="Find person"
+                                    aria-label="Find a person"
+                                    className="h-7 w-full rounded-md border bg-card pl-7 pr-2 text-[12.5px] font-normal outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+                                />
+                            </div>
+                        ) : null}
                     </>
                 }
             />
 
-            <UnfilledRow unfilled={unfilled} week={week} onNeedsPeople={onNeedsPeople} />
+            <OpenRow openShifts={openShifts} editing={editing} onAssign={onAssign} onNeedsPeople={onNeedsPeople} />
 
             {view.sections.map((section) => {
                 const isCollapsed = collapsed.has(section.id);
@@ -375,7 +452,7 @@ export function PeopleGrid({
                                 <span className="font-normal text-muted-foreground">
                                     · {section.people.length} {section.people.length === 1 ? "person" : "people"}
                                 </span>
-                                {isCollapsed ? <span className="font-normal text-muted-foreground">· {formatHours(section.scheduledMinutes)}</span> : null}
+                                {isCollapsed ? <span className="font-normal text-muted-foreground">· {hoursLabel(section.scheduledMinutes)}</span> : null}
                             </button>
                         </div>
                         {isCollapsed
