@@ -1,4 +1,4 @@
-export type ShiftDashboardTab = "upcoming" | "past";
+export type ShiftDashboardTab = "upcoming" | "drafts" | "past";
 
 type QueryValue = string | number | boolean | null | undefined;
 

@@ -34,11 +34,16 @@ interface ShiftListProps {
     isLoading: boolean;
     onShiftClick?: (shift: Shift) => void;
     isUrgentList?: boolean;
+    /** The link on the right of an urgent row. */
+    actionLabel?: string;
+    /** Upcoming reads soonest first; Past reads latest first. */
+    order?: "asc" | "desc";
 }
 
-export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: ShiftListProps) {
+export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList, actionLabel, order = "asc" }: ShiftListProps) {
     const groupedShifts = groupShiftsByDate(shifts);
     const sortedDates = Object.keys(groupedShifts).sort();
+    if (order === "desc") sortedDates.reverse();
 
     if (sortedDates.length === 0 && !isLoading) {
         return (
@@ -55,7 +60,7 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             {isLoading ? (
                 <div className="text-center p-12" role="status" aria-live="polite">
                     <Loader2 aria-hidden="true" className="animate-spin w-8 h-8 text-muted-foreground mx-auto" />
@@ -69,22 +74,16 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
 
                     return (
                     <div key={date}>
-                        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <h3 className="text-sm font-semibold text-foreground">
+                        <div className="mb-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <h3 className="text-[14.5px] font-bold text-foreground">
                                 {formatShiftDateLabel(date)}
                             </h3>
                             <span className="text-xs tabular-nums text-muted-foreground">
                                 {blocks} {blocks === 1 ? "shift" : "shifts"} · {hours} h
+                                {openSlots > 0 ? ` · ${openSlots} open ${openSlots === 1 ? "slot" : "slots"}` : ""}
                             </span>
-                            {openSlots > 0 ? (
-                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-destructive">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
-                                    {openSlots} open {openSlots === 1 ? "slot" : "slots"}
-                                </span>
-                            ) : null}
                         </div>
                         <div className="space-y-3">
-
                             {groupConcurrentShifts(groupedShifts[date] || [])
                                 .sort((a, b) => {
                                     const timeA = new Date(a[0]?.startTime ?? 0).getTime();
@@ -100,7 +99,7 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList }: Shi
                                             shifts={group}
                                             onClick={(s) => onShiftClick?.(s)}
                                             isUrgent={isUrgentList}
-                                            actionLabel={isUrgentList ? "Review Timesheet" : undefined}
+                                            actionLabel={isUrgentList ? actionLabel ?? "Review timesheet" : undefined}
                                         />
                                     );
                                 })}

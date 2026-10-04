@@ -1,5 +1,6 @@
-import { format, isToday, isTomorrow, isThisWeek, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Shift } from '../types';
+import { getLocalParts } from './shift-time';
 
 function isPastShift(shift: Shift, now = new Date()) {
     return parseISO(shift.endTime).getTime() <= now.getTime();
@@ -62,8 +63,9 @@ export function groupShiftsByDate(shifts: Shift[]): Record<string, Shift[]> {
     const grouped: Record<string, Shift[]> = {};
 
     shifts.forEach(shift => {
-        // Assuming startTime is ISO string
-        const dateKey = shift.startTime.split('T')[0] ?? '';
+        // The day it starts *there*: an 8pm shift in New York is 00:00Z the next
+        // day, and must not be filed under tomorrow.
+        const dateKey = getLocalParts(parseISO(shift.startTime), shift.timezone).date;
         if (!grouped[dateKey]) {
             grouped[dateKey] = [];
         }
@@ -78,7 +80,7 @@ export function groupShiftsByDate(shifts: Shift[]): Record<string, Shift[]> {
 
 export function formatShiftDateLabel(dateStr: string): string {
     const date = parseISO(dateStr);
-    return format(date, 'EEEE, MMMM d, yyyy'); // e.g. "Tuesday, October 25, 2022"
+    return format(date, 'EEE MMM d, yyyy'); // e.g. "Tue Oct 25, 2022"
 }
 
 /**

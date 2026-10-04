@@ -12,6 +12,7 @@ import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalBanner } from "./timesheet/shift-approval-banner";
 import { TimesheetTable } from "./timesheet/timesheet-table";
 import { AddWorkerDialog, type AddWorkerSelection } from "./add-worker-dialog";
+import { WorkerPickerSheet } from "./worker-picker-sheet";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,9 +25,9 @@ import {
 } from "@repo/ui/components/ui/alert-dialog";
 
 import { Shift, TimesheetWorker } from "@/lib/types";
-import { getShiftClock, zoneMatchesViewer } from "@/lib/shifts/shift-time";
+import { getLocalParts, getShiftClock, zoneMatchesViewer } from "@/lib/shifts/shift-time";
 import { useOrganizationId } from "@/hooks/use-schedule-data";
-import { addDays, differenceInMinutes, format } from "date-fns";
+import { addDays, differenceInMinutes, format, parseISO } from "date-fns";
 import { toast } from "sonner";
 import { SaveAsTemplateDialog } from "./save-as-template-dialog";
 import { EditShiftDialog } from "./edit-shift-dialog";
@@ -145,6 +146,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
     const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(() => getWorkersFromProps());
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
+    const [isTempsOpen, setIsTempsOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
     const { confirm, confirmDialog } = useConfirm();
@@ -199,7 +201,12 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 return [...prev, ...addedWorkers.filter((worker) => !existingIds.has(worker.id))];
             });
 
-            toast.success(`Added ${newWorkerIds.length} worker${newWorkerIds.length === 1 ? "" : "s"} to the shift`);
+            const warned = newWorkers.find((worker) => worker.warning);
+            toast.success(
+                newWorkers.length === 1
+                    ? `${newWorkers[0]!.name} added to the shift${warned ? ` · ⚠ ${warned.warning}` : ""}`
+                    : `Added ${newWorkerIds.length} workers to the shift`,
+            );
         } catch (error) {
             console.error(error);
             toast.error("Failed to assign workers");
@@ -365,10 +372,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                                         {filledCount} of {workerCount} filled
                                     </Badge>
                                 ) : (
-                                    <Badge
-                                        variant="outline"
-                                        className={openSlotCount > 0 ? "border-destructive/50 text-destructive" : undefined}
-                                    >
+                                    <Badge variant="outline">
                                         {workers.length} of {capacityTotal || workers.length} staffed
                                     </Badge>
                                 )
@@ -391,10 +395,6 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                                 <Printer data-icon="inline-start" aria-hidden="true" />
                                 Print Sign-In Sheet
                             </Link>
-                        </Button>
-                        <Button variant="outline" onClick={() => setIsAddWorkerOpen(true)}>
-                            <UserPlus data-icon="inline-start" />
-                            Add worker
                         </Button>
                         <EditShiftDialog shift={shift} assignedCount={workers.length} />
                         <SiteCodeButton shiftId={shift.id} />
@@ -419,12 +419,13 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     <ShiftSummaryHeader
                         title={shift.title}
                         role={roleLabel}
-                        date={format(new Date(shift.startTime), "EEE, MMM d, yyyy")}
+                        date={format(parseISO(getLocalParts(new Date(shift.startTime), shift.timezone).date), "EEE, MMM d, yyyy")}
                         location={shift.locationName}
                         timeRange={`${shiftClock.start} - ${shiftClock.end}${shiftClock.zoneLabel ? ` ${shiftClock.zoneLabel}` : ""}`}
                         viewerTimeRange={showViewerClock ? `${viewerClock.start} – ${viewerClock.end}` : undefined}
                         viewerZoneLabel={showViewerClock ? viewerClock.zoneLabel : undefined}
                         breakDuration={summaryBreakLabel}
+                        pill={shift.status === "draft" ? "draft" : ["published", "open", "assigned", "in-progress"].includes(shift.status) ? "published" : undefined}
                         createdAt={shift.createdAt ? format(new Date(shift.createdAt), "MMM d, h:mm a") : undefined}
                     />
 
@@ -448,26 +449,32 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                     <div className="flex flex-col gap-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="text-lg font-semibold tracking-tight">
-                                    {showTimesheets ? "Team timesheets" : "Assigned workers"}
+                                <h3 className="text-[15px] font-extrabold tracking-tight">
+                                    {showTimesheets ? "Team timesheets" : "Staffing"}
                                 </h3>
                                 <Badge variant="outline">
                                     {workers.length} of {capacityTotal || workers.length} staffed
                                 </Badge>
                                 {showTimesheets && needsAttentionCount > 0 ? (
-                                    <Badge variant="destructive">{needsAttentionCount} need review</Badge>
+                                    <Badge variant="secondary">{needsAttentionCount} need review</Badge>
                                 ) : openSlotCount > 0 ? (
-                                    <Badge variant="outline" className="border-destructive/50 text-destructive">
+                                    <Badge variant="outline">
                                         {openSlotCount} open slot{openSlotCount === 1 ? "" : "s"}
                                     </Badge>
                                 ) : null}
                             </div>
-                            <p className="max-w-xl text-sm text-muted-foreground">
-                                {showTimesheets
-                                    ? "Update time entries, break windows, notes, and removals before final approval."
-                                    : "Fill open slots and confirm who is working. Clock-in and hours open once the shift starts."}
-                            </p>
+                            {!isApproved && !isCancelled ? (
+                                <Button size="sm" className="font-bold" onClick={() => setIsAddWorkerOpen(true)}>
+                                    <UserPlus data-icon="inline-start" />
+                                    Add worker
+                                </Button>
+                            ) : null}
                         </div>
+                        <p className="max-w-xl text-sm text-muted-foreground">
+                            {showTimesheets
+                                ? "Update time entries, break windows, notes, and removals before final approval."
+                                : "Fill open slots and confirm who is working. Clock-in and hours open once the shift starts."}
+                        </p>
 
                         <TimesheetTable
                             data={workers}
@@ -477,6 +484,8 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                             isApproved={isApproved}
                             isCancelled={isCancelled}
                             openSlotCount={openSlotCount}
+                            roleLabel={roleLabel}
+                            directionsHref={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shift.locationAddress || shift.locationName)}`}
                             onAddWorker={() => setIsAddWorkerOpen(true)}
                             timesReadOnly={!showTimesheets}
                             onRenameTemp={renameTempWorker}
@@ -486,11 +495,23 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             </Card>
 
             {isAddWorkerOpen ? (
-                <AddWorkerDialog
+                <WorkerPickerSheet
                     isOpen={isAddWorkerOpen}
                     onClose={() => setIsAddWorkerOpen(false)}
+                    shift={shift}
+                    onPick={(worker) => handleAddWorkers([worker])}
+                    existingWorkerIds={workers.map((worker) => worker.id)}
+                    onAddTemps={() => setIsTempsOpen(true)}
+                />
+            ) : null}
+
+            {isTempsOpen ? (
+                <AddWorkerDialog
+                    isOpen={isTempsOpen}
+                    onClose={() => setIsTempsOpen(false)}
                     onConfirm={handleAddWorkers}
                     existingWorkerIds={workers.map((worker) => worker.id)}
+                    initialTab="temps"
                 />
             ) : null}
 

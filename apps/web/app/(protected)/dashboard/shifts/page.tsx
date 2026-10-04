@@ -1,13 +1,13 @@
 // apps/web/app/(protected)/dashboard/shifts/page.tsx
 
+import { NewShiftButton } from "./_components/new-shift-button";
 import { ShiftsView } from "./_components/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
-import { DraftBanner } from "@/components/dashboard/draft-banner";
 import { getOrganizationLocations } from "@/lib/api/organizations";
+import { getSchedulingSettings } from "@/lib/api/scheduler";
 import { getShifts, getPendingShiftsCount, getDraftShifts } from "@/lib/api/shifts";
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
-import { filterDraftShifts } from "@/lib/shifts/view-list";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -16,24 +16,24 @@ export default async function ShiftsPage(props: {
 }) {
     const searchParams = await props.searchParams;
     const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined;
-    const view = viewParam === 'past' ? 'past' : 'upcoming';
+    const view = viewParam === 'past' ? 'past' : viewParam === 'drafts' ? 'drafts' : 'upcoming';
     const session = await getRequiredSession();
     const orgId = await resolveActiveOrganizationId(
         session.user.id,
         getSessionActiveOrganizationId(session),
     );
 
-    // Drafts come back as a list: the banner links to their week in the
-    // Scheduler, and the list shows them marked as drafts.
-    const [shifts, pendingCount, draftShifts, locations] = await Promise.all([
-        getShifts({ view, orgId: orgId ?? undefined }),
+    // Drafts are kept in their own tab, a week at a time, so they are always
+    // fetched (the tab's count needs them); the week they belong to depends on
+    // where the organization's week starts. The Drafts tab has no published
+    // shifts of its own to list.
+    const [shifts, pendingCount, draftShifts, locations, settings] = await Promise.all([
+        view === 'drafts' ? Promise.resolve([]) : getShifts({ view, orgId: orgId ?? undefined }),
         orgId ? getPendingShiftsCount(orgId) : Promise.resolve(0),
         orgId ? getDraftShifts(orgId) : Promise.resolve([]),
         orgId ? getOrganizationLocations(orgId) : Promise.resolve([]),
+        orgId ? getSchedulingSettings(orgId).catch(() => null) : Promise.resolve(null),
     ]);
-
-    const upcomingDrafts = filterDraftShifts(draftShifts);
-
 
     const mappedLocations = locations.map((l) => ({
         id: l.id,
@@ -45,22 +45,23 @@ export default async function ShiftsPage(props: {
     return (
         <div className="space-y-6">
             <ApprovalBanner count={pendingCount} />
-            <DraftBanner drafts={upcomingDrafts} />
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">Shifts</h1>
                     <p className="text-muted-foreground">Manage and schedule shifts for your team.</p>
                 </div>
+                <NewShiftButton locations={mappedLocations} weekStartsOn={settings?.weekStartsOn ?? 0} />
             </div>
 
             <ShiftsView
                 key={view}
                 initialShifts={shifts}
-                draftShifts={upcomingDrafts}
+                draftShifts={draftShifts}
                 availableLocations={mappedLocations}
                 defaultTab={view}
                 pendingCount={pendingCount}
+                weekStartsOn={settings?.weekStartsOn ?? 0}
             />
         </div>
     );

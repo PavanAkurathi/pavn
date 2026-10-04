@@ -49,6 +49,10 @@ interface TimesheetRowProps {
     workerId: string;
     workerName: string;
     workerAvatar?: string;
+    /** Shown under the name. */
+    jobTitle?: string;
+    /** The map button opens directions to the shift's location. */
+    directionsHref?: string;
     shiftDuration: string;
     clockIn: string;
     clockOut: string;
@@ -223,6 +227,8 @@ export function TimesheetRow({
     workerId,
     workerName,
     workerAvatar,
+    jobTitle,
+    directionsHref,
     shiftDuration,
     clockIn,
     clockOut,
@@ -361,7 +367,7 @@ export function TimesheetRow({
     return (
         <div
             className={cn(
-                "grid gap-3 border-b border-border/60 py-3 last:border-0 md:grid-cols-[minmax(220px,1.45fr)_148px_148px_116px_116px_minmax(160px,1fr)_148px] md:items-center md:gap-3.5",
+                "grid gap-3 border-b border-border/60 py-3 last:border-0 md:grid-cols-[minmax(200px,1.3fr)_132px_132px_108px_108px_minmax(120px,1fr)_auto] md:items-center md:gap-3.5",
                 disabled && "opacity-60",
             )}
         >
@@ -417,7 +423,7 @@ export function TimesheetRow({
                             ? (agency || "Temp worker")
                             : invitePending
                                 ? "Invite pending"
-                                : `${shiftDuration}${draftBreakTotal !== "0 min" ? ` · ${draftBreakTotal} total break` : ""}`}
+                                : jobTitle || `${shiftDuration}${draftBreakTotal !== "0 min" ? ` · ${draftBreakTotal} total break` : ""}`}
                     </span>
                 </div>
             </div>
@@ -473,9 +479,13 @@ export function TimesheetRow({
                         <a href={`tel:${phone}`}><Phone className="size-3.5" /></a>
                     </Button>
                 ) : null}
-                <Button size="icon" variant="outline" className="size-8 text-muted-foreground hover:text-foreground" aria-label="View worker location" title="Worker Geofence / Location">
-                    <MapPin className="size-3.5" />
-                </Button>
+                {directionsHref ? (
+                    <Button asChild size="icon" variant="outline" className="size-8 text-muted-foreground hover:text-foreground" title="Directions">
+                        <a href={directionsHref} target="_blank" rel="noreferrer" aria-label="Open the shift's location in Maps">
+                            <MapPin className="size-3.5" />
+                        </a>
+                    </Button>
+                ) : null}
                 {/* A manager may change anything here, but never quietly. This
                     is the standing record of the last hand edit. */}
                 {edited && !hasDirtyEdits ? (

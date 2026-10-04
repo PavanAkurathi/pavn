@@ -1,27 +1,5 @@
-export const SHIFT_STATUS = {
-    ALL: 'all',
-    PUBLISHED: 'published',
-    OPEN: 'open',
-    ASSIGNED: 'assigned',
-    IN_PROGRESS: 'in-progress',
-    COMPLETED: 'completed',
-    CANCELLED: 'cancelled',
-    APPROVED: 'approved',
-} as const;
-
 export const LOCATIONS = {
     ALL: 'all',
-};
-
-export const STATUS_LABELS: Record<string, string> = {
-    [SHIFT_STATUS.ALL]: 'All Status',
-    [SHIFT_STATUS.PUBLISHED]: 'Published',
-    [SHIFT_STATUS.OPEN]: 'Open',
-    [SHIFT_STATUS.ASSIGNED]: 'Assigned',
-    [SHIFT_STATUS.IN_PROGRESS]: 'In Progress',
-    [SHIFT_STATUS.COMPLETED]: 'Completed',
-    [SHIFT_STATUS.CANCELLED]: 'Cancelled',
-    [SHIFT_STATUS.APPROVED]: 'Approved',
 };
 
 export function getApiBaseUrl() {

@@ -5,6 +5,8 @@ import {
     filterActiveShifts,
     filterHistoryShifts,
     filterNeedsApprovalShifts,
+    formatShiftDateLabel,
+    groupShiftsByDate,
 } from "@/lib/shifts/view-list";
 
 function isoMinutesFromNow(offsetMinutes: number) {
@@ -126,5 +128,32 @@ describe("shift view filters", () => {
         ]);
 
         expect(history.map((shift) => shift.id)).toEqual(["approved", "cancelled", "ended-open"]);
+    });
+});
+
+describe("shift list grouping", () => {
+    it("files a shift under the day it starts at its own location", () => {
+        // 8pm in New York on Oct 25 is 00:00Z on Oct 26.
+        const evening = createShift({
+            id: "evening",
+            startTime: "2026-10-26T00:00:00.000Z",
+            endTime: "2026-10-26T04:00:00.000Z",
+            timezone: "America/New_York",
+        });
+        const lunch = createShift({
+            id: "lunch",
+            startTime: "2026-10-25T16:00:00.000Z",
+            endTime: "2026-10-25T20:00:00.000Z",
+            timezone: "America/New_York",
+        });
+
+        const grouped = groupShiftsByDate([evening, lunch]);
+
+        expect(Object.keys(grouped)).toEqual(["2026-10-25"]);
+        expect(grouped["2026-10-25"]?.map((shift) => shift.id)).toEqual(["evening", "lunch"]);
+    });
+
+    it("labels a day the way the list headers read", () => {
+        expect(formatShiftDateLabel("2026-10-25")).toBe("Sun Oct 25, 2026");
     });
 });
