@@ -65,11 +65,16 @@ export function mergeWeeks(weeks: SchedulerWeek[], sites: Site[]): Workspace {
 // A day: events and services
 // ---------------------------------------------------------------------------
 
+/** A position staff can pick up: the shift is published and nothing about it is waiting to be published. */
+const isLive = (shift: SchedulerShift) => shift.status !== "draft" && !shift.hasUnpublishedEdits;
+
 export interface RoleBlock {
     shift: SchedulerShift;
     /** Who is on it, in the order the API lists them. */
     people: { person: SchedulerPerson | undefined; assignee: SchedulerAssignee }[];
     unfilled: number;
+    /** Staff can see this shift as it stands, so its empty positions are open for pickup now. */
+    live: boolean;
 }
 
 export type Publication = "draft" | "published" | "mixed";
@@ -89,6 +94,10 @@ export interface DayItem {
     needed: number;
     assigned: number;
     unfilled: number;
+    /** Unfilled positions that are published, so eligible staff can pick them up now. */
+    openNow: number;
+    /** Unfilled positions still in a draft (or an unpublished edit): they open for pickup when published. */
+    openLater: number;
     /** Staff can see all of it (published), none of it (draft), or some (mixed). */
     publication: Publication;
 }
@@ -135,6 +144,7 @@ export function buildDayPlan(ws: Workspace, localDate: string, options: { needsP
             shift,
             people: shift.assignees.map((assignee) => ({ person: people.get(assignee.personId), assignee })),
             unfilled: shift.open,
+            live: isLive(shift),
         }));
         const event = group.eventId ? events.get(group.eventId) : undefined;
         const first = blocks[0]!.shift;
@@ -153,6 +163,8 @@ export function buildDayPlan(ws: Workspace, localDate: string, options: { needsP
             needed: blocks.reduce((sum, b) => sum + b.shift.capacity, 0),
             assigned: blocks.reduce((sum, b) => sum + b.shift.filled, 0),
             unfilled: blocks.reduce((sum, b) => sum + b.unfilled, 0),
+            openNow: blocks.reduce((sum, b) => sum + (isLive(b.shift) ? b.unfilled : 0), 0),
+            openLater: blocks.reduce((sum, b) => sum + (isLive(b.shift) ? 0 : b.unfilled), 0),
             publication: publicationOf(blocks),
         };
         if (options.needsPeopleOnly && item.unfilled === 0) continue;
@@ -161,6 +173,8 @@ export function buildDayPlan(ws: Workspace, localDate: string, options: { needsP
 
     return items.sort((a, b) => byTime(a, b) || a.siteName.localeCompare(b.siteName) || a.name.localeCompare(b.name));
 }
+
+export { isLive as isOpenForPickup };
 
 export interface UnfilledDay {
     /** Positions still without a person. */

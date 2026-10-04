@@ -174,6 +174,16 @@ describe("buildDayPlan", () => {
         expect(buildDayPlan(mixed, FRIDAY)[0]!.publication).toBe("mixed");
     });
 
+    test("open positions: published ones are open for pickup now, drafts will be once published", () => {
+        const items = buildDayPlan(ws, FRIDAY);
+        const reception = items.find((i) => i.name === "Alumni reception")!;
+        expect([reception.openNow, reception.openLater]).toEqual([2, 0]);
+        const draftBar = items.find((i) => i.siteId === "charles" && i.startLocal === "16:00")!;
+        expect([draftBar.openNow, draftBar.openLater]).toEqual([0, 3]);
+        const edited = mergeWeeks([week(GSU, [shift({ id: "x", capacity: 3, filled: 1, open: 2, hasUnpublishedEdits: true })])], [GSU]);
+        expect(buildDayPlan(edited, FRIDAY)[0]).toMatchObject({ openNow: 0, openLater: 2 });
+    });
+
     test("something that disappears at the next publish is not part of the plan", () => {
         const gone = mergeWeeks([week(GSU, [shift({ id: "x", pendingRemoval: true })])], [GSU]);
         expect(buildDayPlan(gone, FRIDAY)).toEqual([]);

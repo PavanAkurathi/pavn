@@ -32,10 +32,16 @@ function PublicationTag({ publication }: { publication: Publication }) {
     );
 }
 
-function staffingText(item: Pick<DayItem, "assigned" | "needed" | "unfilled">) {
-    return item.unfilled > 0
-        ? `${item.assigned} of ${item.needed} assigned · ${item.unfilled} unfilled`
-        : `${item.assigned} of ${item.needed} assigned · Fully staffed`;
+/**
+ * Staffing and publication are different things. A published position nobody
+ * has taken is open for pickup; one still in a draft is only unfilled, and
+ * will open for pickup when it is published.
+ */
+function staffingText(item: Pick<DayItem, "assigned" | "needed" | "unfilled" | "openNow" | "openLater">) {
+    const assigned = `${item.assigned} of ${item.needed} assigned`;
+    if (item.unfilled === 0) return `${assigned} · Fully staffed`;
+    const parts = [item.openNow > 0 ? `${item.openNow} open for pickup` : null, item.openLater > 0 ? `${item.openLater} unfilled` : null].filter(Boolean);
+    return `${assigned} · ${parts.join(" · ")}`;
 }
 
 function BlockDetails({
@@ -98,7 +104,9 @@ function BlockDetails({
                 {Array.from({ length: block.unfilled }).map((_, index) => (
                     <li key={`open-${index}`} className="py-1">
                         <div className="flex items-center justify-between gap-3 rounded-lg border-[1.5px] border-dashed border-border px-3 py-1.5 text-[13px]">
-                            <span className="text-muted-foreground">Unfilled position · {shift.role}</span>
+                            <span className="text-muted-foreground">
+                                {block.live ? "Open for pickup" : "Unfilled · will open for pickup when published"} · {shift.role}
+                            </span>
                             <Button size="sm" variant="outline" className="h-7 px-3 text-xs font-semibold" onClick={() => onOpenShift(shift.id)}>
                                 Assign
                             </Button>
@@ -139,7 +147,7 @@ function EventRow({
                 aria-expanded={expanded}
                 aria-controls={panelId}
                 onClick={onToggle}
-                className="grid w-full grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:grid-cols-[1.25rem_minmax(0,1.5fr)_6.5rem_minmax(0,1.1fr)_minmax(0,1.5fr)_9.5rem]"
+                className="grid w-full grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring md:grid-cols-[1.25rem_minmax(0,1.25fr)_6.5rem_minmax(0,1fr)_minmax(0,2fr)_9rem]"
             >
                 <ChevronRight aria-hidden className={cn("size-4 text-muted-foreground transition-transform", expanded && "rotate-90")} />
                 <span className="min-w-0 truncate text-[14.5px] font-bold">

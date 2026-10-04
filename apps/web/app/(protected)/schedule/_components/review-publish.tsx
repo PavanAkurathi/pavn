@@ -18,6 +18,11 @@ function describe(person: SchedulerPublishPerson) {
         .join(", ");
 }
 
+/** Positions in drafts that are still unfilled: the ones this publish makes open for pickup. */
+function newlyOpen(week: SchedulerWeek): number {
+    return week.shifts.filter((s) => s.status === "draft" && !s.pendingRemoval).reduce((sum, s) => sum + s.open, 0);
+}
+
 /** The days in a site's week that have something staff can't see yet. */
 function datesAffected(week: SchedulerWeek): string[] {
     const dates = new Set<string>();
@@ -69,7 +74,7 @@ export function ReviewPublish({
     const changes = (p: SchedulerPublishPreview) => p.newShifts + p.changedShifts + p.removedShifts;
     const withChanges = previewList.filter((x) => changes(x.preview) > 0);
     const conflicts = previewList.reduce((sum, x) => sum + x.preview.conflicts.length, 0);
-    const openPositions = previewList.reduce((sum, x) => sum + x.preview.openSlots, 0);
+    const openPositions = withChanges.reduce((sum, x) => sum + newlyOpen(x.week), 0);
     const label = weeks[0] ? weekRangeLabel(weeks[0].days[0]!.localDate, weeks[0].days[6]!.localDate) : "";
 
     const publish = async () => {
@@ -166,9 +171,9 @@ export function ReviewPublish({
                                         </div>
                                     ) : null}
 
-                                    {preview.openSlots ? (
+                                    {newlyOpen(week) ? (
                                         <p>
-                                            <span className="font-semibold">{plural(preview.openSlots, "position")}</span> will open for pickup where needed.
+                                            <span className="font-semibold">{plural(newlyOpen(week), "position")}</span> will open for pickup where needed.
                                         </p>
                                     ) : null}
 

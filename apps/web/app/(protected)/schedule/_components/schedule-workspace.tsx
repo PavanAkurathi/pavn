@@ -118,6 +118,7 @@ export function ScheduleWorkspace({
     const week = ws.week;
     const today = localToday(week.location.timezone);
     const siteScoped = ws.sites.length === 1;
+    const weekIsEmpty = week.shifts.length === 0;
     const singleSiteWeek = siteScoped ? ws.weeks[0]! : null;
 
     const refresh = useCallback(() => mutate(), [mutate]);
@@ -308,7 +309,6 @@ export function ScheduleWorkspace({
         }
     };
 
-    const weekIsEmpty = week.shifts.length === 0;
     const otherSitesShifts = weeks.filter((w) => !inScopeIds.includes(w.location.id)).reduce((sum, w) => sum + w.shifts.length, 0);
 
     return (
@@ -329,6 +329,7 @@ export function ScheduleWorkspace({
                 elsewhere={elsewhere}
                 onReview={() => setReviewOpen(true)}
                 reviewBusy={edits.busy}
+                hasShifts={!weekIsEmpty}
                 busy={(isValidating && !weeks.length) || edits.busy}
                 history={{
                     canUndo: edits.canUndo,

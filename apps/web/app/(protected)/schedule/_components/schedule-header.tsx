@@ -44,6 +44,7 @@ export function ScheduleHeader({
     elsewhere,
     onReview,
     reviewBusy,
+    hasShifts,
     busy,
     history,
     tools,
@@ -70,6 +71,8 @@ export function ScheduleHeader({
     elsewhere: { name: string; count: number }[];
     onReview: () => void;
     reviewBusy: boolean;
+    /** Something is scheduled in view, so "everything is published" says something. */
+    hasShifts: boolean;
     busy: boolean;
     history: { canUndo: boolean; canRedo: boolean; undoLabel?: string; onUndo: () => void; onRedo: () => void };
     /** Copy and templates work on one site; discard works on the sites in view. */
@@ -93,7 +96,7 @@ export function ScheduleHeader({
                         {elsewhereCount > 0
                             ? `${plural(elsewhereCount, "more change")} at ${elsewhere.map((s) => s.name).join(", ")} not in view`
                             : null}
-                        {pending === 0 && elsewhereCount === 0 ? "Everything here is published." : null}
+                        {pending === 0 && elsewhereCount === 0 && hasShifts ? "Everything here is published." : null}
                     </p>
                 </div>
                 <div className="flex items-center gap-2">

@@ -130,7 +130,8 @@ function AddShiftForm({
     }, [valid, inLoadedWeek, week, siteId, localDate, startLocal, endLocal, role, capacityValue, timeZone]);
 
     const chosenIds = new Set(chosen.map((p) => p.id));
-    const everyone: { person: SchedulerPerson; reasons: string[]; blocked: boolean }[] = inLoadedWeek
+    const checked = valid && inLoadedWeek;
+    const everyone: { person: SchedulerPerson; reasons: string[]; blocked: boolean }[] = checked
         ? candidates.map((c) => ({ person: c.person, reasons: c.reasons, blocked: c.blocked }))
         : week.people.map((person) => ({ person, reasons: [], blocked: false }));
     const needle = query.trim().toLowerCase();
@@ -195,7 +196,7 @@ function AddShiftForm({
                                 Site
                             </label>
                             <Select value={siteId} onValueChange={setSiteId}>
-                                <SelectTrigger id="as-site" className="w-full" aria-invalid={!siteId}>
+                                <SelectTrigger id="as-site" className="w-full">
                                     <SelectValue placeholder="Choose a site">{site?.name}</SelectValue>
                                 </SelectTrigger>
                                 <SelectContent>
@@ -306,7 +307,7 @@ function AddShiftForm({
                                         <span className="min-w-0 text-sm">
                                             <span className="font-medium">{c.person.name}</span>
                                             <span className="text-muted-foreground"> · {c.person.primaryRole ?? "No role"} · {formatHours(c.person.scheduledMinutes)} this week</span>
-                                            {inLoadedWeek && valid ? (
+                                            {checked ? (
                                                 <span className={cn("block text-xs", c.blocked ? "text-destructive" : "text-muted-foreground")}>
                                                     {c.reasons.length ? c.reasons.join(" · ") : "Free and trained"}
                                                 </span>
