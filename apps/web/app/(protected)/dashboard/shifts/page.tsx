@@ -1,5 +1,6 @@
 // apps/web/app/(protected)/dashboard/shifts/page.tsx
 
+import { NewShiftButton } from "./_components/new-shift-button";
 import { ShiftsView } from "./_components/shifts-view";
 import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { getOrganizationLocations } from "@/lib/api/organizations";
@@ -45,11 +46,12 @@ export default async function ShiftsPage(props: {
         <div className="space-y-6">
             <ApprovalBanner count={pendingCount} />
 
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-foreground">Shifts</h1>
                     <p className="text-muted-foreground">Manage and schedule shifts for your team.</p>
                 </div>
+                <NewShiftButton locations={mappedLocations} weekStartsOn={settings?.weekStartsOn ?? 0} />
             </div>
 
             <ShiftsView
