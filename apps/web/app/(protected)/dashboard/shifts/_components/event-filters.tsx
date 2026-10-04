@@ -5,18 +5,17 @@
 import * as React from 'react';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { Filter, MapPin, Calendar as CalendarIcon, X } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, X } from "lucide-react";
 
 import { Button } from '@repo/ui/components/ui/button';
 import { Popover, PopoverTrigger, PopoverContent } from '@repo/ui/components/ui/popover';
 import { Calendar } from '@repo/ui/components/ui/calendar';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@repo/ui/components/ui/select';
-import { LOCATIONS, SHIFT_STATUS, STATUS_LABELS } from '@/lib/constants';
+import { LOCATIONS } from '@/lib/constants';
 import { WorkerCombobox } from './worker-combobox';
 
 interface FilterState {
     location: string | null;
-    status: string | null;
     startDate: string | null;
     endDate: string | null;
     workerId: string | null;
@@ -62,7 +61,6 @@ export function EventFilters({
 
     const hasActiveFilters =
         filters.location !== LOCATIONS.ALL ||
-        filters.status !== SHIFT_STATUS.ALL ||
         filters.workerId !== null ||
         (filters.startDate !== '' && filters.startDate !== null);
 
@@ -79,7 +77,7 @@ export function EventFilters({
                     value={filters.location || LOCATIONS.ALL}
                     onValueChange={(val) => setFilters({ location: val })}
                 >
-                    <SelectTrigger className="w-[240px] bg-background border-border">
+                    <SelectTrigger className="w-[240px] rounded-[11px] border-border bg-card font-semibold">
                         <MapPin className="mr-2 h-4 w-4 text-muted-foreground" />
                         <SelectValue placeholder="All locations" />
                     </SelectTrigger>
@@ -110,7 +108,7 @@ export function EventFilters({
                     <PopoverTrigger asChild>
                         <Button
                             variant="outline"
-                            className="w-[220px] justify-start bg-background border-border text-left font-normal"
+                            className="w-[220px] justify-start rounded-[11px] border-border bg-card text-left font-semibold"
                         >
                             <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                             {formattedDateLabel}
@@ -130,31 +128,12 @@ export function EventFilters({
                     </PopoverContent>
                 </Popover>
 
-                {/* Status Filter */}
-                <Select
-                    value={filters.status || SHIFT_STATUS.ALL}
-                    onValueChange={(val) => setFilters({ status: val })}
-                >
-                    <SelectTrigger className="w-[160px] bg-background border-border">
-                        <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="All Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Object.values(SHIFT_STATUS).map((status) => (
-                            <SelectItem key={status} value={status}>
-                                {STATUS_LABELS[status] || status}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-
                 {/* Reset */}
                 {hasActiveFilters && (
                     <Button
                         variant="ghost"
                         onClick={() => setFilters({
                             location: LOCATIONS.ALL,
-                            status: SHIFT_STATUS.ALL,
                             startDate: null,
                             endDate: null,
                             workerId: null

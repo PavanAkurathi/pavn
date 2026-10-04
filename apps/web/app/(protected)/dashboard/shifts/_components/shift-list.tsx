@@ -34,11 +34,13 @@ interface ShiftListProps {
     isLoading: boolean;
     onShiftClick?: (shift: Shift) => void;
     isUrgentList?: boolean;
+    /** The link on the right of an urgent row. */
+    actionLabel?: string;
     /** Upcoming reads soonest first; Past reads latest first. */
     order?: "asc" | "desc";
 }
 
-export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList, order = "asc" }: ShiftListProps) {
+export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList, actionLabel, order = "asc" }: ShiftListProps) {
     const groupedShifts = groupShiftsByDate(shifts);
     const sortedDates = Object.keys(groupedShifts).sort();
     if (order === "desc") sortedDates.reverse();
@@ -97,7 +99,7 @@ export function ShiftList({ shifts, isLoading, onShiftClick, isUrgentList, order
                                             shifts={group}
                                             onClick={(s) => onShiftClick?.(s)}
                                             isUrgent={isUrgentList}
-                                            actionLabel={isUrgentList ? "Review Timesheet" : undefined}
+                                            actionLabel={isUrgentList ? actionLabel ?? "Review timesheet" : undefined}
                                         />
                                     );
                                 })}

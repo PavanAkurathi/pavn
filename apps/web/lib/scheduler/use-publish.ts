@@ -27,7 +27,8 @@ export function usePublish({
     onNeedsReview,
     onPublished,
 }: {
-    week: SchedulerWeek;
+    /** Only the target is read, so a Drafts group can publish its week without loading it. */
+    week: Pick<SchedulerWeek, "weekStart"> & { location: Pick<SchedulerWeek["location"], "id"> };
     /** Something is still wrong: open the preview. */
     onNeedsReview: () => void;
     /** Staff have been told: refresh. */

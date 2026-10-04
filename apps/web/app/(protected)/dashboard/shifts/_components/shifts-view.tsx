@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState, useMemo, useCallback } from "react";
 
 import { ShiftList } from "./shift-list";
+import { DraftGroups } from "./draft-groups";
 import { EventFilters } from "./event-filters";
-import { ScheduleSummary } from "./schedule-summary";
-import { SHIFT_STATUS, LOCATIONS } from "@/lib/constants";
+import { LOCATIONS } from "@/lib/constants";
 import { useCrewData } from "@/hooks/use-crew-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import {
@@ -15,17 +15,36 @@ import {
     filterNeedsApprovalShifts,
     filterHistoryShifts,
 } from "@/lib/shifts/view-list";
+import { groupDraftsByWeek } from "@/lib/shifts/draft-groups";
 import type { Shift, Location } from "@/lib/types";
 import { getDashboardShiftsHref, getShiftTimesheetHref, type ShiftDashboardTab } from "@/lib/routes";
 
 interface ShiftsViewProps {
+    /** The published shifts of the open tab (Upcoming or Past). */
     initialShifts: Shift[];
-    /** Unpublished shifts: listed with the rest, marked as drafts. They are built and published in the Scheduler. */
+    /** Unpublished shifts. They are kept in the Drafts tab, a week at a time, and built in the Scheduler. */
     draftShifts?: Shift[];
     availableLocations: Location[];
     defaultTab?: ShiftDashboardTab;
     pendingCount: number;
+    /** First day of the week, 0 = Sunday: the week a draft is published with. */
+    weekStartsOn?: number;
 }
+
+/** A small neutral count beside a tab name. */
+function TabCount({ count, label }: { count: number; label: string }) {
+    if (count <= 0) return null;
+    return (
+        <span
+            aria-label={label}
+            className="ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-black/10 px-1.5 text-[11px] font-extrabold text-foreground/80"
+        >
+            {count}
+        </span>
+    );
+}
+
+const TAB_TRIGGER = "rounded-[9px] px-5 py-2 text-[13.5px] font-semibold";
 
 export function ShiftsView({
     initialShifts,
@@ -33,6 +52,7 @@ export function ShiftsView({
     availableLocations,
     defaultTab = "upcoming",
     pendingCount,
+    weekStartsOn = 0,
 }: ShiftsViewProps) {
     const router = useRouter();
     const { crew } = useCrewData();
@@ -64,37 +84,24 @@ export function ShiftsView({
 
     const [filters, setFilters] = useState<{
         location: string | null;
-        status: string | null;
         startDate: string | null;
         endDate: string | null;
         workerId: string | null;
     }>({
         location: LOCATIONS.ALL,
-        status: SHIFT_STATUS.ALL,
         startDate: null,
         endDate: null,
         workerId: null,
     });
 
     const handleTabChange = (value: string) => {
-        const nextTab: ShiftDashboardTab = value === "past" ? "past" : "upcoming";
+        const nextTab: ShiftDashboardTab = value === "past" ? "past" : value === "drafts" ? "drafts" : "upcoming";
         router.push(getDashboardShiftsHref({ view: nextTab }));
     };
 
-    // Drafts sit in the same pool as everything else so the filters treat them
-    // as part of the schedule; they are marked as drafts on their cards.
-    const schedulePool = useMemo(
-        () => (draftShifts.length > 0 ? [...initialShifts, ...draftShifts] : initialShifts),
-        [draftShifts, initialShifts],
-    );
-
-    const filteredShifts = useMemo(() => {
-        return schedulePool.filter((shift) => {
+    const matchesFilters = useCallback(
+        (shift: Shift) => {
             if (filters.location !== LOCATIONS.ALL && shift.locationName !== filters.location) {
-                return false;
-            }
-
-            if (filters.status !== SHIFT_STATUS.ALL && shift.status !== filters.status) {
                 return false;
             }
 
@@ -116,19 +123,19 @@ export function ShiftsView({
             }
 
             return true;
-        });
-    }, [
-        filters.endDate,
-        filters.location,
-        filters.startDate,
-        filters.status,
-        filters.workerId,
-        schedulePool,
-    ]);
+        },
+        [filters.endDate, filters.location, filters.startDate, filters.workerId],
+    );
 
+    const filteredShifts = useMemo(
+        () => initialShifts.filter(matchesFilters),
+        [initialShifts, matchesFilters],
+    );
+
+    // Upcoming is what has been published. Drafts have their own tab and never mix in.
     const activeShifts = useMemo(
         () =>
-            [...filterActiveShifts(filteredShifts), ...filterDraftShifts(filteredShifts)].sort(
+            filterActiveShifts(filteredShifts).sort(
                 (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
             ),
         [filteredShifts],
@@ -150,6 +157,18 @@ export function ShiftsView({
         [filteredShifts],
     );
 
+    const upcomingDrafts = useMemo(() => filterDraftShifts(draftShifts), [draftShifts]);
+    // The tab counts drafts the way the tab lists them (a week at a time), and
+    // counts them all: a filter narrows the list, not the number of drafts you have.
+    const draftGroupCount = useMemo(
+        () => groupDraftsByWeek(upcomingDrafts, weekStartsOn).length,
+        [upcomingDrafts, weekStartsOn],
+    );
+    const draftGroups = useMemo(
+        () => groupDraftsByWeek(upcomingDrafts.filter(matchesFilters), weekStartsOn),
+        [upcomingDrafts, matchesFilters, weekStartsOn],
+    );
+
     const handleFilterUpdate = (updates: Partial<typeof filters>) => {
         setFilters((prev) => ({ ...prev, ...updates }));
     };
@@ -163,102 +182,83 @@ export function ShiftsView({
     }, [buildShiftTimesheetHref, router]);
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <Tabs value={defaultTab} className="w-full sm:w-auto" onValueChange={handleTabChange}>
-                    <TabsList className="grid w-full grid-cols-2 sm:w-[320px]">
-                        <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-                        <TabsTrigger value="past" className="relative">
-                            Past
-                            {pendingCount > 0 && (
-                                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
-                                    {pendingCount}
-                                </span>
-                            )}
-                        </TabsTrigger>
-                        <TabsTrigger value="draft" className="hidden">
-                            Drafts
-                        </TabsTrigger>
-                    </TabsList>
-                </Tabs>
-            </div>
+        <div className="space-y-5">
+            <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-5">
+                <TabsList className="h-auto rounded-xl bg-muted p-1">
+                    <TabsTrigger value="upcoming" className={TAB_TRIGGER}>
+                        Upcoming
+                    </TabsTrigger>
+                    <TabsTrigger value="drafts" className={TAB_TRIGGER}>
+                        Drafts
+                        <TabCount count={draftGroupCount} label={`${draftGroupCount} drafts`} />
+                    </TabsTrigger>
+                    <TabsTrigger value="past" className={TAB_TRIGGER}>
+                        Past
+                        <TabCount count={pendingCount} label={`${pendingCount} waiting for approval`} />
+                    </TabsTrigger>
+                </TabsList>
 
-            <EventFilters
-                filters={filters}
-                setFilters={handleFilterUpdate}
-                availableLocations={availableLocations}
-                availableWorkers={availableWorkers}
-            />
+                <EventFilters
+                    filters={filters}
+                    setFilters={handleFilterUpdate}
+                    availableLocations={availableLocations}
+                    availableWorkers={availableWorkers}
+                />
 
-            <div className="mt-6 space-y-4">
-                <ScheduleSummary shifts={activeShifts} countMode="blocks" />
+                <TabsContent value="upcoming" className="mt-0 max-w-4xl">
+                    <h2 className="sr-only" data-testid="upcoming-shifts-widget">
+                        Upcoming shifts
+                    </h2>
+                    <ShiftList
+                        shifts={activeShifts}
+                        isLoading={false}
+                        onShiftClick={openShiftTimesheet}
+                    />
+                </TabsContent>
 
-                <Tabs value={defaultTab} onValueChange={handleTabChange} className="space-y-6">
-                    <TabsContent value="upcoming" className="space-y-6 mt-0">
-                        <div className="space-y-4 max-w-4xl">
-                            <h2 className="text-xl font-bold text-foreground" data-testid="upcoming-shifts-widget">
-                                Upcoming Shifts
+                <TabsContent value="drafts" className="mt-0 max-w-4xl">
+                    <h2 className="sr-only">Draft shifts</h2>
+                    <DraftGroups groups={draftGroups} />
+                </TabsContent>
+
+                <TabsContent value="past" className="mt-0 max-w-4xl space-y-8">
+                    {pendingShifts.length > 0 && (
+                        <div className="space-y-3">
+                            <h2 className="flex items-center gap-2 text-[15px] font-extrabold text-foreground">
+                                Waiting for approval
+                                <TabCount count={pendingShifts.length} label={`${pendingShifts.length} shifts`} />
                             </h2>
                             <ShiftList
-                                shifts={activeShifts}
+                                shifts={pendingShifts}
                                 isLoading={false}
                                 onShiftClick={openShiftTimesheet}
-                            />
-                        </div>
-                    </TabsContent>
-
-                    <TabsContent value="past" className="space-y-8 mt-0">
-                        {pendingShifts.length > 0 && (
-                            <div className="space-y-4 max-w-4xl">
-                                <h2 className="text-xl font-bold flex items-center gap-2 text-red-600 whitespace-nowrap">
-                                    Action Required
-                                    <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-red-100 px-2 text-xs font-semibold text-red-700">
-                                        {pendingShifts.length}
-                                    </span>
-                                </h2>
-                                <ShiftList
-                                    shifts={pendingShifts}
-                                    isLoading={false}
-                                    onShiftClick={openShiftTimesheet}
-                                    isUrgentList={true}
-                                    order="desc"
-                                />
-                            </div>
-                        )}
-
-                        <div className="space-y-4 max-w-4xl">
-                            <h2 className="text-xl font-bold text-foreground">Shift History</h2>
-                            <ShiftList
-                                shifts={historyShifts}
-                                isLoading={false}
-                                onShiftClick={openShiftTimesheet}
+                                isUrgentList={true}
+                                actionLabel="Review timesheet"
                                 order="desc"
                             />
-                            {historyShifts.length === 0 && !pendingShifts.length && (
-                                <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
-                                    No past shifts found matching your filters.
-                                </div>
-                            )}
                         </div>
-                    </TabsContent>
+                    )}
 
-                    <TabsContent value="draft" className="space-y-6 mt-0">
-                        <div className="space-y-4 max-w-4xl">
-                            <h2 className="text-xl font-bold text-yellow-700">Draft Shifts</h2>
-                            <ShiftList
-                                shifts={filteredShifts}
-                                isLoading={false}
-                                onShiftClick={openShiftTimesheet}
-                            />
-                            {filteredShifts.length === 0 && (
-                                <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
-                                    No draft shifts found.
-                                </div>
-                            )}
-                        </div>
-                    </TabsContent>
-                </Tabs>
-            </div>
+                    <div className="space-y-3">
+                        {pendingShifts.length > 0 ? (
+                            <h2 className="text-[15px] font-extrabold text-foreground">Shift history</h2>
+                        ) : (
+                            <h2 className="sr-only">Shift history</h2>
+                        )}
+                        <ShiftList
+                            shifts={historyShifts}
+                            isLoading={false}
+                            onShiftClick={openShiftTimesheet}
+                            order="desc"
+                        />
+                        {historyShifts.length === 0 && !pendingShifts.length && (
+                            <div className="rounded-2xl border-[1.5px] border-dashed border-border py-12 text-center text-muted-foreground">
+                                No past shifts found matching your filters.
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
