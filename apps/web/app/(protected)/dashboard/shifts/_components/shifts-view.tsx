@@ -221,6 +221,7 @@ export function ShiftsView({
                                     isLoading={false}
                                     onShiftClick={openShiftTimesheet}
                                     isUrgentList={true}
+                                    order="desc"
                                 />
                             </div>
                         )}
@@ -231,6 +232,7 @@ export function ShiftsView({
                                 shifts={historyShifts}
                                 isLoading={false}
                                 onShiftClick={openShiftTimesheet}
+                                order="desc"
                             />
                             {historyShifts.length === 0 && !pendingShifts.length && (
                                 <div className="text-center py-12 text-muted-foreground border rounded-lg border-dashed">
