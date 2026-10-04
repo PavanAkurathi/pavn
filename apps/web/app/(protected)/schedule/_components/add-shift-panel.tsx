@@ -120,6 +120,10 @@ function AddShiftForm({
     const overnight = endsNextDay(startLocal, endLocal);
     const timesValid = /^\d{2}:\d{2}$/.test(startLocal) && /^\d{2}:\d{2}$/.test(endLocal) && startLocal !== endLocal;
     const valid = Boolean(siteId) && role.trim() !== "" && /^\d{4}-\d{2}-\d{2}$/.test(localDate) && timesValid;
+    // A shift that has already finished can be saved as a draft but never published.
+    const [now] = useState(() => Date.now());
+    const alreadyEnded =
+        timesValid && /^\d{4}-\d{2}-\d{2}$/.test(localDate) && zonedInstant(overnight ? addDays(localDate, 1) : localDate, endLocal, timeZone).getTime() <= now;
     // Conflicts come from the week that is loaded; a date outside it can't be checked here.
     const inLoadedWeek = week.days.some((d) => d.localDate === localDate) || week.days.some((d) => d.localDate === addDays(localDate, 1));
     const eventsThatDay = ws.events.filter((e) => e.locationId === siteId && e.localDate === localDate);
@@ -263,6 +267,7 @@ function AddShiftForm({
                     ) : !timesValid ? (
                         <p className="-mt-3 text-xs text-destructive">Start and end can&apos;t be the same time.</p>
                     ) : null}
+                    {alreadyEnded ? <p className="-mt-3 text-xs font-medium text-amber-700">This time has already passed, so it can be saved as a draft but not published.</p> : null}
 
                     <section aria-labelledby="as-people" className="flex flex-col gap-2">
                         <div className="flex items-baseline justify-between">

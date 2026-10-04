@@ -84,10 +84,10 @@ export default async function RostersPage(props: {
                 </span>
                 <div>
                     <p className="text-[13px] font-bold">
-                        ${SUBSCRIPTION.MONTHLY_PRICE_USD}/mo per location: unlimited team members.
+                        ${SUBSCRIPTION.MONTHLY_PRICE_USD}/mo per location, flat: unlimited team members.
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                        No per-seat fees. Invite the whole team; the price doesn&apos;t change with headcount.
+                        No per-seat fees, ever. Invite the whole roster; your price never changes.
                     </p>
                 </div>
             </div>

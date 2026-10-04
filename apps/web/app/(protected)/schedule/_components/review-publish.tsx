@@ -74,6 +74,7 @@ export function ReviewPublish({
     const changes = (p: SchedulerPublishPreview) => p.newShifts + p.changedShifts + p.removedShifts;
     const withChanges = previewList.filter((x) => changes(x.preview) > 0);
     const conflicts = previewList.reduce((sum, x) => sum + x.preview.conflicts.length, 0);
+    const expired = previewList.reduce((sum, x) => sum + x.preview.expiredDrafts, 0);
     const openPositions = withChanges.reduce((sum, x) => sum + newlyOpen(x.week), 0);
     const label = weeks[0] ? weekRangeLabel(weeks[0].days[0]!.localDate, weeks[0].days[6]!.localDate) : "";
 
@@ -128,7 +129,13 @@ export function ReviewPublish({
                         {isLoading ? <p className="text-sm text-muted-foreground">Checking what would change…</p> : null}
                         {error ? <p className="text-sm text-destructive">Couldn&apos;t check the week: {error.message}</p> : null}
 
-                        {previews && withChanges.length === 0 ? <p className="text-sm text-muted-foreground">Nothing to publish here; staff already see this as it is.</p> : null}
+                        {previews && withChanges.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                                {expired > 0
+                                    ? `${plural(expired, "draft")} here already ended, so staff can't be shown ${expired === 1 ? "it" : "them"}. Discard ${expired === 1 ? "it" : "them"} from the ⋯ menu, or add ${expired === 1 ? "it" : "them"} again on a later day.`
+                                    : "Nothing to publish here; staff already see this as it is."}
+                            </p>
+                        ) : null}
 
                         <div className="flex flex-col gap-5 text-sm">
                             {withChanges.map(({ week, preview }) => (
@@ -145,7 +152,7 @@ export function ReviewPublish({
 
                                     {preview.notify.length ? (
                                         <div>
-                                            <p className="font-semibold">{plural(preview.notify.length, "person", "people")} get one message each</p>
+                                            <p className="font-semibold">{plural(preview.notify.length, "person", "people")} {preview.notify.length === 1 ? "gets" : "get"} one message each</p>
                                             <ul className="mt-0.5 text-muted-foreground">
                                                 {preview.notify.slice(0, 6).map((p) => (
                                                     <li key={p.personId}>

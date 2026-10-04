@@ -4,7 +4,7 @@ export const SUPPORT_EMAIL = "support@workershive.com";
 // ── Subscription ──────────────────────────────────────────────────────────────
 export const SUBSCRIPTION = {
     PLAN_NAME: "pro",
-    MONTHLY_PRICE_USD: 30,
+    MONTHLY_PRICE_USD: 29,
     TRIAL_DAYS: 14,
     CURRENCY: "USD",
     UNLIMITED_WORKERS: true,
