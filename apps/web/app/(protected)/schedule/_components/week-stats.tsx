@@ -4,30 +4,25 @@ import type { SchedulerWeek } from "@repo/contracts/scheduler";
 import { pillVariants } from "@repo/ui/components/app/pill";
 import { cn } from "@repo/ui/lib/utils";
 
-type ChipTone = "neutral" | "danger";
-
 function StatChip({
     count,
     label,
-    tone = "neutral",
     title,
     onClick,
 }: {
     count: number;
     label: string;
-    tone?: ChipTone;
     title?: string;
     onClick?: () => void;
 }) {
     const className = cn(
-        pillVariants({ tone, size: "md" }),
+        pillVariants({ tone: "neutral", size: "md" }),
         "gap-1",
         onClick && "cursor-pointer transition-colors hover:bg-muted-foreground/15 focus-visible:outline-2 focus-visible:outline-ring",
-        onClick && tone === "danger" && "hover:bg-destructive/20",
     );
     const body = (
         <>
-            <b className={cn("tabular-nums", tone === "neutral" && "text-foreground")}>{count}</b> {label}
+            <b className="tabular-nums text-foreground">{count}</b> {label}
         </>
     );
     return onClick ? (

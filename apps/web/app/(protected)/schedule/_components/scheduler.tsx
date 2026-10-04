@@ -173,8 +173,8 @@ export function Scheduler({
                 window.setTimeout(() => setFlashOpen(false), 1400);
                 return;
             }
-            // On the Roles board the open slots sit in their role's row: scroll to the first and mark them all.
-            const cards = [...(gridRef.current?.querySelectorAll<HTMLElement>('[data-kind="open"]') ?? [])];
+            // On the Roles board a shift with open slots shows 2/3 in its role's row: scroll to the first and mark them all.
+            const cards = [...(gridRef.current?.querySelectorAll<HTMLElement>('[data-open="true"]') ?? [])];
             cards[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
             for (const card of cards) card.dataset.flash = "true";
             window.setTimeout(() => {
