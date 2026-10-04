@@ -61,7 +61,7 @@ export function WeekStats({
     return (
         <div aria-label="This week" role="group" className="flex flex-wrap items-center gap-2">
             <StatChip count={shifts} label={shifts === 1 ? "shift" : "shifts"} />
-            {openSlots > 0 ? <StatChip count={openSlots} label="open" tone="danger" title="Show the open spots" onClick={onOpen} /> : null}
+            {openSlots > 0 ? <StatChip count={openSlots} label="open" title="Show the open spots" onClick={onOpen} /> : null}
             {pendingChangeCount > 0 ? (
                 <StatChip count={pendingChangeCount} label={pendingChangeCount === 1 ? "draft" : "drafts"} title="Drafts and edits staff can't see yet" />
             ) : null}
@@ -69,7 +69,6 @@ export function WeekStats({
                 <StatChip
                     count={pendingRequestCount}
                     label={pendingRequestCount === 1 ? "request" : "requests"}
-                    tone="danger"
                     title="Waiting for you"
                     onClick={onRequests}
                 />

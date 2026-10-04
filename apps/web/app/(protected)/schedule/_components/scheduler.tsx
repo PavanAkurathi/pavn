@@ -40,6 +40,7 @@ import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
 import { PublishDialog } from "./publish-dialog";
 import { WeekStats } from "./week-stats";
+import { DraftBar } from "./draft-bar";
 import { QuickCreate, type QuickCreateTarget } from "./quick-create";
 import { ChipGhost, type Density } from "./shift-chip";
 import { ShiftDrawer } from "./shift-drawer";
@@ -300,8 +301,17 @@ export function Scheduler({
         }
     };
 
+    const pending = week.summary.pendingChangeCount;
+
     return (
         <div className="flex flex-col gap-3">
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">Schedule</h1>
+                <p className="mt-1 max-w-[600px] text-sm text-muted-foreground">
+                    Build the week. Dashed shifts are drafts, invisible to staff until published.
+                </p>
+            </div>
+
             <div className="overflow-hidden rounded-card border bg-card shadow-sm">
                 <div className="border-b bg-card px-3.5 py-2.5">
                     <SchedulerToolbar
@@ -341,6 +351,15 @@ export function Scheduler({
                 <div className="border-b px-3.5 py-2">
                     <WeekStats week={week} onOpen={showOpenRow} onRequests={() => router.push(getRequestsHref())} />
                 </div>
+
+                {pending > 0 ? (
+                    <DraftBar
+                        count={pending}
+                        publishPhase={publish.phase}
+                        onPublish={() => void publish.start()}
+                        onDiscard={() => void discard()}
+                    />
+                ) : null}
 
                 {error ? (
                     <div role="alert" className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
