@@ -18,6 +18,9 @@ const nextConfig = {
     turbopack: {
         root: repoRoot,
     },
+    // The account menu sits at the bottom of the left rail, where the dev
+    // indicator renders by default and swallows clicks on it (dev only).
+    devIndicators: { position: "bottom-right" },
     // The old schedule builder became the Scheduler.
     async redirects() {
         return [{ source: "/dashboard/schedule/create", destination: "/schedule", permanent: false }];
