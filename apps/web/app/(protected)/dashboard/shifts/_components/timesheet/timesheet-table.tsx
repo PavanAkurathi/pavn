@@ -55,28 +55,51 @@ function PlaceholderPill({ text }: { text: string }) {
     );
 }
 
-function OpenSlotRow({ onAddWorker, disabled }: { onAddWorker?: () => void; disabled: boolean }) {
+function OpenSlotRow({
+    role,
+    onAddWorker,
+    disabled,
+}: {
+    role?: string;
+    onAddWorker?: () => void;
+    disabled: boolean;
+}) {
     const actionable = !disabled && Boolean(onAddWorker);
     return (
-        <div className="grid gap-3 border-b border-border/60 py-3 last:border-0 md:grid-cols-[minmax(240px,1.5fr)_140px_140px_160px_160px_auto] md:items-center md:gap-3.5">
-            <button
-                type="button"
-                onClick={onAddWorker}
-                disabled={!actionable}
-                className="flex items-center gap-3 pr-2 text-left disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+        <div className="border-b border-border/60 py-2 last:border-0">
+            <div
+                role={actionable ? "button" : undefined}
+                tabIndex={actionable ? 0 : undefined}
+                onClick={actionable ? onAddWorker : undefined}
+                onKeyDown={
+                    actionable
+                        ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  onAddWorker?.();
+                              }
+                          }
+                        : undefined
+                }
+                className={`flex items-center gap-3 rounded-xl border-[1.5px] border-dashed border-border px-3.5 py-2.5 ${actionable ? "cursor-pointer hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" : ""}`}
             >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-dashed border-destructive/50 text-destructive">
-                    <UserPlus aria-hidden="true" className="size-4" />
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border text-lg text-muted-foreground">
+                    +
                 </span>
-                <span className="text-sm font-medium text-destructive">
-                    Open slot{actionable ? " — add a worker" : ""}
+                <span className="min-w-0 flex-1">
+                    <span className="block text-[13.5px] font-bold text-foreground">Open slot</span>
+                    <span className="block text-xs text-muted-foreground">
+                        {role ? `${role} · ` : ""}
+                        {actionable ? "tap to add someone" : "waiting for someone"}
+                    </span>
                 </span>
-            </button>
-            <PlaceholderPill text="hh : mm --" />
-            <PlaceholderPill text="hh : mm --" />
-            <PlaceholderPill text="0 min" />
-            <div className="hidden md:block" />
-            <div className="hidden md:block" />
+                {actionable ? (
+                    <Button size="sm" className="font-bold" onClick={(e) => { e.stopPropagation(); onAddWorker?.(); }}>
+                        <UserPlus data-icon="inline-start" aria-hidden="true" />
+                        Add
+                    </Button>
+                ) : null}
+            </div>
         </div>
     );
 }
@@ -106,6 +129,10 @@ interface TimesheetTableProps {
     isCancelled: boolean;
     /** Unfilled slots to render as placeholder rows (required headcount view). */
     openSlotCount?: number;
+    /** What an open slot is for, e.g. "Server". */
+    roleLabel?: string;
+    /** Where each row's map button goes: directions to the shift's location. */
+    directionsHref?: string;
     onAddWorker?: () => void;
     /** True before the shift starts: rows show but time entry is locked. */
     timesReadOnly?: boolean;
@@ -131,6 +158,8 @@ export function TimesheetTable({
     isApproved,
     isCancelled,
     openSlotCount = 0,
+    roleLabel,
+    directionsHref,
     onAddWorker,
     timesReadOnly = false,
     onRenameTemp,
@@ -258,7 +287,7 @@ export function TimesheetTable({
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-                <div className="hidden border-b bg-muted/30 px-5 py-3 text-xs font-semibold text-muted-foreground md:grid md:grid-cols-[minmax(240px,1.5fr)_140px_140px_160px_160px_auto] md:items-center md:gap-3.5">
+                <div className="hidden border-b bg-muted/30 px-5 py-3 text-xs font-semibold text-muted-foreground md:grid md:grid-cols-[minmax(200px,1.3fr)_132px_132px_108px_108px_minmax(120px,1fr)_auto] md:items-center md:gap-3.5">
                     <div
                         className="cursor-pointer pl-2 transition-colors hover:text-foreground"
                         onClick={() => table.getColumn("name")?.toggleSorting()}
@@ -267,7 +296,7 @@ export function TimesheetTable({
                     </div>
                     <div className="text-center">Clock-in</div>
                     <div className="text-center">Clock-out</div>
-                    <div className="text-center">Total unpaid break</div>
+                    <div className="col-span-2 text-center">Total unpaid break</div>
                     <div className="text-center">Notes</div>
                     <div className="text-right pr-2">Actions</div>
                 </div>
@@ -300,6 +329,8 @@ export function TimesheetTable({
                                     workerId={worker.id}
                                     workerName={worker.name}
                                     workerAvatar={worker.avatar}
+                                    jobTitle={worker.jobTitle}
+                                    directionsHref={directionsHref}
                                     shiftDuration={worker.shiftDuration}
                                     clockIn={worker.clockIn}
                                     clockOut={worker.clockOut}
@@ -330,6 +361,7 @@ export function TimesheetTable({
                         ? Array.from({ length: openSlotCount }).map((_, index) => (
                             <OpenSlotRow
                                 key={`open-slot-${index}`}
+                                role={roleLabel}
                                 onAddWorker={onAddWorker}
                                 disabled={isApproved || isCancelled}
                             />

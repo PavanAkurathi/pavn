@@ -1,8 +1,6 @@
 // apps/web/components/shifts/timesheet/shift-summary-header.tsx
 
 import * as React from "react";
-import { Badge } from "@repo/ui/components/ui/badge";
-import { Separator } from "@repo/ui/components/ui/separator";
 
 interface ShiftSummaryHeaderProps {
     title: string;
@@ -17,6 +15,8 @@ interface ShiftSummaryHeaderProps {
     breakDuration: string;
     createdBy?: string;
     createdAt?: string;
+    /** "published" fills grey, "draft" is dashed; anything else shows no pill. */
+    pill?: "published" | "draft";
 }
 
 export function ShiftSummaryHeader({
@@ -30,29 +30,35 @@ export function ShiftSummaryHeader({
     breakDuration,
     createdBy,
     createdAt,
+    pill,
 }: ShiftSummaryHeaderProps) {
     return (
-        <div className="flex flex-col gap-4 py-1">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="flex flex-col gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="outline">{role}</Badge>
-                        <Badge variant="secondary">{breakDuration}</Badge>
-                    </div>
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-                        <div className="text-sm text-muted-foreground">{date} · {location}</div>
-                    </div>
-                </div>
+        <div className="flex flex-col gap-1.5 py-1">
+            <div className="flex flex-wrap items-center gap-3">
+                {pill ? (
+                    <span
+                        className={
+                            pill === "draft"
+                                ? "whitespace-nowrap rounded-full border-[1.5px] border-dashed border-border px-2.5 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wide text-muted-foreground"
+                                : "whitespace-nowrap rounded-full bg-muted px-2.5 py-0.5 text-[10.5px] font-extrabold uppercase tracking-wide text-foreground/80"
+                        }
+                    >
+                        {pill}
+                    </span>
+                ) : null}
+                <h1 className="text-[23px] font-extrabold tracking-tight text-foreground">{title}</h1>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="font-medium text-foreground">{timeRange}</span>
-                <Separator orientation="vertical" className="hidden h-4 sm:block" />
+            <div className="text-[13.5px] leading-[1.7] text-muted-foreground">
+                <div>
+                    {date} · {timeRange}
+                </div>
+                <div>{location}</div>
+                <div>
+                    {role} · {breakDuration}
+                </div>
                 {createdAt ? (
-                    <span className="text-muted-foreground">
-                        {createdBy ? `Created by ${createdBy} on ${createdAt}` : `Created ${createdAt}`}
-                    </span>
+                    <div>{createdBy ? `Created by ${createdBy} on ${createdAt}` : `Created ${createdAt}`}</div>
                 ) : null}
             </div>
 
@@ -60,7 +66,7 @@ export function ShiftSummaryHeader({
                 time above is the location's; this is the reader's own clock, so
                 a manager scheduling across zones is never guessing which. */}
             {viewerTimeRange ? (
-                <div className="text-sm text-muted-foreground">
+                <div className="text-[13.5px] text-muted-foreground">
                     Your time{viewerZoneLabel ? ` (${viewerZoneLabel})` : ""}: {viewerTimeRange}
                 </div>
             ) : null}
