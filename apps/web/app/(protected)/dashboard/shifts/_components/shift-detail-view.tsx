@@ -12,6 +12,7 @@ import { ShiftSummaryHeader } from "./timesheet/shift-summary-header";
 import { ShiftApprovalBanner } from "./timesheet/shift-approval-banner";
 import { TimesheetTable } from "./timesheet/timesheet-table";
 import { AddWorkerDialog, type AddWorkerSelection } from "./add-worker-dialog";
+import { WorkerPickerSheet } from "./worker-picker-sheet";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -145,6 +146,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
 
     const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(() => getWorkersFromProps());
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
+    const [isTempsOpen, setIsTempsOpen] = React.useState(false);
     const [isCancelling, setIsCancelling] = React.useState(false);
     const [isCancelDialogOpen, setIsCancelDialogOpen] = React.useState(false);
     const { confirm, confirmDialog } = useConfirm();
@@ -199,7 +201,12 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 return [...prev, ...addedWorkers.filter((worker) => !existingIds.has(worker.id))];
             });
 
-            toast.success(`Added ${newWorkerIds.length} worker${newWorkerIds.length === 1 ? "" : "s"} to the shift`);
+            const warned = newWorkers.find((worker) => worker.warning);
+            toast.success(
+                newWorkers.length === 1
+                    ? `${newWorkers[0]!.name} added to the shift${warned ? ` · ⚠ ${warned.warning}` : ""}`
+                    : `Added ${newWorkerIds.length} workers to the shift`,
+            );
         } catch (error) {
             console.error(error);
             toast.error("Failed to assign workers");
@@ -488,11 +495,23 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             </Card>
 
             {isAddWorkerOpen ? (
-                <AddWorkerDialog
+                <WorkerPickerSheet
                     isOpen={isAddWorkerOpen}
                     onClose={() => setIsAddWorkerOpen(false)}
+                    shift={shift}
+                    onPick={(worker) => handleAddWorkers([worker])}
+                    existingWorkerIds={workers.map((worker) => worker.id)}
+                    onAddTemps={() => setIsTempsOpen(true)}
+                />
+            ) : null}
+
+            {isTempsOpen ? (
+                <AddWorkerDialog
+                    isOpen={isTempsOpen}
+                    onClose={() => setIsTempsOpen(false)}
                     onConfirm={handleAddWorkers}
                     existingWorkerIds={workers.map((worker) => worker.id)}
+                    initialTab="temps"
                 />
             ) : null}
 

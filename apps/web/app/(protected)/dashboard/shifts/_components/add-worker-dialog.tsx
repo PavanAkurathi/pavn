@@ -25,6 +25,8 @@ export interface AddWorkerSelection {
     agency?: string;
     /** Invited in-house worker who hasn't accepted yet (roster entry id). */
     invitePending?: boolean;
+    /** A clash worth saying out loud when they are added, e.g. "Already on Wed 4p-11p". */
+    warning?: string;
 }
 
 interface TempWorkerRecord {
@@ -38,6 +40,8 @@ interface AddWorkerDialogProps {
     onClose: () => void;
     onConfirm: (workers: AddWorkerSelection[]) => Promise<void> | void;
     existingWorkerIds?: string[];
+    /** Which list opens first. */
+    initialTab?: "roster" | "temps";
 }
 
 const tempInitials = (name: string) =>
@@ -48,13 +52,13 @@ const tempInitials = (name: string) =>
         .slice(0, 2)
         .toUpperCase() || "T";
 
-export function AddWorkerDialog({ isOpen, onClose, onConfirm, existingWorkerIds = [] }: AddWorkerDialogProps) {
+export function AddWorkerDialog({ isOpen, onClose, onConfirm, existingWorkerIds = [], initialTab = "roster" }: AddWorkerDialogProps) {
     const { crew, isLoading } = useCrewData();
     const orgId = useOrganizationId();
     const tempsUrl = orgId ? `/api/organizations/${orgId}/temp-workers` : null;
     const { data: temps, isLoading: tempsLoading, mutate: mutateTemps } = useSWR<TempWorkerRecord[]>(tempsUrl, fetcher);
 
-    const [tab, setTab] = React.useState<"roster" | "temps">("roster");
+    const [tab, setTab] = React.useState<"roster" | "temps">(initialTab);
     const [searchQuery, setSearchQuery] = React.useState("");
     const [selectedWorkerIds, setSelectedWorkerIds] = React.useState<string[]>([]);
     const [selectedTempIds, setSelectedTempIds] = React.useState<string[]>([]);
@@ -159,7 +163,7 @@ export function AddWorkerDialog({ isOpen, onClose, onConfirm, existingWorkerIds 
         setSearchQuery("");
         setSelectedWorkerIds([]);
         setSelectedTempIds([]);
-        setTab("roster");
+        setTab(initialTab);
         onClose();
     };
 
