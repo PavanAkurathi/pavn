@@ -131,6 +131,9 @@ test.describe('Schedule Management', () => {
         await page.goto(`/schedule?week=${someWeek}`);
         await expect(page.getByRole('table').first()).toBeVisible({ timeout: 30000 });
 
+        // An empty week has no role rows, so build it from the People board.
+        await page.getByRole('button', { name: 'People', exact: true }).click();
+
         // Click Wednesday in the Open row and type the time.
         await page.locator('[data-cell="0,3"]').click();
         await page.getByLabel('Time', { exact: true }).fill('9-5');
@@ -138,12 +141,9 @@ test.describe('Schedule Management', () => {
         await page.getByRole('button', { name: 'Add', exact: true }).click();
         await expect(page.locator('[data-cell="0,3"]').getByText('9a–5p')).toBeVisible({ timeout: 10000 });
 
-        // Publish the week.
-        await page.getByRole('button', { name: /^Publish \d+/ }).click();
-        const dialog = page.getByRole('dialog');
-        await expect(dialog).toBeVisible();
-        await dialog.getByRole('button', { name: /^Publish( anyway)?$/ }).click();
-        await expect(page.getByText(/^Published\./)).toBeVisible({ timeout: 15000 });
+        // Publish the week: one click, then a short undo window before staff are told.
+        await page.getByRole('button', { name: /^Publish \(\d+\)/ }).first().click();
+        await expect(page.getByText(/^Published\./)).toBeVisible({ timeout: 20000 });
     });
 
     test('can view shift details', async ({ page }) => {
