@@ -1,6 +1,6 @@
 import { fetch } from "bun";
 import { db, eq } from "@repo/database";
-import { user, member } from "@repo/database/schema";
+import { user, member, location } from "@repo/database/schema";
 
 const API_URL = process.env.API_URL || "http://localhost:4005";
 const ADMIN = {
@@ -62,6 +62,32 @@ async function seed() {
             if (adminMember?.organizationId) {
                 const orgId = adminMember.organizationId;
                 console.log(`Found Organization: ${orgId}`);
+
+                // The Scheduler is built per location and shows "Add a location
+                // first" without one, so the Scheduler specs need a location.
+                const existingLocation = await db.query.location.findFirst({
+                    where: eq(location.organizationId, orgId)
+                });
+                if (!existingLocation) {
+                    const now = new Date();
+                    await db.insert(location).values({
+                        id: crypto.randomUUID(),
+                        organizationId: orgId,
+                        name: "Test Location",
+                        slug: "test-location",
+                        timezone: "America/New_York",
+                        address: "350 5th Ave, New York, NY",
+                        zip: "10118",
+                        position: { lat: 40.7484, lng: -73.9857 },
+                        geofenceRadius: 100,
+                        geocodeSource: "manual",
+                        createdAt: now,
+                        updatedAt: now,
+                    });
+                    console.log("✅ Location seeded successfully");
+                } else {
+                    console.log("Location already exists");
+                }
 
                 // Seed Worker
                 const WORKER_EMAIL = "worker@test.workershive.com";
