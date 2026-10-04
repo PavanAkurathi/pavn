@@ -12,22 +12,23 @@ const SIZES = {
 
 export interface InitialsAvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   name: string
-  /** Any CSS colour; usually roleHue(role). */
-  hue: string
+  /** Any CSS colour. Leave it out for the neutral grey avatar. */
+  hue?: string
   size?: keyof typeof SIZES
 }
 
-/** A round, solid-colour avatar with the person's initials. */
+/** A round avatar with the person's initials: neutral grey, or a solid colour when given a hue. */
 function InitialsAvatar({ name, hue, size = "md", className, style, ...props }: InitialsAvatarProps) {
   return (
     <span
       aria-hidden
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full font-extrabold leading-none text-white",
+        "flex shrink-0 items-center justify-center rounded-full font-extrabold leading-none",
+        hue ? "text-white" : "bg-muted text-muted-foreground",
         SIZES[size],
         className
       )}
-      style={{ background: hue, ...style }}
+      style={hue ? { background: hue, ...style } : style}
       {...props}
     >
       {initials(name)}

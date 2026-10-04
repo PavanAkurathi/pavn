@@ -6,15 +6,6 @@
     min-width: 1040px;
 }
 
-.dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    flex: 0 0 8px;
-    background: var(--rc);
-    border: 1px solid color-mix(in srgb, var(--rc) 70%, #000 25%);
-}
 
 .unavailable {
     background: repeating-linear-gradient(45deg, transparent 0 7px, rgba(100, 116, 139, 0.16) 7px 8px), var(--card);

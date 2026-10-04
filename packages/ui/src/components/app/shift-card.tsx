@@ -1,56 +1,54 @@
 import * as React from "react"
 
 import { cn } from "../../lib/utils"
-import { InitialsAvatar } from "./initials-avatar"
 
-export interface ShiftCardProps extends Omit<React.ComponentPropsWithRef<"button">, "children"> {
-  /** The role's colour (roleHue(role)). Tint, border and left bar all come from it. */
-  hue: string
-  /** "assigned" shows the person; "open" is the dashed slot nobody has yet. */
+export interface ShiftCardProps extends Omit<React.ComponentPropsWithRef<"button">, "children" | "title"> {
+  /** "assigned" is a shift; "open" is the dashed slot nobody has yet. */
   kind?: "assigned" | "open"
-  /**
-   * The assignee, for a card on a position row. Leave it out on a person's own
-   * row, where the row already says who: the card then leads with the time.
-   */
-  name?: string
-  /** "4p – 11p". */
+  /** The bold first line: what the shift is, e.g. its role or the event it belongs to. */
+  title?: string
+  /** "4p–11p". */
   time: string
-  /** Small text after the time: the role, "draft", "2 open". */
+  /** Small text after the time: "3/4" filled, or the role. */
   detail?: string
-  /** Not published yet: dashed and faded; staff can't see it. */
+  /** Not published yet: dashed, with a DRAFT tag. Staff can't see it. */
   draft?: boolean
   /** Double-booked or on approved time off: red ring and a "!" badge. */
   conflict?: boolean
   /** Being removed at the next publish. */
   removed?: boolean
-  /** Part of an event: a ◆ before the time. */
+  /** Part of an event: a ◆ before the title. */
   event?: boolean
   /** Published, with edits staff can't see yet: an amber dot. */
   edited?: boolean
-  /** Comfortable is the mockup card; compact is one line, for big teams. */
+  /** Comfortable is the full chip; compact is one line, for big teams. */
   density?: "comfortable" | "compact"
-  /** Right-aligned extra, e.g. a "2/3" fill count. */
+  /** Native tooltip (the `title` attribute is the bold line here). */
+  tooltip?: string
+  /** Right-aligned extra. */
   trailing?: React.ReactNode
   /** Text of an open card. */
   openLabel?: string
 }
 
 /**
- * The shift card, after docs/design/manager-scheduler/shiftly-phase1.html.
+ * The shift chip, after docs/design/manager-scheduler/pavn-schedule-board.html.
+ * Black and white on purpose: a draft reads as a draft by its dashed edge, not
+ * by a colour.
  *
- *   comfortable        compact
- *   ┌──────────────┐   ┌─────────────┐
- *   ┃ (MR) Maya R. │   ┃ (MR) 4p–11p │
- *   ┃ 4p – 11p     │   └─────────────┘
- *   └──────────────┘
+ *   comfortable          compact
+ *   ┌───────────────┐    ┌──────────────────────┐
+ *   │ DRAFT         │    │ 11a–4p  Server · 3/4 │
+ *   │ Server        │    └──────────────────────┘
+ *   │ 11a–4p · 3/4  │
+ *   └───────────────┘
  *
  * It is a button so it can be focused, clicked and dragged; refs and listeners
  * pass straight through to it.
  */
 function ShiftCard({
-  hue,
   kind = "assigned",
-  name,
+  title,
   time,
   detail,
   draft,
@@ -59,10 +57,10 @@ function ShiftCard({
   edited,
   event,
   density = "comfortable",
+  tooltip,
   trailing,
   openLabel = "OPEN · tap to assign",
   className,
-  style,
   ...props
 }: ShiftCardProps) {
   const open = kind === "open"
@@ -72,7 +70,7 @@ function ShiftCard({
       ◆
     </span>
   ) : null
-  const timeLine = detail ? `${time} · ${detail}` : time
+  const sub = detail ? `${time} · ${detail}` : time
 
   return (
     <button
@@ -80,17 +78,14 @@ function ShiftCard({
       data-shift-card
       data-kind={kind}
       className={cn(
-        "relative block w-full min-w-0 rounded-chip border text-left text-xs leading-tight",
-        "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-        compact ? "px-1.5 py-0.5" : "px-[7px] py-[5px]",
-        // Assigned: a tint of the role hue, a firmer border, a 3px bar on the left.
-        !open &&
-          "border-[color-mix(in_srgb,var(--hue)_40%,transparent)] border-l-[3px] border-l-(--hue) bg-[color-mix(in_srgb,var(--hue)_9%,var(--card))]",
-        // Open: no fill, a dashed outline, centred text.
+        "relative block w-full min-w-0 rounded-chip border border-border bg-card text-left text-xs leading-tight transition-shadow",
+        "hover:shadow-[0_4px_14px_rgba(20,16,60,0.1)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+        compact ? "px-1.5 py-0.5" : "px-[9px] py-[7px]",
+        // Open: no fill, a firm dashed outline, centred text.
         open && "border-dashed border-foreground bg-transparent text-center",
         open && !compact && "px-[5px] py-2",
-        // Draft: dashed and faded.
-        draft && "border-dashed opacity-[0.72]",
+        // Draft: a dashed edge and a faint fill.
+        draft && "border-dashed bg-muted/40",
         // Removed at next publish.
         removed && "border-dashed border-destructive bg-muted opacity-60",
         conflict && "shadow-[0_0_0_2px_var(--destructive)]",
@@ -98,7 +93,7 @@ function ShiftCard({
         "data-[flash=true]:outline-2 data-[flash=true]:outline-offset-2 data-[flash=true]:outline-primary",
         className
       )}
-      style={{ "--hue": hue, ...style } as React.CSSProperties}
+      title={tooltip}
       {...props}
     >
       {conflict ? (
@@ -117,52 +112,51 @@ function ShiftCard({
         compact ? (
           <span className="flex items-center justify-center gap-1.5">
             <span className="text-[11px] font-semibold text-muted-foreground">OPEN</span>
-            <span className="font-semibold tabular-nums">{timeLine}</span>
+            <span className="font-semibold tabular-nums">{sub}</span>
             {trailing}
           </span>
         ) : (
           <>
             <span className="block text-[11px] font-semibold text-muted-foreground">{openLabel}</span>
             <span className="mt-px block text-[11px] tabular-nums text-muted-foreground">
-              {timeLine}
-              {trailing ? <span className="ml-1.5 font-bold text-destructive">{trailing}</span> : null}
+              {sub}
+              {trailing ? <span className="ml-1.5 font-bold text-foreground">{trailing}</span> : null}
             </span>
           </>
         )
       ) : compact ? (
         <span className="flex items-center gap-1.5">
-          {name ? <InitialsAvatar name={name} hue={hue} size="2xs" /> : null}
           <span className={cn("whitespace-nowrap font-semibold tabular-nums", removed && "line-through")}>
             {diamond}
             {time}
           </span>
-          {detail ? <span className="min-w-0 truncate text-[11px] text-muted-foreground">{detail}</span> : null}
+          {title || detail ? (
+            <span className="min-w-0 truncate text-[11px] text-muted-foreground">
+              {[title, detail].filter(Boolean).join(" · ")}
+              {draft ? " · draft" : ""}
+            </span>
+          ) : null}
           {trailing ? <span className="ml-auto text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
         </span>
-      ) : name ? (
-        // On a position row: who, then when.
-        <>
-          <span className="flex items-center gap-1.5">
-            <InitialsAvatar name={name} hue={hue} size="xs" />
-            <span className="min-w-0 flex-1 truncate text-xs font-bold">{name}</span>
-            {trailing ? <span className="shrink-0 text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
-          </span>
-          <span className={cn("mt-px block text-[11px] tabular-nums text-muted-foreground", removed && "line-through")}>
-            {diamond}
-            {timeLine}
-          </span>
-        </>
       ) : (
-        // On a person's row the row already says who: when, then what (the role, if it differs).
         <>
+          {draft ? (
+            <span className="mb-0.5 block text-[9px] font-extrabold uppercase tracking-[0.06em] text-muted-foreground/70">Draft</span>
+          ) : null}
           <span className="flex items-center gap-1.5">
-            <span className={cn("min-w-0 flex-1 truncate text-xs font-bold tabular-nums", removed && "line-through")}>
+            <span className={cn("min-w-0 flex-1 truncate text-[12.5px] font-bold", removed && "line-through")}>
               {diamond}
-              {time}
+              {title ?? time}
             </span>
             {trailing ? <span className="shrink-0 text-[11px] font-semibold tabular-nums">{trailing}</span> : null}
           </span>
-          {detail ? <span className="mt-px block truncate text-[11px] text-muted-foreground">{detail}</span> : null}
+          {title ? (
+            <span className={cn("mt-px block truncate text-[11.5px] tabular-nums text-muted-foreground", removed && "line-through")}>
+              {sub}
+            </span>
+          ) : detail ? (
+            <span className="mt-px block truncate text-[11.5px] text-muted-foreground">{detail}</span>
+          ) : null}
         </>
       )}
     </button>

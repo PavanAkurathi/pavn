@@ -1,11 +1,10 @@
 "use client";
 
-import { Fragment } from "react";
 import Link from "next/link";
 import { useDroppable } from "@dnd-kit/core";
 import { ChevronDown, Plus } from "lucide-react";
-import type { SchedulerEvent, SchedulerPerson, SchedulerWeek } from "@repo/contracts/scheduler";
-import { roleHue } from "@repo/ui/lib/role-hue";
+import type { SchedulerPerson, SchedulerWeek } from "@repo/contracts/scheduler";
+import { InitialsAvatar } from "@repo/ui/components/app/initials-avatar";
 import { cn } from "@repo/ui/lib/utils";
 import { compactRange, dayOfMonth, formatHours, weekdayShort } from "@/lib/scheduler/format";
 import type { DropTarget } from "@/lib/scheduler/plans";
@@ -41,12 +40,6 @@ export interface GridEditing {
     density: Density;
     /** Click on a day header's event tag. */
     onOpenEvent: (eventId: string) => void;
-}
-
-function eventTone(e: SchedulerEvent) {
-    if (e.needed === 0 || e.filled >= e.needed) return "border-emerald-600/60 text-emerald-800";
-    if (e.filled / e.needed >= 0.5) return "border-amber-500/70 text-amber-800";
-    return "border-destructive/60 text-destructive";
 }
 
 /** Arrow keys walk the cells; Home/End jump along the row. */
@@ -94,7 +87,7 @@ function Header({
                         key={day.localDate}
                         role="columnheader"
                         aria-label={`${weekdayShort(day.localDate)} ${day.localDate}${day.isToday ? ", today" : ""}`}
-                        className={cn(headerCell, day.isToday && "shadow-[inset_0_-2px_0_var(--primary)]")}
+                        className={headerCell}
                     >
                         <div className="flex items-baseline gap-1.5">
                             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -103,6 +96,7 @@ function Header({
                             <span className={cn("text-[13.5px] font-semibold tabular-nums", day.isToday && "text-primary")}>
                                 {dayOfMonth(day.localDate)}
                             </span>
+                            {day.isToday ? <span aria-hidden className="size-[7px] self-center rounded-full bg-primary" /> : null}
                         </div>
                         {events.map((e) => (
                             <button
@@ -110,10 +104,7 @@ function Header({
                                 key={e.id}
                                 onClick={() => onOpenEvent(e.id)}
                                 title={`${e.name}, ${compactRange(e.startLocal, e.endLocal)}: ${e.filled} of ${e.needed} filled`}
-                                className={cn(
-                                    "flex max-w-full items-center gap-1 rounded-full border bg-card px-2 py-px text-left text-[11px] font-semibold leading-4 hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary",
-                                    eventTone(e),
-                                )}
+                                className="flex max-w-full items-center gap-1 rounded-full border bg-card px-2 py-px text-left text-[11px] font-semibold leading-4 hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
                             >
                                 <span aria-hidden>◆</span>
                                 <span className="min-w-0 truncate text-foreground">{e.name}</span>
@@ -212,20 +203,20 @@ function DayCell({
 function PersonLabel({ person }: { person: SchedulerPerson }) {
     return (
         <div role="rowheader" className={labelCell}>
-            <span aria-hidden className={styles.dot} style={{ ["--rc" as string]: roleHue(person.primaryRole) }} />
+            <InitialsAvatar name={person.name} size="sm" />
             <div className="flex min-w-0 flex-col leading-tight">
                 <span className="truncate text-[13px] font-semibold">{person.name}</span>
                 <span className="flex min-w-0 items-center gap-1.5 truncate text-[11.5px] text-muted-foreground">
                     {person.primaryRole ?? "No role yet"}
                     {person.kind === "invited" ? (
-                        <span className="rounded-full border border-amber-300 bg-amber-50 px-1.5 text-[10px] font-semibold leading-4 text-amber-800">
+                        <span className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">
                             Invited
                         </span>
                     ) : null}
                     {person.kind === "agency" ? (
                         <span
                             title={person.agencyName ?? undefined}
-                            className="rounded-full border border-violet-300 bg-violet-50 px-1.5 text-[10px] font-semibold leading-4 text-violet-800"
+                            className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground"
                         >
                             Agency
                         </span>
@@ -236,16 +227,21 @@ function PersonLabel({ person }: { person: SchedulerPerson }) {
     );
 }
 
+/** Event id to name, so a shift in an event is titled by it. */
+const eventNamesOf = (week: SchedulerWeek) => new Map(week.events.map((e) => [e.id, e.name]));
+
 function PersonRowCells({
     row,
     rowIndex,
     week,
     editing,
+    eventNames,
 }: {
     row: PersonRow;
     rowIndex: number;
     week: SchedulerWeek;
     editing: GridEditing;
+    eventNames: Map<string, string>;
 }) {
     const { person } = row;
     const tone = hoursTone(person, week.settings.overtimePolicy);
@@ -291,11 +287,8 @@ function PersonRowCells({
                                 actions={editing.chips}
                                 dragId={`chip:${shift.id}:${person.id}`}
                                 density={editing.density}
-                                variant={{
-                                    kind: "assignment",
-                                    assignee,
-                                    showRole: !person.primaryRole || shift.role.toLowerCase() !== person.primaryRole.toLowerCase(),
-                                }}
+                                eventName={eventNames.get(shift.eventId ?? "")}
+                                variant={{ kind: "assignment", assignee }}
                             />
                         ))}
                         {hidden > 0 ? (
@@ -344,6 +337,7 @@ export function PeopleGrid({
     editing: GridEditing;
 }) {
     const openTotal = view.open.flat().reduce((sum, s) => sum + s.open, 0);
+    const eventNames = eventNamesOf(week);
     let rowIndex = 0;
     return (
         <div role="table" aria-label={`Schedule for ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
@@ -366,7 +360,7 @@ export function PeopleGrid({
                 <div role="rowheader" ref={openRowRef} className={cn(labelCell, "bg-muted/70", flashOpenRow && styles.flash)}>
                     <div className="flex flex-col leading-tight">
                         <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Open</span>
-                        {openTotal ? <span className="text-[11.5px] font-medium text-destructive">{openTotal} to fill</span> : null}
+                        {openTotal ? <span className="text-[11.5px] font-medium text-muted-foreground">{openTotal} to fill</span> : null}
                     </div>
                 </div>
                 {view.open.map((shifts, index) => (
@@ -384,6 +378,7 @@ export function PeopleGrid({
                                 actions={editing.chips}
                                 dragId={`open:${shift.id}`}
                                 density={editing.density}
+                                eventName={eventNames.get(shift.eventId ?? "")}
                                 variant={{ kind: "open" }}
                             />
                         ))}
@@ -408,7 +403,7 @@ export function PeopleGrid({
                                 <span className="font-normal text-muted-foreground">
                                     · {section.people.length} {section.people.length === 1 ? "person" : "people"}
                                 </span>
-                                {section.openSlots ? <span className="font-semibold text-destructive">· {section.openSlots} open</span> : null}
+                                {section.openSlots ? <span className="font-semibold text-foreground/80">· {section.openSlots} open</span> : null}
                                 {isCollapsed ? (
                                     <span className="font-normal text-muted-foreground">· {formatHours(section.scheduledMinutes)}</span>
                                 ) : null}
@@ -417,7 +412,7 @@ export function PeopleGrid({
                         {isCollapsed
                             ? null
                             : section.people.map((row) => (
-                                  <PersonRowCells key={row.person.id} row={row} rowIndex={++rowIndex} week={week} editing={editing} />
+                                  <PersonRowCells key={row.person.id} row={row} rowIndex={++rowIndex} week={week} editing={editing} eventNames={eventNames} />
                               ))}
                     </div>
                 );
@@ -452,7 +447,7 @@ export function PositionsGrid({
     rows: PositionRow[];
     editing: GridEditing;
 }) {
-    const peopleById = new Map(week.people.map((p) => [p.id, p]));
+    const eventNames = eventNamesOf(week);
     return (
         <div role="table" aria-label={`Positions at ${week.location.name}`} className={styles.grid} onKeyDown={moveCellFocus}>
             <Header
@@ -467,10 +462,9 @@ export function PositionsGrid({
                 return (
                     <div key={row.role} role="row" className="contents">
                         <div role="rowheader" className={labelCell}>
-                            <span aria-hidden className={styles.dot} style={{ ["--rc" as string]: roleHue(row.role) }} />
                             <div className="flex min-w-0 flex-col leading-tight">
                                 <span className="truncate text-[13px] font-semibold">{row.role}</span>
-                                <span className={cn("text-[11.5px]", row.open ? "font-medium text-destructive" : "text-muted-foreground")}>
+                                <span className="text-[11.5px] text-muted-foreground">
                                     {row.open ? `${row.open} open` : "All filled"}
                                 </span>
                             </div>
@@ -484,30 +478,19 @@ export function PositionsGrid({
                                 role={row.role}
                             >
                                 {shifts.map((shift) => (
-                                    <Fragment key={shift.id}>
-                                        {shift.assignees.map((assignee) => (
-                                            <ShiftChip
-                                                key={`${shift.id}:${assignee.personId}`}
-                                                shift={shift}
-                                                actions={editing.chips}
-                                                density={editing.density}
-                                                variant={{ kind: "person", assignee, person: peopleById.get(assignee.personId) }}
-                                            />
-                                        ))}
-                                        {shift.open > 0 && !shift.pendingRemoval ? (
-                                            <ShiftChip
-                                                shift={shift}
-                                                actions={editing.chips}
-                                                density={editing.density}
-                                                variant={{ kind: "open-slots" }}
-                                            />
-                                        ) : null}
-                                    </Fragment>
+                                    <ShiftChip
+                                        key={shift.id}
+                                        shift={shift}
+                                        actions={editing.chips}
+                                        density={editing.density}
+                                        eventName={eventNames.get(shift.eventId ?? "")}
+                                        variant={{ kind: "shift" }}
+                                    />
                                 ))}
                             </DayCell>
                         ))}
                         <div role="cell" className={hoursCell}>
-                            <span className={cn("text-[13px] font-semibold", filled < needed && "text-destructive")}>
+                            <span className="text-[13px] font-semibold">
                                 {filled}/{needed}
                             </span>
                         </div>
