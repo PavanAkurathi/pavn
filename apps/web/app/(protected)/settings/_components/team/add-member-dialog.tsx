@@ -33,7 +33,7 @@ export function AddMemberDialog() {
             const result = await addMember({
                 name: `${formData.firstName} ${formData.lastName}`.trim(),
                 email: formData.email,
-                phoneNumber: formData.phoneNumber,
+                phoneNumber: formData.phoneNumber.trim() || undefined,
                 role: formData.role,
                 invites: {
                     email: true,
