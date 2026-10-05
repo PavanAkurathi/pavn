@@ -30,13 +30,25 @@ export function getDashboardShiftsHref(options?: { view?: ShiftDashboardTab }) {
     return buildHref(DASHBOARD_SHIFTS_PATH, { view: options?.view });
 }
 
-/** The weekly Scheduler. Omitted params mean the first location and its current week. */
+/**
+ * The Schedule workspace. Omitted params mean the remembered view and site, on
+ * the current week. `location` and `week` are what older links carry: a site
+ * and any day in the week to open.
+ */
 export function getSchedulerHref(options?: {
     location?: string;
     /** Any local date (YYYY-MM-DD) inside the week to open. */
     week?: string;
+    view?: "week" | "day";
+    /** The day to open, or the day in the week to open. */
+    date?: string;
+    /** A site id, or "all". */
+    site?: string;
 }) {
     return buildHref(SCHEDULER_PATH, {
+        view: options?.view,
+        date: options?.date,
+        site: options?.site,
         location: options?.location,
         week: options?.week,
     });

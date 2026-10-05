@@ -11,7 +11,6 @@ import type {
     SchedulerWeek,
 } from "@repo/contracts/scheduler";
 
-export type ViewMode = "people" | "positions";
 export const ALL_DEPARTMENTS = "all";
 /** Section for people whose roles match no department and there is no catch-all. */
 export const NO_DEPARTMENT = "none";
@@ -53,13 +52,6 @@ export interface PeopleView {
     sections: Section[];
     /** People in view after the department filter and search. */
     visibleCount: number;
-}
-
-export interface PositionRow {
-    role: string;
-    departmentId: string | null;
-    days: SchedulerShift[][];
-    open: number;
 }
 
 const byStart = (a: SchedulerShift, b: SchedulerShift) =>
@@ -167,34 +159,6 @@ export function buildPeopleView(
         sections: [...sections.values()].filter((s) => s.people.length > 0),
         visibleCount,
     };
-}
-
-export function buildPositionsView(week: SchedulerWeek, options: { department: string }): PositionRow[] {
-    const deptOf = departmentOfRole(week);
-    const rows = new Map<string, PositionRow>();
-    for (const shift of [...week.shifts].sort(byStart)) {
-        const departmentId = deptOf(shift.role);
-        if (!inDepartment(options.department, departmentId)) continue;
-        let row = rows.get(shift.role);
-        if (!row) {
-            row = { role: shift.role, departmentId, days: emptyDays(), open: 0 };
-            rows.set(shift.role, row);
-        }
-        if (shift.dayIndex >= 0 && shift.dayIndex < 7) row.days[shift.dayIndex]!.push(shift);
-        if (!shift.pendingRemoval) row.open += shift.open;
-    }
-    const deptRank = new Map(week.departments.map((d, i) => [d.id, i]));
-    const roleRank = (row: PositionRow) => {
-        const roles = week.departments.find((d) => d.id === row.departmentId)?.roles ?? [];
-        const index = roles.findIndex((r) => r.toLowerCase() === row.role.toLowerCase());
-        return index === -1 ? 99 : index;
-    };
-    return [...rows.values()].sort(
-        (a, b) =>
-            (deptRank.get(a.departmentId ?? "") ?? 99) - (deptRank.get(b.departmentId ?? "") ?? 99) ||
-            roleRank(a) - roleRank(b) ||
-            a.role.localeCompare(b.role),
-    );
 }
 
 /** Weekly overtime starts at 40h; "near" is the last four hours before it. */

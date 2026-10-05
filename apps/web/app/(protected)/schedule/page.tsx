@@ -5,9 +5,16 @@ import { getOrganizationLocations } from "@/lib/api/organizations";
 import { getOnboardingHref } from "@/lib/routes";
 import { apiJsonRequest } from "@/lib/server/api-client";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
-import { Scheduler } from "./_components/scheduler";
+import { ScheduleWorkspace } from "./_components/schedule-workspace";
 
-type SearchParams = Promise<{ location?: string | string[]; week?: string | string[] }>;
+type SearchParams = Promise<{
+    view?: string | string[];
+    date?: string | string[];
+    site?: string | string[];
+    /** Older links: a site and a day in the week to open. */
+    location?: string | string[];
+    week?: string | string[];
+}>;
 
 const single = (value: string | string[] | undefined) => (typeof value === "string" ? value : undefined);
 const isLocalDate = (value: string | undefined): value is string => Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value));
@@ -39,20 +46,23 @@ export default async function SchedulePage(props: { searchParams: SearchParams }
         );
     }
 
-    const requestedLocation = single(searchParams.location);
-    const location = locations.find((l) => l.id === requestedLocation) ?? locations[0]!;
-    const requestedWeek = single(searchParams.week);
-    const weekParam = isLocalDate(requestedWeek) ? requestedWeek : null;
+    const requestedDate = single(searchParams.date) ?? single(searchParams.week);
+    const date = isLocalDate(requestedDate) ? requestedDate : null;
+    const view = single(searchParams.view) === "day" ? "day" : single(searchParams.view) === "week" ? "week" : null;
+    const site = single(searchParams.site) ?? single(searchParams.location) ?? null;
 
-    const query = new URLSearchParams({ locationId: location.id });
-    if (weekParam) query.set("weekStart", weekParam);
-
-    let week: SchedulerWeek;
+    let weeks: SchedulerWeek[];
     try {
-        week = await apiJsonRequest<SchedulerWeek>(`/scheduler/week?${query}`, {
-            organizationScoped: true,
-            organizationId: activeOrgId,
-        });
+        weeks = await Promise.all(
+            locations.map((location) => {
+                const query = new URLSearchParams({ locationId: location.id });
+                if (date) query.set("weekStart", date);
+                return apiJsonRequest<SchedulerWeek>(`/scheduler/week?${query}`, {
+                    organizationScoped: true,
+                    organizationId: activeOrgId,
+                });
+            }),
+        );
     } catch (error) {
         const message = error instanceof Error ? error.message : "";
         if (/forbidden|manager/i.test(message)) {
@@ -65,13 +75,16 @@ export default async function SchedulePage(props: { searchParams: SearchParams }
         throw error;
     }
 
+    const today = weeks[0]!.days.find((d) => d.isToday)?.localDate ?? weeks[0]!.weekStart;
+
     return (
-        <Scheduler
+        <ScheduleWorkspace
             orgId={activeOrgId}
-            locations={locations.map((l) => ({ id: l.id, name: l.name }))}
-            initialWeek={week}
-            initialLocationId={location.id}
-            initialWeekParam={weekParam}
+            sites={locations.map((l) => ({ id: l.id, name: l.name }))}
+            initialWeeks={weeks}
+            initialDate={date ?? today}
+            initialView={view}
+            initialSite={site}
         />
     );
 }

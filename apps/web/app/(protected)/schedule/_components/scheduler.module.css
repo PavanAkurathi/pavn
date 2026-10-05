@@ -2,8 +2,8 @@
 
 .grid {
     display: grid;
-    grid-template-columns: 200px repeat(7, minmax(112px, 1fr)) 76px;
-    min-width: 1040px;
+    grid-template-columns: 220px repeat(7, minmax(120px, 1fr));
+    min-width: 1060px;
 }
 
 

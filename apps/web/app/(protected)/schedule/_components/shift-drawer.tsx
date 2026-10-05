@@ -16,7 +16,7 @@ import { compactRange, formatHours, weekdayShort } from "@/lib/scheduler/format"
 import { formatTimeRange, parseTimeRange } from "@/lib/scheduler/parse-time-range";
 import { newShiftId, staying, type Plan } from "@/lib/scheduler/plans";
 import { getShiftTimesheetHref } from "@/lib/routes";
-import { knownRoles } from "./quick-create";
+import { knownRoles } from "@/lib/scheduler/roles";
 
 const CANDIDATES_SHOWN = 8;
 

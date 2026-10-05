@@ -64,6 +64,7 @@ function addToDay(week: SchedulerWeek, shift: SchedulerShift, dayIndex: number, 
         (s) =>
             s.dayIndex === dayIndex &&
             !s.pendingRemoval &&
+            s.locationId === shift.locationId &&
             s.role === shift.role &&
             s.startLocal === shift.startLocal &&
             s.endLocal === shift.endLocal &&

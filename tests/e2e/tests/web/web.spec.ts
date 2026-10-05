@@ -118,32 +118,38 @@ test.describe('Schedule Management', () => {
     test('schedule page loads', async ({ page }) => {
         await page.getByRole('link', { name: /^Schedule/ }).first().click();
         await expect(page).toHaveURL(/\/schedule/);
-        await expect(page.getByRole('table').first()).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('heading', { name: 'Schedule', exact: true })).toBeVisible({ timeout: 30000 });
     });
 
-    test('can add a shift in the Scheduler and publish the week', async ({ page }) => {
+    test('can add a shift in the Schedule and publish the week', async ({ page }) => {
         test.setTimeout(120000);
         await page.setViewportSize({ width: 1280, height: 800 });
 
-        // A random week months out, so no earlier run's shift sits in the cell we click.
+        // A random week months out, so no earlier run's shifts are in it.
         const weeksOut = 8 + Math.floor(Math.random() * 400);
         const someWeek = new Date(Date.now() + weeksOut * 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        await page.goto(`/schedule?week=${someWeek}`);
-        await expect(page.getByRole('table').first()).toBeVisible({ timeout: 30000 });
+        await page.goto(`/schedule?date=${someWeek}`);
+        await expect(page.getByRole('heading', { name: 'Schedule', exact: true })).toBeVisible({ timeout: 30000 });
 
-        // An empty week has no role rows, so build it from the People board.
-        await page.getByRole('button', { name: 'People', exact: true }).click();
+        // Add one position, left open: role and times are enough.
+        await page.getByRole('button', { name: 'Add shift' }).first().click();
+        const panel = page.getByRole('dialog');
+        await panel.getByLabel('Role', { exact: true }).fill('Server');
+        // With more than one site, the panel asks which; with one, it already knows.
+        const site = panel.getByRole('combobox', { name: 'Site' });
+        if ((await site.innerText()).includes('Choose a site')) {
+            await site.click();
+            await page.getByRole('option').first().click();
+        }
+        await panel.getByRole('button', { name: 'Save draft' }).click();
+        await expect(page.getByText('1 draft shift')).toBeVisible({ timeout: 15000 });
 
-        // Click Wednesday in the Open row and type the time.
-        await page.locator('[data-cell="0,3"]').click();
-        await page.getByLabel('Time', { exact: true }).fill('9-5');
-        await page.getByLabel('Role', { exact: true }).fill('Server');
-        await page.getByRole('button', { name: 'Add', exact: true }).click();
-        await expect(page.locator('[data-cell="0,3"]').getByText('9a–5p')).toBeVisible({ timeout: 10000 });
-
-        // Publish the week: one click, then a short undo window before staff are told.
-        await page.getByRole('button', { name: /^Publish \(\d+\)/ }).first().click();
-        await expect(page.getByText(/^Published\./)).toBeVisible({ timeout: 20000 });
+        // Review what would change, then publish it.
+        await page.getByRole('button', { name: 'Review & publish' }).click();
+        const review = page.getByRole('dialog');
+        await expect(review.getByRole('heading', { name: 'Review & publish' })).toBeVisible();
+        await review.getByRole('button', { name: /^Publish/ }).click();
+        await expect(review.getByRole('heading', { name: 'Published' })).toBeVisible({ timeout: 20000 });
     });
 
     test('can view shift details', async ({ page }) => {

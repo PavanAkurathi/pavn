@@ -23,7 +23,7 @@ import { cn } from "@repo/ui/lib/utils";
 import { compactRange, weekdayShort } from "@/lib/scheduler/format";
 import { formatTimeRange, parseTimeRange } from "@/lib/scheduler/parse-time-range";
 import { newShiftId, planCreateEvent, planDeleteEvent, planUpdateEvent, type Plan } from "@/lib/scheduler/plans";
-import { knownRoles } from "./quick-create";
+import { knownRoles } from "@/lib/scheduler/roles";
 
 export type EventEditTarget = { mode: "new"; dayIndex: number } | { mode: "edit"; eventId: string };
 
