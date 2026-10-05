@@ -1,4 +1,3 @@
-export type ShiftDashboardTab = "upcoming" | "drafts" | "past";
 
 type QueryValue = string | number | boolean | null | undefined;
 
@@ -26,8 +25,9 @@ export const AUTH_LOGIN_PATH = "/auth/login";
 export const AUTH_VERIFY_EMAIL_PATH = "/auth/verify-email";
 export const AUTH_SIGN_UP_EMAIL_API_PATH = "/api/auth/sign-up/email";
 
-export function getDashboardShiftsHref(options?: { view?: ShiftDashboardTab }) {
-    return buildHref(DASHBOARD_SHIFTS_PATH, { view: options?.view });
+/** The Timesheets page: who worked, clock-ins and hours. Planning lives in the Schedule. */
+export function getDashboardShiftsHref() {
+    return DASHBOARD_SHIFTS_PATH;
 }
 
 /**
@@ -64,7 +64,7 @@ export function isSchedulerPath(pathname: string) {
 }
 
 export function getDashboardHistoryHref() {
-    return getDashboardShiftsHref({ view: "past" });
+    return getDashboardShiftsHref();
 }
 
 export function getShiftTimesheetHref(
@@ -112,8 +112,11 @@ export function getRosterHref(options?: {
     });
 }
 
+/** Where a shift's timesheet may send you back to: the Timesheets list or the Schedule. */
 export function isSafeDashboardReturnPath(value?: string | null): value is string {
-    return Boolean(value && value.startsWith(DASHBOARD_SHIFTS_PATH));
+    if (!value) return false;
+    if (value.startsWith(DASHBOARD_SHIFTS_PATH)) return true;
+    return value === SCHEDULER_PATH || value.startsWith(`${SCHEDULER_PATH}?`) || value.startsWith(`${SCHEDULER_PATH}/`);
 }
 
 export function isOnboardingPath(pathname: string) {

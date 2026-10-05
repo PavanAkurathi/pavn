@@ -148,7 +148,7 @@ test.describe("business invite activation", () => {
         await expect(page.getByRole("button", { name: /accept invitation/i })).toBeVisible();
         await page.getByRole("button", { name: /accept invitation/i }).click();
 
-        await page.waitForURL(/\/dashboard\/shifts/, { timeout: 30000 });
+        await page.waitForURL(/\/(schedule|dashboard\/shifts)/, { timeout: 30000 });
 
         const invitedUser = await db.query.user.findFirst({
             where: eq(user.email, invitedEmail),
@@ -196,7 +196,7 @@ test.describe("business invite activation", () => {
         await expect(page.getByRole("button", { name: /accept invitation/i })).toBeVisible();
         await page.getByRole("button", { name: /accept invitation/i }).click();
 
-        await page.waitForURL(/\/dashboard\/shifts/, { timeout: 30000 });
+        await page.waitForURL(/\/(schedule|dashboard\/shifts)/, { timeout: 30000 });
 
         const invitedMembership = await db.query.member.findFirst({
             where: and(

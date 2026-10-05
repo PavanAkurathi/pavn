@@ -19,8 +19,8 @@ async function signIn(page: Page, credentials = TEST_ADMIN) {
     await page.fill('input[name="password"]', credentials.password);
     await page.click('button[type="submit"]');
 
-    // Wait for redirect to dashboard
-    await page.waitForURL(/.*dashboard.*/, { timeout: 30000 });
+    // Wait for redirect to the landing page (the Schedule)
+    await page.waitForURL(/.*(dashboard|schedule).*/, { timeout: 30000 });
     // Robust check: wait for the org name to appear, confirming we are logged in and verified
     // This ensures activeOrg is fully loaded before we proceed
     await expect(page.locator('[data-testid="org-name"]')).toHaveText('Test Organization', { timeout: 30000 });
@@ -52,7 +52,7 @@ test.describe('Authentication UI', () => {
     test('successful sign in redirects to dashboard', async ({ page }) => {
         await signIn(page);
 
-        await expect(page).toHaveURL(/.*dashboard.*/);
+        await expect(page).toHaveURL(/.*(dashboard|schedule).*/);
     });
 
     test('invalid credentials shows error', async ({ page }) => {
@@ -95,13 +95,16 @@ test.describe('Dashboard', () => {
         // Check main navigation items
         const nav = page.getByRole('navigation');
         await expect(nav.getByRole('link', { name: /^Schedule/ })).toBeVisible();
-        await expect(nav.getByRole('link', { name: 'Shifts', exact: true })).toBeVisible();
+        await expect(nav.getByRole('link', { name: 'Timesheets', exact: true })).toBeVisible();
         await expect(nav.getByRole('link', { name: 'Team', exact: true })).toBeVisible();
         await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toBeVisible();
     });
 
-    test('dashboard shows upcoming shifts widget', async ({ page }) => {
-        await expect(page.locator('[data-testid="upcoming-shifts-widget"]')).toBeVisible();
+    test('Timesheets lists what has happened and has nothing to plan', async ({ page }) => {
+        await page.goto('/dashboard/shifts');
+        await expect(page.getByRole('heading', { name: 'Timesheets', exact: true })).toBeVisible();
+        await expect(page.locator('[data-testid="timesheets-list"]')).toBeVisible();
+        await expect(page.getByRole('button', { name: 'New shift' })).toHaveCount(0);
     });
 });
 

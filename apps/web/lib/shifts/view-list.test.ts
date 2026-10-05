@@ -4,6 +4,7 @@ import type { Shift } from "@/lib/types";
 import {
     filterActiveShifts,
     filterHistoryShifts,
+    filterInProgressShifts,
     filterNeedsApprovalShifts,
     formatShiftDateLabel,
     groupShiftsByDate,
@@ -60,6 +61,17 @@ describe("shift view filters", () => {
         ]);
 
         expect(active.map((shift) => shift.id)).toEqual(["future-published", "future-assigned"]);
+    });
+
+    it("picks out the shifts happening right now", () => {
+        const now = filterInProgressShifts([
+            createShift({ id: "started-not-ended", startTime: isoMinutesFromNow(-60), endTime: isoMinutesFromNow(60) }),
+            createShift({ id: "not-started", startTime: isoMinutesFromNow(30), endTime: isoMinutesFromNow(240) }),
+            createShift({ id: "ended", startTime: isoMinutesFromNow(-300), endTime: isoMinutesFromNow(-10) }),
+            createShift({ id: "draft-in-window", startTime: isoMinutesFromNow(-60), endTime: isoMinutesFromNow(60), status: "draft" }),
+        ]);
+
+        expect(now.map((shift) => shift.id)).toEqual(["started-not-ended"]);
     });
 
     it("treats only staffed past shifts as action required", () => {

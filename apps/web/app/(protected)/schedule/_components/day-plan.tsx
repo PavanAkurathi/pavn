@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Check, ChevronDown, Plus, UserPlus } from "lucide-react";
 import type { SchedulerShift } from "@repo/contracts/scheduler";
 import { InitialsAvatar } from "@repo/ui/components/app/initials-avatar";
@@ -9,6 +10,7 @@ import { cn } from "@repo/ui/lib/utils";
 import type { AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import { clockRange, dayOfMonth, longDate, weekdayShort } from "@/lib/scheduler/format";
 import type { Plan } from "@/lib/scheduler/plans";
+import { getSchedulerHref, getShiftTimesheetHref } from "@/lib/routes";
 import { buildDayPlan, unfilledByDay, type DayItem, type RoleBlock, type Workspace } from "@/lib/scheduler/workspace";
 import { AssignPanel } from "./assign-panel";
 import { Segmented } from "./schedule-header";
@@ -92,6 +94,14 @@ function BlockDetails({
                     <button type="button" className="text-xs font-semibold text-primary hover:underline" onClick={() => onOpenShift(shift.id)}>
                         Edit
                     </button>
+                    {shift.status !== "draft" ? (
+                        <Link
+                            href={getShiftTimesheetHref(shift.id, { returnTo: getSchedulerHref({ view: "day", date: shift.localDate }) })}
+                            className="text-xs font-semibold text-primary hover:underline"
+                        >
+                            Timesheet
+                        </Link>
+                    ) : null}
                 </div>
             </div>
             <ul className="flex flex-col">

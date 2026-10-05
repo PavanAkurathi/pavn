@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import useSWR from "swr";
-import { BarChart3, Calendar, Inbox, ListChecks, Settings, Users, type LucideIcon } from "lucide-react";
+import { BarChart3, Calendar, ClipboardCheck, Inbox, Settings, Users, type LucideIcon } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import { NavUser } from "@/components/nav-user";
 import { NotificationsPopover } from "@/components/notifications/notifications-popover";
@@ -36,7 +36,7 @@ const PRIMARY: RailItem[] = [
 
 /** Behind the divider: looked at less often. */
 const SECONDARY: RailItem[] = [
-    { label: "Shifts", href: getDashboardShiftsHref(), icon: ListChecks, active: startsWith("/dashboard") },
+    { label: "Timesheets", href: getDashboardShiftsHref(), icon: ClipboardCheck, active: startsWith("/dashboard") },
     { label: "Reports", href: "/reports", icon: BarChart3, active: startsWith("/reports") },
 ];
 
