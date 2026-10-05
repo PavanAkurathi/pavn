@@ -19,7 +19,7 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Spinner } from "@repo/ui/components/ui/spinner";
 import { SUBSCRIPTION } from "@repo/config";
 import { markBillingPromptHandled } from "@/actions/organization";
-import { getSchedulerHref, getDashboardShiftsHref } from "@/lib/routes";
+import { getSchedulerHref } from "@/lib/routes";
 
 export function BusinessSetupCompleteStep({
     billingHandled,
@@ -108,7 +108,7 @@ export function BusinessSetupCompleteStep({
                     </>
                 )}
                 <Button asChild variant="ghost">
-                    <Link href={getDashboardShiftsHref()}>Go to dashboard</Link>
+                    <Link href={getSchedulerHref()}>Go to dashboard</Link>
                 </Button>
             </CardFooter>
         </Card>

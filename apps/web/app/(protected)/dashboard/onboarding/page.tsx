@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { BusinessOnboardingView } from "./_components/business-onboarding-view";
 import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
-import { getDashboardShiftsHref } from "@/lib/routes";
+import { getSchedulerHref } from "@/lib/routes";
 
 type SearchParams = Promise<{
     step?: string;
@@ -18,11 +18,11 @@ export default async function BusinessOnboardingPage(props: { searchParams: Sear
     }
 
     if (!onboarding) {
-        redirect(getDashboardShiftsHref());
+        redirect(getSchedulerHref());
     }
 
     if (!shouldEnforceOnboarding) {
-        redirect(getDashboardShiftsHref());
+        redirect(getSchedulerHref());
     }
 
     return (

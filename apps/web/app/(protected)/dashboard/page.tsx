@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentBusinessOnboardingState } from "@/lib/onboarding";
-import { getDashboardShiftsHref, getOnboardingHref } from "@/lib/routes";
+import { getOnboardingHref, getSchedulerHref } from "@/lib/routes";
 
 export default async function DashboardPage() {
     const { session, shouldEnforceOnboarding } = await getCurrentBusinessOnboardingState();
@@ -13,5 +13,5 @@ export default async function DashboardPage() {
         redirect(getOnboardingHref());
     }
 
-    redirect(getDashboardShiftsHref());
+    redirect(getSchedulerHref());
 }

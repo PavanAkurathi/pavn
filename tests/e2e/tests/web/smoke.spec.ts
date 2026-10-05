@@ -11,7 +11,7 @@ async function signIn(page: Page) {
     await page.fill('input[name="password"]', TEST_ADMIN.password);
     await page.getByRole("button", { name: /sign in/i }).click();
 
-    await page.waitForURL(/.*\/dashboard(\/shifts.*)?$/, { timeout: 30000 });
+    await page.waitForURL(/.*\/(schedule|dashboard(\/shifts.*)?)(\?.*)?$/, { timeout: 30000 });
     await expect(page.locator('[data-testid="org-name"]')).toHaveText(/test organization/i, {
         timeout: 30000,
     });
@@ -35,13 +35,13 @@ test.describe("Manager web smoke", () => {
         await expect(page.locator('input[name="password"]')).toBeVisible();
     });
 
-    test("seeded admin reaches the shifts dashboard", async ({ page }) => {
+    test("seeded admin lands on the Schedule", async ({ page }) => {
         await signIn(page);
 
-        await expect(page.getByRole("heading", { name: "Shifts", exact: true })).toBeVisible();
+        await expect(page.getByRole("heading", { name: "Schedule", exact: true })).toBeVisible();
         const nav = page.getByRole("navigation");
         await expect(nav.getByRole("link", { name: /^Schedule/ })).toBeVisible();
-        await expect(nav.getByRole("link", { name: "Shifts", exact: true })).toBeVisible();
+        await expect(nav.getByRole("link", { name: "Timesheets", exact: true })).toBeVisible();
         await expect(nav.getByRole("link", { name: "Team", exact: true })).toBeVisible();
         await expect(nav.getByRole("link", { name: "Reports", exact: true })).toBeVisible();
     });

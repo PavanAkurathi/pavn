@@ -1,38 +1,41 @@
 // apps/web/app/(protected)/dashboard/shifts/page.tsx
 
-import { NewShiftButton } from "./_components/new-shift-button";
+import { redirect } from "next/navigation";
+
 import { ShiftsView } from "./_components/shifts-view";
-import { ApprovalBanner } from "@/components/dashboard/approval-banner";
 import { getOrganizationLocations } from "@/lib/api/organizations";
-import { getSchedulingSettings } from "@/lib/api/scheduler";
-import { getShifts, getPendingShiftsCount, getDraftShifts } from "@/lib/api/shifts";
+import { getShifts } from "@/lib/api/shifts";
+import { getSchedulerHref } from "@/lib/routes";
 import { getRequiredSession, getSessionActiveOrganizationId } from "@/lib/server/auth-context";
 import { resolveActiveOrganizationId } from "@/lib/active-organization";
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
+/**
+ * Timesheets: who worked, when they clocked in and out, and what is waiting
+ * for approval. Planning (creating, drafting, publishing) lives in the
+ * Schedule, so this page has no New shift and no Drafts.
+ */
 export default async function ShiftsPage(props: {
     searchParams: SearchParams
 }) {
     const searchParams = await props.searchParams;
-    const viewParam = typeof searchParams.view === 'string' ? searchParams.view : undefined;
-    const view = viewParam === 'past' ? 'past' : viewParam === 'drafts' ? 'drafts' : 'upcoming';
+    // Links from when this page also held the upcoming list and the drafts.
+    if (searchParams.view === 'upcoming' || searchParams.view === 'drafts') {
+        redirect(getSchedulerHref());
+    }
+
     const session = await getRequiredSession();
     const orgId = await resolveActiveOrganizationId(
         session.user.id,
         getSessionActiveOrganizationId(session),
     );
 
-    // Drafts are kept in their own tab, a week at a time, so they are always
-    // fetched (the tab's count needs them); the week they belong to depends on
-    // where the organization's week starts. The Drafts tab has no published
-    // shifts of its own to list.
-    const [shifts, pendingCount, draftShifts, locations, settings] = await Promise.all([
-        view === 'drafts' ? Promise.resolve([]) : getShifts({ view, orgId: orgId ?? undefined }),
-        orgId ? getPendingShiftsCount(orgId) : Promise.resolve(0),
-        orgId ? getDraftShifts(orgId) : Promise.resolve([]),
+    // Past shifts, plus the upcoming list to pick out the shifts happening now.
+    const [past, upcoming, locations] = await Promise.all([
+        getShifts({ view: 'past', orgId: orgId ?? undefined }),
+        getShifts({ view: 'upcoming', orgId: orgId ?? undefined }),
         orgId ? getOrganizationLocations(orgId) : Promise.resolve([]),
-        orgId ? getSchedulingSettings(orgId).catch(() => null) : Promise.resolve(null),
     ]);
 
     const mappedLocations = locations.map((l) => ({
@@ -44,25 +47,12 @@ export default async function ShiftsPage(props: {
 
     return (
         <div className="space-y-6">
-            <ApprovalBanner count={pendingCount} />
-
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">Shifts</h1>
-                    <p className="text-muted-foreground">Manage and schedule shifts for your team.</p>
-                </div>
-                <NewShiftButton locations={mappedLocations} weekStartsOn={settings?.weekStartsOn ?? 0} />
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">Timesheets</h1>
+                <p className="text-muted-foreground">Who worked, clock-ins and hours. Plan and publish shifts in the Schedule.</p>
             </div>
 
-            <ShiftsView
-                key={view}
-                initialShifts={shifts}
-                draftShifts={draftShifts}
-                availableLocations={mappedLocations}
-                defaultTab={view}
-                pendingCount={pendingCount}
-                weekStartsOn={settings?.weekStartsOn ?? 0}
-            />
+            <ShiftsView shifts={[...past, ...upcoming]} availableLocations={mappedLocations} />
         </div>
     );
 }

@@ -23,7 +23,7 @@ import { LocationBasicsStep } from "./location-basics-step";
 import { SchedulingSetupStep } from "./scheduling-setup-step";
 import { WorkforceSetupStep } from "./workforce-setup-step";
 import { FirstShiftStep } from "./first-shift-step";
-import { getDashboardShiftsHref, getOnboardingHref } from "@/lib/routes";
+import { getOnboardingHref, getSchedulerHref } from "@/lib/routes";
 
 type ActiveStepId = "business" | "location" | "scheduling" | "workforce" | "first_shift";
 
@@ -107,7 +107,7 @@ export function BusinessOnboardingView({
                                 </h1>
                             </div>
                             <Button asChild variant="ghost" size="sm" className="text-white/70 hover:bg-white/5 hover:text-white">
-                                <Link href={getDashboardShiftsHref()}>
+                                <Link href={getSchedulerHref()}>
                                     <ArrowLeft data-icon="inline-start" />
                                     Exit setup
                                 </Link>
