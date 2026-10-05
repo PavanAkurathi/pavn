@@ -23,7 +23,7 @@ import {
     AlertDialogTitle,
 } from "@repo/ui/components/ui/alert-dialog";
 import { Button } from "@repo/ui/components/ui/button";
-import type { AddShiftPrefill } from "@/lib/scheduler/add-shift";
+import { defaultShiftDate, type AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import { checkPerson } from "@/lib/scheduler/candidates";
 import { discardWeek } from "@/lib/scheduler/client";
 import { addDays, weekRangeFull } from "@/lib/scheduler/format";
@@ -198,9 +198,14 @@ export function ScheduleWorkspace({
     const onThisPeriod = view === "week" ? week.days.some((d) => d.localDate === today) : date === today;
 
     // ---- Adding ----------------------------------------------------------------
-    const defaultAddDate = view === "day" ? date : (week.days.find((d) => d.localDate === today)?.localDate ?? week.days[0]!.localDate);
+    // The Day plan adds to the day on screen; a week adds to today, or to tomorrow once today's default window is over.
+    const todayInWeek = week.days.find((d) => d.localDate === today)?.localDate;
     const addShift = (prefill: AddShiftPrefill = {}) =>
-        setAddPrefill({ localDate: defaultAddDate, siteId: scope !== ALL_SITES ? scope : undefined, ...prefill });
+        setAddPrefill({
+            localDate: view === "day" ? date : defaultShiftDate(todayInWeek, week.days[0]!.localDate, week.location.timezone, Date.now()),
+            siteId: scope !== ALL_SITES ? scope : undefined,
+            ...prefill,
+        });
 
     const runPlan = (plan: Plan | null) => {
         if (!plan) return;
