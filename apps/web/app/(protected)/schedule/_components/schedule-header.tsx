@@ -43,7 +43,6 @@ export function ScheduleHeader({
     edited,
     pending,
     elsewhere,
-    hasShifts,
     onReview,
     reviewBusy,
     busy,
@@ -74,8 +73,6 @@ export function ScheduleHeader({
     pending: number;
     /** Unpublished changes at sites the filter leaves out. */
     elsewhere: { name: string; count: number }[];
-    /** Something is scheduled in view, so "everything is published" says something. */
-    hasShifts: boolean;
     onReview: () => void;
     reviewBusy: boolean;
     busy: boolean;
@@ -230,7 +227,6 @@ export function ScheduleHeader({
                 {parts.length > 0 ? `${parts.join(" · ")} · Only managers can see ${drafts > 0 && edited === 0 ? "drafts" : "these changes"}` : null}
                 {parts.length > 0 && elsewhereCount > 0 ? " · " : null}
                 {elsewhereCount > 0 ? `${plural(elsewhereCount, "more change")} at ${elsewhere.map((s) => s.name).join(", ")} not in view` : null}
-                {pending === 0 && elsewhereCount === 0 && hasShifts ? "Everything here is published." : null}
             </p>
         </header>
     );

@@ -347,7 +347,6 @@ export function ScheduleWorkspace({
                 elsewhere={elsewhere}
                 onReview={() => setReviewOpen(true)}
                 reviewBusy={edits.busy}
-                hasShifts={!weekIsEmpty}
                 busy={(isValidating && !weeks.length) || edits.busy}
                 history={{
                     canUndo: edits.canUndo,
