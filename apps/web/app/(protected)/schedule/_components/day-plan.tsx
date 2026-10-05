@@ -23,7 +23,7 @@ const ASSIGN_BUTTONS_SHOWN = 3;
 const timeText = (item: { startLocal: string; endLocal: string; overnight: boolean }) =>
     `${clockRange(item.startLocal, item.endLocal, { spaced: true })}${item.overnight ? " +1" : ""}`;
 
-function Pill({ tone, children }: { tone: "covered" | "open" | "draft" | "published"; children: React.ReactNode }) {
+function Pill({ tone, children }: { tone: "covered" | "open" | "draft"; children: React.ReactNode }) {
     return (
         <span
             className={cn(
@@ -31,7 +31,6 @@ function Pill({ tone, children }: { tone: "covered" | "open" | "draft" | "publis
                 tone === "covered" && "bg-emerald-50 text-emerald-800",
                 tone === "open" && "bg-amber-100 text-amber-800",
                 tone === "draft" && "border border-dashed border-border bg-card text-muted-foreground",
-                tone === "published" && "bg-muted text-muted-foreground",
             )}
         >
             {children}
@@ -184,7 +183,7 @@ function AgendaRow({
                             <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                                 <h3 className="text-[18px] font-semibold leading-snug">{item.name}</h3>
                                 <StaffingPill item={item} />
-                                {item.publication === "draft" ? <Pill tone="draft">Draft</Pill> : item.publication === "mixed" ? <Pill tone="draft">Draft changes</Pill> : <Pill tone="published">Published</Pill>}
+                                {item.publication === "draft" ? <Pill tone="draft">Draft</Pill> : item.publication === "mixed" ? <Pill tone="draft">Draft changes</Pill> : null}
                             </div>
                             <p className="mt-0.5 text-[14px] text-muted-foreground">
                                 {rolesLine(item)}
