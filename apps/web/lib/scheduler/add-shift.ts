@@ -6,9 +6,24 @@
  */
 
 import type { SchedulerChange, SchedulerPerson, SchedulerPersonRef } from "@repo/contracts/scheduler";
-import { compactRange, weekdayShort } from "./format";
+import { addDays, compactRange, weekdayShort } from "./format";
 import { newEventId, newShiftId, type Plan } from "./plans";
+import { zonedInstant } from "./zoned";
 import type { Workspace } from "./workspace";
+
+/** The window the panel opens with. */
+export const DEFAULT_START = "09:00";
+export const DEFAULT_END = "17:00";
+
+/**
+ * The day the panel opens on: today, unless today's default window is already
+ * over, then tomorrow. A manager's first shift then doesn't open with a "this
+ * time has already passed" warning on a day they can no longer publish for.
+ */
+export function defaultShiftDate(today: string | undefined, fallback: string, timeZone: string, now: number): string {
+    if (!today) return fallback;
+    return zonedInstant(today, DEFAULT_END, timeZone).getTime() <= now ? addDays(today, 1) : today;
+}
 
 /** What the panel opens with. Everything is optional: the panel asks for the rest. */
 export interface AddShiftPrefill {

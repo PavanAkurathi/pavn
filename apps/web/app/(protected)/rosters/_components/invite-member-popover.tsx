@@ -30,7 +30,11 @@ const inviteSchema = z.object({
         .optional()
         .refine((val) => !val || /^\d+(\.\d{1,2})?$/.test(val), "Must be a valid number (e.g. 15.50)"),
     sendSms: z.boolean().default(true),
-    sendEmail: z.boolean().default(true),
+}).superRefine((value, ctx) => {
+    // The server skips the text when there is no number but still reports success.
+    if (value.sendSms && !value.phoneNumber?.trim()) {
+        ctx.addIssue({ code: "custom", path: ["phoneNumber"], message: "Add a phone number to send the text, or untick Text." });
+    }
 });
 
 type InviteFormValues = z.input<typeof inviteSchema>;
@@ -54,7 +58,7 @@ export function InviteMemberPopover() {
 
     const form = useForm<InviteFormValues, unknown, InviteSubmitValues>({
         resolver: zodResolver(inviteSchema),
-        defaultValues: { name: "", email: "", phoneNumber: "", roles: "", hourlyRate: "", sendSms: true, sendEmail: true },
+        defaultValues: { name: "", email: "", phoneNumber: "", roles: "", hourlyRate: "", sendSms: true },
     });
 
     async function onSubmit(data: InviteSubmitValues) {
@@ -69,13 +73,14 @@ export function InviteMemberPopover() {
                 roles,
                 jobTitle: roles[0],
                 hourlyRate: data.hourlyRate ? Math.round(parseFloat(data.hourlyRate) * 100) : undefined,
-                invites: { email: data.sendEmail, sms: data.sendSms },
+                // Workers get their link by text; the server has no email invite for them.
+                invites: { email: false, sms: data.sendSms },
             });
 
             if (result?.error) {
                 toast.error(result.error);
             } else {
-                toast.success("Invite sent.");
+                toast.success(data.sendSms ? "Invite sent by text." : "Added. No invite sent.");
                 setOpen(false);
                 form.reset();
                 router.refresh(); // Refresh the team list
@@ -98,7 +103,7 @@ export function InviteMemberPopover() {
             <PopoverContent align="end" className="max-h-[calc(100vh-6rem)] w-[22rem] overflow-y-auto p-4">
                 <h2 className="text-[13px] font-bold">Invite team member</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                    They get a secure link to the Pavn app, by text and email, to see their shifts.
+                    They get a secure link to the Pavn app by text, to see their shifts.
                 </p>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="mt-3 flex flex-col gap-3">
@@ -184,33 +189,18 @@ export function InviteMemberPopover() {
                         </Collapsible>
 
                         <div className="flex flex-col gap-2 border-t pt-3">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Send the link by</span>
-                            <div className="flex gap-5">
-                                <FormField
-                                    control={form.control}
-                                    name="sendSms"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center gap-2">
-                                            <FormControl>
-                                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                            </FormControl>
-                                            <FormLabel className="font-medium">Text</FormLabel>
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="sendEmail"
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center gap-2">
-                                            <FormControl>
-                                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                                            </FormControl>
-                                            <FormLabel className="font-medium">Email</FormLabel>
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="sendSms"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center gap-2">
+                                        <FormControl>
+                                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                                        </FormControl>
+                                        <FormLabel className="font-medium">Text them the link now</FormLabel>
+                                    </FormItem>
+                                )}
+                            />
                         </div>
 
                         <div className="flex gap-2">

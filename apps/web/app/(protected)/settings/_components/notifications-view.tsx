@@ -98,7 +98,7 @@ export function NotificationsView() {
         <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-0.5">
                 <h3 className="text-lg font-medium">Notification options</h3>
-                <p className="text-sm text-muted-foreground">Manage how and when you receive alerts about your shifts.</p>
+                <p className="text-sm text-muted-foreground">Choose which clock-in and clock-out alerts reach you.</p>
             </div>
             <Separator />
 
@@ -164,7 +164,8 @@ export function NotificationsView() {
                                         className="justify-start"
                                     >
                                         <ToggleGroupItem value="all">All shifts</ToggleGroupItem>
-                                        <ToggleGroupItem value="booked_by_me">Booked by me</ToggleGroupItem>
+                                        {/* Saved but not yet applied by the alert sender (manager-notifications.ts). */}
+                                        <ToggleGroupItem value="booked_by_me" disabled>Booked by me · soon</ToggleGroupItem>
                                         <ToggleGroupItem value="onsite_contact">On-site contact</ToggleGroupItem>
                                     </ToggleGroup>
                                 )}
@@ -174,7 +175,7 @@ export function NotificationsView() {
                         <FieldSet>
                             <FieldLegend>Location scope</FieldLegend>
                             <FieldDescription>
-                                Limit alerts across all locations or prepare for a selected-location mode later.
+                                Alerts come from every location. Choosing locations is coming soon.
                             </FieldDescription>
                             <Controller
                                 control={form.control}
@@ -187,7 +188,7 @@ export function NotificationsView() {
                                         className="justify-start"
                                     >
                                         <ToggleGroupItem value="all">All locations</ToggleGroupItem>
-                                        <ToggleGroupItem value="selected">Selected locations</ToggleGroupItem>
+                                        <ToggleGroupItem value="selected" disabled>Selected locations · soon</ToggleGroupItem>
                                     </ToggleGroup>
                                 )}
                             />

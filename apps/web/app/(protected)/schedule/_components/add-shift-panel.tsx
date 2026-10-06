@@ -8,7 +8,7 @@ import { Input } from "@repo/ui/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@repo/ui/components/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@repo/ui/components/ui/sheet";
 import { cn } from "@repo/ui/lib/utils";
-import { endsNextDay, planAddShift, type AddShiftPrefill } from "@/lib/scheduler/add-shift";
+import { DEFAULT_END, DEFAULT_START, defaultShiftDate, endsNextDay, planAddShift, type AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import { rankCandidates } from "@/lib/scheduler/candidates";
 import { addDays, formatHours, longDate } from "@/lib/scheduler/format";
 import type { Plan } from "@/lib/scheduler/plans";
@@ -102,11 +102,20 @@ function AddShiftForm({
     const week = ws.week;
     const defaultSite = prefill.siteId ?? (scope !== ALL_SITES ? scope : sites.length === 1 ? sites[0]!.id : "");
     const [siteId, setSiteId] = useState(defaultSite);
-    const [localDate, setLocalDate] = useState(prefill.localDate ?? week.days.find((d) => d.isToday)?.localDate ?? week.days[0]!.localDate);
+    const [localDate, setLocalDate] = useState(
+        () =>
+            prefill.localDate ??
+            defaultShiftDate(
+                week.days.find((d) => d.isToday)?.localDate,
+                week.days[0]!.localDate,
+                ws.weeks.find((w) => w.location.id === defaultSite)?.location.timezone ?? week.location.timezone,
+                Date.now(),
+            ),
+    );
     const [eventName, setEventName] = useState(prefill.eventName ?? "");
     const [role, setRole] = useState(prefill.role ?? prefill.person?.primaryRole ?? "");
-    const [startLocal, setStartLocal] = useState(prefill.startLocal ?? "09:00");
-    const [endLocal, setEndLocal] = useState(prefill.endLocal ?? "17:00");
+    const [startLocal, setStartLocal] = useState(prefill.startLocal ?? DEFAULT_START);
+    const [endLocal, setEndLocal] = useState(prefill.endLocal ?? DEFAULT_END);
     const [capacity, setCapacity] = useState(String(prefill.capacity ?? 1));
     const [chosen, setChosen] = useState<SchedulerPerson[]>(prefill.person ? [prefill.person] : []);
     const [query, setQuery] = useState("");

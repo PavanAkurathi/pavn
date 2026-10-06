@@ -85,6 +85,27 @@ async function geocodeWithGoogle(address: string): Promise<GeocodeResponse> {
     }
 }
 
+/**
+ * Nominatim's display_name runs to the neighbourhood, community board and county
+ * ("Empire State Building, 350, 5th Avenue, Koreatown, Manhattan Community Board 5,
+ * …"). This is the address that lands on shift cards, so build the short form from
+ * its structured fields and fall back to the long one when they are missing.
+ */
+export function compactNominatimAddress(hit: { display_name: string; address?: Record<string, string> }): string {
+    const a = hit.address;
+    if (!a) return hit.display_name;
+
+    const street = [a.house_number, a.road].filter(Boolean).join(" ");
+    const locality = a.city || a.town || a.village || a.hamlet || a.suburb;
+    // "US-NY" -> "NY". Only where the subdivision code is how people write addresses.
+    const iso = a["ISO3166-2-lvl4"];
+    const region = iso && /^(US|CA|AU)-/.test(iso) ? iso.slice(3) : undefined;
+    const regionAndPostcode = [region, a.postcode].filter(Boolean).join(" ");
+
+    if (!street || !locality) return hit.display_name;
+    return [street, locality, regionAndPostcode].filter(Boolean).join(", ");
+}
+
 // Global throttling queue for Nominatim to respect 1 req/sec limit
 let nominatimQueue = Promise.resolve();
 
@@ -102,7 +123,7 @@ async function geocodeWithNominatim(address: string): Promise<GeocodeResponse> {
 
                 const encoded = encodeURIComponent(address);
                 const response = await fetch(
-                    `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
+                    `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1&addressdetails=1`,
                     {
                         headers: {
                             'User-Agent': 'WorkersHive/1.0 (contact@workershive.com)'
@@ -123,7 +144,7 @@ async function geocodeWithNominatim(address: string): Promise<GeocodeResponse> {
                     data: {
                         latitude: result.lat,
                         longitude: result.lon,
-                        formattedAddress: result.display_name,
+                        formattedAddress: compactNominatimAddress(result),
                         confidence: result.importance > 0.5 ? 'high' : 'medium',
                         source: 'nominatim'
                     }

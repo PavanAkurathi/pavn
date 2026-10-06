@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { endsNextDay, planAddShift } from "./add-shift";
+import { defaultShiftDate, endsNextDay, planAddShift } from "./add-shift";
 import type { Workspace } from "./workspace";
 
 const ws = (events: Workspace["events"] = []): Workspace => ({
@@ -62,5 +62,23 @@ describe("planAddShift", () => {
         expect(endsNextDay("21:00", "02:00")).toBe(true);
         expect(endsNextDay("09:00", "17:00")).toBe(false);
         expect(endsNextDay("09:00", "09:00")).toBe(true);
+    });
+});
+
+describe("defaultShiftDate", () => {
+    const tz = "America/New_York";
+
+    test("opens on today while the default window is still ahead", () => {
+        const elevenAm = Date.parse("2026-10-05T15:00:00Z");
+        expect(defaultShiftDate("2026-10-05", "2026-10-04", tz, elevenAm)).toBe("2026-10-05");
+    });
+
+    test("opens on tomorrow once today's default window is over, in the site's own time", () => {
+        const sixPm = Date.parse("2026-10-05T22:00:00Z");
+        expect(defaultShiftDate("2026-10-05", "2026-10-04", tz, sixPm)).toBe("2026-10-06");
+    });
+
+    test("a week that doesn't contain today opens on its first day", () => {
+        expect(defaultShiftDate(undefined, "2026-10-11", tz, Date.parse("2026-10-05T22:00:00Z"))).toBe("2026-10-11");
     });
 });

@@ -26,6 +26,7 @@ import {
 import { AppError } from "@repo/observability";
 import { getCrew } from "@repo/gig-workers";
 import { getBusinessInvitationState } from "../invitations/business-invitations";
+import { buildTeamAccessList, isOpenWorkerInvitation } from "./team-access";
 import { nanoid } from "nanoid";
 
 type OrganizationMetadata = {
@@ -249,7 +250,7 @@ export async function getWorkspaceSettings(
                 ),
         ]);
 
-    const members = [
+    const members = buildTeamAccessList([
         ...teamResult
             .filter((entry) => entry.user !== null)
             .map((entry) => ({
@@ -278,10 +279,7 @@ export async function getWorkspaceSettings(
             status: "invited" as const,
             user: entry.user ? { id: entry.user.id } : undefined,
         })),
-    ].sort(
-        (left, right) =>
-            new Date(right.joinedAt).getTime() - new Date(left.joinedAt).getTime(),
-    );
+    ]);
 
     return {
         organization: organizationRecord[0] ?? null,
@@ -377,7 +375,9 @@ export async function getRosterWorkers(orgId: string) {
     const mappedInvitations = invitations
         .filter(
             (entry) =>
-                !rosterEmails.has(entry.email) && !memberEmails.has(entry.email),
+                isOpenWorkerInvitation(entry) &&
+                !rosterEmails.has(entry.email) &&
+                !memberEmails.has(entry.email),
         )
         .map((entry) => ({
             id: entry.id,

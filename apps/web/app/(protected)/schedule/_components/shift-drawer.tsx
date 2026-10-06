@@ -98,11 +98,13 @@ function ShiftPanel({
     const capacityTooLow = capacityValue < refs.length;
 
     const label = `${weekdayShort(shift.localDate)} ${compactRange(shift.startLocal, shift.endLocal)}`;
+    // After a save the shift is where the manager just put it, so the message names that, not the old slot.
+    const savedLabel = `${weekdayShort(newDate)} ${compactRange(patch.startLocal ?? shift.startLocal, patch.endLocal ?? shift.endLocal)}`;
 
     const save = async () => {
         setSaving(true);
         try {
-            await run({ changes: [{ op: "update", shiftId: shift.id, patch }], label: `Changed ${label}` });
+            await run({ changes: [{ op: "update", shiftId: shift.id, patch }], label: `Changed ${savedLabel}` });
         } finally {
             setSaving(false);
         }
@@ -311,6 +313,7 @@ function ShiftPanel({
                                 </li>
                             ))}
                         </ul>
+                        {candidates.length === 0 ? <p className="text-sm text-muted-foreground">No one else to add.</p> : null}
                         {candidates.length > CANDIDATES_SHOWN ? (
                             <button type="button" className="w-fit text-xs font-medium text-muted-foreground hover:text-foreground" onClick={() => setShowAll(!showAll)}>
                                 {showAll ? "Show fewer" : `Show all ${candidates.length}`}
