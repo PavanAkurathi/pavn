@@ -68,6 +68,7 @@ import { organizationsRouter } from "./routes/organizations.js";
 import { geofenceRouter } from "./routes/geofence.js";
 import { getApiReadinessSummary, validateApiRuntimeEnv } from "./lib/runtime-env.js";
 import { errorHandler } from "./lib/error-handler.js";
+import { isPublicRoute } from "./lib/public-routes.js";
 import { requestId, timeout, rateLimit, RATE_LIMITS } from "./middleware/index.js";
 import { normalizeOrganizationRole, type Role } from "./lib/organization-roles.js";
 
@@ -292,16 +293,7 @@ async function resolveRequestSession(sourceHeaders: Headers) {
 
 app.use("*", async (c, next) => {
     // Skip public routes
-    if (
-        c.req.path === "/health" ||
-        c.req.path === "/ready" ||
-        c.req.path.startsWith("/api/auth") ||
-        c.req.path === "/billing/webhooks/stripe" ||
-        c.req.path.startsWith("/worker/auth") ||
-        c.req.path === "/docs" ||
-        c.req.path === "/openapi.json" ||
-        c.req.path === "/"
-    ) {
+    if (isPublicRoute(c.req.method, c.req.path)) {
         await next();
         return;
     }

@@ -19,7 +19,8 @@ export async function addMember(
     try {
         const parsed = TeamMemberInvitationInputSchema.safeParse(rawInput);
         if (!parsed.success) {
-            return { error: "Invalid input data: " + parsed.error.message };
+            // error.message is a JSON dump of every issue; show the first one.
+            return { error: parsed.error.issues[0]?.message ?? "Check the details and try again" };
         }
 
         const result = await apiJsonRequest<{

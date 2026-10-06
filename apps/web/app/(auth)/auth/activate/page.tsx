@@ -41,7 +41,12 @@ export default async function ActivateInvitationPage(props: { searchParams: Sear
 
     const [session, invitationState] = await Promise.all([
         getApiSession(),
-        getBusinessInvitation(invitationId).catch(() => null),
+        // Only a missing invitation reads as "no longer active"; an API outage or
+        // auth failure must not masquerade as one.
+        getBusinessInvitation(invitationId).catch((error: unknown) => {
+            if (error instanceof Error && error.message === "Invitation not found") return null;
+            throw error;
+        }),
     ]);
 
     if (!invitationState || invitationState.isExpired) {
