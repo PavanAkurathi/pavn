@@ -163,8 +163,8 @@ export function ScheduleHeader({
                     value={view}
                     onChange={(v) => onView(v as ScheduleView)}
                     options={[
+                        ["day", "Shifts"],
                         ["week", "Team week"],
-                        ["day", "Day plan"],
                     ]}
                 />
 

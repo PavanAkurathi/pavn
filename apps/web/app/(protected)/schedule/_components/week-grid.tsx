@@ -95,7 +95,7 @@ function Header({
                             <button
                                 type="button"
                                 onClick={() => onOpenDay(day.index)}
-                                title={`Open ${longDate(day.localDate)} in the Day plan`}
+                                title={`Open ${longDate(day.localDate)} in Shifts`}
                                 className="-mx-1 flex items-baseline gap-1.5 rounded px-1 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
                             >
                                 <span className="text-[14px] font-semibold">{weekdayShort(day.localDate)}</span>
@@ -106,7 +106,7 @@ function Header({
                                 <button
                                     type="button"
                                     onClick={() => onNeedsPeople(day.index)}
-                                    title="Open this day in the Day plan, showing what needs people"
+                                    title="Open this day in Shifts, showing what needs people"
                                     className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800 hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-primary"
                                 >
                                     {open} open

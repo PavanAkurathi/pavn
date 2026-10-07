@@ -372,7 +372,7 @@ export function DayPlan({
                             value={filter}
                             onChange={(v) => onFilter(v as DayFilter)}
                             options={[
-                                ["all", "All events"],
+                                ["all", "All shifts"],
                                 ["needs", "Needs people"],
                             ]}
                         />

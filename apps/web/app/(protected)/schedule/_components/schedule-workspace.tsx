@@ -94,7 +94,9 @@ export function ScheduleWorkspace({
     // ---- What is remembered: the view and the site -------------------------------
     const defaultScope = sites.length > 1 ? ALL_SITES : sites[0]!.id;
     const isScope = useCallback((value: string): value is string => value === ALL_SITES || sites.some((s) => s.id === value), [sites]);
-    const [view, setView] = usePersistentState<ScheduleView>(`wh.scheduler.${orgId}.workspace.view`, "week", isView);
+    // The shift list is the front door (start from the shift: what is on, who is on it, what still needs people);
+    // the people grid is the second view. New key, so a "week" remembered from before this change doesn't stick.
+    const [view, setView] = usePersistentState<ScheduleView>(`wh.scheduler.${orgId}.workspace.layout`, "day", isView);
     const [storedScope, setScope] = usePersistentState<string>(`wh.scheduler.${orgId}.workspace.site`, defaultScope, isScope);
     const scope = sites.length === 1 ? sites[0]!.id : storedScope;
 
@@ -151,7 +153,7 @@ export function ScheduleWorkspace({
             null,
             "",
             getSchedulerHref({
-                view: view === "day" ? "day" : undefined,
+                view: view === "week" ? "week" : undefined,
                 date: date === today ? undefined : date,
                 site: scope === defaultScope ? undefined : scope,
             }),

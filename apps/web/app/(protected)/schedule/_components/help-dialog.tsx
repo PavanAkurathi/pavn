@@ -29,7 +29,7 @@ const MARKINGS: { sample: React.ReactNode; text: string }[] = [
 
 const SHORTCUTS: [string, string][] = [
     ["Plus on a day", "Add a shift for that person on that day."],
-    ["A date heading", "Open that day in the Day plan."],
+    ["A date heading", "Open that day in Shifts."],
     ["Unfilled positions", "Open the day's events that still need people."],
     ["Drag a shift", "Move it to another day or person. Hold Alt (Option) to copy instead."],
     ["Arrow keys", "Move between days and people. Enter adds or opens."],
