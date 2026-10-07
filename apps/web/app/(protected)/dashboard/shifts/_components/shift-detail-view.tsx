@@ -344,7 +344,8 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             return true;
         } catch (error) {
             console.error(error);
-            toast.error("Failed to save timesheet");
+            // The server says why (a time that hasn't happened yet, a clock-out before the clock-in): pass that on.
+            toast.error(error instanceof Error && error.message ? error.message : "Failed to save timesheet");
             return false;
         }
     }, [shift.id, shift.startTime, workers]);

@@ -143,3 +143,43 @@ describe("manager edits to a timesheet", () => {
         expect(assignmentUpdate.adjustedBy).toBeUndefined();
     });
 });
+
+describe("hours a manager types have to be possible", () => {
+    beforeEach(() => {
+        auditRows.length = 0;
+        assignmentUpdate = {};
+        assignmentRow = {
+            id: "asg_1",
+            status: "completed",
+            actualClockIn: new Date("2026-08-20T13:00:00Z"),
+            actualClockOut: new Date("2026-08-20T21:00:00Z"),
+            breakMinutes: 30,
+        };
+    });
+
+    const edit = (data: { clockIn?: Date | null; clockOut?: Date | null; breakMinutes?: number }) =>
+        applyManagerTimesheetUpdate(MANAGER, ORG, "shf_1", "worker_1", data, "manager");
+
+    test("a clock-out that has not happened yet is refused", async () => {
+        const later = new Date(Date.now() + 60 * 60 * 1000);
+
+        await expect(edit({ clockOut: later })).rejects.toMatchObject({ code: "TIME_IN_FUTURE" });
+        expect(auditRows).toHaveLength(0);
+    });
+
+    test("a clock-out before the clock-in is refused", async () => {
+        await expect(edit({ clockOut: new Date("2026-08-20T12:00:00Z") })).rejects.toMatchObject({ code: "INVALID_TIMES" });
+    });
+
+    test("so is a clock-out at the same minute", async () => {
+        await expect(edit({ clockOut: new Date("2026-08-20T13:00:00Z") })).rejects.toMatchObject({ code: "INVALID_TIMES" });
+    });
+
+    test("a record that already says something odd can still have its break edited", async () => {
+        assignmentRow = { ...assignmentRow, actualClockOut: new Date("2026-08-20T12:00:00Z") };
+
+        await edit({ breakMinutes: 45 });
+
+        expect(assignmentUpdate.breakMinutes).toBe(45);
+    });
+});

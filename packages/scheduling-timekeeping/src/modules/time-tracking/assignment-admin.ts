@@ -139,6 +139,19 @@ export async function applyManagerTimesheetUpdate(
             data.clockOut === undefined ? assignment.actualClockOut : data.clockOut;
         const nextBreakMinutes = data.breakMinutes ?? assignment.breakMinutes ?? 0;
 
+        // Hours are what gets paid, so a typed time has to be one that could have happened.
+        // Only what is being changed is checked: an old record is not blocked from an
+        // unrelated edit (a note, a break) because of what it already says.
+        const typedIn = data.clockIn;
+        const typedOut = data.clockOut;
+        const rightNow = new Date();
+        if ((typedIn && typedIn > rightNow) || (typedOut && typedOut > rightNow)) {
+            throw new AppError("That time hasn't happened yet.", "TIME_IN_FUTURE", 400);
+        }
+        if ((typedIn || typedOut) && nextActualClockIn && nextActualClockOut && nextActualClockOut <= nextActualClockIn) {
+            throw new AppError("Clock-out has to be after clock-in.", "INVALID_TIMES", 400);
+        }
+
         let effectiveClockIn = nextActualClockIn;
         if (nextActualClockIn) {
             if (actorRole === "member" && nextActualClockIn < targetShift.startTime) {
