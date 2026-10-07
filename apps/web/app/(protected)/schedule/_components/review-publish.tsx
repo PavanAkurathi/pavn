@@ -73,7 +73,7 @@ export function ReviewPublish({
         if (!open) void mutate((key) => Array.isArray(key) && key[0] === "scheduler-review", undefined, { revalidate: false });
     }, [open, mutate]);
     const [publishing, setPublishing] = useState(false);
-    const [done, setDone] = useState<{ sites: string[]; people: number } | null>(null);
+    const [done, setDone] = useState<{ sites: string[]; people: number; tell: string[] } | null>(null);
 
     const previewList = previews ? weeks.map((w) => ({ week: w, preview: previews[w.location.id]! })).filter((x) => x.preview) : [];
     const changes = (p: SchedulerPublishPreview) => p.newShifts + p.changedShifts + p.removedShifts;
@@ -91,8 +91,10 @@ export function ReviewPublish({
                 results.push({ site: week.location.name, result: await publishWeek(week.location.id, week.weekStart, preview.conflicts.length > 0) });
             }
             const people = new Set(results.flatMap((r) => r.result.notify.map((p) => p.personId))).size;
+            // The people with no app: the manager still has to tell them.
+            const tell = [...new Map(results.flatMap((r) => r.result.unreachable).map((p) => [p.personId, p.name] as const)).values()];
             await onPublished();
-            setDone({ sites: results.map((r) => r.site), people });
+            setDone({ sites: results.map((r) => r.site), people, tell });
             toast.success(people ? `Published. ${plural(people, "person", "people")} notified.` : "Published.");
         } catch (e) {
             toast.error(e instanceof Error ? e.message : "Couldn't publish");
@@ -114,9 +116,18 @@ export function ReviewPublish({
                         <DialogHeader>
                             <DialogTitle>Published</DialogTitle>
                             <DialogDescription>
-                                {done.sites.join(", ")} · {label}. {done.people ? `${plural(done.people, "person", "people")} got one message each.` : "Nobody needed a message."}
+                                {done.sites.join(", ")} · {label}. {done.people
+                                    ? `${plural(done.people, "person", "people")} got one message each.`
+                                    : done.tell.length
+                                      ? "Nobody could be messaged."
+                                      : "Nobody needed a message."}
                             </DialogDescription>
                         </DialogHeader>
+                        {done.tell.length ? (
+                            <p className="text-sm">
+                                <span className="font-semibold">Still to tell yourself:</span> {done.tell.join(", ")}. They don&apos;t have the app yet.
+                            </p>
+                        ) : null}
                         <p className="text-sm text-muted-foreground">Both views now show these shifts as published.</p>
                         <DialogFooter>
                             <Button onClick={() => close(false)}>Done</Button>
