@@ -1,6 +1,6 @@
 // packages/geofence/src/services/request-correction.ts
 
-import { db } from "@repo/database";
+import { db, findWorkerIdForUser } from "@repo/database";
 import { visibleToStaff } from "@repo/database/scheduling";
 import { timeCorrectionRequest, shiftAssignment } from "@repo/database/schema";
 import { eq, and } from "drizzle-orm";
@@ -30,11 +30,15 @@ export const requestCorrection = async (data: any, workerId: string, orgId: stri
         reason
     } = parseResult.data;
 
-    // 1. Verify Assignment
+    // 1. Verify Assignment (it must belong to the worker row this account is)
+    const workerRowId = await findWorkerIdForUser(workerId, orgId);
+    if (!workerRowId) {
+        throw new AppError("Assignment not found", "NOT_FOUND", 404);
+    }
     const assignment = await db.query.shiftAssignment.findFirst({
         where: and(
             eq(shiftAssignment.id, shiftAssignmentId),
-            eq(shiftAssignment.workerId, workerId),
+            eq(shiftAssignment.workerId, workerRowId),
             visibleToStaff(),
         ),
         with: { shift: true }

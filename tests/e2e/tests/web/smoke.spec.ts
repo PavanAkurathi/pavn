@@ -64,8 +64,8 @@ test.describe("Manager web smoke", () => {
 
         await page.getByRole("navigation").getByRole("link", { name: "Team", exact: true }).click();
 
-        await expect(page).toHaveURL(/.*\/rosters.*/);
+        await expect(page).toHaveURL(/.*\/workers.*/);
         await expect(page.getByRole("heading", { name: "Team", exact: true })).toBeVisible();
-        await expect(page.getByRole("button", { name: /invite team member/i })).toBeVisible();
+        await expect(page.getByRole("button", { name: /add worker/i })).toBeVisible();
     });
 });

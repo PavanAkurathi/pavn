@@ -2,7 +2,7 @@
 
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { visibleToStaff } from "@repo/database/scheduling";
-import { shift, shiftAssignment, location, organization, member } from "@repo/database/schema";
+import { shift, shiftAssignment, location, organization, member, worker } from "@repo/database/schema";
 import { eq, and, inArray, gt, lte, or, asc, desc, ne, sql } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 import { reconcileOverdueShiftState } from "./reconcile-overdue-shifts";
@@ -24,7 +24,8 @@ interface ConflictInfo {
 }
 
 export const getWorkerAllShifts = async (
-    workerId: string,
+    /** The signed-in app account; assignments belong to the worker rows it is. */
+    userId: string,
     filters: WorkerAllShiftsFilters
 ) => {
     const now = new Date();
@@ -37,7 +38,7 @@ export const getWorkerAllShifts = async (
     })
         .from(member)
         .where(and(
-            eq(member.userId, workerId),
+            eq(member.userId, userId),
             eq(member.status, 'active')
         ));
 
@@ -58,7 +59,7 @@ export const getWorkerAllShifts = async (
 
     // 2. Build query conditions
     const conditions: any[] = [
-        eq(shiftAssignment.workerId, workerId),
+        eq(worker.userId, userId),
         ne(shiftAssignment.status, 'removed'),
         visibleToStaff(),
         inArray(shift.organizationId, orgIds),
@@ -102,6 +103,7 @@ export const getWorkerAllShifts = async (
             },
         })
         .from(shiftAssignment)
+        .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
         .leftJoin(location, eq(shift.locationId, location.id))
         .innerJoin(organization, eq(shift.organizationId, organization.id))

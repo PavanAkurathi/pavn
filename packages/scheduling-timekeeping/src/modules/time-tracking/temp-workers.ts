@@ -1,9 +1,12 @@
 import { db } from "@repo/database";
-import { tempWorker } from "@repo/database/schema";
+import { worker } from "@repo/database/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
 import { newId } from "../../utils/ids";
+
+// Agency temps are workers with employment type 'agency': the manager keys their
+// times, and they never sign in to the app.
 
 const CreateTempWorkersSchema = z
     .object({
@@ -21,9 +24,9 @@ const RenameTempWorkerSchema = z.object({
 });
 
 export const listTempWorkers = async (orgId: string) => {
-    return db.query.tempWorker.findMany({
-        where: eq(tempWorker.organizationId, orgId),
-        orderBy: [desc(tempWorker.createdAt)],
+    return db.query.worker.findMany({
+        where: and(eq(worker.organizationId, orgId), eq(worker.employmentType, "agency")),
+        orderBy: [desc(worker.createdAt)],
     });
 };
 
@@ -50,13 +53,14 @@ export const createTempWorkers = async (body: unknown, orgId: string) => {
     }
 
     const values = resolvedNames.map((name) => ({
-        id: newId("tmp"),
+        id: newId("wkr"),
         organizationId: orgId,
         name,
+        employmentType: "agency" as const,
         agency: agency || null,
     }));
 
-    const created = await db.insert(tempWorker).values(values).returning();
+    const created = await db.insert(worker).values(values).returning();
     return created;
 };
 
@@ -67,9 +71,13 @@ export const renameTempWorker = async (body: unknown, tempWorkerId: string, orgI
     }
 
     const [updated] = await db
-        .update(tempWorker)
+        .update(worker)
         .set({ name: parsed.data.name, updatedAt: new Date() })
-        .where(and(eq(tempWorker.id, tempWorkerId), eq(tempWorker.organizationId, orgId)))
+        .where(and(
+            eq(worker.id, tempWorkerId),
+            eq(worker.organizationId, orgId),
+            eq(worker.employmentType, "agency"),
+        ))
         .returning();
 
     if (!updated) {

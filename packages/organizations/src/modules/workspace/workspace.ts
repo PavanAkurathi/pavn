@@ -1,33 +1,25 @@
-import { sendSMS, isValidPhoneNumber, normalizePhoneNumber } from "@repo/auth";
+import { sendSMS } from "@repo/auth";
 import { SUPPORT_EMAIL, PLAN_LIMITS } from "@repo/config";
 import {
     and,
     db,
     desc,
     eq,
-    ne,
-    resolveWorkerRoleSet,
 } from "@repo/database";
 import {
     invitation,
     location,
     member,
     organization,
-    rosterEntry,
     user,
-    workerRole,
+    worker,
 } from "@repo/database/schema";
 import { sendInvite } from "@repo/email";
-import {
-    BulkImportWorkersInputSchema,
-    OrganizationProfileUpdateSchema,
-    RemoveWorkerByEmailSchema,
-} from "@repo/contracts";
+import { OrganizationProfileUpdateSchema } from "@repo/contracts";
 import { AppError } from "@repo/observability";
 import { getCrew } from "@repo/gig-workers";
 import { getBusinessInvitationState } from "../invitations/business-invitations";
-import { buildTeamAccessList, isOpenWorkerInvitation } from "./team-access";
-import { nanoid } from "nanoid";
+import { buildTeamAccessList } from "./team-access";
 
 type OrganizationMetadata = {
     description?: string;
@@ -289,184 +281,44 @@ export async function getWorkspaceSettings(
     };
 }
 
-export async function getRosterWorkers(orgId: string) {
-    const [workersResult, invitations, rosterEntries] = await Promise.all([
-        db
-            .select({
-                id: member.id,
-                role: member.role,
-                joinedAt: member.createdAt,
-                jobTitle: member.jobTitle,
-                hourlyRate: member.hourlyRate,
-                user: {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    image: user.image,
-                    emailVerified: user.emailVerified,
-                    phoneNumber: user.phoneNumber,
-                    emergencyContact: user.emergencyContact,
-                },
-            })
-            .from(member)
-            .leftJoin(user, eq(member.userId, user.id))
-            .where(
-                and(
-                    eq(member.organizationId, orgId),
-                    ne(member.role, "owner"),
-                    ne(member.role, "admin"),
-                ),
-            ),
-        db
-            .select()
-            .from(invitation)
-            .where(eq(invitation.organizationId, orgId)),
-        db
-            .select()
-            .from(rosterEntry)
-            .where(eq(rosterEntry.organizationId, orgId)),
-    ]);
-
-    const invitedEmails = new Set(invitations.map((entry) => entry.email));
-    const rosterEmails = new Set(rosterEntries.map((entry) => entry.email));
-
-    const mappedRoster = rosterEntries.map((entry) => {
-        const isInvited =
-            entry.status === "invited" || invitedEmails.has(entry.email);
-        return {
-            id: entry.id,
-            role: entry.role,
-            joinedAt: entry.createdAt || new Date(),
-            jobTitle: entry.jobTitle,
-            name: entry.name,
-            email: entry.email,
-            phone: entry.phoneNumber,
-            image: null,
-            status: (isInvited ? "invited" : "uninvited") as
-                | "invited"
-                | "uninvited",
-            hourlyRate: entry.hourlyRate,
-            emergencyContact: null,
-        };
-    });
-
-    const mappedMembers = workersResult
-        .filter((entry) => entry.user !== null)
-        .map((entry) => ({
-            id: entry.id,
-            role: entry.role,
-            joinedAt: entry.joinedAt,
-            jobTitle: entry.jobTitle,
-            name: entry.user!.name,
-            email: entry.user!.email,
-            phone: entry.user!.phoneNumber,
-            image: entry.user!.image,
-            status: (entry.user!.emailVerified ? "active" : "invited") as
-                | "active"
-                | "invited",
-            hourlyRate: entry.hourlyRate,
-            emergencyContact: entry.user!.emergencyContact as
-                | { name: string; phone: string; relation?: string }
-                | null,
-        }));
-
-    const memberEmails = new Set(mappedMembers.map((entry) => entry.email));
-
-    const mappedInvitations = invitations
-        .filter(
-            (entry) =>
-                isOpenWorkerInvitation(entry) &&
-                !rosterEmails.has(entry.email) &&
-                !memberEmails.has(entry.email),
-        )
-        .map((entry) => ({
-            id: entry.id,
-            role: entry.role,
-            joinedAt: entry.createdAt || new Date(),
-            jobTitle: entry.role,
-            name: entry.email,
-            email: entry.email,
-            phone: null,
-            image: null,
-            status: "invited" as const,
-            hourlyRate: null,
-            emergencyContact: null,
-        }));
-
-    return [...mappedMembers, ...mappedRoster, ...mappedInvitations].sort(
-        (left, right) =>
-            new Date(right.joinedAt).getTime() - new Date(left.joinedAt).getTime(),
-    );
-}
-
 export async function getWorkerProfile(orgId: string, id: string) {
-    const memberRecord = await db.query.member.findFirst({
-        where: and(eq(member.id, id), eq(member.organizationId, orgId)),
-        with: {
-            user: true,
-        },
-    });
+    const [record] = await db
+        .select({
+            worker,
+            image: user.image,
+            emergencyContact: user.emergencyContact,
+        })
+        .from(worker)
+        .leftJoin(user, eq(worker.userId, user.id))
+        .where(and(eq(worker.id, id), eq(worker.organizationId, orgId)))
+        .limit(1);
 
-    let displayData = {
-        name: "",
-        email: "",
-        phone: null as string | null,
-        image: null as string | null,
-        status: "Unknown",
-        emergencyContact: null as
-            | { name: string; phone: string; relation?: string }
-            | null,
-        joinedAt: new Date(),
-        userId: null as string | null,
-    };
-
-    if (memberRecord) {
-        displayData = {
-            name: memberRecord.user.name,
-            email: memberRecord.user.email,
-            phone: memberRecord.user.phoneNumber,
-            image: memberRecord.user.image,
-            status: memberRecord.user.emailVerified ? "Active" : "Invited",
-            emergencyContact: memberRecord.user.emergencyContact,
-            joinedAt: memberRecord.createdAt,
-            userId: memberRecord.user.id,
-        };
-    } else {
-        const rosterRecord = await db.query.rosterEntry.findFirst({
-            where: and(eq(rosterEntry.id, id), eq(rosterEntry.organizationId, orgId)),
-        });
-
-        if (!rosterRecord) {
-            return null;
-        }
-
-        displayData = {
-            name: rosterRecord.name,
-            email: rosterRecord.email,
-            phone: rosterRecord.phoneNumber,
-            image: null,
-            status: rosterRecord.status === "invited" ? "Invited" : "Uninvited",
-            emergencyContact: null,
-            joinedAt: rosterRecord.createdAt || new Date(),
-            userId: null,
-        };
+    if (!record) {
+        return null;
     }
 
-    const roles = displayData.userId
-        ? await db.query.workerRole.findMany({
-              where: and(
-                  eq(workerRole.workerId, displayData.userId),
-                  eq(workerRole.organizationId, orgId),
-              ),
-              orderBy: (rolesTable, { desc: orderDesc }) => [
-                  orderDesc(rolesTable.createdAt),
-              ],
-          })
-        : [];
+    const { worker: row } = record;
 
     return {
-        displayData,
-        roles,
+        displayData: {
+            name: row.name,
+            email: row.email,
+            phone: row.phoneNumber,
+            image: record.image,
+            status: row.status,
+            emergencyContact: record.emergencyContact as
+                | { name: string; phone: string; relation?: string }
+                | null,
+            joinedAt: row.createdAt,
+            userId: row.userId,
+            employmentType: row.employmentType as "staff" | "agency",
+            agency: row.agency,
+            inviteCode: row.inviteCode,
+            hourlyRate: row.hourlyRate,
+            jobTitle: row.jobTitle,
+            notes: row.notes,
+        },
+        roles: row.roles,
     };
 }
 
@@ -629,113 +481,6 @@ export async function resendOrganizationMemberInvite(
     }
 
     return { success: true, method: methods.join("+") };
-}
-
-export async function removeWorkerByEmail(orgId: string, payload: unknown) {
-    const parsed = RemoveWorkerByEmailSchema.safeParse(payload);
-    if (!parsed.success) {
-        throw new AppError(
-            "Invalid email address",
-            "VALIDATION_ERROR",
-            400,
-        );
-    }
-
-    const emailAddress = parsed.data.email.trim().toLowerCase();
-    const targetUser = await db.query.user.findFirst({
-        where: eq(user.email, emailAddress),
-        columns: {
-            id: true,
-        },
-    });
-
-    if (targetUser) {
-        await db
-            .delete(member)
-            .where(
-                and(
-                    eq(member.userId, targetUser.id),
-                    eq(member.organizationId, orgId),
-                ),
-            );
-    }
-
-    await db
-        .delete(invitation)
-        .where(
-            and(
-                eq(invitation.email, emailAddress),
-                eq(invitation.organizationId, orgId),
-            ),
-        );
-
-    await db
-        .delete(rosterEntry)
-        .where(
-            and(
-                eq(rosterEntry.email, emailAddress),
-                eq(rosterEntry.organizationId, orgId),
-            ),
-        );
-
-    return { success: true };
-}
-
-export async function bulkImportRosterEntries(orgId: string, payload: unknown) {
-    const parsed = BulkImportWorkersInputSchema.safeParse(payload);
-    if (!parsed.success) {
-        throw new AppError(
-            parsed.error.issues[0]?.message || "Invalid roster import payload",
-            "VALIDATION_ERROR",
-            400,
-        );
-    }
-
-    const results = {
-        success: 0,
-        failed: 0,
-        errors: [] as string[],
-    };
-
-    for (const workerData of parsed.data) {
-        try {
-            if (
-                workerData.phoneNumber &&
-                !isValidPhoneNumber(workerData.phoneNumber)
-            ) {
-                throw new Error("Invalid phone number");
-            }
-
-            const resolvedRoles = resolveWorkerRoleSet({
-                roles: workerData.roles,
-                fallbackRole: workerData.jobTitle,
-            });
-
-            await db.insert(rosterEntry).values({
-                id: nanoid(),
-                organizationId: orgId,
-                name: workerData.name,
-                email: workerData.email.trim().toLowerCase(),
-                phoneNumber: workerData.phoneNumber
-                    ? normalizePhoneNumber(workerData.phoneNumber)
-                    : null,
-                role: workerData.role || "member",
-                jobTitle: resolvedRoles[0] || workerData.jobTitle || null,
-                roles: resolvedRoles,
-                hourlyRate: workerData.hourlyRate || null,
-                status: "uninvited",
-            });
-
-            results.success++;
-        } catch (error: any) {
-            results.failed++;
-            results.errors.push(
-                `Failed to import ${workerData.email}: ${error.message}`,
-            );
-        }
-    }
-
-    return results;
 }
 
 export async function getOrganizationInvitationState(invitationId: string) {

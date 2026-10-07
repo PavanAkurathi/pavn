@@ -127,14 +127,16 @@ function AddShiftForm({
     const timeZone = ws.weeks.find((w) => w.location.id === siteId)?.location.timezone ?? week.location.timezone;
     const capacityValue = Math.max(1, Math.min(200, Math.floor(Number(capacity)) || 1));
     const overnight = endsNextDay(startLocal, endLocal);
+    // The date input reports "" while it is half-typed or cleared; nothing below may do date maths on that.
+    const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(localDate);
     const timesValid = /^\d{2}:\d{2}$/.test(startLocal) && /^\d{2}:\d{2}$/.test(endLocal) && startLocal !== endLocal;
-    const valid = Boolean(siteId) && role.trim() !== "" && /^\d{4}-\d{2}-\d{2}$/.test(localDate) && timesValid;
+    const valid = Boolean(siteId) && role.trim() !== "" && dateValid && timesValid;
     // A shift that has already finished can be saved as a draft but never published.
     const [now] = useState(() => Date.now());
     const alreadyEnded =
-        timesValid && /^\d{4}-\d{2}-\d{2}$/.test(localDate) && zonedInstant(overnight ? addDays(localDate, 1) : localDate, endLocal, timeZone).getTime() <= now;
+        timesValid && dateValid && zonedInstant(overnight ? addDays(localDate, 1) : localDate, endLocal, timeZone).getTime() <= now;
     // Conflicts come from the week that is loaded; a date outside it can't be checked here.
-    const inLoadedWeek = week.days.some((d) => d.localDate === localDate) || week.days.some((d) => d.localDate === addDays(localDate, 1));
+    const inLoadedWeek = dateValid && (week.days.some((d) => d.localDate === localDate) || week.days.some((d) => d.localDate === addDays(localDate, 1)));
     const eventsThatDay = ws.events.filter((e) => e.locationId === siteId && e.localDate === localDate);
 
     const candidates = useMemo(() => {
@@ -168,7 +170,7 @@ function AddShiftForm({
                     startLocal,
                     endLocal,
                     capacity: capacityValue,
-                    assignees: chosen.map((p) => ({ personId: p.id, kind: p.kind })),
+                    assignees: chosen.map((p) => ({ personId: p.id })),
                 },
                 week.people,
             );
@@ -202,7 +204,7 @@ function AddShiftForm({
                                 Date
                             </label>
                             <Input id="as-date" type="date" value={localDate} onChange={(e) => setLocalDate(e.target.value)} />
-                            {/^\d{4}-\d{2}-\d{2}$/.test(localDate) ? <span className="text-xs text-muted-foreground">{longDate(localDate)}</span> : null}
+                            {dateValid ? <span className="text-xs text-muted-foreground">{longDate(localDate)}</span> : null}
                         </div>
                         <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-medium" htmlFor="as-site">
@@ -271,7 +273,7 @@ function AddShiftForm({
                             <Input id="as-capacity" type="number" min={1} max={200} inputMode="numeric" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
                         </div>
                     </div>
-                    {timesValid && overnight ? (
+                    {timesValid && overnight && dateValid ? (
                         <p className="-mt-3 text-xs font-medium text-foreground">Ends the next day, {longDate(addDays(localDate, 1))}.</p>
                     ) : !timesValid ? (
                         <p className="-mt-3 text-xs text-destructive">Start and end can&apos;t be the same time.</p>

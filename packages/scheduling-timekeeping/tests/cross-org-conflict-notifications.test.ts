@@ -14,6 +14,13 @@ const shiftTable = {
     status: "shift_status",
 };
 
+// Conflicts are about the person's app account: the query goes assignment ->
+// worker (for worker.userId) -> shift, and answers with user ids.
+const workerTable = {
+    id: "worker_row_id",
+    userId: "worker_user_id",
+};
+
 const mockExistingAssignments = mock(() => Promise.resolve<any[]>([]));
 const mockSendPushNotification = mock(() => Promise.resolve([{ success: true }]));
 
@@ -22,7 +29,9 @@ mock.module("@repo/database", () => ({
         select: mock(() => ({
             from: mock(() => ({
                 innerJoin: mock(() => ({
-                    where: mockExistingAssignments,
+                    innerJoin: mock(() => ({
+                        where: mockExistingAssignments,
+                    })),
                 })),
             })),
         })),
@@ -32,6 +41,7 @@ mock.module("@repo/database", () => ({
 mock.module("@repo/database/schema", () => ({
     shift: shiftTable,
     shiftAssignment: shiftAssignmentTable,
+    worker: workerTable,
 }));
 
 mock.module("@repo/notifications", () => ({
@@ -49,7 +59,7 @@ describe("notifyWorkersOfCrossOrgConflicts", () => {
     test("sends one generic push per worker when a cross-org overlap exists", async () => {
         mockExistingAssignments.mockResolvedValue([
             {
-                workerId: "worker_1",
+                workerId: "user_1",
                 startTime: new Date("2026-06-01T12:00:00.000Z"),
                 endTime: new Date("2026-06-01T16:00:00.000Z"),
             },
@@ -57,13 +67,13 @@ describe("notifyWorkersOfCrossOrgConflicts", () => {
 
         await notifyWorkersOfCrossOrgConflicts([
             {
-                workerId: "worker_1",
+                workerId: "user_1",
                 shiftId: "shift_new_1",
                 startTime: new Date("2026-06-01T13:00:00.000Z"),
                 endTime: new Date("2026-06-01T17:00:00.000Z"),
             },
             {
-                workerId: "worker_1",
+                workerId: "user_1",
                 shiftId: "shift_new_2",
                 startTime: new Date("2026-06-01T14:00:00.000Z"),
                 endTime: new Date("2026-06-01T18:00:00.000Z"),
@@ -72,7 +82,7 @@ describe("notifyWorkersOfCrossOrgConflicts", () => {
 
         expect(mockSendPushNotification).toHaveBeenCalledTimes(1);
         expect(mockSendPushNotification).toHaveBeenCalledWith({
-            workerId: "worker_1",
+            workerId: "user_1",
             title: "Schedule conflict detected",
             body: "You have overlapping shifts across organizations. Open the app to review and resolve it.",
             data: {
@@ -87,7 +97,7 @@ describe("notifyWorkersOfCrossOrgConflicts", () => {
 
         await notifyWorkersOfCrossOrgConflicts([
             {
-                workerId: "worker_2",
+                workerId: "user_2",
                 shiftId: "shift_new_3",
                 startTime: new Date("2026-06-01T09:00:00.000Z"),
                 endTime: new Date("2026-06-01T17:00:00.000Z"),

@@ -1,6 +1,6 @@
 import { test, expect, request as playwrightRequest, type APIRequestContext } from "@playwright/test";
 import { db, and, desc, eq, toLatLng } from "@repo/database";
-import { invitation, location, member, rosterEntry, session, shift, shiftAssignment, timeCorrectionRequest, user, workerRole } from "@repo/database/schema";
+import { location, member, session, shift, shiftAssignment, timeCorrectionRequest, user, worker } from "@repo/database/schema";
 // Package imports, not relative reaches into packages/auth/src. The old paths
 // only resolved because this suite happened to live under packages/, and broke
 // the moment it moved. @repo/auth re-exports both from its index.
@@ -82,7 +82,7 @@ async function publishShiftViaScheduler(
                         role: input.role,
                         capacity: Math.max(1, input.workerIds.length),
                     },
-                    assignees: people.map((personId) => ({ personId, kind: "roster" })),
+                    assignees: people.map((personId) => ({ personId })),
                 },
             ],
         },
@@ -152,7 +152,7 @@ function createUniqueWorkerPhone(runId: string | number): string {
     return `+1415556${createPhoneLine(runId)}`;
 }
 
-function createUniqueUnrosteredPhone(runId: string | number): string {
+function createUniqueUninvitedPhone(runId: string | number): string {
     return `+1415557${createPhoneLine(runId)}`;
 }
 
@@ -172,30 +172,32 @@ async function createInvitedWorkerForOrg(
     const workerName = options?.name ?? "Lifecycle Worker";
     const normalizedWorkerPhone = normalizePhoneNumber(workerPhoneNumber);
 
-    const inviteResponse = await managerContext.post("/organizations/crew/invite", {
+    // The business adds the worker and invites them: that is the only way in.
+    const inviteResponse = await managerContext.post("/organizations/crew/invitations", {
         headers: { "x-org-id": orgId },
         data: {
             name: workerName,
-            email: workerEmail,
             phoneNumber: workerPhoneNumber,
-            role: "member",
+            email: workerEmail,
+            invites: { sms: true },
         },
     });
-    expect(inviteResponse.ok()).toBeTruthy();
+    expect(inviteResponse.ok(), await inviteResponse.text()).toBeTruthy();
 
-    const inviteRecord = await db.query.invitation.findFirst({
+    const workerRecord = await db.query.worker.findFirst({
         where: and(
-            eq(invitation.email, workerEmail),
-            eq(invitation.organizationId, orgId)
+            eq(worker.organizationId, orgId),
+            eq(worker.phoneNumber, normalizedWorkerPhone),
         ),
-        orderBy: [desc(invitation.createdAt)],
     });
-    expect(inviteRecord).toBeDefined();
+    expect(workerRecord).toBeDefined();
+    expect(workerRecord!.status).toBe("invited");
+    expect(workerRecord!.inviteCode).toBeTruthy();
 
     const workerAccess = await getWorkerPhoneAccess(workerPhoneNumber);
     expect(workerAccess.eligible).toBe(true);
     expect(workerAccess.organizationIds).toContain(orgId);
-    expect(workerAccess.rosterAccess.some((record) => record.email === workerEmail)).toBe(true);
+    expect(workerAccess.workerAccess.some((record) => record.workerId === workerRecord!.id)).toBe(true);
 
     const workerUserId = crypto.randomUUID();
     await db.insert(user).values({
@@ -210,6 +212,11 @@ async function createInvitedWorkerForOrg(
     });
 
     await syncWorkerMembershipsForPhone(workerUserId, workerPhoneNumber);
+
+    // Signing in attaches the account to the business's worker.
+    const signedInWorker = await db.query.worker.findFirst({ where: eq(worker.id, workerRecord!.id) });
+    expect(signedInWorker?.userId).toBe(workerUserId);
+    expect(signedInWorker?.status).toBe("active");
 
     const workerUser = await db.query.user.findFirst({
         where: eq(user.id, workerUserId),
@@ -232,7 +239,8 @@ async function createInvitedWorkerForOrg(
         normalizedWorkerPhone,
         workerUser: workerUser!,
         workerContext,
-        inviteRecord: inviteRecord!,
+        workerId: workerRecord!.id,
+        workerRecord: workerRecord!,
         workerAccess,
     };
 }
@@ -260,6 +268,7 @@ test.describe("manager/worker lifecycle", () => {
 
         const {
             workerUser,
+            workerId,
             workerContext,
         } = await createInvitedWorkerForOrg(apiBaseUrl, orgId, managerContext, runId, {
             name: "Lifecycle Worker",
@@ -282,7 +291,7 @@ test.describe("manager/worker lifecycle", () => {
             startLocal: startTime,
             endLocal: endTime,
             role: shiftTitle,
-            workerIds: [workerUser!.id],
+            workerIds: [workerId],
         });
 
         const createdShift = await db.query.shift.findFirst({
@@ -297,7 +306,7 @@ test.describe("manager/worker lifecycle", () => {
         const createdAssignment = await db.query.shiftAssignment.findFirst({
             where: and(
                 eq(shiftAssignment.shiftId, createdShift!.id),
-                eq(shiftAssignment.workerId, workerUser!.id)
+                eq(shiftAssignment.workerId, workerId)
             ),
         });
         expect(createdAssignment).toBeDefined();
@@ -407,6 +416,7 @@ test.describe("manager/worker lifecycle", () => {
 
         const {
             workerUser,
+            workerId,
             workerContext,
         } = await createInvitedWorkerForOrg(apiBaseUrl, orgId, managerContext, runId, {
             name: "Shift Lifecycle Worker",
@@ -427,7 +437,7 @@ test.describe("manager/worker lifecycle", () => {
             startLocal: startTime,
             endLocal: endTime,
             role: shiftTitle,
-            workerIds: [workerUser.id],
+            workerIds: [workerId],
         });
 
         const createdShift = await db.query.shift.findFirst({
@@ -442,7 +452,7 @@ test.describe("manager/worker lifecycle", () => {
         const createdAssignment = await db.query.shiftAssignment.findFirst({
             where: and(
                 eq(shiftAssignment.shiftId, createdShift!.id),
-                eq(shiftAssignment.workerId, workerUser.id),
+                eq(shiftAssignment.workerId, workerId),
             ),
         });
         expect(createdAssignment).toBeDefined();
@@ -577,14 +587,14 @@ test.describe("manager/worker lifecycle", () => {
         await workerContext.dispose();
     });
 
-    test("worker phone access stays locked until workforce access exists", async () => {
-        const randomPhone = createUniqueUnrosteredPhone(createRunId("locked-phone"));
+    test("worker phone access stays locked until a business has invited the number", async () => {
+        const randomPhone = createUniqueUninvitedPhone(createRunId("locked-phone"));
         const access = await getWorkerPhoneAccess(randomPhone);
 
         expect(access.eligible).toBe(false);
         expect(access.organizationCount).toBe(0);
         expect(access.organizationIds).toEqual([]);
-        expect(access.rosterAccess).toEqual([]);
+        expect(access.workerAccess).toEqual([]);
     });
 
     test("phone activation syncs invited roles and custom-role scheduling supports open slots", async ({ baseURL }) => {
@@ -609,15 +619,14 @@ test.describe("manager/worker lifecycle", () => {
             updatedAt: new Date(),
         });
 
-        await db.insert(rosterEntry).values({
-            id: `re_${runId}`,
+        const workerRowId = `wkr_${runId.slice(-16)}`;
+        await db.insert(worker).values({
+            id: workerRowId,
             organizationId: orgId,
             name: "Phone Worker",
-            email: `worker-phone-${runId}@test.workershive.com`,
             phoneNumber: normalizedPhone,
-            role: "member",
             jobTitle: "Shift Lead",
-            roles: ["Cashier", "Shift Lead", "Cashier"],
+            roles: ["Cashier", "Shift Lead"],
             hourlyRate: 2400,
             status: "invited",
             createdAt: new Date(),
@@ -626,7 +635,7 @@ test.describe("manager/worker lifecycle", () => {
         const access = await getWorkerPhoneAccess(phoneNumber);
         expect(access.eligible).toBe(true);
         expect(access.organizationIds).toContain(orgId);
-        expect(access.rosterAccess[0]?.roles).toEqual(["Cashier", "Shift Lead", "Cashier"]);
+        expect(access.workerAccess[0]?.workerId).toBe(workerRowId);
 
         await db.insert(user).values({
             id: workerUserId,
@@ -649,22 +658,11 @@ test.describe("manager/worker lifecycle", () => {
             ),
         });
         expect(workerMembership).toBeDefined();
-        expect(workerMembership?.jobTitle).toBe("Shift Lead");
-        expect(workerMembership?.hourlyRate).toBe(2400);
 
-        const syncedRoles = await db.query.workerRole.findMany({
-            where: and(
-                eq(workerRole.workerId, workerUserId),
-                eq(workerRole.organizationId, orgId),
-            ),
-            orderBy: [workerRole.role],
-        });
-        expect(syncedRoles.map((role) => role.role)).toEqual(["Cashier", "Shift Lead"]);
-
-        const syncedRoster = await db.query.rosterEntry.findFirst({
-            where: eq(rosterEntry.id, `re_${runId}`),
-        });
-        expect(syncedRoster?.status).toBe("active");
+        // The worker keeps what the business recorded for them, now attached to the account.
+        const synced = await db.query.worker.findFirst({ where: eq(worker.id, workerRowId) });
+        expect(synced).toMatchObject({ userId: workerUserId, status: "active", jobTitle: "Shift Lead", hourlyRate: 2400 });
+        expect(synced?.roles).toEqual(["Cashier", "Shift Lead"]);
 
         await publishShiftViaScheduler(managerContext, {
             orgId,
@@ -673,7 +671,7 @@ test.describe("manager/worker lifecycle", () => {
             startLocal: "09:00",
             endLocal: "17:00",
             role: "Forklift Operator",
-            workerIds: [workerUserId, null],
+            workerIds: [workerRowId, null],
         });
 
         const publishedShift = await db.query.shift.findFirst({
@@ -691,7 +689,7 @@ test.describe("manager/worker lifecycle", () => {
             where: eq(shiftAssignment.shiftId, publishedShift!.id),
         });
         expect(assignments).toHaveLength(1);
-        expect(assignments[0]?.workerId).toBe(workerUserId);
+        expect(assignments[0]?.workerId).toBe(workerRowId);
 
         await managerSignupContext.dispose();
         await managerContext.dispose();

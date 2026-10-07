@@ -5,11 +5,11 @@ import {
     location,
     member,
     organization,
-    rosterEntry,
     scheduledNotification,
     shift,
     shiftAssignment,
     user,
+    worker,
 } from "@repo/database/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -27,18 +27,21 @@ const TZ = "America/New_York";
 const tag = nanoid(6);
 const ORG = `org_p${tag}`;
 const LOC = `loc_p${tag}`;
-const ANA = `usr_pa${tag}`;
-const BEN = `usr_pb${tag}`;
-const MARCO = `re_pm${tag}`;
+// Accounts get the messages and sign in; workers are who is on the shifts.
+const USER_ANA = `usr_pa${tag}`;
+const USER_BEN = `usr_pb${tag}`;
+const ANA = `wkr_pa${tag}`;
+const BEN = `wkr_pb${tag}`;
+const MARCO = `wkr_pm${tag}`; // invited to the app, never signed in
 const PUBLISHED = `shf_ppub${tag}`;
 const WEEK = { locationId: LOC, weekStart: "2027-02-03" }; // week of Sun 31 Jan – Sat 6 Feb 2027
 
-const ana = { personId: ANA, kind: "roster" as const };
-const ben = { personId: BEN, kind: "roster" as const };
-const marco = { personId: MARCO, kind: "invited" as const };
+const ana = { personId: ANA };
+const ben = { personId: BEN };
+const marco = { personId: MARCO };
 const newShiftId = () => `shf_${nanoid(16).replace(/[^0-9A-Za-z]/g, "x")}`;
-const apply = (changes: unknown[]) => applySchedulerChanges({ orgId: ORG, actorId: ANA, body: { changes } });
-const publish = (force = false) => publishSchedulerWeek({ orgId: ORG, actorId: ANA, body: { ...WEEK, force } });
+const apply = (changes: unknown[]) => applySchedulerChanges({ orgId: ORG, actorId: USER_ANA, body: { changes } });
+const publish = (force = false) => publishSchedulerWeek({ orgId: ORG, actorId: USER_ANA, body: { ...WEEK, force } });
 const messagesFor = (workerId: string) =>
     db.query.scheduledNotification.findMany({
         where: and(eq(scheduledNotification.organizationId, ORG), eq(scheduledNotification.workerId, workerId), eq(scheduledNotification.type, "schedule_published")),
@@ -53,14 +56,18 @@ describeDb("Publishing a Scheduler week (database)", () => {
         await db.insert(organization).values({ id: ORG, name: "Publish Bistro", createdAt: now, timezone: TZ });
         await db.insert(location).values({ id: LOC, organizationId: ORG, name: "Downtown", slug: `pdt-${tag}`, timezone: TZ, createdAt: now, updatedAt: now });
         await db.insert(user).values([
-            { id: ANA, name: "Ana Ruiz", email: `pana-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
-            { id: BEN, name: "Ben Kim", email: `pben-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
+            { id: USER_ANA, name: "Ana Ruiz", email: `pana-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
+            { id: USER_BEN, name: "Ben Kim", email: `pben-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
         ]);
         await db.insert(member).values([
-            { id: `mem_pa${tag}`, userId: ANA, organizationId: ORG, role: "member", createdAt: now },
-            { id: `mem_pb${tag}`, userId: BEN, organizationId: ORG, role: "member", createdAt: now },
+            { id: `mem_pa${tag}`, userId: USER_ANA, organizationId: ORG, role: "member", createdAt: now },
+            { id: `mem_pb${tag}`, userId: USER_BEN, organizationId: ORG, role: "member", createdAt: now },
         ] as never);
-        await db.insert(rosterEntry).values({ id: MARCO, organizationId: ORG, name: "Marco Bell", email: `pmarco-${tag}@example.com`, createdAt: now } as never);
+        await db.insert(worker).values([
+            { id: ANA, organizationId: ORG, userId: USER_ANA, name: "Ana Ruiz", status: "active" },
+            { id: BEN, organizationId: ORG, userId: USER_BEN, name: "Ben Kim", status: "active" },
+            { id: MARCO, organizationId: ORG, name: "Marco Bell", status: "invited" },
+        ]);
     });
 
     beforeEach(async () => {
@@ -82,7 +89,7 @@ describeDb("Publishing a Scheduler week (database)", () => {
         await db.insert(shiftAssignment).values({ id: `asg_pp${nanoid(8)}`, shiftId: PUBLISHED, workerId: ANA, status: "active" });
         await db.insert(scheduledNotification).values({
             id: nanoid(),
-            workerId: ANA,
+            workerId: USER_ANA,
             shiftId: PUBLISHED,
             organizationId: ORG,
             type: "night_before",
@@ -97,20 +104,20 @@ describeDb("Publishing a Scheduler week (database)", () => {
         await db.delete(scheduledNotification).where(eq(scheduledNotification.organizationId, ORG));
         await db.delete(shift).where(eq(shift.organizationId, ORG));
         await db.delete(auditLog).where(eq(auditLog.organizationId, ORG));
-        await db.delete(rosterEntry).where(eq(rosterEntry.organizationId, ORG));
+        await db.delete(worker).where(eq(worker.organizationId, ORG));
         await db.delete(member).where(eq(member.organizationId, ORG));
         await db.delete(location).where(eq(location.organizationId, ORG));
-        await db.delete(user).where(inArray(user.id, [ANA, BEN]));
+        await db.delete(user).where(inArray(user.id, [USER_ANA, USER_BEN]));
         await db.delete(organization).where(eq(organization.id, ORG));
     });
 
     test("staff don't see staged people until the week is published", async () => {
         await apply([{ op: "assign", shiftId: PUBLISHED, assignees: [ana, ben] }]);
-        const before = await getWorkerAllShifts(BEN, { status: "all", orgId: ORG });
+        const before = await getWorkerAllShifts(USER_BEN, { status: "all", orgId: ORG });
         expect(before.shifts.map((s: { id: string }) => s.id)).not.toContain(PUBLISHED);
 
         await publish();
-        const after = await getWorkerAllShifts(BEN, { status: "all", orgId: ORG });
+        const after = await getWorkerAllShifts(USER_BEN, { status: "all", orgId: ORG });
         expect(after.shifts.map((s: { id: string }) => s.id)).toContain(PUBLISHED);
     });
 
@@ -131,7 +138,7 @@ describeDb("Publishing a Scheduler week (database)", () => {
 
         const result = await publish();
         expect(result).toMatchObject({ newShifts: 1, changedShifts: 1, removedShifts: 0 });
-        expect((await publishSchedulerWeek({ orgId: ORG, actorId: ANA, body: WEEK })).newShifts).toBe(0); // nothing left to publish
+        expect((await publishSchedulerWeek({ orgId: ORG, actorId: USER_ANA, body: WEEK })).newShifts).toBe(0); // nothing left to publish
     });
 
     test("drafts go live, staged edits apply, and each person gets one message", async () => {
@@ -149,13 +156,13 @@ describeDb("Publishing a Scheduler week (database)", () => {
         expect(moved!.startTime.toISOString()).toBe("2027-02-02T22:00:00.000Z");
         expect(moved!.pendingPatch).toBeNull();
 
-        const [benMessage, ...moreForBen] = await messagesFor(BEN);
+        const [benMessage, ...moreForBen] = await messagesFor(USER_BEN);
         expect(moreForBen).toHaveLength(0);
         expect(benMessage).toMatchObject({ title: "You're on the schedule", body: "Downtown, Jan 31 – Feb 6: 1 new shift. Open the app to see your shifts." });
-        expect((await messagesFor(ANA))[0]!.body).toContain("1 changed");
+        expect((await messagesFor(USER_ANA))[0]!.body).toContain("1 changed");
 
         // Ben's reminders exist, without the old per-shift "new shift" push; Ana's were rebuilt for the new time.
-        const benReminders = await db.query.scheduledNotification.findMany({ where: and(eq(scheduledNotification.shiftId, draft), eq(scheduledNotification.workerId, BEN)) });
+        const benReminders = await db.query.scheduledNotification.findMany({ where: and(eq(scheduledNotification.shiftId, draft), eq(scheduledNotification.workerId, USER_BEN)) });
         expect(benReminders.length).toBeGreaterThan(0);
         expect(benReminders.some((n) => n.type === "assignment_created")).toBe(false);
         const anaOld = await db.query.scheduledNotification.findMany({ where: and(eq(scheduledNotification.shiftId, PUBLISHED), eq(scheduledNotification.body, "…")) });
@@ -181,9 +188,9 @@ describeDb("Publishing a Scheduler week (database)", () => {
         const friday = await loadShift(draft);
         expect(friday!.status).toBe("cancelled");
 
-        expect((await messagesFor(ANA))[0]).toMatchObject({ title: "Your schedule changed", body: "Downtown, Jan 31 – Feb 6: 2 removed. Open the app to see your shifts." });
+        expect((await messagesFor(USER_ANA))[0]).toMatchObject({ title: "Your schedule changed", body: "Downtown, Jan 31 – Feb 6: 2 removed. Open the app to see your shifts." });
         const anaPending = await db.query.scheduledNotification.findMany({
-            where: and(eq(scheduledNotification.workerId, ANA), eq(scheduledNotification.status, "pending"), inArray(scheduledNotification.shiftId, [PUBLISHED, draft])),
+            where: and(eq(scheduledNotification.workerId, USER_ANA), eq(scheduledNotification.status, "pending"), inArray(scheduledNotification.shiftId, [PUBLISHED, draft])),
         });
         expect(anaPending).toHaveLength(0);
     });
@@ -192,7 +199,7 @@ describeDb("Publishing a Scheduler week (database)", () => {
         await apply([{ op: "update", shiftId: PUBLISHED, patch: { capacity: 2 } }]);
         await applySchedulerChanges({
             orgId: ORG,
-            actorId: ANA,
+            actorId: USER_ANA,
             body: {
                 force: true,
                 changes: [{ op: "create", shiftId: newShiftId(), shift: { locationId: LOC, localDate: "2027-02-02", startLocal: "18:00", endLocal: "22:00", role: "Host" }, assignees: [ana] }],

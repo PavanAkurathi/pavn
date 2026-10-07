@@ -93,7 +93,7 @@ export async function getLiveBusinessOnboardingState(_options?: {
         Boolean(metadata.onboarding?.billingPromptHandled) ||
         org.subscriptionStatus === "active" ||
         org.subscriptionStatus === "trialing";
-    const hasWorkforceAccess = facts.hasRosterEntry || facts.hasWorkerMember;
+    const hasWorkforceAccess = facts.hasWorker;
     const hasPublishedShift = facts.hasPublishedShift;
     const hasDraftShift = facts.hasDraftShift;
     const hasManagerSupport = facts.hasManagerMember || facts.hasManagerInvite;

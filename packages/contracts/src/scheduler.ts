@@ -65,7 +65,7 @@ export const SchedulerDepartmentSchema = z.object({
 });
 
 export const SchedulerPersonSchema = z.object({
-    /** User id, roster-entry id or temp-worker id, depending on `kind`. */
+    /** The worker's id. */
     id: z.string(),
     kind: AssignedWorkerKindSchema,
     name: z.string(),
@@ -189,9 +189,9 @@ export const SchedulerWeekSchema = z.object({
 /** Shift ids for new shifts are made by the client so later changes in the same batch can refer to them. */
 export const NewShiftIdSchema = z.string().regex(/^shf_[0-9A-Za-z]{16}$/, "Expected a shift id like shf_0123456789abcdef");
 
+/** Who is on a shift: a worker, by id. */
 export const SchedulerPersonRefSchema = z.object({
     personId: z.string().min(1),
-    kind: AssignedWorkerKindSchema,
 });
 
 const RoleSchema = z.string().trim().min(1, "Pick a role").max(60);
@@ -420,7 +420,7 @@ export interface BusinessTypePreset {
     summary: string;
     /**
      * Starter departments. Roles use the canonical spelling
-     * (canonicalizeWorkerRole) so they match the roster without translation.
+     * (canonicalizeWorkerRole) so they match a worker's roles without translation.
      * A department with no roles takes everyone no other department claims.
      */
     departments: { name: string; roles: string[] }[];

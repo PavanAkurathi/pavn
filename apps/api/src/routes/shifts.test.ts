@@ -51,6 +51,7 @@ mock.module("@repo/scheduling-timekeeping", () => {
         getDraftShifts: noop,
         getShiftById: noopObject,
         approveShift: noopObject,
+        reconcileOverdueShiftState: noopObject,
         cancelShift: noopObject,
         assignWorker: noopObject,
         getShiftTimesheets: noop,

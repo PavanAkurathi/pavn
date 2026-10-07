@@ -3,6 +3,7 @@ export * from "./schema";
 export * from "./audit";
 export * from "./spatial";
 export * from "./worker-roles";
+export * from "./workers";
 export * from "./scheduling";
 
 export { eq, ne, and, or, desc, asc, relations, sql, inArray, isNull, not } from "drizzle-orm";

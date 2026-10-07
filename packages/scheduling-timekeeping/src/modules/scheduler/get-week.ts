@@ -4,17 +4,13 @@ import { db } from "@repo/database";
 import {
     department,
     location,
-    member,
     organization,
-    rosterEntry,
     scheduleEvent,
     shift,
     shiftRequest,
-    tempWorker,
     timeOffRequest,
-    user,
+    worker,
     workerAvailability,
-    workerRole,
     type ShiftPendingPatch,
 } from "@repo/database/schema";
 import { AppError } from "@repo/observability";
@@ -28,7 +24,7 @@ import type {
     SchedulerUnavailable,
     SchedulerWeek,
 } from "@repo/contracts/scheduler";
-import { and, eq, gt, inArray, lt, ne, notInArray } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, ne } from "drizzle-orm";
 
 import { evaluateConflicts } from "../../domain/conflicts";
 import { addedOvertimeMinutes, paidMinutes, summarizeWeek, type OvertimePolicy, type WorkInterval } from "../../domain/hours";
@@ -36,19 +32,17 @@ import { compactRange, compactTime, dayName } from "../../domain/labels";
 import { dayIndexOf, isLocalDate, splitIntoDaySpans, startOfLocalWeek, weekBounds, weekDates } from "../../domain/week";
 import { canonicalizeCrewRole, deriveCrewRoles } from "../../utils/crew-roles";
 import { getInitials } from "../../utils/formatting";
+import { workerKind } from "../../utils/mapper";
 import { localDateInZone, localTimeInZone } from "../../utils/zoned-time";
 
-type PersonKind = "roster" | "invited" | "agency";
+type PersonKind = "active" | "invited" | "agency";
 type AssignmentRow = {
     id: string;
-    workerId: string | null;
-    tempWorkerId: string | null;
-    rosterEntryId: string | null;
+    workerId: string;
     status: string;
     pendingState: string | null;
 };
 
-const MANAGER_ROLES = ["admin", "manager", "owner"];
 const DEAD_ASSIGNMENT = new Set(["removed", "cancelled"]);
 // Wide enough that an overnight shift from the day before still shows up as an overlap.
 const OVERLAP_PADDING_MS = 24 * 60 * 60 * 1000;
@@ -109,7 +103,7 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
     const padEnd = new Date(bounds.end.getTime() + OVERLAP_PADDING_MS);
     const locationById = new Map(locations.map((l) => [l.id, l]));
 
-    const [shiftRows, members, roleRows, rosterRows, timeOffRows, availabilityRows, eventRows, departmentRows, openShiftRequests, openTimeOff] =
+    const [shiftRows, workerRows, timeOffRows, availabilityRows, eventRows, departmentRows, openShiftRequests, openTimeOff] =
         await Promise.all([
             db.query.shift.findMany({
                 where: and(
@@ -120,22 +114,13 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
                 ),
                 with: {
                     assignments: {
-                        columns: { id: true, workerId: true, tempWorkerId: true, rosterEntryId: true, status: true, pendingState: true },
+                        columns: { id: true, workerId: true, status: true, pendingState: true },
                     },
                 },
             }),
-            db.query.member.findMany({
-                where: and(eq(member.organizationId, input.orgId), notInArray(member.role, MANAGER_ROLES)),
-                columns: { jobTitle: true },
-                with: { user: { columns: { id: true, name: true, email: true } } },
-            }),
-            db.query.workerRole.findMany({
-                where: eq(workerRole.organizationId, input.orgId),
-                columns: { workerId: true, role: true },
-            }),
-            db.query.rosterEntry.findMany({
-                where: eq(rosterEntry.organizationId, input.orgId),
-                columns: { id: true, name: true, email: true, roles: true, jobTitle: true },
+            db.query.worker.findMany({
+                where: eq(worker.organizationId, input.orgId),
+                columns: { id: true, name: true, userId: true, employmentType: true, agency: true, status: true, roles: true, jobTitle: true },
             }),
             db.query.timeOffRequest.findMany({
                 where: and(
@@ -214,12 +199,6 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
 
     // ---- People ---------------------------------------------------------------
     const people = new Map<string, SchedulerPerson>();
-    const rolesByWorker = new Map<string, string[]>();
-    for (const r of roleRows) {
-        const list = rolesByWorker.get(r.workerId) ?? [];
-        list.push(r.role);
-        rolesByWorker.set(r.workerId, list);
-    }
 
     const addPerson = (id: string, kind: PersonKind, name: string, roles: string[], agencyName: string | null = null) => {
         if (people.has(id)) return;
@@ -236,52 +215,40 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
             overtimeMinutes: 0,
         });
     };
+    const addWorker = (w: (typeof workerRows)[number]) =>
+        addPerson(
+            w.id,
+            workerKind(w),
+            w.name,
+            // Agency temps are placeholders with no roles of their own.
+            w.employmentType === "agency" ? w.roles : deriveCrewRoles(w.roles, w.jobTitle),
+            w.agency,
+        );
 
-    const memberEmails = new Set<string>();
-    for (const m of members) {
-        if (!m.user) continue;
-        memberEmails.add((m.user.email || "").toLowerCase());
-        addPerson(m.user.id, "roster", m.user.name, deriveCrewRoles(rolesByWorker.get(m.user.id) ?? [], m.jobTitle));
-    }
-    for (const entry of rosterRows) {
-        if (memberEmails.has((entry.email || "").toLowerCase())) continue;
-        const roles = deriveCrewRoles(entry.roles ?? [], entry.jobTitle);
-        addPerson(entry.id, "invited", entry.name, roles);
+    // Time off and availability belong to a person's app account; the grid
+    // draws them against the worker that account is.
+    const workerOfUser = new Map<string, string>();
+    for (const w of workerRows) {
+        if (w.userId) workerOfUser.set(w.userId, w.id);
     }
 
-    // Anyone on a shift this week who is not on the roster any more (a manager
-    // who covered, someone who left, an agency worker) still needs a row.
-    const personOf = (a: AssignmentRow): { id: string; kind: PersonKind } | null =>
-        a.workerId ? { id: a.workerId, kind: "roster" }
-            : a.rosterEntryId ? { id: a.rosterEntryId, kind: "invited" }
-                : a.tempWorkerId ? { id: a.tempWorkerId, kind: "agency" }
-                    : null;
+    // Everyone on the list is a row, except agency temps (placeholders) and
+    // paused workers, who only show up if they are on a shift this week.
+    for (const w of workerRows) {
+        if (w.employmentType !== "agency" && w.status !== "inactive") addWorker(w);
+    }
+    const workerById = new Map(workerRows.map((w) => [w.id, w]));
+
+    const personOf = (a: AssignmentRow): { id: string } => ({ id: a.workerId });
 
     const inWeek = (ws: WorkingShift) => ws.start.getTime() >= bounds.start.getTime() && ws.start.getTime() < bounds.end.getTime();
-    const missingUsers = new Set<string>();
-    const missingTemps = new Set<string>();
     for (const ws of working) {
         if (ws.row.locationId !== loc.id || !inWeek(ws)) continue;
         for (const a of ws.live) {
-            const who = personOf(a);
-            if (!who || people.has(who.id)) continue;
-            if (who.kind === "agency") missingTemps.add(who.id);
-            else if (who.kind === "roster") missingUsers.add(who.id);
+            const w = workerById.get(a.workerId);
+            if (w) addWorker(w);
         }
     }
-    const [extraUsers, temps] = await Promise.all([
-        missingUsers.size
-            ? db.query.user.findMany({ where: inArray(user.id, [...missingUsers]), columns: { id: true, name: true } })
-            : Promise.resolve([]),
-        missingTemps.size
-            ? db.query.tempWorker.findMany({
-                where: and(eq(tempWorker.organizationId, input.orgId), inArray(tempWorker.id, [...missingTemps])),
-                columns: { id: true, name: true, agency: true },
-            })
-            : Promise.resolve([]),
-    ]);
-    for (const u of extraUsers) addPerson(u.id, "roster", u.name, deriveCrewRoles(rolesByWorker.get(u.id) ?? []));
-    for (const t of temps) addPerson(t.id, "agency", t.name, [], t.agency ?? null);
 
     // ---- Departments ------------------------------------------------------------
     const departments: SchedulerDepartment[] = departmentRows.length
@@ -324,7 +291,6 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
         for (const a of ws.live) {
             if (!stays(a)) continue;
             const who = personOf(a);
-            if (!who) continue;
             const list = shiftsByPerson.get(who.id) ?? [];
             list.push(ws);
             shiftsByPerson.set(who.id, list);
@@ -355,15 +321,17 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
     const timeOff: SchedulerTimeOff[] = [];
     const timeOffByPerson = new Map<string, ConflictContextTimeOff[]>();
     for (const t of timeOffRows) {
+        const personId = workerOfUser.get(t.workerId);
+        if (!personId) continue;
         const status = t.status === "approved" ? "approved" : "pending";
-        const list = timeOffByPerson.get(t.workerId) ?? [];
+        const list = timeOffByPerson.get(personId) ?? [];
         list.push({ start: t.startTime, end: t.endTime, status, label: spanLabel(t.startTime, t.endTime, t.allDay) });
-        timeOffByPerson.set(t.workerId, list);
+        timeOffByPerson.set(personId, list);
         const spans = splitIntoDaySpans(t.startTime, t.endTime, weekStart, tz);
         if (spans.length === 0) continue;
         timeOff.push({
             id: t.id,
-            personId: t.workerId,
+            personId,
             status,
             allDay: t.allDay,
             reason: t.reason ?? null,
@@ -376,14 +344,16 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
     const unavailable: SchedulerUnavailable[] = [];
     const unavailableByPerson = new Map<string, Array<{ start: Date; end: Date; label: string }>>();
     for (const a of availabilityRows) {
-        const list = unavailableByPerson.get(a.workerId) ?? [];
+        const personId = workerOfUser.get(a.workerId);
+        if (!personId) continue;
+        const list = unavailableByPerson.get(personId) ?? [];
         list.push({ start: a.startTime, end: a.endTime, label: spanLabel(a.startTime, a.endTime, false) });
-        unavailableByPerson.set(a.workerId, list);
+        unavailableByPerson.set(personId, list);
         const spans = splitIntoDaySpans(a.startTime, a.endTime, weekStart, tz);
         if (spans.length === 0) continue;
         unavailable.push({
             id: a.id,
-            personId: a.workerId,
+            personId,
             startsAt: a.startTime.toISOString(),
             endsAt: a.endTime.toISOString(),
             spans,
@@ -423,12 +393,11 @@ export async function getSchedulerWeek(input: GetSchedulerWeekInput): Promise<Sc
 
         const assignees: SchedulerShift["assignees"] = ws.live.flatMap((a) => {
             const who = personOf(a);
-            if (!who) return [];
             const pendingState: "add" | "remove" | null =
                 a.pendingState === "add" || a.pendingState === "remove" ? a.pendingState : null;
             return [{
                 personId: who.id,
-                kind: who.kind,
+                kind: people.get(who.id)?.kind ?? "invited",
                 pendingState,
                 warnings: counts(ws) && pendingState !== "remove" ? warningsFor(who.id, ws) : [],
             }];

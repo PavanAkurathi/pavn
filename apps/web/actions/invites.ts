@@ -21,7 +21,7 @@ export async function deleteMemberAction(memberId: string) {
     });
 
     revalidatePath("/settings/team");
-    revalidatePath("/rosters");
+    revalidatePath("/workers");
     return { success: true };
 }
 

@@ -60,8 +60,7 @@ export const OnboardingFactsSchema = z.object({
     hasLocation: z.boolean(),
     hasPublishedShift: z.boolean(),
     hasDraftShift: z.boolean(),
-    hasRosterEntry: z.boolean(),
-    hasWorkerMember: z.boolean(),
+    hasWorker: z.boolean(),
     hasManagerMember: z.boolean(),
     hasManagerInvite: z.boolean(),
 });

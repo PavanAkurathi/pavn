@@ -1,25 +1,23 @@
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@repo/database";
-import {
-    invitation,
-    member,
-    organization,
-    rosterEntry,
-    user,
-} from "@repo/database/schema";
-import { resolveWorkerRoleSet, upsertWorkerRolesForOrganization } from "@repo/database";
+import { member, organization, user, worker } from "@repo/database/schema";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
 
-type WorkerRosterAccess = {
+/**
+ * Who gets into the worker app. Nobody signs themselves up: a business adds a
+ * worker (name + phone) and invites them, and that invited worker row is the
+ * only thing that makes a phone number eligible. Statuses that count:
+ * 'invited' (waiting for them to sign in) and 'active' (already have).
+ * A worker who is only 'added', or who was made 'inactive', cannot sign in.
+ */
+const ELIGIBLE_STATUSES = ["invited", "active"] as const;
+
+type WorkerAccessRow = {
+    workerId: string;
     organizationId: string;
     organizationName: string;
-    rosterEntryId: string;
+    userId: string | null;
     name: string;
-    email: string;
-    role: string | null;
-    jobTitle: string | null;
-    roles: string[];
-    hourlyRate: number | null;
     status: string;
 };
 
@@ -31,12 +29,8 @@ export type WorkerPhoneAccess = {
     existingUserId: string | null;
     displayName: string | null;
     organizationIds: string[];
-    rosterAccess: WorkerRosterAccess[];
+    workerAccess: WorkerAccessRow[];
 };
-
-function toUniqueOrganizationIds(values: Array<{ organizationId: string }>): string[] {
-    return [...new Set(values.map((value) => value.organizationId))];
-}
 
 export function getWorkerTempEmail(phoneNumber: string): string {
     const digits = phoneNumber.replace(/\D/g, "");
@@ -49,7 +43,6 @@ export async function getWorkerPhoneAccess(phoneNumber: string): Promise<WorkerP
     }
 
     const normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
-    const normalizedDigits = normalizedPhoneNumber.replace(/\D/g, "");
 
     const existingUser = await db.query.user.findFirst({
         where: eq(user.phoneNumber, normalizedPhoneNumber),
@@ -59,34 +52,31 @@ export async function getWorkerPhoneAccess(phoneNumber: string): Promise<WorkerP
         },
     });
 
-    const activeMemberships = existingUser
-        ? await db
-            .select({ organizationId: member.organizationId })
-            .from(member)
-            .where(and(eq(member.userId, existingUser.id), eq(member.status, "active")))
-        : [];
-
-    const rosterAccess = await db
+    const workerAccess = await db
         .select({
-            organizationId: rosterEntry.organizationId,
+            workerId: worker.id,
+            organizationId: worker.organizationId,
             organizationName: organization.name,
-            rosterEntryId: rosterEntry.id,
-            name: rosterEntry.name,
-            email: rosterEntry.email,
-            role: rosterEntry.role,
-            jobTitle: rosterEntry.jobTitle,
-            roles: rosterEntry.roles,
-            hourlyRate: rosterEntry.hourlyRate,
-            status: rosterEntry.status,
+            userId: worker.userId,
+            name: worker.name,
+            status: worker.status,
         })
-        .from(rosterEntry)
-        .innerJoin(organization, eq(rosterEntry.organizationId, organization.id))
-        .where(sql`regexp_replace(coalesce(${rosterEntry.phoneNumber}, ''), '[^0-9]', '', 'g') = ${normalizedDigits}`);
+        .from(worker)
+        .innerJoin(organization, eq(worker.organizationId, organization.id))
+        .where(and(
+            eq(worker.phoneNumber, normalizedPhoneNumber),
+            inArray(worker.status, [...ELIGIBLE_STATUSES]),
+        ));
 
-    const organizationIds = [...new Set([
-        ...toUniqueOrganizationIds(activeMemberships),
-        ...toUniqueOrganizationIds(rosterAccess),
-    ])];
+    const organizationIds = [...new Set(workerAccess.map((row) => row.organizationId))];
+
+    // A brand-new account is named after its phone number; the business's name
+    // for the person is the better one until they set their own.
+    const accountNameIsPlaceholder =
+        !existingUser?.name || existingUser.name === normalizedPhoneNumber || existingUser.name === phoneNumber;
+    const displayName = accountNameIsPlaceholder
+        ? (workerAccess[0]?.name ?? existingUser?.name ?? null)
+        : existingUser!.name;
 
     return {
         normalizedPhoneNumber,
@@ -94,16 +84,107 @@ export async function getWorkerPhoneAccess(phoneNumber: string): Promise<WorkerP
         organizationCount: organizationIds.length,
         existingAccount: Boolean(existingUser),
         existingUserId: existingUser?.id ?? null,
-        displayName: existingUser?.name ?? rosterAccess[0]?.name ?? null,
+        displayName,
         organizationIds,
-        rosterAccess,
+        workerAccess,
     };
 }
 
+/**
+ * What an invite code points at, for the worker app's invite screen. Only says
+ * which business and which person; the phone number still has to match.
+ */
+export async function getWorkerInviteByCode(code: string) {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) {
+        return null;
+    }
+
+    const [row] = await db
+        .select({
+            workerId: worker.id,
+            name: worker.name,
+            phoneNumber: worker.phoneNumber,
+            status: worker.status,
+            organizationName: organization.name,
+        })
+        .from(worker)
+        .innerJoin(organization, eq(worker.organizationId, organization.id))
+        .where(eq(worker.inviteCode, trimmed))
+        .limit(1);
+
+    if (!row || !ELIGIBLE_STATUSES.includes(row.status as (typeof ELIGIBLE_STATUSES)[number])) {
+        return null;
+    }
+
+    return {
+        workerId: row.workerId,
+        workerName: row.name,
+        organizationName: row.organizationName,
+        // Enough for "the number ending in 42", not enough to leak it.
+        phoneHint: row.phoneNumber ? row.phoneNumber.slice(-2) : null,
+    };
+}
+
+/**
+ * Runs after a worker proves they own a phone number: attach this account to
+ * every business that invited that number, and give it membership in each.
+ */
 export async function syncWorkerMembershipsForPhone(userId: string, phoneNumber: string): Promise<string[]> {
     const access = await getWorkerPhoneAccess(phoneNumber);
     if (!access.eligible) {
-        throw new Error("This phone number has not been added to any organization.");
+        throw new Error("This phone number has not been invited to any organization.");
+    }
+
+    const now = new Date();
+
+    for (const row of access.workerAccess) {
+        // A number someone else already signed in with stays theirs.
+        if (row.userId && row.userId !== userId) {
+            continue;
+        }
+
+        // Already attached to another worker row in the same business (a stale one).
+        const alreadyLinked = await db.query.worker.findFirst({
+            where: and(
+                eq(worker.organizationId, row.organizationId),
+                eq(worker.userId, userId),
+            ),
+            columns: { id: true },
+        });
+        if (alreadyLinked && alreadyLinked.id !== row.workerId) {
+            continue;
+        }
+
+        await db
+            .update(worker)
+            .set({ userId, status: "active", updatedAt: now })
+            .where(eq(worker.id, row.workerId));
+
+        const existingMembership = await db.query.member.findFirst({
+            where: and(
+                eq(member.userId, userId),
+                eq(member.organizationId, row.organizationId),
+            ),
+            columns: { id: true, status: true },
+        });
+
+        if (!existingMembership) {
+            await db.insert(member).values({
+                id: crypto.randomUUID(),
+                organizationId: row.organizationId,
+                userId,
+                role: "member",
+                status: "active",
+                createdAt: now,
+                updatedAt: now,
+            });
+        } else if (existingMembership.status !== "active") {
+            await db
+                .update(member)
+                .set({ status: "active", updatedAt: now })
+                .where(eq(member.id, existingMembership.id));
+        }
     }
 
     const existingUser = await db.query.user.findFirst({
@@ -111,78 +192,8 @@ export async function syncWorkerMembershipsForPhone(userId: string, phoneNumber:
         columns: {
             id: true,
             name: true,
-            updatedAt: true,
         },
     });
-
-    const currentMemberships = await db
-        .select({
-            id: member.id,
-            organizationId: member.organizationId,
-            status: member.status,
-        })
-        .from(member)
-        .where(eq(member.userId, userId));
-
-    const membershipByOrgId = new Map(
-        currentMemberships.map((membership) => [membership.organizationId, membership])
-    );
-
-    for (const roster of access.rosterAccess) {
-        const existingMembership = membershipByOrgId.get(roster.organizationId);
-        if (existingMembership) {
-            if (existingMembership.status !== "active") {
-                await db
-                    .update(member)
-                    .set({
-                        status: "active",
-                        role: roster.role ?? "member",
-                        jobTitle: roster.jobTitle,
-                        hourlyRate: roster.hourlyRate,
-                        updatedAt: new Date(),
-                    })
-                    .where(eq(member.id, existingMembership.id));
-            }
-        } else {
-            await db.insert(member).values({
-                id: crypto.randomUUID(),
-                organizationId: roster.organizationId,
-                userId,
-                role: roster.role ?? "member",
-                status: "active",
-                jobTitle: roster.jobTitle,
-                hourlyRate: roster.hourlyRate,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            });
-        }
-
-        await db
-            .update(rosterEntry)
-            .set({ status: "active" })
-            .where(eq(rosterEntry.id, roster.rosterEntryId));
-
-        if (roster.email) {
-            await db
-                .update(invitation)
-                .set({ status: "accepted" })
-                .where(and(
-                    eq(invitation.organizationId, roster.organizationId),
-                    eq(invitation.email, roster.email),
-                    or(eq(invitation.status, "pending"), eq(invitation.status, "accepted"))
-                ));
-        }
-
-        await upsertWorkerRolesForOrganization({
-            workerId: userId,
-            organizationId: roster.organizationId,
-            roles: resolveWorkerRoleSet({
-                roles: roster.roles,
-                fallbackRole: roster.jobTitle,
-            }),
-            hourlyRate: roster.hourlyRate,
-        });
-    }
 
     const nextUserValues: {
         role: string;
@@ -190,7 +201,7 @@ export async function syncWorkerMembershipsForPhone(userId: string, phoneNumber:
         name?: string;
     } = {
         role: "worker",
-        updatedAt: new Date(),
+        updatedAt: now,
     };
 
     if (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth } from "date-fns";
 import useSWR from "swr";
 import { DateRange } from "react-day-picker";
 import { Download, Calendar as CalendarIcon, MapPin, Briefcase, Search } from "lucide-react";
@@ -233,10 +233,10 @@ export default function ReportsPage() {
                                             </td>
                                             <td className="px-4 py-3 text-sm text-muted-foreground">{row.shift.title}</td>
                                             <td className="px-4 py-3 text-sm text-muted-foreground">{row.location?.name || '—'}</td>
-                                            <td className="px-4 py-3 text-sm">{format(new Date(row.shift.date), 'MMM d, yyyy')}</td>
+                                            <td className="px-4 py-3 text-sm">{format(parseISO(row.shift.date), 'MMM d, yyyy')}</td>
                                             <td className="px-4 py-3 text-sm text-right font-medium">{row.timesheet.totalHours.toFixed(2)}h</td>
                                             <td className="px-4 py-3 text-center">
-                                                <Badge variant={row.status === 'completed' ? 'default' : 'secondary'} className="capitalize">
+                                                <Badge variant={row.status === 'approved' ? 'secondary' : 'default'} className="capitalize">
                                                     {row.status}
                                                 </Badge>
                                             </td>

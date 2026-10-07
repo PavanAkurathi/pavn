@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import useSWR from "swr";
+import { useEffect, useState } from "react";
+import useSWR, { useSWRConfig } from "swr";
 import { toast } from "sonner";
 import type { SchedulerPublishPerson, SchedulerPublishPreview, SchedulerWeek } from "@repo/contracts/scheduler";
 import { Button } from "@repo/ui/components/ui/button";
@@ -67,6 +67,11 @@ export function ReviewPublish({
     const weekStart = weeks[0]?.weekStart ?? "";
     const siteIds = weeks.map((w) => w.location.id).join(",");
     const { data: previews, error, isLoading } = useSWR(open && weeks.length ? (["scheduler-review", siteIds, weekStart] as const) : null, fetchPreviews, { revalidateOnFocus: false });
+    // Drop the answer when the dialog closes, so the next open shows "Checking…" rather than the last publish's summary.
+    const { mutate } = useSWRConfig();
+    useEffect(() => {
+        if (!open) void mutate((key) => Array.isArray(key) && key[0] === "scheduler-review", undefined, { revalidate: false });
+    }, [open, mutate]);
     const [publishing, setPublishing] = useState(false);
     const [done, setDone] = useState<{ sites: string[]; people: number } | null>(null);
 
@@ -171,7 +176,7 @@ export function ReviewPublish({
                                             <ul className="mt-0.5 text-muted-foreground">
                                                 {preview.unreachable.map((p) => (
                                                     <li key={p.personId}>
-                                                        <span className="text-foreground">{p.name}</span> ({p.kind === "agency" ? "agency" : "invited"}): {describe(p)}
+                                                        <span className="text-foreground">{p.name}</span> ({p.kind === "agency" ? "agency" : "not on the app yet"}): {describe(p)}
                                                     </li>
                                                 ))}
                                             </ul>

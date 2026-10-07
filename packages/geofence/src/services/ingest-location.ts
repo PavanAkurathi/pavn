@@ -2,7 +2,7 @@
 
 import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
 import { visibleToStaff } from "@repo/database/scheduling";
-import { workerLocation, shiftAssignment, shift, member, location, organization } from "@repo/database/schema";
+import { workerLocation, shiftAssignment, shift, member, location, organization, worker } from "@repo/database/schema";
 import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { z } from "zod";
 import { nanoid } from "nanoid";
@@ -54,10 +54,11 @@ export const ingestLocation = async (data: any, workerId: string, orgId: string)
         location,
     })
         .from(shiftAssignment)
+        .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
         .leftJoin(location, eq(shift.locationId, location.id))
         .where(and(
-            eq(shiftAssignment.workerId, workerId),
+            eq(worker.userId, workerId),
             eq(shift.organizationId, orgId),
             inArray(shiftAssignment.status, ['active', 'assigned', 'in-progress']),
             visibleToStaff(),

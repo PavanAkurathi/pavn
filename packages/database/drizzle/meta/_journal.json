@@ -29,6 +29,13 @@
       "when": 1790534339223,
       "tag": "0003_soft_bloodstorm",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791299913229,
+      "tag": "0004_one_worker_table",
+      "breakpoints": true
     }
   ]
 }

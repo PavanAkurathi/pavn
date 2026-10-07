@@ -137,7 +137,8 @@ export default function BulkImportPage() {
     const validateRow = (row: { name: string; email: string }) => {
         const errors: string[] = [];
         if (!row.name) errors.push("Missing Name");
-        if (!row.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) errors.push("Invalid Email");
+        // Email is optional: the phone number is how a worker joins the app.
+        if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email)) errors.push("Invalid Email");
         return { valid: errors.length === 0, errors };
     };
 
@@ -183,9 +184,8 @@ export default function BulkImportPage() {
                         .map((role) => role.trim())
                         .filter(Boolean),
                     name: r.name,
-                    email: r.email,
+                    email: r.email || undefined,
                     phoneNumber: r.phone || undefined,
-                    role: r.role,
                     jobTitle: r.jobTitle || r.roles.split(/[,;\n|]+/).map((role) => role.trim()).filter(Boolean)[0] || undefined,
                     hourlyRate: hourlyRateCents,
                     image: r.image || undefined,
@@ -218,11 +218,11 @@ export default function BulkImportPage() {
         <div className="container flex max-w-5xl flex-col gap-6 py-8">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" asChild>
-                    <Link href="/rosters"><ArrowLeft className="h-4 w-4" /></Link>
+                    <Link href="/workers"><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Bulk Import Workers</h1>
-                    <p className="text-muted-foreground">Upload a CSV or Excel file to add users in bulk.</p>
+                    <p className="text-muted-foreground">Upload a CSV or Excel file to add workers in bulk. Nobody is invited until you send the invites.</p>
                 </div>
             </div>
 
@@ -234,9 +234,9 @@ export default function BulkImportPage() {
                                 <EmptyMedia variant="icon">
                                     <FileSpreadsheet />
                                 </EmptyMedia>
-                                <EmptyTitle>Upload your roster</EmptyTitle>
+                                <EmptyTitle>Upload your workers</EmptyTitle>
                                 <EmptyDescription>
-                                    Drag and drop or click to browse a CSV or Excel file. Supported columns include Name, Email, Phone, Job Title, and Roles.
+                                    Drag and drop or click to browse a CSV or Excel file. Supported columns include Name, Phone, Email, Job Title, and Roles. A phone number is how a worker joins the app.
                                 </EmptyDescription>
                             </EmptyHeader>
                             <EmptyContent>
@@ -312,7 +312,7 @@ export default function BulkImportPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Input
-                                                        className={cn("h-8 border-transparent bg-transparent hover:border-input focus:bg-background", (!row.email || row.errors.includes("Invalid Email")) && "border-destructive/30")}
+                                                        className={cn("h-8 border-transparent bg-transparent hover:border-input focus:bg-background", row.errors.includes("Invalid Email") && "border-destructive/30")}
                                                         value={row.email}
                                                         onChange={(e) => updateRow(row.id, "email", e.target.value)}
                                                     />
@@ -395,7 +395,7 @@ export default function BulkImportPage() {
                             {importStats.failed > 0 ? (
                                 <Badge variant="destructive">Failed to add {importStats.failed} workers</Badge>
                             ) : null}
-                            <Button onClick={() => router.push("/rosters")}>
+                            <Button onClick={() => router.push("/workers")}>
                                 Back to Team
                             </Button>
                         </EmptyContent>

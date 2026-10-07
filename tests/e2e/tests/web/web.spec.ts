@@ -170,23 +170,23 @@ test.describe('Schedule Management', () => {
 // CREW MANAGEMENT TESTS
 // ============================================================================
 
-test.describe('Roster Management', () => {
+test.describe('Worker Management', () => {
     test.beforeEach(async ({ page }) => {
         // Log console messages
         page.on('console', msg => console.log(`BROWSER LOG: ${msg.text()}`));
         page.on('pageerror', err => console.log(`BROWSER ERROR: ${err.message}`));
 
         await signIn(page);
-        await page.click('a[href*="rosters"]');
-        await expect(page).toHaveURL(/.*rosters.*/);
+        await page.click('a[href*="workers"]');
+        await expect(page).toHaveURL(/.*workers.*/);
         await page.waitForLoadState('networkidle');
     });
 
-    test('roster page loads', async ({ page }) => {
-        await expect(page).toHaveURL(/.*rosters.*/);
+    test('workers page loads', async ({ page }) => {
+        await expect(page).toHaveURL(/.*workers.*/);
     });
 
-    test('can search roster members', async ({ page }) => {
+    test('can search workers', async ({ page }) => {
         const searchInput = page.locator('input[placeholder*="search" i]');
 
         if (await searchInput.isVisible()) {

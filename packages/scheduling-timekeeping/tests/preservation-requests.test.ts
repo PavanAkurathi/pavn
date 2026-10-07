@@ -11,7 +11,7 @@ import {
     shiftRequest,
     timeOffRequest,
     user,
-    workerRole,
+    worker,
 } from "@repo/database/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -32,6 +32,13 @@ const ANA = `usr_ra${tag}`;
 const BEN = `usr_rb${tag}`;
 const CARA = `usr_rc${tag}`;
 const BOSS = `usr_rm${tag}`;
+// Requests are made by app accounts (the ids above); assignments point at the worker each account is here.
+const WORKER_OF: Record<string, string> = {
+    [ANA]: `wkr_ra${tag}`,
+    [BEN]: `wkr_rb${tag}`,
+    [CARA]: `wkr_rc${tag}`,
+};
+const ACCOUNT_OF = Object.fromEntries(Object.entries(WORKER_OF).map(([user, worker]) => [worker, user]));
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 
@@ -57,8 +64,8 @@ async function addShift(input: { start: Date; hours?: number; capacity?: number;
         publishedAt: new Date(),
     });
     const rows = [
-        ...people.map((workerId) => ({ id: `asg_${nanoid(10)}`, shiftId: id, workerId, status: "active", pendingState: null })),
-        ...(input.staged ?? []).map((workerId) => ({ id: `asg_${nanoid(10)}`, shiftId: id, workerId, status: "active", pendingState: "add" })),
+        ...people.map((account) => ({ id: `asg_${nanoid(10)}`, shiftId: id, workerId: WORKER_OF[account]!, status: "active", pendingState: null })),
+        ...(input.staged ?? []).map((account) => ({ id: `asg_${nanoid(10)}`, shiftId: id, workerId: WORKER_OF[account]!, status: "active", pendingState: "add" })),
     ];
     if (rows.length) await db.insert(shiftAssignment).values(rows);
     return id;
@@ -66,7 +73,7 @@ async function addShift(input: { start: Date; hours?: number; capacity?: number;
 
 const assignmentsOf = async (shiftId: string) =>
     (await db.query.shiftAssignment.findMany({ where: eq(shiftAssignment.shiftId, shiftId) }))
-        .map((a) => [a.workerId, a.status, a.pendingState] as const)
+        .map((a) => [ACCOUNT_OF[a.workerId] ?? a.workerId, a.status, a.pendingState] as const)
         .sort();
 const messagesFor = (workerId: string) =>
     db.query.scheduledNotification.findMany({
@@ -96,10 +103,10 @@ describeDb("Requests (database)", () => {
             { id: `mem_c${tag}`, userId: CARA, organizationId: ORG, role: "member", createdAt: now },
             { id: `mem_m${tag}`, userId: BOSS, organizationId: ORG, role: "admin", createdAt: now },
         ] as never);
-        await db.insert(workerRole).values([
-            { id: `wr_a${tag}`, workerId: ANA, organizationId: ORG, role: "Server" },
-            { id: `wr_b${tag}`, workerId: BEN, organizationId: ORG, role: "Server" },
-            { id: `wr_c${tag}`, workerId: CARA, organizationId: ORG, role: "Line Cook" },
+        await db.insert(worker).values([
+            { id: WORKER_OF[ANA]!, organizationId: ORG, userId: ANA, name: "Ana Ruiz", status: "active", roles: ["Server"] },
+            { id: WORKER_OF[BEN]!, organizationId: ORG, userId: BEN, name: "Ben Kim", status: "active", roles: ["Server"] },
+            { id: WORKER_OF[CARA]!, organizationId: ORG, userId: CARA, name: "Cara Diaz", status: "active", roles: ["Line Cook"] },
         ]);
     });
 
@@ -117,7 +124,7 @@ describeDb("Requests (database)", () => {
         await db.delete(timeOffRequest).where(eq(timeOffRequest.organizationId, ORG));
         await db.delete(shift).where(eq(shift.organizationId, ORG));
         await db.delete(auditLog).where(eq(auditLog.organizationId, ORG));
-        await db.delete(workerRole).where(eq(workerRole.organizationId, ORG));
+        await db.delete(worker).where(eq(worker.organizationId, ORG));
         await db.delete(member).where(eq(member.organizationId, ORG));
         await db.delete(location).where(eq(location.organizationId, ORG));
         await db.delete(user).where(inArray(user.id, [ANA, BEN, CARA, BOSS]));

@@ -141,8 +141,8 @@ test.describe("manager browser signup flow", () => {
 
         await expect(page.getByRole("heading", { name: /add your first workers/i })).toBeVisible();
         await expect(page.getByText(/worker access is the gate for the mobile experience/i).first()).toBeVisible();
-        await expect(page.getByRole("link", { name: /open roster workspace/i })).toBeVisible();
-        await expect(page.getByRole("link", { name: /import roster csv/i })).toBeVisible();
+        await expect(page.getByRole("link", { name: /open your workers/i })).toBeVisible();
+        await expect(page.getByRole("link", { name: /import workers csv/i })).toBeVisible();
 
         await page.context().clearCookies();
         await page.goto("/auth/login");

@@ -50,7 +50,7 @@ const event = (over: Partial<SchedulerEvent>): SchedulerEvent => ({
 
 const person = (id: string, name: string, minutes = 0) => ({
     id,
-    kind: "roster" as const,
+    kind: "active" as const,
     name,
     initials: name.slice(0, 2).toUpperCase(),
     roles: ["Server"],
@@ -63,7 +63,7 @@ const person = (id: string, name: string, minutes = 0) => ({
 
 const assignee = (personId: string, pendingState: "add" | "remove" | null = null) => ({
     personId,
-    kind: "roster" as const,
+    kind: "active" as const,
     pendingState,
     warnings: [],
 });

@@ -1,6 +1,6 @@
 import { and, eq, like } from "drizzle-orm";
 import { db } from "@repo/database";
-import { location, member, organization, shift, shiftAssignment, user, workerRole } from "@repo/database/schema";
+import { location, member, organization, shift, shiftAssignment, user, worker } from "@repo/database/schema";
 import {
     DEV_SEED_ACCOUNTS,
     DEV_SEED_EMAIL_DOMAIN,
@@ -22,6 +22,7 @@ const LOCATION_ID = "loc_dev_seed";
 
 const userIdFor = (alias: string) => `usr_dev_${alias}`;
 const memberIdFor = (alias: string) => `mem_dev_${alias}`;
+const workerIdFor = (alias: string) => `wkr_dev_${alias}`;
 
 function assertSafeToSeed() {
     if (process.env.NODE_ENV === "production") {
@@ -116,14 +117,22 @@ export async function seed() {
                 .onConflictDoNothing();
 
             if (isWorker) {
+                // The business's own record of this person; shifts point at it. Signed in already,
+                // so the invite code is not needed.
                 await tx
-                    .insert(workerRole)
+                    .insert(worker)
                     .values({
-                        id: `wrole_dev_${account.alias}`,
-                        workerId: userId,
+                        id: workerIdFor(account.alias),
                         organizationId: DEV_SEED_ORGANIZATION.id,
-                        role: account.jobTitle,
+                        userId,
+                        name: account.name,
+                        phoneNumber: account.phoneNumber ?? null,
+                        jobTitle: account.jobTitle,
+                        roles: [account.jobTitle],
                         hourlyRate: account.hourlyRateCents ?? null,
+                        status: "active",
+                        createdAt: now,
+                        updatedAt: now,
                     })
                     .onConflictDoNothing();
             }
@@ -191,7 +200,7 @@ export async function seed() {
                         await tx.insert(shiftAssignment).values({
                             id: `asg_dev_${String(n).padStart(3, "0")}`,
                             shiftId: id,
-                            workerId: userIdFor(pattern.alias),
+                            workerId: workerIdFor(pattern.alias),
                             status: "active",
                             // A draft's people are staged too: nobody has been told yet.
                             pendingState: draft ? "add" : null,

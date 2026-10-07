@@ -11,6 +11,7 @@ interface ShiftApprovalBannerProps {
     totalHours: string;
     hasErrors: boolean;
     isApproved?: boolean;
+    isApproving?: boolean;
     onApprove: () => void;
 }
 
@@ -21,6 +22,7 @@ export function ShiftApprovalBanner({
     totalHours,
     hasErrors,
     isApproved = false,
+    isApproving = false,
     onApprove,
 }: ShiftApprovalBannerProps) {
     const title = isApproved
@@ -66,10 +68,10 @@ export function ShiftApprovalBanner({
                 ) : (
                     <Button
                         className="self-start"
-                        disabled={hasErrors}
+                        disabled={hasErrors || isApproving}
                         onClick={onApprove}
                     >
-                        Approve shift
+                        {isApproving ? "Approving…" : "Approve shift"}
                     </Button>
                 )}
             </div>

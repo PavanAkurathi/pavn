@@ -15,7 +15,7 @@ import {
     WorkerSchema,
 } from "@repo/contracts/workforce";
 import type { AppContext } from "../index";
-import { getWorkerPhoneAccess } from "@repo/auth";
+import { getWorkerInviteByCode, getWorkerPhoneAccess } from "@repo/auth";
 import {
     OpenApiLooseArraySchema,
     OpenApiLooseObjectSchema,
@@ -63,13 +63,14 @@ const workerAuthEligibilityRoute = createRoute({
     method: "post",
     path: "/auth/eligibility",
     summary: "Check Worker Phone Eligibility",
-    description: "Check whether a phone number has already been added to at least one organization and can use the worker app.",
+    description: "Check whether a business has invited this phone number to the worker app. If an invite code came with it, the code has to belong to the same person.",
     request: {
         body: {
             content: {
                 "application/json": {
                     schema: z.object({
                         phoneNumber: z.string(),
+                        inviteCode: z.string().optional(),
                     }),
                 },
             },
@@ -84,6 +85,7 @@ const workerAuthEligibilityRoute = createRoute({
                         eligible: z.boolean(),
                         organizationCount: z.number().int().nonnegative(),
                         existingAccount: z.boolean(),
+                        reason: z.enum(["invalid_code", "code_mismatch"]).optional(),
                     }),
                 },
             },
@@ -100,6 +102,17 @@ workerRouter.openapi(workerAuthEligibilityRoute, async (c) => {
 
     try {
         const access = await getWorkerPhoneAccess(body.phoneNumber);
+
+        if (typeof body.inviteCode === "string" && body.inviteCode.trim()) {
+            const invite = await getWorkerInviteByCode(body.inviteCode);
+            if (!invite) {
+                return c.json({ eligible: false, organizationCount: 0, existingAccount: access.existingAccount, reason: "invalid_code" as const }, 200);
+            }
+            if (!access.workerAccess.some((row) => row.workerId === invite.workerId)) {
+                return c.json({ eligible: false, organizationCount: 0, existingAccount: access.existingAccount, reason: "code_mismatch" as const }, 200);
+            }
+        }
+
         return c.json({
             eligible: access.eligible,
             organizationCount: access.organizationCount,
@@ -108,6 +121,41 @@ workerRouter.openapi(workerAuthEligibilityRoute, async (c) => {
     } catch {
         return c.json({ error: "Invalid phone number" }, 400);
     }
+});
+
+const workerInviteLookupRoute = createRoute({
+    method: "get",
+    path: "/auth/invite/{code}",
+    summary: "Look Up Worker Invite",
+    description: "What a business's invite code points at, so the app can say who invited the worker before they sign in.",
+    request: { params: z.object({ code: z.string() }) },
+    responses: {
+        200: {
+            description: "Invite",
+            content: {
+                "application/json": {
+                    schema: z.object({
+                        organizationName: z.string(),
+                        workerName: z.string(),
+                        phoneHint: z.string().nullable(),
+                    }),
+                },
+            },
+        },
+        404: { description: "Not a valid invite" },
+    },
+});
+
+workerRouter.openapi(workerInviteLookupRoute, async (c) => {
+    const invite = await getWorkerInviteByCode(c.req.param("code"));
+    if (!invite) {
+        return c.json({ error: "This invite isn't valid anymore. Ask your manager to send a new one." }, 404);
+    }
+    return c.json({
+        organizationName: invite.organizationName,
+        workerName: invite.workerName,
+        phoneHint: invite.phoneHint,
+    }, 200);
 });
 
 // =============================================================================

@@ -23,9 +23,7 @@ export const getUpcomingShifts = async (orgId: string) => {
             location: true,
             assignments: {
                 with: {
-                    worker: true,
-                    tempWorker: true,
-                    rosterEntry: true
+                    worker: true
                 }
             }
         }

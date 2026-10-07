@@ -12,7 +12,7 @@ import {
     getDashboardShiftsHref,
     getRequestsHref,
     getSchedulerHref,
-    isRosterPath,
+    isWorkersPath,
     isSchedulerPath,
 } from "@/lib/routes";
 import type { TrialState } from "@/lib/trial";
@@ -30,7 +30,7 @@ const startsWith = (base: string) => (pathname: string) => pathname === base || 
 /** What a manager does every day. */
 const PRIMARY: RailItem[] = [
     { label: "Schedule", href: getSchedulerHref(), icon: Calendar, active: isSchedulerPath },
-    { label: "Team", href: "/rosters", icon: Users, active: isRosterPath },
+    { label: "Team", href: "/workers", icon: Users, active: isWorkersPath },
     { label: "Requests", href: getRequestsHref(), icon: Inbox, active: startsWith("/requests"), badge: true },
 ];
 

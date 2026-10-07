@@ -210,15 +210,13 @@ export async function assignWorkers(
     shiftId: string,
     workerIds: string[],
     orgId?: string,
-    tempWorkerIds: string[] = [],
-    rosterEntryIds: string[] = [],
     /** Go ahead past a soft gate the manager has already been shown. */
     force = false,
 ) {
     return mutateShift<AssignResult>(
         `/shifts/${shiftId}/assign${force ? "?force=true" : ""}`,
         {
-            body: { workerIds, tempWorkerIds, rosterEntryIds },
+            body: { workerIds },
             organizationId: orgId,
         },
     );

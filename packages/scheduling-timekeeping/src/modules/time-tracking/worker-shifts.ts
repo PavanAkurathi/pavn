@@ -1,6 +1,6 @@
 import { db, jsonPositionLatitude, jsonPositionLongitude } from "@repo/database";
 import { visibleToStaff } from "@repo/database/scheduling";
-import { shift, shiftAssignment, location, organization } from "@repo/database/schema";
+import { shift, shiftAssignment, location, organization, worker } from "@repo/database/schema";
 import { eq, and, inArray, gt, lte, or, asc, desc, sql } from "drizzle-orm";
 import { DEFAULT_ATTENDANCE_VERIFICATION_POLICY } from "@repo/config";
 import { AppError } from "@repo/observability";
@@ -13,7 +13,8 @@ interface WorkerShiftFilters {
 }
 
 export const getWorkerShifts = async (
-    workerId: string,
+    /** The signed-in app account; assignments belong to the worker row it is. */
+    userId: string,
     orgId: string,
     filters: WorkerShiftFilters
 ) => {
@@ -27,7 +28,7 @@ export const getWorkerShifts = async (
     // This prevents "gaps" where mixed statuses in the DB cause pages to appear empty or incomplete.
 
     const conditions = [
-        eq(shiftAssignment.workerId, workerId),
+        eq(worker.userId, userId),
         eq(shift.organizationId, orgId),
         visibleToStaff(),
     ];
@@ -60,6 +61,7 @@ export const getWorkerShifts = async (
             organization: organization
         })
         .from(shiftAssignment)
+        .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
         .leftJoin(location, eq(shift.locationId, location.id))
         .innerJoin(organization, eq(shift.organizationId, organization.id))
@@ -98,7 +100,7 @@ export const getWorkerShifts = async (
 };
 
 export const getWorkerShiftById = async (
-    workerId: string,
+    userId: string,
     shiftId: string,
     orgId: string,
 ) => {
@@ -116,11 +118,12 @@ export const getWorkerShiftById = async (
             organization: organization,
         })
         .from(shiftAssignment)
+        .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
         .leftJoin(location, eq(shift.locationId, location.id))
         .innerJoin(organization, eq(shift.organizationId, organization.id))
         .where(and(
-            eq(shiftAssignment.workerId, workerId),
+            eq(worker.userId, userId),
             eq(shift.id, shiftId),
             eq(shift.organizationId, orgId),
             visibleToStaff(),

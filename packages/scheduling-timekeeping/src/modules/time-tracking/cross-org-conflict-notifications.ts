@@ -1,9 +1,10 @@
 import { db } from "@repo/database";
-import { shift, shiftAssignment } from "@repo/database/schema";
+import { shift, shiftAssignment, worker } from "@repo/database/schema";
 import { and, eq, gt, inArray, lt, ne } from "drizzle-orm";
 import { sendPushNotification } from "@repo/notifications";
 
 type PlannedAssignment = {
+    /** The worker's app account (user id): conflicts are about a person across businesses. */
     workerId: string;
     shiftId: string;
     startTime: Date;
@@ -30,14 +31,15 @@ export async function notifyWorkersOfCrossOrgConflicts(
     const searchEnd = new Date(Math.max(...uniquePlannedAssignments.map(assignment => assignment.endTime.getTime())));
 
     const existingAssignments = await db.select({
-        workerId: shiftAssignment.workerId,
+        workerId: worker.userId,
         startTime: shift.startTime,
         endTime: shift.endTime,
     })
         .from(shiftAssignment)
+        .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
         .where(and(
-            inArray(shiftAssignment.workerId, workerIds),
+            inArray(worker.userId, workerIds),
             inArray(shiftAssignment.status, ACTIVE_ASSIGNMENT_STATUSES as unknown as string[]),
             inArray(shift.status, ACTIVE_SHIFT_STATUSES as unknown as string[]),
             ne(shift.organizationId, activeOrgId),

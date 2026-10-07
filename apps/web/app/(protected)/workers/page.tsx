@@ -16,58 +16,68 @@ import { InviteMemberPopover } from "./_components/invite-member-popover";
 import { SUBSCRIPTION } from "@repo/config";
 import { PageTopBar } from "@/components/app-shell/page-top-bar";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
-import { getRosterWorkers } from "@/lib/api/organizations";
+import { getWorkers } from "@/lib/api/organizations";
 import { getOnboardingHref } from "@/lib/routes";
 import type { WorkerDetails } from "./_components/columns";
 
-type RosterSearchParams = {
-    onboarding?: "roster" | "roles";
+type WorkersSearchParams = {
+    onboarding?: "workers" | "roles";
 };
 
-export default async function RostersPage(props: {
-    searchParams: Promise<RosterSearchParams>;
+export default async function WorkersPage(props: {
+    searchParams: Promise<WorkersSearchParams>;
 }) {
     const searchParams = await props.searchParams;
     const { activeOrgId } = await getRequiredOrganizationContext();
-    const workers = (await getRosterWorkers(activeOrgId)).map((worker) => ({
-        ...worker,
-        role: worker.role ?? null,
-        jobTitle: worker.jobTitle ?? null,
-        phone: worker.phone ?? null,
-        image: worker.image ?? null,
-        hourlyRate: worker.hourlyRate ?? null,
-        emergencyContact: worker.emergencyContact ?? null,
-        joinedAt: new Date(worker.joinedAt),
-    })) satisfies WorkerDetails[];
+    // Agency temps are placeholders the schedule creates as needed; this page is the business's own people.
+    const workers = (await getWorkers(activeOrgId))
+        .filter((worker) => worker.employmentType !== "agency")
+        .map((worker) => ({
+            id: worker.id,
+            name: worker.name,
+            email: worker.email ?? null,
+            phone: worker.phone ?? null,
+            jobTitle: worker.jobTitle ?? null,
+            roles: worker.roles ?? [],
+            hourlyRate: worker.hourlyRate ?? null,
+            status: worker.status ?? "added",
+            hasAccount: worker.hasAccount ?? false,
+            joinedAt: new Date(worker.joinedAt ?? Date.now()),
+        })) satisfies WorkerDetails[];
 
     const onboardingMode =
         searchParams.onboarding === "roles"
             ? "roles"
-            : searchParams.onboarding === "roster"
-              ? "roster"
+            : searchParams.onboarding === "workers"
+              ? "workers"
               : null;
 
-    const rosterHeaderDescription =
+    const headerDescription =
         onboardingMode === "roles"
-            ? "Review the roles attached to your frontline workforce before you publish your first schedule."
-            : onboardingMode === "roster"
-              ? "This is your frontline workforce workspace. Add or import the people you plan to schedule."
+            ? "Review the roles attached to your frontline workers before you publish your first schedule."
+            : onboardingMode === "workers"
+              ? "This is where your frontline workers live. Add or import the people you plan to schedule."
               : null;
 
     const active = workers.filter((w) => w.status === "active").length;
-    const waiting = workers.length - active;
-    const summary = [`${active} active`, waiting > 0 ? `${waiting} ${waiting === 1 ? "invite" : "invites"} pending` : null].filter(Boolean).join(" · ");
+    const invited = workers.filter((w) => w.status === "invited").length;
+    const notInvited = workers.filter((w) => w.status === "added").length;
+    const summary = [
+        `${active} on the app`,
+        invited > 0 ? `${invited} invited` : null,
+        notInvited > 0 ? `${notInvited} not invited yet` : null,
+    ].filter(Boolean).join(" · ");
 
     return (
         <div className="max-w-5xl overflow-hidden rounded-card border bg-card">
             <PageTopBar
                 title="Team"
-                subtitle={rosterHeaderDescription ?? summary}
+                subtitle={headerDescription ?? summary}
                 actions={
                     onboardingMode ? null : (
                         <>
                             <Button asChild variant="outline" size="sm">
-                                <Link href="/rosters/import">
+                                <Link href="/workers/import">
                                     <Upload className="mr-2 h-4 w-4" />
                                     Import CSV
                                 </Link>
@@ -87,7 +97,7 @@ export default async function RostersPage(props: {
                         ${SUBSCRIPTION.MONTHLY_PRICE_USD}/mo per location, flat: unlimited team members.
                     </p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
-                        No per-seat fees, ever. Invite the whole roster; your price never changes.
+                        No per-seat fees, ever. Add everyone; your price never changes.
                     </p>
                 </div>
             </div>
@@ -110,13 +120,13 @@ export default async function RostersPage(props: {
                             <CardTitle className="flex items-center gap-2">
                                 <Users className="h-5 w-5 text-primary" />
                                 {onboardingMode === "roles"
-                                    ? "Review workforce roles"
-                                    : "Build your roster"}
+                                    ? "Review worker roles"
+                                    : "Add your workers"}
                             </CardTitle>
                             <CardDescription className="max-w-3xl text-sm leading-6">
                                 {onboardingMode === "roles"
                                     ? "Confirm the job roles attached to your workforce here so schedules reflect real staffing demand."
-                                    : "Import your workforce by CSV/XLSX or add the first few workers manually. Pending invites and roster entries are enough to move forward."}
+                                    : "Import your workers by CSV/XLSX or add the first few manually. You can invite them to the app later; workers you have only added are enough to move forward."}
                             </CardDescription>
                         </div>
                     </CardHeader>
@@ -136,10 +146,10 @@ export default async function RostersPage(props: {
                             </AlertDescription>
                         </Alert>
                         <div className="flex flex-wrap gap-3">
-                            <Link href="/rosters/import">
+                            <Link href="/workers/import">
                                 <Button variant="outline">
                                     <Upload className="mr-2 h-4 w-4" />
-                                    Import roster CSV
+                                    Import workers CSV
                                 </Button>
                             </Link>
                             <InviteMemberPopover />

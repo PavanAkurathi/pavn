@@ -37,6 +37,10 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
             throw new AppError("Shift not found", "SHIFT_NOT_FOUND", 404);
         }
 
+        if (new Date(shiftRecord.endTime) > new Date() && shiftRecord.status !== 'approved') {
+            throw new AppError("This shift hasn't ended yet. Approve it once it's over.", "SHIFT_NOT_ENDED", 409);
+        }
+
         // Validate Transition
         try {
             validateShiftTransition(shiftRecord.status as ShiftStatus, 'approved');
@@ -68,7 +72,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                     status: 'no_show',
                     totalDurationMinutes: 0,
                     breakMinutes: 0,
-                    workerId: (assign.workerId ?? assign.tempWorkerId ?? assign.rosterEntryId)!
+                    workerId: assign.workerId
                 });
                 continue;
             }
@@ -82,7 +86,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                     status: 'completed',
                     totalDurationMinutes: Math.max(0, differenceInMinutes(scheduledEnd, new Date(assign.actualClockIn)) - (assign.breakMinutes || 0)),
                     breakMinutes: assign.breakMinutes || 0,
-                    workerId: (assign.workerId ?? assign.tempWorkerId ?? assign.rosterEntryId)!,
+                    workerId: assign.workerId,
                     effectiveClockIn: assign.actualClockIn,
                     effectiveClockOut: scheduledEnd,
                     clockOutMethod: 'system_auto_finalized'
@@ -124,14 +128,14 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                 const totalMinutes = differenceInMinutes(calculatedEnd, effectiveStart);
 
                 if (totalMinutes < 0) {
-                    dirtyAssignments.push((assign.workerId ?? assign.tempWorkerId ?? assign.rosterEntryId)!);
+                    dirtyAssignments.push(assign.workerId);
                     continue;
                 }
 
                 const breakMinutes = assign.breakMinutes || 0;
 
                 if (breakMinutes < 0 || breakMinutes >= totalMinutes) {
-                    dirtyAssignments.push((assign.workerId ?? assign.tempWorkerId ?? assign.rosterEntryId)!);
+                    dirtyAssignments.push(assign.workerId);
                     continue;
                 }
 
@@ -150,7 +154,7 @@ export const approveShift = async (shiftId: string, orgId: string, actorId: stri
                     status: 'completed',
                     totalDurationMinutes: billableMinutes,
                     breakMinutes: breakMinutes,
-                    workerId: (assign.workerId ?? assign.tempWorkerId ?? assign.rosterEntryId)!,
+                    workerId: assign.workerId,
                     effectiveClockIn: effectiveStart,
                     effectiveClockOut: calculatedEnd
                 });

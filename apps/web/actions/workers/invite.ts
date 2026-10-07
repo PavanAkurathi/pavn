@@ -9,6 +9,7 @@ import { apiJsonRequest } from "@/lib/server/api-client";
 
 type InviteWorkerResult = {
     success?: true;
+    workerId?: string;
     link?: string;
     error?: string;
 };
@@ -24,6 +25,7 @@ export async function inviteWorker(
 
         const result = await apiJsonRequest<{
             success: true;
+            workerId: string;
             link?: string;
         }>("/organizations/crew/invitations", {
             method: "POST",
@@ -31,11 +33,11 @@ export async function inviteWorker(
             organizationScoped: true,
         });
 
-        revalidatePath("/rosters");
-        revalidatePath("/settings/team");
+        revalidatePath("/workers");
+        revalidatePath("/schedule");
         return result;
     } catch (error: any) {
         console.error("SERVER ACTION ERROR:", error);
-        return { error: error.message || "Failed to invite worker" };
+        return { error: error.message || "Failed to add worker" };
     }
 }

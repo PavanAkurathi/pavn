@@ -1,7 +1,7 @@
 // packages/geofence/src/services/flagged-timesheets.ts
 
 import { db } from "@repo/database";
-import { shiftAssignment, shift, timeCorrectionRequest, location, user } from "@repo/database/schema";
+import { shiftAssignment, shift, timeCorrectionRequest, location, worker } from "@repo/database/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 export const getFlaggedTimesheets = async (orgId: string) => {
@@ -14,7 +14,7 @@ export const getFlaggedTimesheets = async (orgId: string) => {
             shiftDate: shift.startTime,
             locationName: location.name,
             workerId: shiftAssignment.workerId,
-            workerName: user.name,
+            workerName: worker.name,
             clockIn: shiftAssignment.actualClockIn,
             clockOut: shiftAssignment.actualClockOut,
             reviewReason: shiftAssignment.reviewReason,
@@ -23,7 +23,7 @@ export const getFlaggedTimesheets = async (orgId: string) => {
         .from(shiftAssignment)
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
         .leftJoin(location, eq(shift.locationId, location.id))
-        .leftJoin(user, eq(shiftAssignment.workerId, user.id))
+        .leftJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .where(and(
             eq(shiftAssignment.needsReview, true),
             eq(shift.organizationId, orgId)

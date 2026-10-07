@@ -20,15 +20,12 @@
 import { db, logAudit } from "@repo/database";
 import {
     location,
-    member,
     organization,
-    rosterEntry,
     scheduleEvent,
     shift,
     shiftAssignment,
-    tempWorker,
     timeOffRequest,
-    user,
+    worker,
     type ShiftPendingPatch,
 } from "@repo/database/schema";
 import { AppError } from "@repo/observability";
@@ -70,9 +67,7 @@ function parse<T>(schema: ZodType<T>, input: unknown): T {
 
 export type AssignmentRow = {
     id: string;
-    workerId: string | null;
-    tempWorkerId: string | null;
-    rosterEntryId: string | null;
+    workerId: string;
     status: string;
     pendingState: string | null;
 };
@@ -109,20 +104,11 @@ export function workingCopy(row: ShiftRow) {
     };
 }
 
-const keyOf = (ref: SchedulerPersonRef) => `${ref.kind}:${ref.personId}`;
+const keyOf = (ref: SchedulerPersonRef) => ref.personId;
 
-export function refOf(a: AssignmentRow): SchedulerPersonRef | null {
-    if (a.workerId) return { personId: a.workerId, kind: "roster" };
-    if (a.rosterEntryId) return { personId: a.rosterEntryId, kind: "invited" };
-    if (a.tempWorkerId) return { personId: a.tempWorkerId, kind: "agency" };
-    return null;
+export function refOf(a: AssignmentRow): SchedulerPersonRef {
+    return { personId: a.workerId };
 }
-
-const identityOf = (ref: SchedulerPersonRef) => ({
-    workerId: ref.kind === "roster" ? ref.personId : null,
-    rosterEntryId: ref.kind === "invited" ? ref.personId : null,
-    tempWorkerId: ref.kind === "agency" ? ref.personId : null,
-});
 
 function dedupe(refs: SchedulerPersonRef[]) {
     const seen = new Map<string, SchedulerPersonRef>();
@@ -222,7 +208,7 @@ async function loadShift(tx: Tx, orgId: string, shiftId: string): Promise<ShiftR
         where: and(eq(shift.id, shiftId), eq(shift.organizationId, orgId)),
         with: {
             assignments: {
-                columns: { id: true, workerId: true, tempWorkerId: true, rosterEntryId: true, status: true, pendingState: true },
+                columns: { id: true, workerId: true, status: true, pendingState: true },
             },
         },
     });
@@ -234,37 +220,18 @@ async function loadShift(tx: Tx, orgId: string, shiftId: string): Promise<ShiftR
 }
 
 async function verifyPeople(tx: Tx, orgId: string, refs: SchedulerPersonRef[], names: Map<string, string>) {
-    const ids = (kind: SchedulerPersonRef["kind"]) => refs.filter((r) => r.kind === kind).map((r) => r.personId);
-    const [members, entries, temps] = await Promise.all([
-        ids("roster").length
-            ? tx
-                  .select({ id: user.id, name: user.name })
-                  .from(member)
-                  .innerJoin(user, eq(member.userId, user.id))
-                  .where(and(eq(member.organizationId, orgId), inArray(member.userId, ids("roster"))))
-            : Promise.resolve([]),
-        ids("invited").length
-            ? tx.query.rosterEntry.findMany({
-                  where: and(eq(rosterEntry.organizationId, orgId), inArray(rosterEntry.id, ids("invited"))),
-                  columns: { id: true, name: true },
-              })
-            : Promise.resolve([]),
-        ids("agency").length
-            ? tx.query.tempWorker.findMany({
-                  where: and(eq(tempWorker.organizationId, orgId), inArray(tempWorker.id, ids("agency"))),
-                  columns: { id: true, name: true },
-              })
-            : Promise.resolve([]),
-    ]);
-    const found = new Map<string, string>();
-    for (const m of members) found.set(`roster:${m.id}`, m.name);
-    for (const e of entries) found.set(`invited:${e.id}`, e.name);
-    for (const t of temps) found.set(`agency:${t.id}`, t.name);
+    if (!refs.length) return new Map<string, { id: string; name: string; status: string }>();
+    const people = await tx
+        .select({ id: worker.id, name: worker.name, status: worker.status })
+        .from(worker)
+        .where(and(eq(worker.organizationId, orgId), inArray(worker.id, refs.map((r) => r.personId))));
+    const found = new Map(people.map((p) => [p.id, p] as const));
     for (const ref of refs) {
-        const name = found.get(keyOf(ref));
-        if (name === undefined) throw new AppError("That person isn't in this organization", "PERSON_NOT_FOUND", 404);
-        names.set(keyOf(ref), name);
+        const person = found.get(ref.personId);
+        if (person === undefined) throw new AppError("That person isn't in this organization", "PERSON_NOT_FOUND", 404);
+        names.set(keyOf(ref), person.name);
     }
+    return found;
 }
 
 async function verifyEvent(tx: Tx, orgId: string, eventId: string | null | undefined, locationId: string | null) {
@@ -281,7 +248,7 @@ async function verifyEvent(tx: Tx, orgId: string, eventId: string | null | undef
 async function insertAssignments(tx: Tx, shiftId: string, refs: SchedulerPersonRef[], pendingState: "add" | null) {
     if (!refs.length) return;
     await tx.insert(shiftAssignment).values(
-        refs.map((ref) => ({ id: newId("asg"), shiftId, status: "active", pendingState, ...identityOf(ref) })),
+        refs.map((ref) => ({ id: newId("asg"), shiftId, status: "active", pendingState, workerId: ref.personId })),
     );
 }
 
@@ -505,8 +472,7 @@ async function applyOne(tx: Tx, orgId: string, change: SchedulerChange, ctx: Ctx
             if (!row.locationId) throw new AppError("This draft has no location; delete it from Shifts", "VALIDATION_ERROR", 400);
             const people = row.assignments
                 .filter((a) => !DEAD_ASSIGNMENT.has(a.status))
-                .map(refOf)
-                .filter((r): r is SchedulerPersonRef => r !== null);
+                .map(refOf);
             await tx.delete(shift).where(eq(shift.id, row.id));
             return {
                 op: "create",
@@ -532,19 +498,17 @@ async function applyOne(tx: Tx, orgId: string, change: SchedulerChange, ctx: Ctx
             if (desired.length > ws.capacity) {
                 throw new AppError(`This shift is for ${ws.capacity}; add a spot first`, "CAPACITY_FULL", 409);
             }
-            await verifyPeople(tx, orgId, desired, ctx.names);
+            const people = await verifyPeople(tx, orgId, desired, ctx.names);
 
             const draft = row.status === "draft";
             const wanted = new Set(desired.map(keyOf));
             const rowsByKey = new Map<string, AssignmentRow>();
             for (const a of row.assignments) {
-                const ref = refOf(a);
-                if (ref) rowsByKey.set(keyOf(ref), a);
+                rowsByKey.set(keyOf(refOf(a)), a);
             }
             const previous = row.assignments
                 .filter((a) => !DEAD_ASSIGNMENT.has(a.status) && a.pendingState !== "remove")
-                .map(refOf)
-                .filter((r): r is SchedulerPersonRef => r !== null);
+                .map(refOf);
 
             for (const [key, a] of rowsByKey) {
                 if (DEAD_ASSIGNMENT.has(a.status) || wanted.has(key)) continue;
@@ -555,12 +519,21 @@ async function applyOne(tx: Tx, orgId: string, change: SchedulerChange, ctx: Ctx
                 }
             }
 
+            // Someone paused can stay on shifts they already have, but cannot be put on new ones.
+            const assertSchedulable = (ref: SchedulerPersonRef) => {
+                if (people.get(ref.personId)?.status === "inactive") {
+                    throw new AppError(`${people.get(ref.personId)!.name} is inactive. Reactivate them to schedule them.`, "INVALID_STATE", 409);
+                }
+            };
+
             const fresh: SchedulerPersonRef[] = [];
             for (const ref of desired) {
                 const a = rowsByKey.get(keyOf(ref));
                 if (!a) {
+                    assertSchedulable(ref);
                     fresh.push(ref);
                 } else if (DEAD_ASSIGNMENT.has(a.status)) {
+                    assertSchedulable(ref);
                     // One row per worker per shift: bring the old one back.
                     await tx
                         .update(shiftAssignment)
@@ -611,12 +584,7 @@ export async function findBlockingConflicts(
         // Wide enough to catch shifts whose staged times moved them into range.
         const from = new Date(Math.min(...mine.map((s) => s.start.getTime())) - 7 * DAY_MS);
         const to = new Date(Math.max(...mine.map((s) => s.end.getTime())) + 7 * DAY_MS);
-        const identity =
-            ref.kind === "roster"
-                ? eq(shiftAssignment.workerId, ref.personId)
-                : ref.kind === "invited"
-                    ? eq(shiftAssignment.rosterEntryId, ref.personId)
-                    : eq(shiftAssignment.tempWorkerId, ref.personId);
+        const identity = eq(shiftAssignment.workerId, ref.personId);
 
         const others = await tx
             .select({
@@ -651,13 +619,19 @@ export async function findBlockingConflicts(
                 };
             });
 
+        // Time off is requested from the worker's app account, so a worker
+        // who has not signed in has none.
+        const account = await tx.query.worker.findFirst({
+            where: eq(worker.id, ref.personId),
+            columns: { userId: true },
+        });
         const timeOff =
-            ref.kind === "roster"
+            account?.userId
                 ? (
                       await tx.query.timeOffRequest.findMany({
                           where: and(
                               eq(timeOffRequest.organizationId, orgId),
-                              eq(timeOffRequest.workerId, ref.personId),
+                              eq(timeOffRequest.workerId, account.userId),
                               eq(timeOffRequest.status, "approved"),
                               lt(timeOffRequest.startTime, to),
                               gt(timeOffRequest.endTime, from),

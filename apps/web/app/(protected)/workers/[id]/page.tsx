@@ -2,13 +2,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@repo/ui/components/ui/card";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { ArrowLeft, Plus, Phone, Mail, HelpCircle } from "lucide-react";
+import { ArrowLeft, Phone, Mail, KeyRound, HelpCircle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@repo/ui/components/ui/table";
 import { AvailabilityList } from "@/components/workers/availability-list";
 import { getRequiredOrganizationContext } from "@/lib/server/auth-context";
 import { getWorkerProfile } from "@/lib/api/organizations";
+
+const STATUS_LABEL: Record<string, string> = {
+    added: "Not invited",
+    invited: "Invite sent",
+    active: "On the app",
+    inactive: "Inactive",
+};
 
 interface PageProps {
     params: Promise<{
@@ -30,7 +36,7 @@ export default async function WorkerProfilePage({ params }: PageProps) {
                 <HelpCircle className="h-12 w-12 text-muted-foreground/50 mb-4" />
                 <h2 className="text-xl font-semibold">Worker not found</h2>
                 <p className="text-muted-foreground mb-6">This worker does not exist or has been removed from your organization.</p>
-                <Link href="/rosters">
+                <Link href="/workers">
                     <Button variant="outline">Back to Team</Button>
                 </Link>
             </div>
@@ -43,7 +49,7 @@ export default async function WorkerProfilePage({ params }: PageProps) {
         <div className="max-w-4xl space-y-8">
             {/* Header / Breadcrumb */}
             <div className="flex items-center gap-4">
-                <Link href="/rosters">
+                <Link href="/workers">
                     <Button variant="ghost" size="icon" className="rounded-full">
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
@@ -67,21 +73,31 @@ export default async function WorkerProfilePage({ params }: PageProps) {
                             <CardDescription>Joined {format(new Date(displayData.joinedAt), "MMM d, yyyy")}</CardDescription>
 
                             <Badge
-                                variant={displayData.status === "Active" ? "default" : "outline"}
-                                className={displayData.status === "Active" ? "bg-green-500 mt-2" : "mt-2"}
+                                variant={displayData.status === "active" ? "default" : "outline"}
+                                className={displayData.status === "active" ? "bg-green-500 mt-2" : "mt-2"}
                             >
-                                {displayData.status}
+                                {STATUS_LABEL[displayData.status] ?? displayData.status}
                             </Badge>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center gap-3 text-sm">
-                                <Mail className="h-4 w-4 text-muted-foreground" />
-                                <span>{displayData.email}</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm">
                                 <Phone className="h-4 w-4 text-muted-foreground" />
                                 <span>{displayData.phone || "No phone number"}</span>
                             </div>
+                            {displayData.email ? (
+                                <div className="flex items-center gap-3 text-sm">
+                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                    <span>{displayData.email}</span>
+                                </div>
+                            ) : null}
+                            {displayData.status === "invited" && displayData.inviteCode ? (
+                                <div className="flex items-center gap-3 text-sm">
+                                    <KeyRound className="h-4 w-4 text-muted-foreground" />
+                                    <span>
+                                        Invite code <span className="font-mono font-semibold tracking-wider">{displayData.inviteCode}</span>
+                                    </span>
+                                </div>
+                            ) : null}
                         </CardContent>
                     </Card>
 
@@ -109,49 +125,26 @@ export default async function WorkerProfilePage({ params }: PageProps) {
                 {/* Right Column: Roles & Availability */}
                 <div className="md:col-span-2 space-y-6">
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                            <div>
-                                <CardTitle className="text-lg">Roles & Rates</CardTitle>
-                                <CardDescription>Manage the specific roles this worker holds in your organization.</CardDescription>
-                            </div>
-                            <Button size="sm" disabled={!displayData.userId}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Role
-                            </Button>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Roles</CardTitle>
+                            <CardDescription>What this worker can be scheduled for in your business.</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            {!displayData.userId ? (
-                                <div className="text-center py-6 text-sm text-muted-foreground border rounded-md bg-muted/20">
-                                    Worker must accept their invite before you can assign specific roles.
-                                </div>
-                            ) : roles.length === 0 ? (
+                        <CardContent className="space-y-4">
+                            {roles.length === 0 ? (
                                 <div className="text-center py-6 text-sm text-muted-foreground border rounded-md">
-                                    No roles assigned. Click "Add Role" to get started.
+                                    No roles set yet.
                                 </div>
                             ) : (
-                                <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Role Title</TableHead>
-                                                <TableHead>Hourly Rate</TableHead>
-                                                <TableHead className="text-right">Added On</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {roles.map((r) => (
-                                                <TableRow key={r.id}>
-                                                    <TableCell className="font-medium capitalize">{r.role}</TableCell>
-                                                    <TableCell>{r.hourlyRate ? `$${(r.hourlyRate / 100).toFixed(2)}/hr` : "Standard"}</TableCell>
-                                                    <TableCell className="text-right text-muted-foreground text-sm">
-                                                        {format(new Date(r.createdAt), "MMM d, yyyy")}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                <div className="flex flex-wrap gap-2">
+                                    {roles.map((role) => (
+                                        <Badge key={role} variant="secondary" className="capitalize">{role}</Badge>
+                                    ))}
                                 </div>
                             )}
+                            {/* Timesheet exports report hours, not pay: the payroll system applies rates. */}
+                            <p className="text-sm text-muted-foreground">
+                                Hourly rate: {displayData.hourlyRate ? `$${(displayData.hourlyRate / 100).toFixed(2)}/hr` : "not set"}. For your reference only; timesheets report hours.
+                            </p>
                         </CardContent>
                     </Card>
 
@@ -166,7 +159,7 @@ export default async function WorkerProfilePage({ params }: PageProps) {
                                 <AvailabilityList workerId={displayData.userId} />
                             ) : (
                                 <div className="text-center py-6 text-sm text-muted-foreground border rounded-md bg-muted/20">
-                                    Worker must accept their invite before availability can be monitored.
+                                    Availability shows once the worker has signed in to the app.
                                 </div>
                             )}
                         </CardContent>

@@ -129,11 +129,9 @@ flowchart TD
 
 ### Worker eligibility rule
 
-A worker can use the mobile app only if their phone number is already known to at least one org.
+A worker can use the mobile app only if a business has invited their phone number. Nobody signs themselves up.
 
-That eligibility is resolved in [src/worker-access.ts](/Users/av/Documents/pavn/packages/auth/src/worker-access.ts) from:
-- existing active `member` records for a user with that phone number
-- `roster_entry` rows with that phone number
+Eligibility is resolved in [src/worker-access.ts](/Users/av/Documents/pavn/packages/auth/src/worker-access.ts) from `worker` rows (the business's own record of a person) with that phone number whose status is `invited` or `active`. A worker who has only been *added* to the list (`added`), or who was made `inactive`, cannot sign in.
 
 This means the worker does **not** need to already have the app installed.
 
@@ -141,10 +139,10 @@ This means the worker does **not** need to already have the app installed.
 
 The real invite is server-side phone ownership:
 
-1. Manager adds/imports/invites worker with phone number.
-2. Backend stores the phone number in `roster_entry` and optionally Better Auth invitation records.
-3. Days later, the worker installs the app and enters that same phone number.
-4. The server checks phone eligibility.
+1. Manager adds (or imports) the worker with a phone number, then invites them.
+2. Backend stores a `worker` row for that business and texts the worker a link plus an invite code (`worker.invite_code`).
+3. Days later, the worker installs the app and opens the link (or enters the same phone number).
+4. The server checks phone eligibility; if the link's code came along it must belong to the same worker.
 5. If eligible, OTP is allowed.
 6. If not eligible, login is blocked.
 
@@ -156,7 +154,7 @@ Worker mobile sign-in lives in:
 
 Flow:
 1. Worker enters phone number.
-2. App calls public API `POST /worker/auth/eligibility`.
+2. App calls public API `POST /worker/auth/eligibility` (with the invite code when it came from a link; `GET /worker/auth/invite/:code` says which business sent it).
 3. If not eligible:
    - no OTP is sent
    - UI shows "not invited yet"
@@ -168,7 +166,7 @@ Flow:
    - verifies the OTP
    - creates a worker account automatically on first verification if needed
    - creates a session
-8. `callbackOnVerification` hydrates org memberships from `roster_entry`
+8. `callbackOnVerification` attaches the account to the invited `worker` rows and gives it a `member` row in each business
 9. App stores the session token in SecureStore
 10. App restores org context and loads `All orgs`
 
@@ -184,19 +182,18 @@ So first-time worker login no longer needs:
 
 If the worker has no existing Better Auth user yet, verification creates one automatically using:
 - temp email from `getWorkerTempEmail(...)`
-- display name from the best matching roster record when available
+- display name from the invited `worker` record when available
 
 ### Worker membership hydration
 
 After OTP verification, [syncWorkerMembershipsForPhone(...)](/Users/av/Documents/pavn/packages/auth/src/worker-access.ts) does the following:
 
-1. finds all roster records matching the normalized phone number
-2. inserts missing `member` rows
-3. reactivates non-active memberships when needed
-4. copies role / job title / hourly rate from roster data
-5. marks matching roster entries as `active`
-6. marks matching invitation rows as `accepted` when email matches roster data
-7. forces the user role to `worker`
+1. finds every invited `worker` row matching the normalized phone number
+2. sets `worker.user_id` to the account and the status to `active` (a number another account already signed in with stays theirs)
+3. inserts missing `member` rows and reactivates non-active ones
+4. forces the user role to `worker`
+
+Shift assignments point at the `worker` row, so shifts a manager scheduled before the worker ever signed in are already theirs.
 
 ### Worker session persistence
 
@@ -220,7 +217,7 @@ Behavior:
 
 ```mermaid
 flowchart TD
-    A["Manager adds worker phone to org"] --> B["Phone stored in roster_entry"]
+    A["Manager adds worker and invites them"] --> B["worker row + invite code, invite texted"]
     B --> C["Worker installs app later"]
     C --> D["Worker enters phone number"]
     D --> E["POST /worker/auth/eligibility"]
@@ -229,7 +226,7 @@ flowchart TD
     G --> H["Worker enters OTP"]
     H --> I["Better Auth verifies phone"]
     I --> J["Create worker account on first login if needed"]
-    J --> K["Hydrate memberships from roster entries"]
+    J --> K["Attach account to the worker rows"]
     K --> L["Store session in SecureStore"]
     L --> M["Resolve org context"]
     M --> N["Load shifts across all orgs"]

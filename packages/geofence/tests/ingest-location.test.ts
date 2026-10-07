@@ -56,6 +56,7 @@ mock.module("@repo/database", () => ({
 mock.module("@repo/database/schema", () => ({
     workerLocation: { workerId: "worker_id", shiftId: "shift_id", recordedAt: "recorded_at", id: "id" },
     shiftAssignment: { workerId: "worker_id", shiftId: "shift_id", id: "id" },
+    worker: { id: "id", userId: "user_id" },
     shift: { id: "id", locationId: "location_id", startTime: "start_time", endTime: "end_time" },
     member: { userId: "user_id", organizationId: "organization_id" },
     location: { id: "id", position: "position", geofenceRadius: "geofence_radius", name: "name" },
@@ -102,11 +103,14 @@ describe("ingestLocation", () => {
 
         selectMock
             .mockImplementationOnce(() => ({
+                // assignment -> worker (the signed-in account) -> shift -> venue
                 from: () => ({
                     innerJoin: () => ({
-                        leftJoin: () => ({
-                            where: () => ({
-                                orderBy: () => Promise.resolve(activeAssignments),
+                        innerJoin: () => ({
+                            leftJoin: () => ({
+                                where: () => ({
+                                    orderBy: () => Promise.resolve(activeAssignments),
+                                }),
                             }),
                         }),
                     }),
@@ -170,11 +174,14 @@ describe("ingestLocation", () => {
 
         selectMock
             .mockImplementationOnce(() => ({
+                // assignment -> worker (the signed-in account) -> shift -> venue
                 from: () => ({
                     innerJoin: () => ({
-                        leftJoin: () => ({
-                            where: () => ({
-                                orderBy: () => Promise.resolve(activeAssignments),
+                        innerJoin: () => ({
+                            leftJoin: () => ({
+                                where: () => ({
+                                    orderBy: () => Promise.resolve(activeAssignments),
+                                }),
                             }),
                         }),
                     }),

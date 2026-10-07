@@ -16,7 +16,7 @@
  * DEVELOPMENT PHASE: enforcement is OFF by default so the owner can test the
  * core product (Scheduler, shifts, timesheets) without the setup wizard in the
  * way. While it's off, /dashboard/onboarding redirects to Shifts; locations,
- * people and scheduling answers are set in Settings and Roster instead.
+ * people and scheduling answers are set in Settings and the Team page instead.
  *
  * BEFORE LAUNCH: turn it back on, either by setting
  * PAVN_DISABLE_ONBOARDING_ENFORCEMENT=0 in production or by making the

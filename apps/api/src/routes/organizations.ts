@@ -25,8 +25,6 @@ import {
     BulkImportWorkersResultSchema,
     ContactsSchema,
     CrewMemberSchema,
-    RemoveWorkerByEmailSchema,
-    RosterWorkersSchema,
     ScheduleBootstrapSchema,
     WorkerInviteInputSchema,
     WorkerProfileSchema,
@@ -44,25 +42,20 @@ import { jsonOk } from "../lib/response.js";
 // Import from packages (Services)
 import {
     acceptBusinessInvitation,
-    bulkImportRosterEntries,
-    bulkInviteWorkers,
     createLocation,
     createLocationWithPlanLimit,
     createTeamInvitation,
-    createWorkerInvitation,
     deleteLocation,
     getDefaultOrganizationContext,
     getOrganizationContacts,
     getOrganizationInvitationState,
     getOrganizationSummary,
-    getRosterWorkers,
     getSettings,
     getScheduleBootstrap,
     getWorkerProfile,
     getWorkspaceSettings,
     markBillingPromptHandled,
     removeOrganizationMember,
-    removeWorkerByEmail,
     resendOrganizationMemberInvite,
     resendTeamInvitation,
     cancelTeamInvitation,
@@ -73,11 +66,14 @@ import {
     updateSettings,
 } from "@repo/organizations";
 import {
+    addWorker,
+    bulkImportWorkers,
     deactivateWorker,
     getCrew,
     getAvailability,
-    inviteWorker,
+    inviteWorkers,
     reactivateWorker,
+    removeWorker,
     updateWorker,
 } from "@repo/gig-workers";
 
@@ -111,7 +107,8 @@ organizationsRouter.openapi(getCrewRoute, async (c) => {
 
     const orgId = c.get("orgId");
     const search = c.req.query("search");
-    const limit = parseInt(c.req.query("limit") || "50");
+    // The whole list by default: the schedule pickers and Team page need everyone.
+    const limit = parseInt(c.req.query("limit") || "500");
     const offset = parseInt(c.req.query("offset") || "0");
 
     const result = await getCrew(orgId, { search, limit, offset });
@@ -152,55 +149,11 @@ organizationsRouter.openapi(getAvailabilityRoute, async (c) => {
     return jsonOk(c, result);
 });
 
-const inviteWorkerRoute = createRoute({
-    method: 'post',
-    path: '/crew/invite',
-    summary: 'Invite Worker',
-    description: 'Invite a new worker to the organization.',
-    request: {
-        body: {
-            content: {
-                'application/json': {
-                    schema: z.object({
-                        name: z.string().optional(),
-                        email: z.string().email(),
-                        phoneNumber: z.string().optional(),
-                        role: z.enum(["admin", "member"]).optional(),
-                        jobTitle: z.string().optional(),
-                        roles: z.array(z.string()).optional(),
-                        hourlyRate: z.number().int().nonnegative().optional(),
-                    })
-                }
-            }
-        }
-    },
-    responses: {
-        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Invitation sent' },
-        400: { description: 'Invalid request' },
-        401: { description: 'Unauthorized' },
-        403: { description: 'Forbidden' },
-        409: { description: 'Worker already invited or already a member' }
-    }
-});
-
-organizationsRouter.openapi(inviteWorkerRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const orgId = c.get("orgId");
-    const user = c.get("user");
-    if (!user) return c.json({ error: "Unauthorized" }, 401);
-
-    const body = await c.req.json();
-    const result = await inviteWorker(body, orgId, user.id);
-    return jsonOk(c, result);
-});
-
 const createWorkerInvitationRoute = createRoute({
     method: "post",
     path: "/crew/invitations",
-    summary: "Create Worker Invitation",
-    description: "Create and deliver a worker invitation from the API boundary.",
+    summary: "Add Worker",
+    description: "Put a worker on the business's list and, if asked, text them the invite.",
     request: {
         body: {
             content: {
@@ -216,31 +169,33 @@ const createWorkerInvitationRoute = createRoute({
                 "application/json": {
                     schema: z.object({
                         success: z.boolean(),
+                        workerId: z.string(),
                         link: z.string().optional(),
                     }),
                 },
             },
-            description: "Worker invitation created",
+            description: "Worker added",
         },
         403: { description: "Forbidden" },
     },
 });
 
+// Managers run the schedule, so they build and invite their own crew.
 organizationsRouter.openapi(createWorkerInvitationRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
     const body = await c.req.json();
-    const result = await createWorkerInvitation(c.req.raw.headers, orgId, body);
-    return c.json(result, 200);
+    const result = await addWorker(orgId, body);
+    return c.json({ success: true, workerId: result.worker.id, link: result.link }, 200);
 });
 
 const bulkInviteWorkersRoute = createRoute({
     method: "post",
     path: "/crew/invitations/bulk",
     summary: "Bulk Invite Workers",
-    description: "Create invitations for multiple roster entries.",
+    description: "Text the invite to several workers on the list.",
     request: {
         body: {
             content: {
@@ -257,6 +212,7 @@ const bulkInviteWorkersRoute = createRoute({
                     schema: z.object({
                         success: z.boolean(),
                         count: z.number(),
+                        skipped: z.array(z.object({ id: z.string(), name: z.string(), reason: z.string() })),
                     }),
                 },
             },
@@ -268,19 +224,19 @@ const bulkInviteWorkersRoute = createRoute({
 
 organizationsRouter.openapi(bulkInviteWorkersRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const body = await c.req.json();
-    const result = await bulkInviteWorkers(c.req.raw.headers, orgId, body);
-    return c.json(result, 200);
+    const body = BulkWorkerInviteInputSchema.parse(await c.req.json());
+    const result = await inviteWorkers(orgId, body);
+    return c.json({ success: true, count: result.invited, skipped: result.skipped }, 200);
 });
 
 const bulkImportWorkersRoute = createRoute({
     method: "post",
     path: "/crew/import",
-    summary: "Bulk Import Roster Entries",
-    description: "Stage imported workers in the roster workspace.",
+    summary: "Bulk Import Workers",
+    description: "Put imported people on the list. Nobody is invited until a manager does it.",
     request: {
         body: {
             content: {
@@ -305,51 +261,22 @@ const bulkImportWorkersRoute = createRoute({
 
 organizationsRouter.openapi(bulkImportWorkersRoute, async (c) => {
     const userRole = c.get("userRole");
-    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
 
     const orgId = c.get("orgId");
-    const body = await c.req.json();
-    const result = await bulkImportRosterEntries(orgId, body);
-    return c.json(result, 200);
-});
-
-const removeWorkerRoute = createRoute({
-    method: "post",
-    path: "/crew/remove",
-    summary: "Remove Worker By Email",
-    description: "Remove a worker, pending invite, or roster entry from the organization.",
-    request: {
-        body: {
-            content: {
-                "application/json": {
-                    schema: RemoveWorkerByEmailSchema,
-                },
-            },
-        },
-    },
-    responses: {
-        200: {
-            content: {
-                "application/json": {
-                    schema: z.object({
-                        success: z.boolean(),
-                    }),
-                },
-            },
-            description: "Worker removed",
-        },
-        403: { description: "Forbidden" },
-    },
-});
-
-organizationsRouter.openapi(removeWorkerRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isAdminRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const orgId = c.get("orgId");
-    const body = await c.req.json();
-    const result = await removeWorkerByEmail(orgId, body);
-    return c.json(result, 200);
+    const rows = BulkImportWorkersInputSchema.parse(await c.req.json());
+    const result = await bulkImportWorkers(
+        orgId,
+        rows.map((row) => ({
+            name: row.name,
+            email: row.email,
+            phone: row.phoneNumber,
+            jobTitle: row.jobTitle,
+            roles: row.roles,
+            rate: row.hourlyRate,
+        })),
+    );
+    return c.json({ success: result.created + result.updated, failed: result.failed, errors: result.errors }, 200);
 });
 
 const updateWorkerRoute = createRoute({
@@ -375,11 +302,33 @@ organizationsRouter.openapi(updateWorkerRoute, async (c) => {
     return jsonOk(c, result);
 });
 
-const deactivateWorkerRoute = createRoute({
+const removeWorkerRoute = createRoute({
     method: 'delete',
     path: '/crew/{id}',
+    summary: 'Remove Worker',
+    description: 'Take a worker off the list. Anyone with shift history is kept as inactive so their hours stay on the record.',
+    request: { params: z.object({ id: z.string() }) },
+    responses: {
+        200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker removed' },
+        403: { description: 'Forbidden' }
+    }
+});
+
+organizationsRouter.openapi(removeWorkerRoute, async (c) => {
+    const userRole = c.get("userRole");
+    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
+
+    const id = c.req.param("id");
+    const orgId = c.get("orgId");
+    const result = await removeWorker(id, orgId);
+    return jsonOk(c, result);
+});
+
+const deactivateWorkerRoute = createRoute({
+    method: 'post',
+    path: '/crew/{id}/deactivate',
     summary: 'Deactivate Worker',
-    description: 'Deactivate a worker account.',
+    description: 'Pause a worker: off the schedule pickers and out of the app, but kept on the list.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
         200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker deactivated' },
@@ -401,7 +350,7 @@ const reactivateWorkerRoute = createRoute({
     method: 'post',
     path: '/crew/{id}/reactivate',
     summary: 'Reactivate Worker',
-    description: 'Reactivate a suspended worker account.',
+    description: 'Bring a paused worker back.',
     request: { params: z.object({ id: z.string() }) },
     responses: {
         200: { content: { 'application/json': { schema: OpenApiLooseObjectSchema } }, description: 'Worker reactivated' },
@@ -832,38 +781,11 @@ organizationsRouter.openapi(getWorkspaceSettingsRoute, async (c) => {
     return c.json(result, 200);
 });
 
-const getRosterRoute = createRoute({
-    method: "get",
-    path: "/roster",
-    summary: "Get Roster",
-    description: "Fetch the combined roster view for the active organization.",
-    responses: {
-        200: {
-            content: {
-                "application/json": {
-                    schema: RosterWorkersSchema,
-                },
-            },
-            description: "Roster data",
-        },
-        403: { description: "Forbidden" },
-    },
-});
-
-organizationsRouter.openapi(getRosterRoute, async (c) => {
-    const userRole = c.get("userRole");
-    if (!isManagerRole(userRole)) return c.json({ error: "Access denied" }, 403);
-
-    const orgId = c.get("orgId");
-    const result = await getRosterWorkers(orgId);
-    return c.json(result, 200);
-});
-
 const getWorkerProfileRoute = createRoute({
     method: "get",
     path: "/crew/{id}/profile",
     summary: "Get Worker Profile",
-    description: "Fetch a worker or staged roster profile.",
+    description: "Fetch a worker's profile.",
     request: {
         params: z.object({
             id: z.string(),

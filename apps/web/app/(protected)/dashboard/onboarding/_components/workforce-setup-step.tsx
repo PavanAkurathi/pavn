@@ -12,7 +12,7 @@ import {
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@repo/ui/components/ui/alert";
-import { getRosterHref } from "@/lib/routes";
+import { getWorkersHref } from "@/lib/routes";
 
 export function WorkforceSetupStep() {
     return (
@@ -21,8 +21,8 @@ export function WorkforceSetupStep() {
                 <div className="flex flex-col gap-2">
                     <CardTitle>Build your workforce</CardTitle>
                     <CardDescription>
-                        Add the first workers who need mobile access. This can be a manual add, a CSV import,
-                        or a staged roster entry. You do not need perfect data for every worker before you keep moving.
+                        Add the first workers who need mobile access. This can be a manual add or a CSV import,
+                        and you can invite them to the app whenever you are ready. You do not need perfect data for every worker before you keep moving.
                     </CardDescription>
                 </div>
             </CardHeader>
@@ -32,13 +32,13 @@ export function WorkforceSetupStep() {
                     <AlertTitle>Worker access is separate from team access</AlertTitle>
                     <AlertDescription>
                         Admins and managers belong in <span className="font-medium text-foreground">Settings → Team</span>.
-                        Your roster is for frontline workers who need shift visibility and mobile attendance.
+                        Your workers list is for frontline workers who need shift visibility and mobile attendance.
                     </AlertDescription>
                 </Alert>
 
                 <Alert>
                     <Upload className="h-4 w-4" />
-                    <AlertTitle>Pending roster entries are enough to move forward</AlertTitle>
+                    <AlertTitle>Workers you have only added are enough to move forward</AlertTitle>
                     <AlertDescription>
                         You do not need to finish every profile. If the business has started adding workers, you can move on to creating the first live shift.
                     </AlertDescription>
@@ -46,14 +46,14 @@ export function WorkforceSetupStep() {
             </CardContent>
             <CardFooter className="flex flex-wrap gap-3">
                 <Button asChild size="lg">
-                    <Link href={getRosterHref({ onboarding: "roster" })}>
-                        Open roster workspace
+                    <Link href={getWorkersHref({ onboarding: "workers" })}>
+                        Open your workers
                         <ArrowRight data-icon="inline-end" />
                     </Link>
                 </Button>
                 <Button asChild variant="outline">
-                    <Link href="/rosters/import">
-                        Import roster CSV
+                    <Link href="/workers/import">
+                        Import workers CSV
                         <ArrowRight data-icon="inline-end" />
                     </Link>
                 </Button>

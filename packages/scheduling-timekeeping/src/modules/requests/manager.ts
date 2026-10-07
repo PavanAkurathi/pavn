@@ -10,7 +10,7 @@
  */
 
 import { db, logAudit } from "@repo/database";
-import { location, organization, shift, shiftAssignment, shiftRequest, timeOffRequest, user } from "@repo/database/schema";
+import { location, organization, shift, shiftAssignment, shiftRequest, timeOffRequest, user, worker } from "@repo/database/schema";
 import { AppError } from "@repo/observability";
 import {
     DecideRequestInputSchema,
@@ -33,8 +33,8 @@ import {
     assertChangeable,
     expireStaleRequests,
     findShifts,
+    hasAccountOn,
     isOnShift,
-    liveAssignments,
     loadShift,
     lockShift,
     message,
@@ -50,6 +50,7 @@ import {
     timeOffLabel,
     tzOf,
     whenLabel,
+    workerIdOf,
     type LoadedShift,
     type NotificationRow,
     type Q,
@@ -77,10 +78,11 @@ async function orgContext(q: Q, orgId: string) {
     return { org, ctx };
 }
 
-/** Why putting this person on this shift needs "approve anyway". */
+/** Why putting this person (an app account) on this shift needs "approve anyway". */
 async function blockers(q: Q, orgId: string, row: LoadedShift, person: { id: string; name: string }, ctx: ConflictCtx) {
-    ctx.names.set(`roster:${person.id}`, person.name);
-    const found = await findBlockingConflicts(q as Tx, orgId, [{ shiftId: row.id, ref: { kind: "roster", personId: person.id } }], ctx);
+    const workerId = await workerIdOf(q, orgId, person.id);
+    ctx.names.set(workerId, person.name);
+    const found = await findBlockingConflicts(q as Tx, orgId, [{ shiftId: row.id, ref: { personId: workerId } }], ctx);
     return found.flatMap((c) => c.messages);
 }
 
@@ -88,6 +90,7 @@ async function blockers(q: Q, orgId: string, row: LoadedShift, person: { id: str
 async function hoursLine(q: Q, orgId: string, weekStartsOn: number, row: LoadedShift, person: { id: string; name: string }) {
     const tz = tzOf(row);
     const bounds = weekBounds(startOfLocalWeek(localDateInZone(row.startTime, tz), weekStartsOn), tz);
+    const workerId = await workerIdOf(q, orgId, person.id);
     const others = await q
         .select({ start: shift.startTime, end: shift.endTime, breakMinutes: shift.breakMinutes })
         .from(shiftAssignment)
@@ -95,7 +98,7 @@ async function hoursLine(q: Q, orgId: string, weekStartsOn: number, row: LoadedS
         .where(
             and(
                 eq(shift.organizationId, orgId),
-                eq(shiftAssignment.workerId, person.id),
+                eq(shiftAssignment.workerId, workerId),
                 notInArray(shiftAssignment.status, DEAD),
                 sql`${shiftAssignment.pendingState} is distinct from 'remove'`,
                 ne(shift.status, "cancelled"),
@@ -109,7 +112,13 @@ async function hoursLine(q: Q, orgId: string, weekStartsOn: number, row: LoadedS
     return `${person.name} would be at ${compactHours(total)} this week${total > WEEKLY_OVERTIME_MINUTES ? ", into overtime" : ""}`;
 }
 
-async function shiftsDuring(q: Q, orgId: string, workerId: string, start: Date, end: Date) {
+async function shiftsDuring(q: Q, orgId: string, userId: string, start: Date, end: Date) {
+    const mine = await q.query.worker.findFirst({
+        where: and(eq(worker.organizationId, orgId), eq(worker.userId, userId)),
+        columns: { id: true },
+    });
+    if (!mine) return [];
+    const workerId = mine.id;
     const rows = await findShifts(
         q,
         and(
@@ -352,7 +361,7 @@ export async function decideRequest(input: {
         const place = fresh.location ? ` at ${fresh.location.name}` : "";
 
         if (request.type === "claim") {
-            if (!liveAssignments(fresh).some((a) => a.workerId === requester.id)) {
+            if (!hasAccountOn(fresh, requester.id)) {
                 if (openSlotsOf(fresh) === 0) {
                     throw new AppError("This shift is full now. Raise the headcount in the Scheduler first, or decline.", "SHIFT_FULL", 409);
                 }

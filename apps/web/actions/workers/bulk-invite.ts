@@ -10,6 +10,7 @@ import { apiJsonRequest } from "@/lib/server/api-client";
 type BulkInviteWorkersResult = {
     success?: true;
     count?: number;
+    skipped?: { id: string; name: string; reason: string }[];
     error?: string;
 };
 
@@ -25,14 +26,14 @@ export async function bulkInviteWorkers(
         const result = await apiJsonRequest<{
             success: true;
             count: number;
+            skipped: { id: string; name: string; reason: string }[];
         }>("/organizations/crew/invitations/bulk", {
             method: "POST",
             body: parsed.data,
             organizationScoped: true,
         });
 
-        revalidatePath("/rosters");
-        revalidatePath("/settings/team");
+        revalidatePath("/workers");
         return result;
     } catch (error: any) {
         console.error("BULK INVITE ERROR:", error);

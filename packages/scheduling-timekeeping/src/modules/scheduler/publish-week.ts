@@ -13,12 +13,10 @@ import { db, logAudit } from "@repo/database";
 import {
     location,
     organization,
-    rosterEntry,
     scheduledNotification,
     shift,
     shiftAssignment,
-    tempWorker,
-    user,
+    worker,
     workerNotificationPreferences,
     type ShiftPendingPatch,
 } from "@repo/database/schema";
@@ -38,6 +36,7 @@ import { nanoid } from "nanoid";
 import type { ZodType } from "zod";
 
 import { startOfLocalWeek, weekBounds, weekDates } from "../../domain/week";
+import { workerKind } from "../../utils/mapper";
 import { notifyWorkersOfCrossOrgConflicts } from "../time-tracking/cross-org-conflict-notifications";
 import {
     DEAD_ASSIGNMENT,
@@ -65,7 +64,7 @@ function parse<T>(schema: ZodType<T>, input: unknown): T {
     return parsed.data;
 }
 
-const keyOf = (ref: SchedulerPersonRef) => `${ref.kind}:${ref.personId}`;
+const keyOf = (ref: SchedulerPersonRef) => ref.personId;
 
 function weekLabel(dates: string[]) {
     const [, m1, d1] = dates[0]!.split("-").map(Number) as [number, number, number];
@@ -83,6 +82,8 @@ interface Plan {
     items: { row: Row; kind: Kind; newsworthy: boolean }[];
     effects: Map<string, SchedulerPublishPerson>;
     staying: { shiftId: string; ref: SchedulerPersonRef }[];
+    /** Worker id -> the app account their notifications go to (none until they sign in). */
+    accountOf: Map<string, string>;
     preview: SchedulerPublishPreview;
 }
 
@@ -110,7 +111,7 @@ async function planPublish(q: Tx | typeof db, orgId: string, body: unknown, now:
             ),
             with: {
                 assignments: {
-                    columns: { id: true, workerId: true, tempWorkerId: true, rosterEntryId: true, status: true, pendingState: true },
+                    columns: { id: true, workerId: true, status: true, pendingState: true },
                 },
             },
         })
@@ -124,8 +125,8 @@ async function planPublish(q: Tx | typeof db, orgId: string, body: unknown, now:
 
     const touch = (a: AssignmentRow, what: "added" | "changed" | "removed") => {
         const ref = refOf(a);
-        if (!ref) return;
-        const entry = effects.get(keyOf(ref)) ?? { personId: ref.personId, kind: ref.kind, name: "", added: 0, changed: 0, removed: 0 };
+        // Kind and name are filled in once the workers are loaded, below.
+        const entry = effects.get(keyOf(ref)) ?? { personId: ref.personId, kind: "invited" as const, name: "", added: 0, changed: 0, removed: 0 };
         entry[what]++;
         effects.set(keyOf(ref), entry);
     };
@@ -164,29 +165,29 @@ async function planPublish(q: Tx | typeof db, orgId: string, body: unknown, now:
         openSlots += Math.max(0, ws.capacity - stayingHere.length);
         if (items[items.length - 1]?.row === row) {
             for (const a of stayingHere) {
-                const ref = refOf(a);
-                if (ref) staying.push({ shiftId: row.id, ref });
+                staying.push({ shiftId: row.id, ref: refOf(a) });
             }
         }
     }
 
-    // Names for the dialog.
-    const ids = (kind: SchedulerPersonRef["kind"]) => [...effects.values()].filter((e) => e.kind === kind).map((e) => e.personId);
-    const [users, entries, temps] = await Promise.all([
-        ids("roster").length ? q.query.user.findMany({ where: inArray(user.id, ids("roster")), columns: { id: true, name: true } }) : [],
-        ids("invited").length
-            ? q.query.rosterEntry.findMany({ where: and(eq(rosterEntry.organizationId, orgId), inArray(rosterEntry.id, ids("invited"))), columns: { id: true, name: true } })
-            : [],
-        ids("agency").length
-            ? q.query.tempWorker.findMany({ where: and(eq(tempWorker.organizationId, orgId), inArray(tempWorker.id, ids("agency"))), columns: { id: true, name: true } })
-            : [],
-    ]);
-    const names = new Map<string, string>([
-        ...users.map((u) => [`roster:${u.id}`, u.name] as const),
-        ...entries.map((e) => [`invited:${e.id}`, e.name] as const),
-        ...temps.map((t) => [`agency:${t.id}`, t.name] as const),
-    ]);
-    for (const [key, entry] of effects) entry.name = names.get(key) ?? "Someone";
+    // Names and kinds for the dialog.
+    const accountOf = new Map<string, string>();
+    const names = new Map<string, string>();
+    if (effects.size) {
+        const people = await q.query.worker.findMany({
+            where: and(eq(worker.organizationId, orgId), inArray(worker.id, [...effects.keys()])),
+            columns: { id: true, name: true, userId: true, employmentType: true },
+        });
+        for (const person of people) {
+            const entry = effects.get(person.id);
+            if (!entry) continue;
+            entry.kind = workerKind(person);
+            entry.name = person.name;
+            names.set(person.id, person.name);
+            if (person.userId) accountOf.set(person.id, person.userId);
+        }
+    }
+    for (const entry of effects.values()) entry.name ||= "Someone";
 
     const conflicts = await findBlockingConflicts(q as Tx, orgId, staying, {
         locationById: new Map(locations.map((l) => [l.id, l])),
@@ -202,12 +203,13 @@ async function planPublish(q: Tx | typeof db, orgId: string, body: unknown, now:
         items,
         effects,
         staying,
+        accountOf,
         preview: {
             newShifts: items.filter((i) => i.kind === "new").length,
             changedShifts: items.filter((i) => i.kind === "changed").length,
             removedShifts: items.filter((i) => i.kind === "removed").length,
-            notify: people.filter((p) => p.kind === "roster"),
-            unreachable: people.filter((p) => p.kind !== "roster"),
+            notify: people.filter((p) => p.kind === "active"),
+            unreachable: people.filter((p) => p.kind !== "active"),
             openSlots,
             conflicts,
             expiredDrafts,
@@ -243,7 +245,7 @@ export async function publishSchedulerWeek(input: { orgId: string; actorId: stri
 
     // Reminders for everyone staying on a new or changed shift, built before the
     // transaction because preferences are read one worker at a time.
-    const workerIds = [...new Set(first.staying.filter((s) => s.ref.kind === "roster").map((s) => s.ref.personId))];
+    const workerIds = [...new Set(first.staying.flatMap((s) => first.accountOf.get(s.ref.personId) ?? []))];
     const prefs = new Map<string, NotificationPreferences>();
     if (workerIds.length) {
         for (const p of await db.query.workerNotificationPreferences.findMany({ where: inArray(workerNotificationPreferences.workerId, workerIds) })) {
@@ -305,14 +307,15 @@ export async function publishSchedulerWeek(input: { orgId: string; actorId: stri
 
             for (const a of leaving) {
                 await tx.update(shiftAssignment).set({ status: "removed", pendingState: null, updatedAt: now }).where(eq(shiftAssignment.id, a.id));
-                if (a.workerId) {
+                const account = plan.accountOf.get(a.workerId);
+                if (account) {
                     await tx
                         .update(scheduledNotification)
                         .set({ status: "cancelled", updatedAt: now })
                         .where(
                             and(
                                 eq(scheduledNotification.shiftId, row.id),
-                                eq(scheduledNotification.workerId, a.workerId),
+                                eq(scheduledNotification.workerId, account),
                                 eq(scheduledNotification.status, "pending"),
                             ),
                         );
@@ -335,23 +338,26 @@ export async function publishSchedulerWeek(input: { orgId: string; actorId: stri
                     .where(and(eq(scheduledNotification.shiftId, row.id), eq(scheduledNotification.status, "pending")));
             }
             for (const a of timesMoved ? stays : joining) {
-                if (!a.workerId || ws.end <= now) continue;
-                const schedule = await buildNotificationSchedule(a.workerId, row.id, input.orgId, ws.start, ws.role, row.locationName, prefs.get(a.workerId));
+                const account = plan.accountOf.get(a.workerId);
+                if (!account || ws.end <= now) continue;
+                const schedule = await buildNotificationSchedule(account, row.id, input.orgId, ws.start, ws.role, row.locationName, prefs.get(account));
                 // The one message per person below replaces the per-shift "new shift" push.
                 reminders.push(...schedule.filter((n) => n.type !== "assignment_created"));
             }
             for (const a of joining) {
-                if (a.workerId) announced.push({ workerId: a.workerId, shiftId: row.id, startTime: ws.start, endTime: ws.end });
+                const account = plan.accountOf.get(a.workerId);
+                if (account) announced.push({ workerId: account, shiftId: row.id, startTime: ws.start, endTime: ws.end });
             }
         }
 
         // One message per person, about their own week.
         for (const person of plan.preview.notify) {
             const summary = summaryOf(person);
-            if (!summary) continue;
+            const account = plan.accountOf.get(person.personId);
+            if (!summary || !account) continue;
             reminders.push({
                 id: nanoid(),
-                workerId: person.personId,
+                workerId: account,
                 shiftId: null,
                 organizationId: input.orgId,
                 type: "schedule_published",

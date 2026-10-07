@@ -304,7 +304,7 @@ function ShiftPanel({
                                         variant={c.blocked ? "ghost" : "outline"}
                                         className="shrink-0"
                                         onClick={() =>
-                                            setPeople([...refs, { personId: c.person.id, kind: c.person.kind }], `Added ${c.person.name.split(" ")[0]} to ${label}`)
+                                            setPeople([...refs, { personId: c.person.id }], `Added ${c.person.name.split(" ")[0]} to ${label}`)
                                         }
                                     >
                                         <UserPlus data-icon="inline-start" />

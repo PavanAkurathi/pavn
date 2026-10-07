@@ -12,7 +12,7 @@ import { clockRange, compactRange, dayOfMonth, hoursLabel, longDate, weekdayShor
 import type { DropTarget } from "@/lib/scheduler/plans";
 import { hoursTone, type PeopleView, type PersonRow } from "@/lib/scheduler/view-model";
 import type { UnfilledDay } from "@/lib/scheduler/workspace";
-import { ROSTERS_PATH } from "@/lib/routes";
+import { WORKERS_PATH } from "@/lib/routes";
 import { ShiftChip, type ChipActions, type Density } from "./shift-chip";
 import styles from "./scheduler.module.css";
 
@@ -210,7 +210,7 @@ function PersonLabel({ person, policy }: { person: SchedulerPerson; policy: Sche
                 <span className="truncate text-[14.5px] font-semibold">{person.name}</span>
                 <span className="flex min-w-0 items-center gap-1.5 truncate text-[13px] text-muted-foreground">
                     {person.primaryRole ?? "No role yet"}
-                    {person.kind === "invited" ? <span className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">Invited</span> : null}
+                    {person.kind === "invited" ? <span className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">No app yet</span> : null}
                     {person.kind === "agency" ? (
                         <span title={person.agencyName ?? undefined} className="rounded-full border bg-muted px-1.5 text-[10px] font-semibold leading-4 text-muted-foreground">
                             Agency
@@ -477,7 +477,7 @@ export function PeopleGrid({
                     {week.people.length === 0 ? (
                         <>
                             Nobody on the team yet.{" "}
-                            <Link href={ROSTERS_PATH} className="font-medium text-primary underline-offset-2 hover:underline">
+                            <Link href={WORKERS_PATH} className="font-medium text-primary underline-offset-2 hover:underline">
                                 Add people in Team
                             </Link>
                         </>

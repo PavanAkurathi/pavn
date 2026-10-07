@@ -60,8 +60,9 @@ describe("TICKET-003: Approval Workflow - Time Only", () => {
     test("approveShift should calculates duration but NOT financial data", async () => {
         // Arrange
         const now = new Date();
-        const startTime = now;
-        const endTime = addHours(now, 4);
+        // A shift that has ended: approval is refused for one still running.
+        const startTime = addHours(now, -5);
+        const endTime = addHours(now, -1);
 
         const mockShift = {
             id: "shift-003",

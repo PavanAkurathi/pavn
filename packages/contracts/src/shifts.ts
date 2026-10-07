@@ -18,11 +18,11 @@ export const ShiftCapacitySchema = z.object({
 });
 
 /**
- * How a person came to be on the shift. The three are operationally different:
- * a roster worker has an account and clocks themselves in, an invited worker has
- * not accepted yet, and an agency worker never logs in at all.
+ * How a person is on the shift. The three are operationally different: an
+ * active worker has an app account and clocks themselves in, an invited worker
+ * has not signed in yet, and an agency worker never logs in at all.
  */
-export const AssignedWorkerKindSchema = z.enum(["roster", "invited", "agency"]);
+export const AssignedWorkerKindSchema = z.enum(["active", "invited", "agency"]);
 
 export const AssignedWorkerSummarySchema = z.object({
     id: z.string(),
@@ -77,7 +77,7 @@ export const TimesheetReportSchema = z.object({
 
 export const TimesheetWorkerSchema = z.object({
     id: z.string(),
-    /** Roster user id, or temp worker id when isTemp is true. */
+    /** The worker's id (the business's own record of them). */
     workerId: z.string(),
     isTemp: z.boolean().optional(),
     invitePending: z.boolean().optional(),

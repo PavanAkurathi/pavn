@@ -15,9 +15,10 @@ export const cancelShift = async (shiftId: string, orgId: string, userId: string
             },
             assignments: {
                 columns: {
-                    workerId: true,
                     status: true,
                 },
+                // Pushes go to the app account, which only some workers have.
+                with: { worker: { columns: { userId: true } } },
             },
         },
     });
@@ -56,8 +57,8 @@ export const cancelShift = async (shiftId: string, orgId: string, userId: string
     const workerIds = Array.from(
         new Set(
             existingShift.assignments
-                .filter((assignment) => assignment.workerId && assignment.status !== "cancelled")
-                .map((assignment) => assignment.workerId as string)
+                .filter((assignment) => assignment.worker?.userId && assignment.status !== "cancelled")
+                .map((assignment) => assignment.worker!.userId as string)
         )
     );
 

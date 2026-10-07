@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@repo/ui/components/ui/button";
 import { ArrowLeft, Printer, UserPlus, X } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@repo/ui/components/ui/card";
@@ -46,6 +47,7 @@ import {
     workerNeedsAttention,
 } from "@/lib/timesheet-utils";
 import {
+    approveShiftAction,
     assignWorkersToShiftAction,
     cancelShiftAction,
     unassignWorkerFromShiftAction,
@@ -164,13 +166,10 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     }, []);
 
     const handleAddWorkers = async (newWorkers: AddWorkerSelection[]) => {
-        const rosterIds = newWorkers.filter((worker) => !worker.isTemp && !worker.invitePending).map((worker) => worker.id);
-        const tempIds = newWorkers.filter((worker) => worker.isTemp).map((worker) => worker.id);
-        const pendingEntryIds = newWorkers.filter((worker) => worker.invitePending).map((worker) => worker.id);
         const newWorkerIds = newWorkers.map((worker) => worker.id);
 
         try {
-            let result = await assignWorkersToShiftAction(shift.id, rosterIds, tempIds, pendingEntryIds);
+            let result = await assignWorkersToShiftAction(shift.id, newWorkerIds);
 
             // Over capacity is a question, not a refusal. The manager usually has
             // a reason; going ahead is recorded rather than blocked.
@@ -182,13 +181,7 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                 });
                 if (!ok) return;
 
-                result = await assignWorkersToShiftAction(
-                    shift.id,
-                    rosterIds,
-                    tempIds,
-                    pendingEntryIds,
-                    true,
-                );
+                result = await assignWorkersToShiftAction(shift.id, newWorkerIds, true);
             }
 
             if ("error" in result) {
@@ -234,6 +227,35 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
             toast.error("Failed to rename temp worker");
         }
     }, [orgId]);
+
+    const router = useRouter();
+    const [isApprovingShift, setIsApprovingShift] = React.useState(false);
+
+    const handleApproveShift = async () => {
+        if (onApprove) {
+            onApprove();
+            return;
+        }
+        const ok = await confirm({
+            title: `Approve this ${shift.title} shift?`,
+            description: "The hours become final and show up in Reports for payroll.",
+            confirmLabel: "Approve shift",
+        });
+        if (!ok) return;
+
+        setIsApprovingShift(true);
+        try {
+            const result = await approveShiftAction(shift.id);
+            if ("error" in result) {
+                toast.error(result.error);
+                return;
+            }
+            toast.success("Shift approved");
+            router.refresh();
+        } finally {
+            setIsApprovingShift(false);
+        }
+    };
 
     const isApproved = shift.status === "approved";
     const isCancelled = shift.status === "cancelled";
@@ -439,7 +461,8 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                                 totalHours={totalHours}
                                 hasErrors={hasErrors}
                                 isApproved={isApproved}
-                                onApprove={() => onApprove?.()}
+                                isApproving={isApprovingShift}
+                                onApprove={handleApproveShift}
                             />
                         </>
                     ) : null}

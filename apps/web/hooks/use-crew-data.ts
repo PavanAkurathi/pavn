@@ -4,14 +4,15 @@ export interface Role {
 }
 
 export interface CrewMember {
-    id: string; // Worker User ID
-    memberId?: string; // Member ID
+    id: string; // The worker's id: what shift assignments point at
     name: string;
     avatar: string;
     roles: string[];
     hours: number;
     initials: string;
-    /** True for invited roster entries without accounts yet. */
+    status?: "added" | "invited" | "active" | "inactive";
+    employmentType?: "staff" | "agency";
+    /** True for workers invited to the app who haven't signed in yet. */
     invitePending?: boolean;
 }
 
@@ -33,7 +34,11 @@ export function useCrewData() {
     const shouldFetch = orgId ? `/api/organizations/${orgId}/crew` : null;
 
     // Standard fetcher is fine for internal API
-    const { data, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcher);
+    const { data: everyone, error, isLoading } = useSWR<CrewMember[]>(shouldFetch, fetcher);
+
+    // Who can be put on a shift: the business's own people who are not paused.
+    // Agency temps have their own picker.
+    const data = everyone?.filter((worker) => worker.employmentType !== "agency" && worker.status !== "inactive");
 
 
 

@@ -29,7 +29,6 @@
         "@repo/config": "workspace:*",
         "@repo/contracts": "workspace:*",
         "@repo/database": "workspace:*",
-        "@repo/dub": "workspace:*",
         "@repo/email": "workspace:*",
         "@repo/geofence": "workspace:*",
         "@repo/gig-workers": "workspace:*",

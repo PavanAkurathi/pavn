@@ -11,7 +11,6 @@ import type { SecurityOverview } from "@repo/contracts/preferences";
 import type {
     Contact,
     CrewMember,
-    RosterWorker,
     WorkerProfile,
 } from "@repo/contracts/workforce";
 import { apiJsonRequest } from "@/lib/server/api-client";
@@ -74,10 +73,11 @@ export async function getWorkspaceSettings(
     );
 }
 
-export async function getRosterWorkers(
+/** Everyone the business has added: staff and agency temps, in any status. */
+export async function getWorkers(
     organizationId?: string,
-): Promise<RosterWorker[]> {
-    return apiJsonRequest<RosterWorker[]>("/organizations/roster", {
+): Promise<CrewMember[]> {
+    return apiJsonRequest<CrewMember[]>("/organizations/crew", {
         organizationScoped: true,
         organizationId,
     });

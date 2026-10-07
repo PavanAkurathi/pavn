@@ -1,8 +1,8 @@
 // packages/scheduling-timekeeping/src/modules/time-tracking/unassign-worker.ts
 
 import { db } from "@repo/database";
-import { shift, shiftAssignment } from "@repo/database/schema";
-import { eq, and, or } from "drizzle-orm";
+import { shift, shiftAssignment, worker } from "@repo/database/schema";
+import { eq, and } from "drizzle-orm";
 import { logAudit } from "@repo/database";
 import { AppError } from "@repo/observability";
 import { cancelNotificationByType } from "@repo/notifications";
@@ -36,7 +36,7 @@ export const unassignWorker = async (
     const assignment = await db.query.shiftAssignment.findFirst({
         where: and(
             eq(shiftAssignment.shiftId, shiftId),
-            or(eq(shiftAssignment.workerId, workerId), eq(shiftAssignment.tempWorkerId, workerId), eq(shiftAssignment.rosterEntryId, workerId)),
+            eq(shiftAssignment.workerId, workerId),
             eq(shiftAssignment.status, "active")
         ),
         columns: { id: true, actualClockIn: true },
@@ -63,10 +63,18 @@ export const unassignWorker = async (
         })
         .where(eq(shiftAssignment.id, assignment.id));
 
-    // 6. Cancel any pending notifications for this worker on this shift
+    // 6. Cancel any pending notifications for this worker on this shift.
+    // Notifications are addressed to the app account, so a worker who has never
+    // signed in has none.
     try {
-        for (const type of ['night_before', '60_min', '15_min', 'shift_start', 'late_warning'] as const) {
-            await cancelNotificationByType(shiftId, workerId, type);
+        const target = await db.query.worker.findFirst({
+            where: eq(worker.id, workerId),
+            columns: { userId: true },
+        });
+        if (target?.userId) {
+            for (const type of ['night_before', '60_min', '15_min', 'shift_start', 'late_warning'] as const) {
+                await cancelNotificationByType(shiftId, target.userId, type);
+            }
         }
     } catch (e) {
         // Non-critical — don't fail the unassign

@@ -102,7 +102,7 @@ export const verification = pgTable("verification", {
 
 export const userRelations = relations(user, ({ many }) => ({
     certifications: many(certification),
-    roles: many(workerRole),
+    workers: many(worker),
     // specific relations to shifts/assignments can be added here if needed, 
     // but often handled via the other side (shiftAssignment.worker)
 }));
@@ -243,54 +243,65 @@ export const memberRelations = relations(member, ({ one }) => ({
     }),
 }));
 
-export const rosterEntry = pgTable("roster_entry", {
+/**
+ * A person who works for one business. The business owns this record: the name,
+ * phone, roles and notes are theirs, and the same person at two businesses is
+ * two rows. Every shift assignment points here.
+ *
+ * `userId` stays null until the person signs in to the worker app with this
+ * phone number, and for agency temps who never do. The phone number is the
+ * only way in: a business has to add the worker (and invite them) first.
+ */
+export const worker = pgTable("worker", {
     id: text("id").primaryKey(),
     organizationId: text("organization_id")
         .notNull()
         .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+        .references(() => user.id, { onDelete: "set null" }),
     name: text("name").notNull(),
-    email: text("email").notNull(),
     phoneNumber: text("phone_number"),
-    role: text("role").default("member"),
-    hourlyRate: integer("hourly_rate"), // Stored in cents, nullable
+    email: text("email"),
+    // 'staff' = the business's own people; 'agency' = temps supplied by an agency.
+    employmentType: text("employment_type").notNull().default("staff"),
+    agency: text("agency"),
     jobTitle: text("job_title"),
     roles: jsonb("roles").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
-    status: text("status").default("uninvited").notNull(), // 'uninvited'
-    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).defaultNow(),
-});
-
-export const rosterEntryRelations = relations(rosterEntry, ({ one }) => ({
-    organization: one(organization, {
-        fields: [rosterEntry.organizationId],
-        references: [organization.id],
-    }),
-}));
-
-export const workerRole = pgTable("worker_role", {
-    id: text("id").primaryKey(),
-    workerId: text("worker_id")
-        .notNull()
-        .references(() => user.id, { onDelete: "cascade" }),
-    organizationId: text("organization_id")
-        .notNull()
-        .references(() => organization.id, { onDelete: "cascade" }),
-    role: text("role").notNull(), // e.g. "Server", "Bartender"
-    hourlyRate: integer("hourly_rate"), // Stored in cents
+    // Reference only (cents). Timesheets export hours; nothing computes pay from this.
+    hourlyRate: integer("hourly_rate"),
+    notes: text("notes"),
+    // What the business hands the worker (in the invite text and link) to join.
+    inviteCode: text("invite_code"),
+    // 'added' (on the list, not invited) | 'invited' | 'active' (has signed in) | 'inactive'
+    status: text("status").notNull().default("added"),
+    invitedAt: timestamp("invited_at", { withTimezone: true, mode: 'date' }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 }, (table) => ({
-    workerRoleWorkerIdx: index("worker_role_worker_idx").on(table.workerId),
-    workerRoleOrgIdx: index("worker_role_org_idx").on(table.organizationId),
+    workerOrgIdx: index("worker_org_idx").on(table.organizationId),
+    workerUserIdx: index("worker_user_idx").on(table.userId),
+    workerOrgUserUnique: unique("worker_org_user_unique").on(table.organizationId, table.userId),
+    // One worker per phone number per business.
+    workerOrgPhoneUnique: uniqueIndex("worker_org_phone_unique")
+        .on(table.organizationId, table.phoneNumber)
+        .where(sql`${table.phoneNumber} is not null`),
+    workerInviteCodeUnique: uniqueIndex("worker_invite_code_unique")
+        .on(table.inviteCode)
+        .where(sql`${table.inviteCode} is not null`),
+    workerEmploymentTypeCheck: check(
+        "check_worker_employment_type",
+        sql`${table.employmentType} in ('staff', 'agency')`
+    ),
 }));
 
-export const workerRoleRelations = relations(workerRole, ({ one }) => ({
-    worker: one(user, {
-        fields: [workerRole.workerId],
-        references: [user.id],
-    }),
+export const workerRelations = relations(worker, ({ one }) => ({
     organization: one(organization, {
-        fields: [workerRole.organizationId],
+        fields: [worker.organizationId],
         references: [organization.id],
+    }),
+    user: one(user, {
+        fields: [worker.userId],
+        references: [user.id],
     }),
 }));
 
@@ -308,21 +319,6 @@ export const invitationRelations = relations(invitation, ({ one }) => ({
 // ============================================================================
 // 4. SCHEDULING (Shifts & Assignments)
 // ============================================================================
-
-export const tempWorker = pgTable("temp_worker", {
-    id: text("id").primaryKey(),
-    organizationId: text("organization_id")
-        .notNull()
-        .references(() => organization.id, { onDelete: "cascade" }),
-    name: text("name").notNull(), // "Temp 1" until the real name is known
-    agency: text("agency"), // e.g. "ABC Staffing"
-    phone: text("phone"),
-    notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
-}, (table) => ({
-    tempWorkerOrgIdx: index("temp_worker_org_idx").on(table.organizationId),
-}));
 
 /**
  * An edit to a published shift that staff should not see yet. The scheduler
@@ -458,19 +454,11 @@ export const shiftAssignment = pgTable("shift_assignment", {
         .notNull()
         .references(() => shift.id, { onDelete: "cascade" }),
 
-    // Exactly one of workerId / tempWorkerId is set: roster workers have app
-    // accounts and clock in themselves; temp (agency) workers are tracked by
-    // the manager and never log in.
+    // Who worked it. A worker clocks in through their own app account once they
+    // have one (worker.userId); agency temps are tracked by the manager.
     workerId: text("worker_id")
-        .references(() => user.id, { onDelete: "cascade" }),
-
-    tempWorkerId: text("temp_worker_id")
-        .references(() => tempWorker.id, { onDelete: "restrict" }),
-
-    // Invited in-house worker without an account yet; migrated to workerId
-    // when the invitation is accepted.
-    rosterEntryId: text("roster_entry_id")
-        .references(() => rosterEntry.id, { onDelete: "restrict" }),
+        .notNull()
+        .references(() => worker.id, { onDelete: "restrict" }),
 
     // -- Timesheet Data (Triple-Timestamp Model) --
     // 1. Actual (Behavioral) - Raw device timestamp
@@ -542,14 +530,6 @@ export const shiftAssignment = pgTable("shift_assignment", {
     assignmentStatusIdx: index("assignment_status_idx").on(table.status),
     // Constraint: A worker cannot be assigned to the same shift twice
     uniqueWorkerPerShift: unique("unique_worker_shift").on(table.shiftId, table.workerId),
-    // Exactly one assignment identity: app user XOR temp/agency worker XOR
-    // invited roster entry. Lives in production (added by hand-written migration
-    // 0012) but was never declared here, so a schema-generated environment would
-    // silently lose it.
-    singleIdentity: check(
-        "shift_assignment_single_identity",
-        sql`num_nonnulls(${table.workerId}, ${table.tempWorkerId}, ${table.rosterEntryId}) = 1`
-    ),
 }));
 
 export const shiftRelations = relations(shift, ({ one, many }) => ({
@@ -584,17 +564,9 @@ export const shiftAssignmentRelations = relations(shiftAssignment, ({ one }) => 
         fields: [shiftAssignment.shiftId],
         references: [shift.id],
     }),
-    worker: one(user, {
+    worker: one(worker, {
         fields: [shiftAssignment.workerId],
-        references: [user.id],
-    }),
-    tempWorker: one(tempWorker, {
-        fields: [shiftAssignment.tempWorkerId],
-        references: [tempWorker.id],
-    }),
-    rosterEntry: one(rosterEntry, {
-        fields: [shiftAssignment.rosterEntryId],
-        references: [rosterEntry.id],
+        references: [worker.id],
     }),
 }));
 

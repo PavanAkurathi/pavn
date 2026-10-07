@@ -8,6 +8,13 @@ const memberTable = {
     role: "role",
 };
 
+// Assignments belong to a worker row; the signed-in account is worker.userId.
+const workerTable = {
+    __table: "worker",
+    id: "worker_row_id",
+    userId: "worker_user_id",
+};
+
 const shiftAssignmentTable = {
     __table: "shift_assignment",
     workerId: "worker_id",
@@ -67,12 +74,14 @@ const mockDb = {
             if (table === shiftAssignmentTable) {
                 return {
                     innerJoin: mock(() => ({
-                        leftJoin: mock(() => ({
-                            innerJoin: mock(() => ({
-                                where: mock(() => ({
-                                    orderBy: mock(() => ({
-                                        limit: mock(() => ({
-                                            offset: mockShiftRows,
+                        innerJoin: mock(() => ({
+                            leftJoin: mock(() => ({
+                                innerJoin: mock(() => ({
+                                    where: mock(() => ({
+                                        orderBy: mock(() => ({
+                                            limit: mock(() => ({
+                                                offset: mockShiftRows,
+                                            })),
                                         })),
                                     })),
                                 })),
@@ -105,6 +114,7 @@ mock.module("@repo/database/schema", () => ({
     shift: shiftTable,
     location: locationTable,
     organization: organizationTable,
+    worker: workerTable,
 }));
 
 const { getWorkerAllShifts } = await import("../src/modules/time-tracking/worker-all-shifts");

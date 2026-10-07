@@ -45,7 +45,7 @@ export function AssignPanel({
         if (!candidate || busy) return;
         setBusy(personId);
         try {
-            const refs = [...staying(shift), { personId, kind: candidate.person.kind }];
+            const refs = [...staying(shift), { personId }];
             await run({
                 changes: [
                     ...(refs.length > shift.capacity ? [{ op: "update" as const, shiftId: shift.id, patch: { capacity: refs.length } }] : []),

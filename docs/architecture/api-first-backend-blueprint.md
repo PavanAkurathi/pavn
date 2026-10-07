@@ -136,10 +136,10 @@ Good API shapes:
 - `GET /shifts/upcoming`
 - `GET /shifts/:id`
 - `POST /shifts/publish`
-- `GET /organizations/roster-view`
+- `GET /organizations/crew`
 - `GET /organizations/worker/:id`
 - `GET /organizations/onboarding`
-- `POST /organizations/crew/invite`
+- `POST /organizations/crew/invitations`
 - `POST /billing/checkout-session`
 
 Bad API shapes:

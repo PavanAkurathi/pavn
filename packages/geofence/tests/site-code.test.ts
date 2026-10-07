@@ -41,8 +41,12 @@ const mockDb = {
         }),
 };
 
+const mockFindWorkerId = mock(async (): Promise<string | null> => "worker_row_1");
+
 mock.module("@repo/database", () => ({
     db: mockDb,
+    // The signed-in account's worker row at this business: what assignments point at.
+    findWorkerIdForUser: mockFindWorkerId,
     logAudit: mock(async (e: Record<string, unknown>) => {
         audits.push(e);
     }),
@@ -155,6 +159,15 @@ describe("clocking in with a site code", () => {
         await expect(
             clockInWithSiteCode({ shiftId: "shf_1", code: "0421" }, WORKER, ORG),
         ).rejects.toThrow(/not on this shift/);
+    });
+
+    test("an account with no worker at this business cannot use the code", async () => {
+        mockFindWorkerId.mockResolvedValueOnce(null);
+
+        await expect(
+            clockInWithSiteCode({ shiftId: "shf_1", code: "0421" }, WORKER, ORG),
+        ).rejects.toThrow(/not on this shift/);
+        expect(assignmentUpdate.clockInMethod).toBeUndefined();
     });
 
     test("will not clock you in twice", async () => {

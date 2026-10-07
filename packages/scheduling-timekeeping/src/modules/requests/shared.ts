@@ -14,15 +14,14 @@
 
 import { db } from "@repo/database";
 import {
-    member,
     organization,
     scheduledNotification,
     shift,
     shiftAssignment,
     shiftRequest,
     timeOffRequest,
+    worker,
     workerNotificationPreferences,
-    workerRole,
 } from "@repo/database/schema";
 import { AppError } from "@repo/observability";
 import { buildNotificationSchedule } from "@repo/notifications";
@@ -42,7 +41,6 @@ export type Q = Tx | typeof db;
 export const PENDING_SHIFT_REQUEST = ["pending_peer", "pending_manager"] as const;
 /** Shift statuses staff can see and still change hands before the shift starts. */
 export const LIVE_SHIFT = ["published", "open", "assigned"] as const;
-export const MANAGER_ROLES = ["admin", "manager", "owner"];
 const DEAD = [...DEAD_ASSIGNMENT];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -84,7 +82,8 @@ const localTimeLabel = (instant: Date, tz: string) => compactTime(localTimeInZon
 // ---------------------------------------------------------------------------
 
 const shiftWith = {
-    assignments: { columns: { id: true, workerId: true, tempWorkerId: true, rosterEntryId: true, status: true, pendingState: true } },
+    // `worker.userId` is the app account, which is who requests are about.
+    assignments: { columns: { id: true, workerId: true, status: true, pendingState: true }, with: { worker: { columns: { userId: true } } } },
     location: { columns: { id: true, name: true, timezone: true } },
     event: { columns: { name: true } },
     organization: { columns: { id: true, name: true, timezone: true, openShiftClaimPolicy: true, swapApprovalRequired: true } },
@@ -127,9 +126,29 @@ export function openSlotsOf(row: LoadedShift) {
     return Math.max(0, capacity - liveAssignments(row).length);
 }
 
+/**
+ * Requests are made by app accounts, so this package's request code names
+ * people by user id and translates to the worker row only where it touches
+ * assignments.
+ */
+export const accountOf = (a: LoadedShift["assignments"][number]) => a.worker?.userId ?? null;
+
+/** True when this account is on the shift (even if only staged onto it). */
+export const hasAccountOn = (row: LoadedShift, userId: string) => liveAssignments(row).some((a) => accountOf(a) === userId);
+
 /** On the shift as staff see it (not merely staged onto it by a manager). */
-export const isOnShift = (row: LoadedShift, workerId: string) =>
-    liveAssignments(row).some((a) => a.workerId === workerId && a.pendingState !== "add");
+export const isOnShift = (row: LoadedShift, userId: string) =>
+    liveAssignments(row).some((a) => accountOf(a) === userId && a.pendingState !== "add");
+
+/** The worker row an app account is, at one business. */
+export async function workerIdOf(q: Q, orgId: string, userId: string) {
+    const row = await q.query.worker.findFirst({
+        where: and(eq(worker.organizationId, orgId), eq(worker.userId, userId)),
+        columns: { id: true },
+    });
+    if (!row) throw new AppError("You don't work here", "NOT_A_MEMBER", 403);
+    return row.id;
+}
 
 /** Still something a worker can ask about: published, not being removed, not started. */
 export function assertChangeable(row: LoadedShift, now: Date) {
@@ -145,31 +164,34 @@ export function assertChangeable(row: LoadedShift, now: Date) {
 // People
 // ---------------------------------------------------------------------------
 
-export async function membershipsOf(q: Q, workerId: string) {
-    return q.query.member.findMany({
-        where: and(eq(member.userId, workerId), eq(member.status, "active"), notInArray(member.role, MANAGER_ROLES)),
+export async function membershipsOf(q: Q, userId: string) {
+    return q.query.worker.findMany({
+        where: and(eq(worker.userId, userId), eq(worker.status, "active")),
         columns: { organizationId: true, jobTitle: true },
         with: { organization: { columns: { id: true, name: true, timezone: true, openShiftClaimPolicy: true, swapApprovalRequired: true } } },
     });
 }
 
-export async function requireMember(q: Q, orgId: string, workerId: string) {
-    const row = await q.query.member.findFirst({
-        where: and(eq(member.organizationId, orgId), eq(member.userId, workerId), eq(member.status, "active")),
-        columns: { id: true, jobTitle: true },
-        with: { user: { columns: { id: true, name: true } } },
+export async function requireMember(q: Q, orgId: string, userId: string) {
+    const row = await q.query.worker.findFirst({
+        where: and(eq(worker.organizationId, orgId), eq(worker.userId, userId), eq(worker.status, "active")),
+        columns: { id: true, jobTitle: true, name: true },
     });
     if (!row) throw new AppError("You don't work here", "NOT_A_MEMBER", 403);
-    return row;
+    return { id: row.id, jobTitle: row.jobTitle, user: { id: userId, name: row.name } };
 }
 
-/** Each person's roles at one workplace, as the Scheduler reads them. */
+/** Each person's roles at one workplace, as the Scheduler reads them, by app account. */
 export async function rolesOf(q: Q, orgId: string, workers: { id: string; jobTitle?: string | null }[]) {
     const ids = workers.map((w) => w.id);
     const rows = ids.length
-        ? await q.query.workerRole.findMany({ where: and(eq(workerRole.organizationId, orgId), inArray(workerRole.workerId, ids)), columns: { workerId: true, role: true } })
+        ? await q.query.worker.findMany({ where: and(eq(worker.organizationId, orgId), inArray(worker.userId, ids)), columns: { userId: true, roles: true, jobTitle: true } })
         : [];
-    return new Map(workers.map((w) => [w.id, deriveCrewRoles(rows.filter((r) => r.workerId === w.id).map((r) => r.role), w.jobTitle)]));
+    const byUser = new Map(rows.map((r) => [r.userId, r] as const));
+    return new Map(workers.map((w) => {
+        const r = byUser.get(w.id);
+        return [w.id, deriveCrewRoles(r?.roles ?? [], r?.jobTitle ?? w.jobTitle)] as const;
+    }));
 }
 
 /** Someone with no roles set yet can take anything; otherwise the role has to be one of theirs. */
@@ -196,7 +218,7 @@ export async function busyWindows(q: Q, workerIds: string[], from: Date, to: Dat
     const [shifts, off] = await Promise.all([
         q
             .select({
-                workerId: shiftAssignment.workerId,
+                workerId: worker.userId,
                 shiftId: shift.id,
                 start: shift.startTime,
                 end: shift.endTime,
@@ -207,10 +229,11 @@ export async function busyWindows(q: Q, workerIds: string[], from: Date, to: Dat
             })
             .from(shiftAssignment)
             .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
+            .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
             .innerJoin(organization, eq(shift.organizationId, organization.id))
             .where(
                 and(
-                    inArray(shiftAssignment.workerId, workerIds),
+                    inArray(worker.userId, workerIds),
                     notInArray(shiftAssignment.status, DEAD),
                     sql`${shiftAssignment.pendingState} is distinct from 'remove'`,
                     ne(shift.status, "cancelled"),
@@ -256,7 +279,8 @@ export async function lockShift(tx: Tx, shiftId: string) {
     await tx.execute(sql`select ${shift.id} from ${shift} where ${shift.id} = ${shiftId} for update`);
 }
 
-export async function putOnShift(tx: Tx, row: LoadedShift, workerId: string, now: Date) {
+export async function putOnShift(tx: Tx, row: LoadedShift, userId: string, now: Date) {
+    const workerId = await workerIdOf(tx, row.organizationId, userId);
     const existing = row.assignments.find((a) => a.workerId === workerId);
     if (existing) {
         await tx.update(shiftAssignment).set({ status: "active", pendingState: null, updatedAt: now }).where(eq(shiftAssignment.id, existing.id));
@@ -265,7 +289,8 @@ export async function putOnShift(tx: Tx, row: LoadedShift, workerId: string, now
     }
 }
 
-export async function takeOffShift(tx: Tx, row: LoadedShift, workerId: string, now: Date) {
+export async function takeOffShift(tx: Tx, row: LoadedShift, userId: string, now: Date) {
+    const workerId = await workerIdOf(tx, row.organizationId, userId);
     await tx
         .update(shiftAssignment)
         .set({ status: "removed", pendingState: null, updatedAt: now })
@@ -273,7 +298,7 @@ export async function takeOffShift(tx: Tx, row: LoadedShift, workerId: string, n
     await tx
         .update(scheduledNotification)
         .set({ status: "cancelled", updatedAt: now })
-        .where(and(eq(scheduledNotification.shiftId, row.id), eq(scheduledNotification.workerId, workerId), eq(scheduledNotification.status, "pending")));
+        .where(and(eq(scheduledNotification.shiftId, row.id), eq(scheduledNotification.workerId, userId), eq(scheduledNotification.status, "pending")));
 }
 
 /** "assigned" once everyone staff can see fills it, "published" while spots are open. */
@@ -358,15 +383,14 @@ export async function expireStaleRequests(q: Q, scope: { orgId?: string; workerI
         );
 }
 
-/** A coworker at the same workplace who could take a shift: active, not a manager. */
-export async function findCoworker(q: Q, orgId: string, workerId: string) {
-    const row = await q.query.member.findFirst({
-        where: and(eq(member.organizationId, orgId), eq(member.userId, workerId), eq(member.status, "active"), notInArray(member.role, MANAGER_ROLES)),
-        columns: { jobTitle: true },
-        with: { user: { columns: { id: true, name: true } } },
+/** A coworker at the same workplace who could take a shift: signed in and active. */
+export async function findCoworker(q: Q, orgId: string, userId: string) {
+    const row = await q.query.worker.findFirst({
+        where: and(eq(worker.organizationId, orgId), eq(worker.userId, userId), eq(worker.status, "active")),
+        columns: { jobTitle: true, name: true },
     });
     if (!row) throw new AppError("That person doesn't work here", "NOT_A_MEMBER", 404);
-    return row;
+    return { jobTitle: row.jobTitle, user: { id: userId, name: row.name } };
 }
 
 /** The shift changes hands: one person off, the other on, reminders moved. */

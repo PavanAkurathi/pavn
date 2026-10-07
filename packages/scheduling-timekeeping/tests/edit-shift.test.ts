@@ -96,9 +96,9 @@ describe("editShift", () => {
 
     test("re-notifies the app users on a published shift when the time moves", async () => {
         activeAssignments = [
-            { workerId: "user_1" },
-            { workerId: "user_2" },
-            { workerId: null }, // invited or agency — no device to reach
+            { workerId: "wkr_1", worker: { userId: "user_1" } },
+            { workerId: "wkr_2", worker: { userId: "user_2" } },
+            { workerId: "wkr_3", worker: { userId: null } }, // not on the app yet, or agency: no device to reach
         ];
 
         const result = await editShift("shf_1", ORG, MANAGER, {
@@ -114,7 +114,7 @@ describe("editShift", () => {
     });
 
     test("says nothing to anyone when only the title changes", async () => {
-        activeAssignments = [{ workerId: "user_1" }];
+        activeAssignments = [{ workerId: "wkr_1", worker: { userId: "user_1" } }];
 
         const result = await editShift("shf_1", ORG, MANAGER, { title: "Forklift Operator" });
 
@@ -125,7 +125,7 @@ describe("editShift", () => {
 
     test("a draft moving about disturbs nobody", async () => {
         shiftRow = { ...shiftRow, status: "draft" };
-        activeAssignments = [{ workerId: "user_1" }];
+        activeAssignments = [{ workerId: "wkr_1", worker: { userId: "user_1" } }];
 
         const result = await editShift("shf_1", ORG, MANAGER, {
             local: { date: "2026-08-21", startTime: "09:00", endTime: "17:00" },

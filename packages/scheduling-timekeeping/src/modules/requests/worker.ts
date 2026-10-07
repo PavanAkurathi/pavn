@@ -10,7 +10,7 @@
  */
 
 import { db, logAudit } from "@repo/database";
-import { member, shift, shiftRequest, timeOffRequest } from "@repo/database/schema";
+import { shift, shiftRequest, timeOffRequest, worker } from "@repo/database/schema";
 import { AppError } from "@repo/observability";
 import {
     TimeOffInputSchema,
@@ -24,14 +24,14 @@ import {
     type WorkerRequestResult,
     type WorkerRequestsResponse,
 } from "@repo/contracts/requests";
-import { and, desc, eq, gt, gte, inArray, lt, ne, notInArray, or } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, lt, ne, or } from "drizzle-orm";
 
 import { newId } from "../../utils/ids";
 import { addDaysToLocalDate, combineDateTimeTz } from "../../utils/zoned-time";
 import {
     LIVE_SHIFT,
-    MANAGER_ROLES,
     PENDING_SHIFT_REQUEST,
+    accountOf,
     applySwap,
     assertChangeable,
     busyWindows,
@@ -40,6 +40,7 @@ import {
     expireStaleRequests,
     findCoworker,
     findShifts,
+    hasAccountOn,
     isOnShift,
     liveAssignments,
     loadShift,
@@ -107,7 +108,7 @@ export async function listOpenShifts(input: { workerId: string }): Promise<OpenS
             (row) =>
                 !row.pendingPatch?.cancel &&
                 openSlotsOf(row) > 0 &&
-                !liveAssignments(row).some((a) => a.workerId === input.workerId) &&
+                !hasAccountOn(row, input.workerId) &&
                 canWork(rolesByOrg.get(row.organizationId) ?? [], row.title),
         )
         .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
@@ -177,7 +178,7 @@ export async function createShiftRequest(input: { workerId: string; body: unknow
     const targetName = target.user.name;
     const roles = (await rolesOf(db, row.organizationId, [{ id: target.user.id, jobTitle: target.jobTitle }])).get(target.user.id) ?? [];
     if (!canWork(roles, row.title)) throw new AppError(`${targetName} isn't set up to work ${row.title}`, "ROLE_MISMATCH", 409);
-    if (liveAssignments(row).some((a) => a.workerId === target.user.id)) {
+    if (hasAccountOn(row, target.user.id)) {
         throw new AppError(`${targetName} is already on this shift`, "ALREADY_ON_SHIFT", 409);
     }
     const busy = await busyWindows(db, [target.user.id], row.startTime, row.endTime);
@@ -211,7 +212,7 @@ export async function createShiftRequest(input: { workerId: string; body: unknow
 }
 
 async function claim(row: LoadedShift, workerId: string, jobTitle: string | null, note: string | undefined, now: Date): Promise<WorkerRequestResult> {
-    if (liveAssignments(row).some((a) => a.workerId === workerId)) throw new AppError("You're already on this shift", "ALREADY_ON_SHIFT", 409);
+    if (hasAccountOn(row, workerId)) throw new AppError("You're already on this shift", "ALREADY_ON_SHIFT", 409);
     const roles = (await rolesOf(db, row.organizationId, [{ id: workerId, jobTitle }])).get(workerId) ?? [];
     if (!canWork(roles, row.title)) {
         throw new AppError(`This shift is for ${row.title}. Ask your manager to add it to your roles.`, "ROLE_MISMATCH", 403);
@@ -231,7 +232,7 @@ async function claim(row: LoadedShift, workerId: string, jobTitle: string | null
     await db.transaction(async (tx) => {
         await lockShift(tx, row.id);
         const fresh = await loadShift(tx, row.id);
-        if (liveAssignments(fresh).some((a) => a.workerId === workerId)) throw new AppError("You're already on this shift", "ALREADY_ON_SHIFT", 409);
+        if (hasAccountOn(fresh, workerId)) throw new AppError("You're already on this shift", "ALREADY_ON_SHIFT", 409);
         if (openSlotsOf(fresh) === 0) throw new AppError("Someone got there first. This shift is full.", "SHIFT_FULL", 409);
         await tx.insert(shiftRequest).values({ ...base, status: "approved", decidedAt: now });
         await putOnShift(tx, fresh, workerId, now);
@@ -467,18 +468,18 @@ export async function listSwapCandidates(input: { workerId: string; shiftId: str
     await requireMember(db, row.organizationId, input.workerId);
     if (!isOnShift(row, input.workerId)) throw new AppError("You're not on this shift", "NOT_ON_SHIFT", 409);
 
-    const coworkers = await db.query.member.findMany({
+    const coworkerRows = await db.query.worker.findMany({
         where: and(
-            eq(member.organizationId, row.organizationId),
-            eq(member.status, "active"),
-            notInArray(member.role, MANAGER_ROLES),
-            ne(member.userId, input.workerId),
+            eq(worker.organizationId, row.organizationId),
+            eq(worker.status, "active"),
+            ne(worker.userId, input.workerId),
         ),
-        columns: { jobTitle: true },
-        with: { user: { columns: { id: true, name: true } } },
+        columns: { userId: true, name: true, jobTitle: true },
     });
+    // Only people who have signed in can be offered a shift by their coworkers.
+    const coworkers = coworkerRows.flatMap((c) => (c.userId ? [{ jobTitle: c.jobTitle, user: { id: c.userId, name: c.name } }] : []));
     const roles = await rolesOf(db, row.organizationId, coworkers.map((c) => ({ id: c.user.id, jobTitle: c.jobTitle })));
-    const onIt = new Set(liveAssignments(row).map((a) => a.workerId));
+    const onIt = new Set(liveAssignments(row).map(accountOf));
     const eligible = coworkers.filter((c) => !onIt.has(c.user.id) && canWork(roles.get(c.user.id) ?? [], row.title));
     const busy = await busyWindows(db, eligible.map((c) => c.user.id), row.startTime, row.endTime);
 

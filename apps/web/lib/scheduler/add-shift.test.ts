@@ -48,13 +48,13 @@ describe("planAddShift", () => {
         ];
         const plan = planAddShift(
             ws(),
-            { ...base, capacity: 1, assignees: [{ personId: "ana", kind: "roster" }, { personId: "ben", kind: "roster" }] },
+            { ...base, capacity: 1, assignees: [{ personId: "ana" }, { personId: "ben" }] },
             people,
         );
         expect((plan.changes[0] as { shift: { capacity: number } }).shift.capacity).toBe(2);
         expect(plan.label).toBe("Added Server Fri 4:30p–10p: Ana, Ben");
 
-        const some = planAddShift(ws(), { ...base, assignees: [{ personId: "ana", kind: "roster" }] }, people);
+        const some = planAddShift(ws(), { ...base, assignees: [{ personId: "ana" }] }, people);
         expect(some.label).toBe("Added Server Fri 4:30p–10p: Ana and 5 open");
     });
 

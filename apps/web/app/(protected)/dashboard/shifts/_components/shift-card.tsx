@@ -16,8 +16,8 @@ interface ShiftCardProps {
 const AVATAR_STACK_SIZE = 3;
 
 const WORKER_KIND_NOUN = {
-    roster: "on the roster",
-    invited: "invited, not accepted yet",
+    active: "on the app",
+    invited: "not on the app yet",
     agency: "agency",
 } as const;
 
@@ -132,12 +132,12 @@ export function ShiftCard({ shifts, onClick, isUrgent, actionLabel }: ShiftCardP
                 {workers.length > 0 ? (
                     <span className="ml-1 flex items-center">
                         {workers.slice(0, AVATAR_STACK_SIZE).map((worker, index) => {
-                            const kind = worker.kind ?? "roster";
+                            const kind = worker.kind ?? "active";
                             return (
                                 <Avatar
                                     key={`${worker.id}-${index}`}
                                     className={`h-[30px] w-[30px] border-2 border-card ${index > 0 ? "-ml-[9px]" : ""}`}
-                                    title={`${worker.name ?? worker.initials} — ${WORKER_KIND_NOUN[kind] ?? WORKER_KIND_NOUN.roster}`}
+                                    title={`${worker.name ?? worker.initials} — ${WORKER_KIND_NOUN[kind] ?? WORKER_KIND_NOUN.active}`}
                                 >
                                     <AvatarFallback className="bg-muted text-[11px] font-extrabold text-muted-foreground">
                                         {worker.initials}

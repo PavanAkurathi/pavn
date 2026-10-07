@@ -5,13 +5,12 @@ import {
     location,
     member,
     organization,
-    rosterEntry,
     scheduleEvent,
     shift,
     shiftAssignment,
-    tempWorker,
     timeOffRequest,
     user,
+    worker,
 } from "@repo/database/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -29,20 +28,23 @@ const tag = nanoid(6);
 const ORG = `org_t${tag}`;
 const OTHER_ORG = `org_o${tag}`;
 const LOC = `loc_t${tag}`;
-const ANA = `usr_a${tag}`;
-const BEN = `usr_b${tag}`;
-const MARCO = `re_m${tag}`;
-const TEMP = `tmp_t${tag}`;
+// Accounts (who signs in, who requests time off) and the workers they are at this business.
+const USER_ANA = `usr_a${tag}`;
+const USER_BEN = `usr_b${tag}`;
+const ANA = `wkr_a${tag}`;
+const BEN = `wkr_b${tag}`;
+const MARCO = `wkr_m${tag}`; // invited to the app, never signed in
+const TEMP = `wkr_t${tag}`; // agency temp
 const PUBLISHED = `shf_pub${tag}`;
 const FOREIGN = `shf_for${tag}`;
 
 const newShiftId = () => `shf_${nanoid(16).replace(/[^0-9A-Za-z]/g, "x")}`;
-const ana = { personId: ANA, kind: "roster" as const };
-const ben = { personId: BEN, kind: "roster" as const };
-const marco = { personId: MARCO, kind: "invited" as const };
-const temp = { personId: TEMP, kind: "agency" as const };
+const ana = { personId: ANA };
+const ben = { personId: BEN };
+const marco = { personId: MARCO };
+const temp = { personId: TEMP };
 const apply = (changes: unknown[], force = false) =>
-    applySchedulerChanges({ orgId: ORG, actorId: ANA, body: { changes, force } });
+    applySchedulerChanges({ orgId: ORG, actorId: USER_ANA, body: { changes, force } });
 const draftFields = (over: Record<string, unknown> = {}) => ({
     locationId: LOC,
     localDate: "2027-02-03", // Wednesday
@@ -68,20 +70,24 @@ describeDb("Scheduler changes (database)", () => {
         ]);
         await db.insert(location).values({ id: LOC, organizationId: ORG, name: "Downtown", slug: `dt-${tag}`, timezone: TZ, createdAt: now, updatedAt: now });
         await db.insert(user).values([
-            { id: ANA, name: "Ana Ruiz", email: `ana-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
-            { id: BEN, name: "Ben Kim", email: `ben-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
+            { id: USER_ANA, name: "Ana Ruiz", email: `ana-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
+            { id: USER_BEN, name: "Ben Kim", email: `ben-${tag}@example.com`, emailVerified: true, createdAt: now, updatedAt: now },
         ]);
         await db.insert(member).values([
-            { id: `mem_a${tag}`, userId: ANA, organizationId: ORG, role: "member", createdAt: now },
-            { id: `mem_b${tag}`, userId: BEN, organizationId: ORG, role: "member", createdAt: now },
+            { id: `mem_a${tag}`, userId: USER_ANA, organizationId: ORG, role: "member", createdAt: now },
+            { id: `mem_b${tag}`, userId: USER_BEN, organizationId: ORG, role: "member", createdAt: now },
         ] as never);
-        await db.insert(rosterEntry).values({ id: MARCO, organizationId: ORG, name: "Marco Bell", email: `marco-${tag}@example.com`, createdAt: now } as never);
-        await db.insert(tempWorker).values({ id: TEMP, organizationId: ORG, name: "Jordan Fox", agency: "StaffPlus", createdAt: now, updatedAt: now } as never);
+        await db.insert(worker).values([
+            { id: ANA, organizationId: ORG, userId: USER_ANA, name: "Ana Ruiz", status: "active" },
+            { id: BEN, organizationId: ORG, userId: USER_BEN, name: "Ben Kim", status: "active" },
+            { id: MARCO, organizationId: ORG, name: "Marco Bell", status: "invited" },
+            { id: TEMP, organizationId: ORG, name: "Jordan Fox", employmentType: "agency", agency: "StaffPlus" },
+        ]);
         // Ben has Friday off.
         await db.insert(timeOffRequest).values({
             id: `tor_${tag}`,
             organizationId: ORG,
-            workerId: BEN,
+            workerId: USER_BEN,
             startTime: new Date("2027-02-05T05:00:00Z"),
             endTime: new Date("2027-02-06T05:00:00Z"),
             allDay: true,
@@ -119,11 +125,10 @@ describeDb("Scheduler changes (database)", () => {
         await db.delete(shift).where(inArray(shift.organizationId, [ORG, OTHER_ORG]));
         await db.delete(timeOffRequest).where(eq(timeOffRequest.organizationId, ORG));
         await db.delete(auditLog).where(eq(auditLog.organizationId, ORG));
-        await db.delete(tempWorker).where(eq(tempWorker.organizationId, ORG));
-        await db.delete(rosterEntry).where(eq(rosterEntry.organizationId, ORG));
+        await db.delete(worker).where(eq(worker.organizationId, ORG));
         await db.delete(member).where(eq(member.organizationId, ORG));
         await db.delete(location).where(eq(location.organizationId, ORG));
-        await db.delete(user).where(inArray(user.id, [ANA, BEN]));
+        await db.delete(user).where(inArray(user.id, [USER_ANA, USER_BEN]));
         await db.delete(organization).where(inArray(organization.id, [ORG, OTHER_ORG]));
     });
 
@@ -192,7 +197,7 @@ describeDb("Scheduler changes (database)", () => {
         await apply(undo);
         const back = await loadShift(id);
         expect(back).toMatchObject({ status: "draft", description: "Wear black", capacityTotal: 2 });
-        expect(back!.assignments.map((a) => a.rosterEntryId)).toEqual([MARCO]);
+        expect(back!.assignments.map((a) => a.workerId)).toEqual([MARCO]);
     });
 
     test("double-booking someone needs force, and the override is audited", async () => {
@@ -238,7 +243,7 @@ describeDb("Scheduler changes (database)", () => {
 
     test("another organization's shift, person or location is out of reach", async () => {
         await expect(apply([{ op: "delete", shiftId: FOREIGN }])).rejects.toMatchObject({ statusCode: 404 });
-        await expect(apply([{ op: "assign", shiftId: PUBLISHED, assignees: [{ personId: "usr_nobody", kind: "roster" }] }])).rejects.toMatchObject({
+        await expect(apply([{ op: "assign", shiftId: PUBLISHED, assignees: [{ personId: "wkr_nobody" }] }])).rejects.toMatchObject({
             code: "PERSON_NOT_FOUND",
         });
         await expect(apply([{ op: "create", shiftId: newShiftId(), shift: draftFields({ locationId: "loc_elsewhere" }) }])).rejects.toMatchObject({
@@ -260,7 +265,7 @@ describeDb("Scheduler changes (database)", () => {
         ]);
         expect(undoCreate.map((c) => c.op)).toEqual(["delete", "deleteEvent"]);
         const event = await db.query.scheduleEvent.findFirst({ where: eq(scheduleEvent.id, eventId) });
-        expect(event).toMatchObject({ name: "Smith Wedding", locationId: LOC, createdBy: ANA });
+        expect(event).toMatchObject({ name: "Smith Wedding", locationId: LOC, createdBy: USER_ANA });
         expect(event!.startTime.toISOString()).toBe("2027-02-06T20:00:00.000Z");
         expect((await loadShift(servers))!.eventId).toBe(eventId);
 

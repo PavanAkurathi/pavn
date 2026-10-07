@@ -1,7 +1,7 @@
-import { db } from "@repo/database";
+import { db, findWorkerIdForUser } from "@repo/database";
 import { visibleToStaff } from "@repo/database/scheduling";
 import { shift, shiftAssignment, rateLimitState } from "@repo/database/schema";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { randomInt } from "crypto";
 import { z } from "zod";
 import { logAudit } from "@repo/database";
@@ -106,13 +106,16 @@ export const clockInWithSiteCode = async (data: unknown, workerId: string, orgId
         throw new AppError(`Cannot clock in to a ${targetShift.status} shift`, "INVALID_STATE", 409);
     }
 
-    const assignment = await db.query.shiftAssignment.findFirst({
-        where: and(
-            eq(shiftAssignment.shiftId, shiftId),
-            or(eq(shiftAssignment.workerId, workerId), eq(shiftAssignment.rosterEntryId, workerId)),
-            visibleToStaff(),
-        ),
-    });
+    const workerRowId = await findWorkerIdForUser(workerId, orgId);
+    const assignment = workerRowId
+        ? await db.query.shiftAssignment.findFirst({
+            where: and(
+                eq(shiftAssignment.shiftId, shiftId),
+                eq(shiftAssignment.workerId, workerRowId),
+                visibleToStaff(),
+            ),
+        })
+        : null;
 
     if (!assignment) {
         throw new AppError("You are not on this shift", "FORBIDDEN", 403);

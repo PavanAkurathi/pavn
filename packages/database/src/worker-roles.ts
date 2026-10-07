@@ -1,8 +1,3 @@
-import { nanoid } from "nanoid";
-import { and, eq } from "drizzle-orm";
-import { db, TxOrDb } from "./db";
-import { workerRole } from "./schema";
-
 const ROLE_SPLIT_REGEX = /[,;\n|]+/;
 
 export function canonicalizeWorkerRole(raw: string | null | undefined): string | null {
@@ -77,66 +72,4 @@ export function resolveWorkerRoleSet(input: {
     }
 
     return Array.from(ordered);
-}
-
-export async function upsertWorkerRolesForOrganization(
-    input: {
-        workerId: string;
-        organizationId: string;
-        roles: string[];
-        hourlyRate?: number | null;
-    },
-    tx?: TxOrDb
-): Promise<string[]> {
-    const execute = tx ?? db;
-    const normalizedRoles = normalizeWorkerRoles(input.roles);
-
-    if (normalizedRoles.length === 0) {
-        return [];
-    }
-
-    const existingRows = await execute
-        .select({
-            id: workerRole.id,
-            role: workerRole.role,
-            hourlyRate: workerRole.hourlyRate,
-        })
-        .from(workerRole)
-        .where(and(
-            eq(workerRole.workerId, input.workerId),
-            eq(workerRole.organizationId, input.organizationId)
-        ));
-
-    const existingByRole = new Map(
-        existingRows.map((row) => [canonicalizeWorkerRole(row.role), row] as const)
-    );
-
-    for (const role of normalizedRoles) {
-        const existing = existingByRole.get(role);
-
-        if (existing) {
-            if (input.hourlyRate !== undefined && existing.hourlyRate !== input.hourlyRate) {
-                await execute
-                    .update(workerRole)
-                    .set({
-                        hourlyRate: input.hourlyRate,
-                        updatedAt: new Date(),
-                    })
-                    .where(eq(workerRole.id, existing.id));
-            }
-            continue;
-        }
-
-        await execute.insert(workerRole).values({
-            id: nanoid(),
-            workerId: input.workerId,
-            organizationId: input.organizationId,
-            role,
-            hourlyRate: input.hourlyRate ?? null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-    }
-
-    return normalizedRoles;
 }

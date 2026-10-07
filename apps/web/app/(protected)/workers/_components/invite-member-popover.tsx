@@ -19,7 +19,6 @@ import { inviteWorker } from "@/actions/workers";
 
 const inviteSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters."),
-    email: z.string().email("Invalid email address."),
     phoneNumber: z
         .string()
         .optional()
@@ -31,9 +30,9 @@ const inviteSchema = z.object({
         .refine((val) => !val || /^\d+(\.\d{1,2})?$/.test(val), "Must be a valid number (e.g. 15.50)"),
     sendSms: z.boolean().default(true),
 }).superRefine((value, ctx) => {
-    // The server skips the text when there is no number but still reports success.
+    // The phone number is the only way into the app, so there is nothing to text without one.
     if (value.sendSms && !value.phoneNumber?.trim()) {
-        ctx.addIssue({ code: "custom", path: ["phoneNumber"], message: "Add a phone number to send the text, or untick Text." });
+        ctx.addIssue({ code: "custom", path: ["phoneNumber"], message: "Add a phone number to send the invite, or untick the text." });
     }
 });
 
@@ -47,9 +46,9 @@ const splitRoles = (value: string | undefined) =>
         .filter(Boolean);
 
 /**
- * "+ Invite team member": a small popover with the few things an invite needs.
- * Each person gets a secure link to the Pavn app by text and/or email; the
- * first role becomes their primary role.
+ * "+ Add worker": a small popover with the few things a worker needs. The
+ * business owns the record. If asked, the worker is texted a link and a code to
+ * join the app; the first role becomes their primary role.
  */
 export function InviteMemberPopover() {
     const router = useRouter();
@@ -58,7 +57,7 @@ export function InviteMemberPopover() {
 
     const form = useForm<InviteFormValues, unknown, InviteSubmitValues>({
         resolver: zodResolver(inviteSchema),
-        defaultValues: { name: "", email: "", phoneNumber: "", roles: "", hourlyRate: "", sendSms: true },
+        defaultValues: { name: "", phoneNumber: "", roles: "", hourlyRate: "", sendSms: true },
     });
 
     async function onSubmit(data: InviteSubmitValues) {
@@ -67,23 +66,20 @@ export function InviteMemberPopover() {
             const roles = splitRoles(data.roles);
             const result = await inviteWorker({
                 name: data.name,
-                email: data.email,
                 phoneNumber: data.phoneNumber || undefined,
-                role: "member", // Default to member for manual adds
                 roles,
                 jobTitle: roles[0],
                 hourlyRate: data.hourlyRate ? Math.round(parseFloat(data.hourlyRate) * 100) : undefined,
-                // Workers get their link by text; the server has no email invite for them.
-                invites: { email: false, sms: data.sendSms },
+                invites: { sms: data.sendSms },
             });
 
             if (result?.error) {
                 toast.error(result.error);
             } else {
-                toast.success(data.sendSms ? "Invite sent by text." : "Added. No invite sent.");
+                toast.success(data.sendSms ? "Added. Invite sent by text." : "Added. No invite sent yet.");
                 setOpen(false);
                 form.reset();
-                router.refresh(); // Refresh the team list
+                router.refresh(); // Refresh the worker list
             }
         } catch {
             toast.error("An unexpected error occurred.");
@@ -97,13 +93,13 @@ export function InviteMemberPopover() {
             <PopoverTrigger asChild>
                 <Button size="sm">
                     <Plus data-icon="inline-start" />
-                    Invite team member
+                    Add worker
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="max-h-[calc(100vh-6rem)] w-[22rem] overflow-y-auto p-4">
-                <h2 className="text-[13px] font-bold">Invite team member</h2>
+                <h2 className="text-[13px] font-bold">Add worker</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                    They get a secure link to the Pavn app by text, to see their shifts.
+                    They can only join the app with the invite you send: a text with a link and a code.
                 </p>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="mt-3 flex flex-col gap-3">
@@ -122,19 +118,6 @@ export function InviteMemberPopover() {
                         />
                         <FormField
                             control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input type="email" placeholder="casey@example.com" autoComplete="off" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
                             name="phoneNumber"
                             render={({ field }) => (
                                 <FormItem>
@@ -142,7 +125,7 @@ export function InviteMemberPopover() {
                                     <FormControl>
                                         <Input type="tel" placeholder="(312) 555-0100" autoComplete="off" {...field} />
                                     </FormControl>
-                                    <FormDescription>Needed to send the text.</FormDescription>
+                                    <FormDescription>Their way into the app. Needed to send the invite.</FormDescription>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -197,7 +180,7 @@ export function InviteMemberPopover() {
                                         <FormControl>
                                             <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                                         </FormControl>
-                                        <FormLabel className="font-medium">Text them the link now</FormLabel>
+                                        <FormLabel className="font-medium">Text them the invite now</FormLabel>
                                     </FormItem>
                                 )}
                             />
@@ -206,7 +189,7 @@ export function InviteMemberPopover() {
                         <div className="flex gap-2">
                             <Button type="submit" size="sm" className="flex-1" disabled={isSubmitting}>
                                 {isSubmitting ? <Spinner data-icon="inline-start" /> : <Send data-icon="inline-start" />}
-                                {isSubmitting ? "Sending…" : "Send invite"}
+                                {isSubmitting ? "Adding…" : form.watch("sendSms") ? "Add & send invite" : "Add worker"}
                             </Button>
                             <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>
                                 Cancel

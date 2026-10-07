@@ -1,6 +1,8 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import {
+    approveShift,
     assignWorkers,
     cancelShift,
     unassignWorker,
@@ -25,8 +27,6 @@ type AssignActionResult =
 export async function assignWorkersToShiftAction(
     shiftId: string,
     workerIds: string[],
-    tempWorkerIds: string[] = [],
-    rosterEntryIds: string[] = [],
     force = false,
 ): Promise<AssignActionResult> {
     try {
@@ -34,8 +34,6 @@ export async function assignWorkersToShiftAction(
             shiftId,
             workerIds,
             undefined,
-            tempWorkerIds,
-            rosterEntryIds,
             force,
         );
 
@@ -78,6 +76,19 @@ export async function updateTimesheetAction(
     } catch (error: any) {
         console.error("Failed to update timesheet:", error);
         return { error: error?.message || "Failed to update timesheet" };
+    }
+}
+
+/** Finalizes a shift's timesheets: its hours become payroll history and show up in Reports. */
+export async function approveShiftAction(shiftId: string): Promise<ShiftActionResult> {
+    try {
+        await approveShift(shiftId);
+        revalidatePath("/dashboard/shifts");
+        revalidatePath("/reports");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to approve shift:", error);
+        return { error: error?.message || "Failed to approve shift" };
     }
 }
 

@@ -34,6 +34,7 @@ mock.module("@repo/database", () => ({
         transaction: mockTransaction,
         select: mockSelect
     },
+    findWorkerIdForUser: () => Promise.resolve('worker_row_1'),
     // Mock Schema
     shift: { id: 'shift_id', organizationId: 'org_id', locationId: 'loc_id' },
     shiftAssignment: { id: 'assign_id', workerId: 'worker_id' },

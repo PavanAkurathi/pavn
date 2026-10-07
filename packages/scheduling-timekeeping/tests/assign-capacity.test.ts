@@ -2,22 +2,29 @@ import { describe, test, expect, mock, beforeEach } from "bun:test";
 
 let shiftRow: Record<string, unknown> | undefined;
 let activeAssignments: unknown[] = [];
+/** Workers the business owns; assign() refuses ids that are not in this list. */
+let ownedWorkerIds: string[] = [];
 let insertedAssignments: unknown[] = [];
 let auditEntries: Record<string, unknown>[] = [];
 
 /**
- * assign() runs several selects. Only two shapes matter here: the dedupe probes
- * ask for a specific column, while the capacity count asks for `id` off the
- * assignment table. Discriminating on the requested column keeps the real schema
- * in play — mocking the schema module wholesale breaks everything else that
- * imports from it.
+ * assign() runs several selects. Three shapes matter here: the ownership check
+ * asks for the worker's `userId` and `status`, the dedupe probe asks for a
+ * specific column, and the capacity count asks for `id` off the assignment
+ * table. Discriminating on the requested columns keeps the real schema in play
+ * — mocking the schema module wholesale breaks everything else that imports
+ * from it.
  */
 const mockDb = {
     query: { shift: { findFirst: mock(() => Promise.resolve(shiftRow)) } },
     select: (cols?: Record<string, unknown>) => ({
         from: () => ({
-            where: () =>
-                Promise.resolve(cols && "id" in cols && Object.keys(cols).length === 1 ? activeAssignments : []),
+            where: () => {
+                if (cols && "userId" in cols) {
+                    return Promise.resolve(ownedWorkerIds.map((id) => ({ id, userId: null, status: "active" })));
+                }
+                return Promise.resolve(cols && "id" in cols && Object.keys(cols).length === 1 ? activeAssignments : []);
+            },
         }),
     }),
     insert: () => ({
@@ -52,6 +59,7 @@ describe("assigning past capacity", () => {
         insertedAssignments = [];
         auditEntries = [];
         activeAssignments = [];
+        ownedWorkerIds = ["wkr_new", "wkr_a", "wkr_b", "wkr_c"];
         shiftRow = {
             id: "shf_1",
             status: "published",
@@ -66,7 +74,7 @@ describe("assigning past capacity", () => {
     test("asks first rather than refusing", async () => {
         activeAssignments = [{ id: "a1" }, { id: "a2" }, { id: "a3" }];
 
-        const result = await assignWorker({ workerIds: ["user_new"] }, "shf_1", ORG);
+        const result = await assignWorker({ workerIds: ["wkr_new"] }, "shf_1", ORG);
 
         expect(result.success).toBe(false);
         expect(result.warning).toBe(true);
@@ -83,7 +91,7 @@ describe("assigning past capacity", () => {
         activeAssignments = [{ id: "a1" }, { id: "a2" }, { id: "a3" }];
 
         const result = await assignWorker(
-            { workerIds: ["user_new"] },
+            { workerIds: ["wkr_new"] },
             "shf_1",
             ORG,
             undefined,
@@ -102,7 +110,7 @@ describe("assigning past capacity", () => {
     test("stays quiet while there is still room", async () => {
         activeAssignments = [{ id: "a1" }];
 
-        const result = await assignWorker({ workerIds: ["user_new"] }, "shf_1", ORG);
+        const result = await assignWorker({ workerIds: ["wkr_new"] }, "shf_1", ORG);
 
         expect(result.success).toBe(true);
         expect(insertedAssignments).toHaveLength(1);
@@ -112,7 +120,7 @@ describe("assigning past capacity", () => {
     test("filling the last slot exactly is not over capacity", async () => {
         activeAssignments = [{ id: "a1" }, { id: "a2" }];
 
-        const result = await assignWorker({ workerIds: ["user_new"] }, "shf_1", ORG);
+        const result = await assignWorker({ workerIds: ["wkr_new"] }, "shf_1", ORG);
 
         expect(result.success).toBe(true);
         expect(auditEntries).toHaveLength(0);
@@ -120,14 +128,51 @@ describe("assigning past capacity", () => {
 
     test("counts the whole batch, not one at a time", async () => {
         activeAssignments = [{ id: "a1" }];
+        ownedWorkerIds = ["wkr_a", "wkr_b", "wkr_c"];
 
         const result = await assignWorker(
-            { workerIds: ["user_a", "user_b", "user_c"] },
+            { workerIds: ["wkr_a", "wkr_b", "wkr_c"] },
             "shf_1",
             ORG,
         );
 
         expect(result.warning).toBe(true);
         expect(result.capacityConflict?.overBy).toBe(1); // 1 + 3 = 4 against 3
+    });
+});
+
+describe("who can be assigned", () => {
+    beforeEach(() => {
+        insertedAssignments = [];
+        activeAssignments = [];
+        shiftRow = {
+            id: "shf_1",
+            status: "published",
+            title: "Loader",
+            price: 0,
+            capacityTotal: 3,
+            startTime: new Date("2026-08-20T13:00:00Z"),
+            endTime: new Date("2026-08-20T21:00:00Z"),
+        };
+    });
+
+    test("refuses a worker who is not on this business's list", async () => {
+        ownedWorkerIds = [];
+
+        await expect(assignWorker({ workerIds: ["wkr_other_business"] }, "shf_1", ORG)).rejects.toMatchObject({
+            code: "NOT_FOUND",
+            statusCode: 404,
+        });
+        expect(insertedAssignments).toHaveLength(0);
+    });
+
+    test("one worker id covers staff and agency temps alike", async () => {
+        ownedWorkerIds = ["wkr_staff", "wkr_temp"];
+
+        const result = await assignWorker({ workerIds: ["wkr_staff", "wkr_temp"] }, "shf_1", ORG);
+
+        expect(result.success).toBe(true);
+        expect(insertedAssignments).toHaveLength(2);
+        expect(insertedAssignments.map((row) => (row as { workerId: string }).workerId)).toEqual(["wkr_staff", "wkr_temp"]);
     });
 });

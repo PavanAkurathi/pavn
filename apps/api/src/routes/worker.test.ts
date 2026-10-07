@@ -7,7 +7,14 @@ const mockGetWorkerPhoneAccess = mock(() => Promise.resolve({
     eligible: true,
     organizationCount: 2,
     existingAccount: false,
+    workerAccess: [{ workerId: "wkr_1" }],
 }));
+const mockGetWorkerInviteByCode = mock((code: string): Promise<unknown> =>
+    Promise.resolve(code === "ABCD2345"
+        ? { workerId: "wkr_1", workerName: "Casey", organizationName: "Cafe Nord", phoneHint: "42" }
+        : code === "OTHER999"
+            ? { workerId: "wkr_other", workerName: "Someone Else", organizationName: "Cafe Nord", phoneHint: "99" }
+            : null));
 
 const noop = mock(() => Promise.resolve([]));
 const calls: { fn: string; args: unknown[] }[] = [];
@@ -19,6 +26,7 @@ const noopObject = mock(() => Promise.resolve({}));
 
 mock.module("@repo/auth", () => ({
     getWorkerPhoneAccess: mockGetWorkerPhoneAccess,
+    getWorkerInviteByCode: mockGetWorkerInviteByCode,
 }));
 
 // These factories replace the module wholesale, so every named import that
@@ -75,6 +83,42 @@ describe("worker auth routes", () => {
             organizationCount: 2,
             existingAccount: false,
         });
+    });
+
+    const checkEligibility = (body: unknown) =>
+        app.request("/worker/auth/eligibility", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+        });
+
+    test("an invite code that belongs to this number's worker is accepted", async () => {
+        const response = await checkEligibility({ phoneNumber: "+15550001234", inviteCode: "ABCD2345" });
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ eligible: true, organizationCount: 2, existingAccount: false });
+    });
+
+    test("a code that doesn't exist or has been replaced is refused, whatever the number", async () => {
+        const response = await checkEligibility({ phoneNumber: "+15550001234", inviteCode: "NOPE0000" });
+
+        expect(await response.json()).toMatchObject({ eligible: false, reason: "invalid_code" });
+    });
+
+    test("a code sent to someone else's number is refused", async () => {
+        const response = await checkEligibility({ phoneNumber: "+15550001234", inviteCode: "OTHER999" });
+
+        expect(await response.json()).toMatchObject({ eligible: false, reason: "code_mismatch" });
+    });
+
+    test("GET /worker/auth/invite/:code says who invited the worker, without the phone number", async () => {
+        const found = await app.request("/worker/auth/invite/ABCD2345");
+
+        expect(found.status).toBe(200);
+        expect(await found.json()).toEqual({ organizationName: "Cafe Nord", workerName: "Casey", phoneHint: "42" });
+
+        const missing = await app.request("/worker/auth/invite/NOPE0000");
+        expect(missing.status).toBe(404);
     });
 
     test("POST /worker/auth/eligibility rejects invalid payloads", async () => {

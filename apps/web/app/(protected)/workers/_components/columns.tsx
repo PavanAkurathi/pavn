@@ -6,12 +6,12 @@ import { InitialsAvatar } from "@repo/ui/components/app/initials-avatar"
 import { Pill } from "@repo/ui/components/app/pill"
 import { roleHue } from "@repo/ui/lib/role-hue"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { format } from "date-fns"
 import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { removeWorker, inviteWorker } from "@/actions/workers"
+import { removeWorker, bulkInviteWorkers } from "@/actions/workers"
 import { useConfirm } from "@/components/ui/use-confirm"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -37,26 +37,32 @@ import {
 
 export type WorkerDetails = {
     id: string
-    role: string | null
     joinedAt: Date
     jobTitle: string | null
+    roles: string[]
     name: string
-    email: string
+    email: string | null
     phone: string | null
-    image: string | null
-    status: "active" | "invited" | "uninvited"
+    /** added = on the list only; invited = texted the app; active = has signed in. */
+    status: "added" | "invited" | "active" | "inactive"
+    hasAccount: boolean
+    /** Reference only; nothing computes pay from it. */
     hourlyRate?: number | null
-    emergencyContact?: { name: string; phone: string; relation?: string } | null
+}
+
+const STATUS_LABEL: Record<WorkerDetails["status"], string> = {
+    added: "Not invited",
+    invited: "Invite sent",
+    active: "On the app",
+    inactive: "Inactive",
 }
 
 function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
-    const isPureInvitation = worker.name === worker.email && worker.status === "invited";
-
     return (
         <Sheet>
             <SheetTrigger asChild>
                 <button className="flex items-center gap-3 text-left text-foreground transition-opacity hover:opacity-80">
-                    <InitialsAvatar name={worker.name} hue={roleHue(worker.jobTitle ?? worker.role)} size="md" />
+                    <InitialsAvatar name={worker.name} hue={roleHue(worker.jobTitle ?? worker.roles[0])} size="md" />
                     <div className="flex min-w-0 flex-col">
                         <span className="text-[13px] font-bold hover:underline">{worker.name}</span>
                         <span className="truncate text-[11.5px] text-muted-foreground">{worker.phone || worker.email}</span>
@@ -67,13 +73,12 @@ function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
                 <SheetHeader className="text-left gap-2 mb-6 mt-4">
                     <div className="flex items-center gap-4">
                         <Avatar className="h-16 w-16 border-2 border-primary/10">
-                            <AvatarImage src={worker.image || undefined} alt={worker.name} />
                             <AvatarFallback className="text-xl">{worker.name.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div>
                             <SheetTitle className="text-xl">{worker.name}</SheetTitle>
                             <SheetDescription className="text-base mt-1">
-                                {worker.jobTitle || worker.role || "Member"}
+                                {worker.jobTitle || worker.roles[0] || "No role set"}
                             </SheetDescription>
                         </div>
                     </div>
@@ -83,8 +88,8 @@ function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
                     <div className="grid gap-4">
                         <div className="grid gap-1">
                             <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Contact</span>
-                            <span className="text-sm">{worker.email}</span>
-                            {worker.phone && <span className="text-sm">{worker.phone}</span>}
+                            {worker.phone ? <span className="text-sm">{worker.phone}</span> : <span className="text-sm text-muted-foreground">No phone number</span>}
+                            {worker.email && <span className="text-sm">{worker.email}</span>}
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
@@ -96,7 +101,7 @@ function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
                             </div>
                             <div className="grid gap-1">
                                 <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Status</span>
-                                <span className="text-sm font-medium capitalize">{worker.status}</span>
+                                <span className="text-sm font-medium">{STATUS_LABEL[worker.status]}</span>
                             </div>
                         </div>
 
@@ -108,13 +113,9 @@ function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
                 </div>
 
                 <SheetFooter className="mt-8 flex flex-col sm:flex-col gap-2">
-                    {isPureInvitation ? (
-                        <Button disabled className="w-full">No Full Profile Yet</Button>
-                    ) : (
-                        <Button asChild className="w-full">
-                            <Link href={`/workers/${worker.id}`}>View Full Profile</Link>
-                        </Button>
-                    )}
+                    <Button asChild className="w-full">
+                        <Link href={`/workers/${worker.id}`}>View Full Profile</Link>
+                    </Button>
                     <SheetClose asChild>
                         <Button variant="outline" className="w-full">Close</Button>
                     </SheetClose>
@@ -132,7 +133,6 @@ function WorkerCellViewer({ worker }: { worker: WorkerDetails }) {
 function WorkerRowActions({ row }: { row: Row<WorkerDetails> }) {
     const { confirm, confirmDialog } = useConfirm();
     const worker = row.original;
-    const isPureInvitation = worker.name === worker.email && worker.status === "invited";
 
     return (
         <>
@@ -146,36 +146,28 @@ function WorkerRowActions({ row }: { row: Row<WorkerDetails> }) {
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild disabled={isPureInvitation}>
-                    {isPureInvitation ? (
-                        <span>No Profile Yet</span>
-                    ) : (
-                        <Link href={`/workers/${worker.id}`}>View details</Link>
-                    )}
+                <DropdownMenuItem asChild>
+                    <Link href={`/workers/${worker.id}`}>View details</Link>
                 </DropdownMenuItem>
-                {worker.status !== "active" && (
+                {(worker.status === "added" || worker.status === "invited") && (
                     <DropdownMenuItem
                         className="cursor-pointer"
+                        disabled={!worker.phone}
                         onClick={() => {
-                            toast.promise(inviteWorker({
-                                name: worker.name,
-                                email: worker.email,
-                                phoneNumber: worker.phone || undefined,
-                                role: (worker.role as "admin" | "member") || "member",
-                                jobTitle: worker.jobTitle || undefined,
-                                hourlyRate: worker.hourlyRate || undefined,
-                                invites: { email: true, sms: !!worker.phone }
-                            }), {
-                                loading: "Resending invite...",
+                            toast.promise(bulkInviteWorkers([worker.id]), {
+                                loading: "Sending invite...",
                                 success: (result) => {
                                     if (result.error) throw new Error(result.error);
-                                    return "Invite resent successfully";
+                                    const skipped = result.skipped?.[0];
+                                    if (skipped) throw new Error(skipped.reason);
+                                    return "Invite sent by text";
                                 },
-                                error: (err) => err.message || "Failed to resend invite"
+                                error: (err) => err.message || "Failed to send invite"
                             });
                         }}
                     >
-                        Resend Invite
+                        {worker.status === "added" ? "Send invite" : "Resend invite"}
+                        {!worker.phone && " (add a phone number first)"}
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
@@ -183,12 +175,12 @@ function WorkerRowActions({ row }: { row: Row<WorkerDetails> }) {
                     onClick={async () => {
                         const ok = await confirm({
                             title: `Remove ${worker.name}?`,
-                            description: "They stay on any shift they are already assigned to.",
+                            description: "Their past shifts and hours stay on record. They lose access to the app right away.",
                             confirmLabel: "Remove worker",
                             destructive: true,
                         });
                         if (!ok) return;
-                        toast.promise(removeWorker(worker.email), {
+                        toast.promise(removeWorker(worker.id), {
                             loading: "Removing worker...",
                             success: (result) => {
                                 if (result.error) throw new Error(result.error);
@@ -246,7 +238,7 @@ export const columns: ColumnDef<WorkerDetails>[] = [
         header: "Role",
         cell: ({ row }) => {
             const worker = row.original;
-            const role = worker.jobTitle || worker.role || "Member";
+            const role = worker.jobTitle || worker.roles[0] || "No role set";
             return (
                 <Pill tone="role" hue={roleHue(role)}>
                     {role}
@@ -282,9 +274,10 @@ export const columns: ColumnDef<WorkerDetails>[] = [
         cell: ({ row }) => {
             const status = row.getValue("status") as string;
 
-            if (status === "active") return <Pill>Active</Pill>
+            if (status === "active") return <Pill>On the app</Pill>
             if (status === "invited") return <Pill tone="warning">Invite sent</Pill>
-            if (status === "uninvited") return <Pill>Not invited</Pill>
+            if (status === "added") return <Pill>Not invited</Pill>
+            if (status === "inactive") return <Pill>Inactive</Pill>
             return <Pill>{status}</Pill>
         }
     },

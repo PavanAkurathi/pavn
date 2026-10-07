@@ -5,12 +5,11 @@ import { normalizeWorkerRoles } from "@repo/database";
 
 const ImportRowSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    email: z.string().email("Invalid email format"),
+    email: z.string().email("Invalid email format").optional(),
     phone: z.string().optional(),
     jobTitle: z.string().optional(),
     roles: z.array(z.string()).optional(),
     rate: z.number().min(0).optional(),
-    role: z.enum(["admin", "manager", "member"]).default("member")
 });
 
 export type ImportRow = z.infer<typeof ImportRowSchema>;
@@ -56,11 +55,15 @@ export const parseWorkerFile = (fileBuffer: Buffer) => {
             else if (cleanKey.includes("title") || cleanKey.includes("position") || cleanKey.includes("job")) normalizedData.jobTitle = row[key];
             else if (cleanKey.includes("roles") || cleanKey.includes("skills")) normalizedData.roles = normalizeWorkerRoles(String(row[key]));
             else if (cleanKey.includes("rate") || cleanKey.includes("pay") || cleanKey.includes("wage")) normalizedData.rate = row[key];
-            else if (cleanKey.includes("role") || cleanKey.includes("access")) normalizedData.role = row[key];
         });
 
         if (typeof normalizedData.email === "string") {
-            normalizedData.email = normalizedData.email.trim().toLowerCase();
+            const email = normalizedData.email.trim().toLowerCase();
+            if (email) {
+                normalizedData.email = email;
+            } else {
+                delete normalizedData.email;
+            }
         }
 
         if (normalizedData.rate) {

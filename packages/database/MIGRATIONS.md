@@ -47,10 +47,30 @@ Two things production had that `schema.ts` did not, now declared:
 - `shift_assignment_single_identity`, the XOR check that exactly one of
   `worker_id` / `temp_worker_id` / `roster_entry_id` is set. It existed only
   because hand-written `0012` added it, so a generated environment silently lost
-  it.
+  it. (Gone again since `0004`, below: an assignment now has one worker.)
 - Three foreign keys carried Postgres' default `_fkey` names (from the same
   hand-written SQL) instead of drizzle's convention. Production was renamed to
   match; the columns, references and `ON DELETE` behaviour were already identical.
+
+## 0004: one worker table
+
+`roster_entry`, `temp_worker` and `worker_role` are folded into a single
+`worker` table, and `shift_assignment.worker_id` now points at `worker.id`
+(it used to point at a user, a temp, or a roster entry, exactly one of three).
+A worker belongs to the business that added them; `worker.user_id` stays null
+until they sign in to the app with the invited phone number.
+
+The generated SQL could only create and drop, so `0004_one_worker_table.sql` is
+hand-edited to carry the data across: members who are not staff become workers
+(with their roles), roster entries become workers (merged into the member's
+worker when the email or phone matches), temps keep their ids, and every
+assignment is re-pointed. It aborts if any assignment cannot be mapped. Pending
+worker invitations in the `invitation` table are cancelled, because workers
+join by phone now. It was tested on a copy of the dev branch: all 63 assignments
+mapped to the same person in the same business.
+
+Pay is not carried across by any of this: `worker.hourly_rate` is a single
+reference figure, and `worker_role`'s per-role rates are dropped.
 
 ## If you need to undo it
 

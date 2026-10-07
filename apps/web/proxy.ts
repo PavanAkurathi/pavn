@@ -219,7 +219,6 @@ export const config = {
         "/dashboard/:path*",
         "/schedule/:path*",
         "/settings/:path*",
-        "/rosters/:path*",
         "/reports/:path*",
         "/workers/:path*",
         "/api/auth/sign-up/email",

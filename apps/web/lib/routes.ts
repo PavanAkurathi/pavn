@@ -19,7 +19,7 @@ function buildHref(pathname: string, params?: Record<string, QueryValue>) {
 export const DASHBOARD_SHIFTS_PATH = "/dashboard/shifts";
 export const SCHEDULER_PATH = "/schedule";
 export const DASHBOARD_ONBOARDING_PATH = "/dashboard/onboarding";
-export const ROSTERS_PATH = "/rosters";
+export const WORKERS_PATH = "/workers";
 export const REQUESTS_PATH = "/requests";
 export const AUTH_LOGIN_PATH = "/auth/login";
 export const AUTH_VERIFY_EMAIL_PATH = "/auth/verify-email";
@@ -104,10 +104,10 @@ export function getOnboardingHref(options?: {
     });
 }
 
-export function getRosterHref(options?: {
+export function getWorkersHref(options?: {
     onboarding?: string;
 }) {
-    return buildHref(ROSTERS_PATH, {
+    return buildHref(WORKERS_PATH, {
         onboarding: options?.onboarding,
     });
 }
@@ -123,14 +123,14 @@ export function isOnboardingPath(pathname: string) {
     return pathname === DASHBOARD_ONBOARDING_PATH || pathname.startsWith(`${DASHBOARD_ONBOARDING_PATH}/`);
 }
 
-export function isRosterPath(pathname: string) {
-    return pathname === ROSTERS_PATH || pathname.startsWith(`${ROSTERS_PATH}/`);
+export function isWorkersPath(pathname: string) {
+    return pathname === WORKERS_PATH || pathname.startsWith(`${WORKERS_PATH}/`);
 }
 
 export function isOnboardingExemptProtectedPath(pathname: string) {
     return (
         isOnboardingPath(pathname) ||
         isSchedulerPath(pathname) ||
-        isRosterPath(pathname)
+        isWorkersPath(pathname)
     );
 }

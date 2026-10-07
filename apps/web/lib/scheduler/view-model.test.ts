@@ -32,7 +32,7 @@ const shift = (over: Partial<SchedulerShift>): SchedulerShift => ({
 
 const person = (id: string, name: string, primaryRole: string | null, departmentId: string | null, minutes = 0) => ({
     id,
-    kind: "roster" as const,
+    kind: "active" as const,
     name,
     initials: name.slice(0, 2).toUpperCase(),
     roles: primaryRole ? [primaryRole] : [],
@@ -60,10 +60,10 @@ const week = (): SchedulerWeek => ({
         person("dee", "Dee Ray", "Florist", null),
     ],
     shifts: [
-        shift({ id: "mon-open", dayIndex: 1, role: "Server", capacity: 3, filled: 1, open: 2, assignees: [{ personId: "ben", kind: "roster", pendingState: null, warnings: [] }] }),
+        shift({ id: "mon-open", dayIndex: 1, role: "Server", capacity: 3, filled: 1, open: 2, assignees: [{ personId: "ben", kind: "active", pendingState: null, warnings: [] }] }),
         shift({ id: "tue-cook", dayIndex: 2, role: "Line Cook", capacity: 1, filled: 0, open: 1 }),
-        shift({ id: "tue-late", dayIndex: 2, startLocal: "16:00", endLocal: "23:00", assignees: [{ personId: "ana", kind: "roster", pendingState: "add", warnings: [] }] }),
-        shift({ id: "tue-early", dayIndex: 2, startLocal: "07:00", endLocal: "11:00", assignees: [{ personId: "ana", kind: "roster", pendingState: null, warnings: [] }] }),
+        shift({ id: "tue-late", dayIndex: 2, startLocal: "16:00", endLocal: "23:00", assignees: [{ personId: "ana", kind: "active", pendingState: "add", warnings: [] }] }),
+        shift({ id: "tue-early", dayIndex: 2, startLocal: "07:00", endLocal: "11:00", assignees: [{ personId: "ana", kind: "active", pendingState: null, warnings: [] }] }),
         shift({ id: "gone", dayIndex: 3, open: 4, capacity: 4, filled: 0, pendingRemoval: true }),
     ],
     events: [],

@@ -189,9 +189,11 @@ export const editShift = async (
         const assignments = await db.query.shiftAssignment.findMany({
             where: and(eq(shiftAssignment.shiftId, shiftId), eq(shiftAssignment.status, "active")),
             columns: { workerId: true },
+            with: { worker: { columns: { userId: true } } },
         });
 
-        const workerIds = assignments.map((a) => a.workerId).filter(Boolean) as string[];
+        // Notifications are addressed to the app account.
+        const workerIds = assignments.map((a) => a.worker?.userId).filter(Boolean) as string[];
         unreachable = assignments.length - workerIds.length;
 
         if (workerIds.length > 0) {

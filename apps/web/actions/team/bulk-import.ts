@@ -26,6 +26,6 @@ export async function bulkImport(
     );
 
     revalidatePath("/settings/team");
-    revalidatePath("/rosters");
+    revalidatePath("/workers");
     return result;
 }

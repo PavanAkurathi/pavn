@@ -1,11 +1,11 @@
 
 import { db } from "@repo/database";
-import { shiftAssignment, shift, workerAvailability } from "@repo/database/schema";
+import { shiftAssignment, shift, worker, workerAvailability } from "@repo/database/schema";
 import { eq, and, ne, lte, gte, or } from "drizzle-orm";
 
 export class OverlapService {
     static async findOverlappingAssignment(
-        userId: string,
+        workerId: string,
         startTime: Date,
         endTime: Date,
         requesterOrgId: string,
@@ -17,7 +17,7 @@ export class OverlapService {
             .from(shiftAssignment)
             .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
             .where(and(
-                eq(shiftAssignment.workerId, userId),
+                eq(shiftAssignment.workerId, workerId),
                 ne(shiftAssignment.status, 'cancelled'),
                 eq(shift.organizationId, requesterOrgId), // STRICT: Internal Only
                 lte(shift.startTime, endTime),
@@ -35,10 +35,19 @@ export class OverlapService {
         }
 
         // 2. Global Availability Check: Hard Block if 'unavailable'
-        // This is the only "global" check we allow.
+        // This is the only "global" check we allow. Availability belongs to the
+        // person's app account, so a worker who has not signed in has none.
+        const account = await db.query.worker.findFirst({
+            where: eq(worker.id, workerId),
+            columns: { userId: true },
+        });
+        if (!account?.userId) {
+            return { conflict: false };
+        }
+
         const unavailConflict = await db.query.workerAvailability.findFirst({
             where: and(
-                eq(workerAvailability.workerId, userId),
+                eq(workerAvailability.workerId, account.userId),
                 eq(workerAvailability.type, 'unavailable'),
                 lte(workerAvailability.startTime, endTime),
                 gte(workerAvailability.endTime, startTime)

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
@@ -19,7 +19,9 @@ import { authClient } from "../../lib/auth-client";
 import { workerTheme } from "../../lib/theme";
 import {
     type WorkerEligibilityResponse,
+    type WorkerInviteSummary,
     checkWorkerEligibility,
+    lookupWorkerInvite,
     persistWorkerSession,
 } from "../../lib/worker-auth";
 import { otpSchema, phoneSchema, validate } from "../../lib/validation";
@@ -96,30 +98,63 @@ export function WorkerPhoneAuthFlow({
     const [otpError, setOtpError] = useState<string | null>(null);
     const [generalError, setGeneralError] = useState<string | null>(null);
     const [access, setAccess] = useState<WorkerEligibilityResponse | null>(null);
+    // Who the invite is from; null while loading, and when the code isn't valid.
+    const [invite, setInvite] = useState<WorkerInviteSummary | null>(null);
+    const [inviteChecked, setInviteChecked] = useState(!inviteCode);
+
+    useEffect(() => {
+        if (!inviteCode) {
+            return;
+        }
+        let cancelled = false;
+        lookupWorkerInvite(inviteCode)
+            .then((summary) => {
+                if (!cancelled) setInvite(summary);
+            })
+            .catch(() => undefined)
+            .finally(() => {
+                if (!cancelled) setInviteChecked(true);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [inviteCode]);
+
+    const inviteInvalid = Boolean(inviteCode) && inviteChecked && !invite;
 
     const copy = useMemo(() => {
         const inviteMode = mode === "invite";
 
         return {
             eyebrow: inviteMode ? "Worker invite" : "Workers Hive",
-            phoneTitle: inviteMode ? "Join your team" : "Sign in to work",
+            phoneTitle: inviteMode
+                ? invite
+                    ? `Join ${invite.organizationName}`
+                    : "Join your team"
+                : "Sign in to work",
             otpTitle: access?.existingAccount ? "Welcome back" : "Confirm your access",
             phoneDescription: inviteMode
-                ? "This link starts the process, but access still depends on the mobile number your business added to the workforce."
-                : "Use the same mobile number your manager added when they brought you into the workforce.",
+                ? invite?.phoneHint
+                    ? `Enter the mobile number ${invite.organizationName} invited, the one ending in ${invite.phoneHint}.`
+                    : "Enter the mobile number your business invited."
+                : "Use the mobile number your business invited to the app.",
             otpDescription:
                 access?.organizationCount && access.organizationCount > 0
                     ? `We found ${pluralizeBusiness(access.organizationCount)} connected to this number. Enter the 6-digit code to continue.`
                     : "Enter the 6-digit code we texted to your phone to finish signing in.",
-            phoneAlertTitle: inviteMode ? "Invite link detected" : "Workforce access only",
-            phoneAlertDescription: inviteMode
-                ? "The link is a shortcut. Your real access still comes from the workforce record tied to your phone number."
-                : "Workers can only sign in after a business has added them to the workforce.",
+            phoneAlertTitle: inviteInvalid
+                ? "This invite isn't valid anymore"
+                : inviteMode ? "You've been invited" : "Invited workers only",
+            phoneAlertDescription: inviteInvalid
+                ? "Ask your manager to send a new one. If you've already signed in before, you can still sign in with your number."
+                : inviteMode
+                    ? "Your business sent this invite to your mobile number. We text a code to that number to confirm it's you."
+                    : "Workers can only sign in after a business has invited them.",
             footer: inviteMode
                 ? "If your phone number has changed since the invite was sent, ask your manager to update it before trying again."
-                : "If you do not see a code, confirm that your manager added the correct number to your workforce profile.",
+                : "If you do not see a code, ask your manager to confirm they invited the right number.",
         };
-    }, [access?.existingAccount, access?.organizationCount, mode]);
+    }, [access?.existingAccount, access?.organizationCount, invite, inviteInvalid, mode]);
 
     const resetErrors = () => {
         setPhoneError(null);
@@ -156,16 +191,20 @@ export function WorkerPhoneAuthFlow({
 
         try {
             const formattedPhone = parsedPhone.data;
-            const nextAccess = await checkWorkerEligibility(formattedPhone);
+            const nextAccess = await checkWorkerEligibility(formattedPhone, inviteCode);
 
             if (!nextAccess.eligible) {
                 const message =
-                    "This number has not been added to a workforce yet. Ask your manager to add or invite you first.";
+                    nextAccess.reason === "invalid_code"
+                        ? "This invite isn't valid anymore. Ask your manager to send a new one."
+                        : nextAccess.reason === "code_mismatch"
+                            ? "This invite was sent to a different number. Use the number your manager invited."
+                            : "This number hasn't been invited yet. Ask your manager to invite you first.";
                 setGeneralError(message);
                 setAccess(null);
                 Toast.show({
                     type: "error",
-                    text1: "Not added yet",
+                    text1: "Not invited yet",
                     text2: message,
                 });
                 return;

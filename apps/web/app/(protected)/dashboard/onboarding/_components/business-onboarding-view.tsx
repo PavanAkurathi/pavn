@@ -241,7 +241,7 @@ export function BusinessOnboardingView({
                                                 : activeStepId === "scheduling"
                                                     ? "Three quick answers set up your departments, the default schedule view and who approves open shifts. Everything stays editable in Settings."
                                                 : activeStepId === "workforce"
-                                                    ? "Worker access is the gate for the mobile experience. Start your roster here before you publish the first live shift."
+                                                    ? "Worker access is the gate for the mobile experience: a worker can only join with the invite you send. Add your workers here before you publish the first live shift."
                                                     : "Drafts are useful, but publishing the first live shift is the actual onboarding finish line."}
                                     </p>
                                 </div>

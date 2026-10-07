@@ -14,7 +14,7 @@ import {
     CardTitle,
 } from "@repo/ui/components/ui/card";
 import { SUBSCRIPTION } from "@repo/config";
-import { getSchedulerHref, getRosterHref } from "@/lib/routes";
+import { getSchedulerHref, getWorkersHref } from "@/lib/routes";
 
 export function FirstShiftStep({
     hasDraftShift,
@@ -61,7 +61,7 @@ export function FirstShiftStep({
                     </Link>
                 </Button>
                 <Button asChild variant="ghost">
-                    <Link href={getRosterHref({ onboarding: "roster" })}>
+                    <Link href={getWorkersHref({ onboarding: "workers" })}>
                         <Sparkles data-icon="inline-start" />
                         Review workforce again
                     </Link>

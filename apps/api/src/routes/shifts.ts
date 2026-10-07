@@ -31,6 +31,7 @@ import {
     getDraftShifts,
     getShiftById,
     approveShift,
+    reconcileOverdueShiftState,
     cancelShift,
     assignWorker,
     getShiftTimesheets,
@@ -284,6 +285,9 @@ shiftsRouter.openapi(approveShiftRoute, async (c) => {
     const user = c.get("user");
     if (!user) return c.json({ error: "Unauthorized" }, 401);
 
+    // A shift only counts as finished once its hours are in. The list pages settle ended shifts on load, but a
+    // manager who types hours in and approves straight away has not loaded one, so settle here too.
+    await reconcileOverdueShiftState(orgId);
     const result = await approveShift(id, orgId, user.id);
     return jsonOk(c, result);
 });

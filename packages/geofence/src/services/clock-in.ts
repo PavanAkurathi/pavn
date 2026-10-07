@@ -1,6 +1,6 @@
 // packages/geofence/src/services/clock-in.ts
 
-import { db, jsonPositionToGeography, toLatLng } from "@repo/database";
+import { db, findWorkerIdForUser, jsonPositionToGeography, toLatLng } from "@repo/database";
 import { visibleToStaff } from "@repo/database/scheduling";
 import { shift, shiftAssignment, workerLocation, organization, location } from "@repo/database/schema";
 import { eq, and, sql } from "drizzle-orm";
@@ -69,6 +69,12 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
         });
     }
 
+    // Assignments belong to the worker row this account is at this business.
+    const workerRowId = await findWorkerIdForUser(workerId, orgId);
+    if (!workerRowId) {
+        throw new AppError("You are not assigned to this shift", "FORBIDDEN", 403);
+    }
+
     // 2. Fetch shift details
     const shiftRecord = await db.query.shift.findFirst({
         where: and(
@@ -78,7 +84,7 @@ export const clockIn = async (data: any, workerId: string, orgId: string) => {
         with: {
             location: true,
             assignments: {
-                where: and(eq(shiftAssignment.workerId, workerId), visibleToStaff()),
+                where: and(eq(shiftAssignment.workerId, workerRowId), visibleToStaff()),
                 with: { worker: true }
             }
         }

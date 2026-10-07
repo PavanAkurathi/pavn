@@ -6,7 +6,7 @@ import { planCopyWeek, planCreate, planMove, planRemove, planTemplate, withoutPe
 
 const assignee = (personId: string, pendingState: "add" | "remove" | null = null) => ({
     personId,
-    kind: "roster" as const,
+    kind: "active" as const,
     pendingState,
     warnings: [],
 });
@@ -39,7 +39,7 @@ const shift = (over: Partial<SchedulerShift>): SchedulerShift => ({
 
 const person = (id: string, name: string, roles = ["Server"], minutes = 0) => ({
     id,
-    kind: "roster" as const,
+    kind: "active" as const,
     name,
     initials: "",
     roles,
@@ -73,7 +73,7 @@ describe("planMove", () => {
         const plan = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "ben", dayIndex: 3 }, { copy: false });
         expect(plan!.changes).toEqual([
             { op: "update", shiftId: "mon", patch: { localDate: "2026-09-30" } },
-            { op: "assign", shiftId: "mon", assignees: [{ personId: "ben", kind: "roster" }] },
+            { op: "assign", shiftId: "mon", assignees: [{ personId: "ben" }] },
         ]);
         expect(plan!.label).toBe("Moved 4p–11p to Ben on Wed");
     });
@@ -97,7 +97,7 @@ describe("planMove", () => {
         const plan = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "cy", dayIndex: 2 }, { copy: true });
         expect(plan!.changes).toEqual([
             { op: "update", shiftId: "tue", patch: { capacity: 2 } },
-            { op: "assign", shiftId: "tue", assignees: [{ personId: "ben", kind: "roster" }, { personId: "cy", kind: "roster" }] },
+            { op: "assign", shiftId: "tue", assignees: [{ personId: "ben" }, { personId: "cy" }] },
         ]);
     });
 
@@ -111,7 +111,7 @@ describe("planMove", () => {
         const w = week([shift({ id: "mon", capacity: 2, filled: 1, open: 1, assignees: [assignee("ana")] })]);
         const plan = planMove(w, { kind: "open", shiftId: "mon" }, { personId: "ben", dayIndex: 1 }, { copy: false });
         expect(plan!.changes).toEqual([
-            { op: "assign", shiftId: "mon", assignees: [{ personId: "ana", kind: "roster" }, { personId: "ben", kind: "roster" }] },
+            { op: "assign", shiftId: "mon", assignees: [{ personId: "ana" }, { personId: "ben" }] },
         ]);
     });
 
@@ -124,7 +124,7 @@ describe("planMove", () => {
     test("people staged to come off don't count", () => {
         const w = week([shift({ id: "mon", capacity: 2, assignees: [assignee("ana"), assignee("ben", "remove")] })]);
         const plan = planMove(w, { kind: "assignment", shiftId: "mon", personId: "ana" }, { personId: "cy", dayIndex: 1 }, { copy: false });
-        expect(plan!.changes).toEqual([{ op: "assign", shiftId: "mon", assignees: [{ personId: "cy", kind: "roster" }] }]);
+        expect(plan!.changes).toEqual([{ op: "assign", shiftId: "mon", assignees: [{ personId: "cy" }] }]);
     });
 });
 
@@ -135,7 +135,7 @@ describe("planRemove", () => {
 
         const group = week([shift({ id: "mon", capacity: 2, assignees: [assignee("ana"), assignee("ben")] })]);
         expect(planRemove(group, { kind: "assignment", shiftId: "mon", personId: "ana" })!.changes).toEqual([
-            { op: "assign", shiftId: "mon", assignees: [{ personId: "ben", kind: "roster" }] },
+            { op: "assign", shiftId: "mon", assignees: [{ personId: "ben" }] },
         ]);
     });
 
@@ -157,7 +157,7 @@ describe("planning new shifts", () => {
         expect(mine.changes[0]).toMatchObject({
             op: "create",
             shift: { localDate: "2026-09-27", capacity: 1, role: "Server" },
-            assignees: [{ personId: "ana", kind: "roster" }],
+            assignees: [{ personId: "ana" }],
         });
         expect(planCreate({ week: w, dayIndex: 0, person: null, startLocal: "09:00", endLocal: "17:00", role: "Host", capacity: 3 }).label).toBe(
             "Added 3 open Host spots",

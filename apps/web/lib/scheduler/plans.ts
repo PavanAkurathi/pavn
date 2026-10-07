@@ -40,7 +40,7 @@ export interface DropTarget {
 }
 
 export const staying = (shift: SchedulerShift): SchedulerPersonRef[] =>
-    shift.assignees.filter((a) => a.pendingState !== "remove").map((a) => ({ personId: a.personId, kind: a.kind }));
+    shift.assignees.filter((a) => a.pendingState !== "remove").map((a) => ({ personId: a.personId }));
 
 const without = (refs: SchedulerPersonRef[], personId: string) => refs.filter((r) => r.personId !== personId);
 const firstName = (person: SchedulerPerson | undefined) => person?.name.split(" ")[0] ?? "Someone";
@@ -110,7 +110,7 @@ export function planMove(
     const sameDay = shift.dayIndex === target.dayIndex;
     const day = weekdayShort(week.days[target.dayIndex]!.localDate);
     const targetPerson = target.personId ? people.get(target.personId) : undefined;
-    const targetRef: SchedulerPersonRef | null = targetPerson ? { personId: targetPerson.id, kind: targetPerson.kind } : null;
+    const targetRef: SchedulerPersonRef | null = targetPerson ? { personId: targetPerson.id } : null;
     if (target.personId && !targetRef) return null;
     const verb = options.copy ? "Copied" : "Moved";
 
@@ -225,7 +225,7 @@ export function planCreate(input: {
                     role: input.role,
                     capacity,
                 },
-                assignees: person ? [{ personId: person.id, kind: person.kind }] : [],
+                assignees: person ? [{ personId: person.id }] : [],
             },
         ],
         label: person

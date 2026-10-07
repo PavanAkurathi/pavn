@@ -10,6 +10,7 @@ export { editShift } from "./modules/shifts/edit-shift";
 export { duplicateShift } from "./modules/shifts/duplicate-shift";
 
 export { approveShift } from "./modules/time-tracking/approve";
+export { reconcileOverdueShiftState } from "./modules/time-tracking/reconcile-overdue-shifts";
 export { assignWorker } from "./modules/time-tracking/assign";
 export { getWorkerShifts } from "./modules/time-tracking/worker-shifts";
 export { getWorkerShiftById } from "./modules/time-tracking/worker-shifts";

@@ -1,7 +1,8 @@
 import { db } from "@repo/database";
-import { shift, shiftAssignment, user, location } from "@repo/database/schema";
+import { shift, shiftAssignment, worker, location, organization } from "@repo/database/schema";
 import { eq, and, gte, lte, inArray, desc, asc, ilike } from "drizzle-orm";
-import { differenceInMinutes, format } from "date-fns";
+import { differenceInMinutes } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 import { AppError } from "@repo/observability";
 import { z } from "zod";
 
@@ -56,17 +57,22 @@ export async function getTimesheetsReport(
     }
 
     if (search) {
-        conditions.push(ilike(user.name, `%${search}%`));
+        conditions.push(ilike(worker.name, `%${search}%`));
     }
+
+    const orgRecord = await db.query.organization.findFirst({
+        where: eq(organization.id, orgId),
+        columns: { timezone: true },
+    });
+    const orgTimezone = orgRecord?.timezone || 'UTC';
 
     // Query data
     const results = await db
         .select({
             assignmentId: shiftAssignment.id,
-            workerId: user.id,
-            workerName: user.name,
-            workerEmail: user.email,
-            workerImage: user.image,
+            workerId: worker.id,
+            workerName: worker.name,
+            workerEmail: worker.email,
             shiftId: shift.id,
             position: shift.title,
             shiftDate: shift.startTime,
@@ -74,15 +80,15 @@ export async function getTimesheetsReport(
             scheduledEnd: shift.endTime,
             locationId: location.id,
             locationName: location.name,
+            locationTimezone: location.timezone,
             clockIn: shiftAssignment.effectiveClockIn,
             clockOut: shiftAssignment.effectiveClockOut,
             breakMinutes: shiftAssignment.breakMinutes,
             totalDurationMinutes: shiftAssignment.totalDurationMinutes,
-            assignmentStatus: shiftAssignment.status,
         })
         .from(shiftAssignment)
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
-        .innerJoin(user, eq(shiftAssignment.workerId, user.id))
+        .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .leftJoin(location, eq(shift.locationId, location.id))
         .where(and(...conditions))
         .orderBy(sortOrder === 'desc' ? desc(shift.startTime) : asc(shift.startTime))
@@ -109,6 +115,10 @@ export async function getTimesheetsReport(
 
         totalHours += hours;
 
+        // Dates and times are the business's wall clock, not the server's.
+        const zone = row.locationTimezone || orgTimezone;
+        const clock = (instant: Date) => formatInTimeZone(instant, zone, 'HH:mm');
+
         // Generate initials
         const initials = row.workerName
             ?.split(' ')
@@ -123,27 +133,27 @@ export async function getTimesheetsReport(
                 id: row.workerId,
                 name: row.workerName || 'Unknown',
                 email: row.workerEmail || '',
-                avatarUrl: row.workerImage || undefined,
                 initials,
             },
             shift: {
                 id: row.shiftId,
                 title: row.position,
-                date: format(row.shiftDate, 'yyyy-MM-dd'),
-                scheduledStart: format(row.scheduledStart, 'HH:mm'),
-                scheduledEnd: format(row.scheduledEnd, 'HH:mm'),
+                date: formatInTimeZone(row.shiftDate, zone, 'yyyy-MM-dd'),
+                scheduledStart: clock(row.scheduledStart),
+                scheduledEnd: clock(row.scheduledEnd),
             },
             location: row.locationId ? {
                 id: row.locationId,
                 name: row.locationName || '',
             } : null,
             timesheet: {
-                actualStart: row.clockIn ? format(row.clockIn, 'HH:mm') : null,
-                actualEnd: row.clockOut ? format(row.clockOut, 'HH:mm') : null,
+                actualStart: row.clockIn ? clock(row.clockIn) : null,
+                actualEnd: row.clockOut ? clock(row.clockOut) : null,
                 breakMinutes: row.breakMinutes || 0,
                 totalHours: Math.round(hours * 100) / 100,
             },
-            status: row.assignmentStatus,
+            // Only approved shifts are in this report; approving marks each assignment "completed", which would read as unapproved.
+            status: 'approved',
         };
     });
 

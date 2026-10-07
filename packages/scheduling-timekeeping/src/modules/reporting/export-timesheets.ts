@@ -2,7 +2,7 @@
 // Does not require 'exceljs' dependency but opens natively in Excel.
 
 import { db } from "@repo/database";
-import { shift, shiftAssignment, user, location, organization } from "@repo/database/schema";
+import { shift, shiftAssignment, worker, location, organization } from "@repo/database/schema";
 import { eq, and, gte, lte, like, inArray, ilike, desc, asc } from "drizzle-orm";
 import { differenceInMinutes, format, startOfWeek, endOfWeek, isSameWeek } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
@@ -40,9 +40,10 @@ export async function exportTimesheets(
     // 1. Fetch Organization Policy
     const orgRecord = await db.query.organization.findFirst({
         where: eq(organization.id, orgId),
-        columns: { regionalOvertimePolicy: true }
+        columns: { regionalOvertimePolicy: true, timezone: true }
     });
     const overtimePolicy = orgRecord?.regionalOvertimePolicy || 'weekly_40'; // 'daily_8' or 'weekly_40'
+    const orgTimezone = orgRecord?.timezone || 'UTC';
 
     // Build WHERE conditions
     const conditions = [
@@ -56,16 +57,17 @@ export async function exportTimesheets(
     if (locationId) conditions.push(eq(shift.locationId, locationId));
     if (position) conditions.push(eq(shift.title, position));
     if (workerId) conditions.push(eq(shiftAssignment.workerId, workerId));
-    if (search) conditions.push(ilike(user.name, `%${search}%`));
+    if (search) conditions.push(ilike(worker.name, `%${search}%`));
 
     // Fetch Data
     const results = await db
         .select({
-            workerId: user.id,
-            workerName: user.name,
-            workerEmail: user.email,
+            workerId: worker.id,
+            workerName: worker.name,
+            workerEmail: worker.email,
             position: shift.title,
             locationName: location.name,
+            locationTimezone: location.timezone,
             scheduledStart: shift.startTime,
             scheduledEnd: shift.endTime,
             clockIn: shiftAssignment.effectiveClockIn,
@@ -82,16 +84,17 @@ export async function exportTimesheets(
         })
         .from(shiftAssignment)
         .innerJoin(shift, eq(shiftAssignment.shiftId, shift.id))
-        .innerJoin(user, eq(shiftAssignment.workerId, user.id))
+        .innerJoin(worker, eq(shiftAssignment.workerId, worker.id))
         .leftJoin(location, eq(shift.locationId, location.id))
         .where(and(...conditions))
-        .orderBy(asc(user.name), asc(shift.startTime)); // Sort by Worker, then Date for calc
+        .orderBy(asc(worker.name), asc(shift.startTime)); // Sort by Worker, then Date for calc
 
     // 2. Process Data (Calculate Overtime)
     // We need to track weekly totals if policy is 'weekly_40'
     // Explicitly typed rather than left to inference: both output formats read
     // these fields, and an implicit any[] here silently widens every cell.
     type ExportRow = {
+        locationTimezone: string | null;
         workerName: string | null;
         workerEmail: string | null;
         scheduledStart: Date;
@@ -174,12 +177,18 @@ export async function exportTimesheets(
         "Break (min)", "Regular Hours", "Overtime Hours", "Total Hours",
     ] as const;
 
+    // Times are read by whoever runs payroll, so they are the venue's wall clock:
+    // a 5pm–11pm shift reads 17:00 to 23:00, not the UTC instants behind it.
+    const zoneOf = (row: ExportRow) => row.locationTimezone || orgTimezone;
+    const dateOf = (row: ExportRow) => formatInTimeZone(row.scheduledStart, zoneOf(row), 'yyyy-MM-dd');
+    const timeOf = (row: ExportRow, instant: Date) => formatInTimeZone(instant, zoneOf(row), 'HH:mm');
+
     const rowValues = (row: ExportRow) => [
         row.workerName ?? "",
         row.workerEmail ?? "",
-        format(row.scheduledStart, 'yyyy-MM-dd'),
-        formatInTimeZone(row.clockIn!, 'UTC', 'HH:mm'),
-        formatInTimeZone(row.clockOut!, 'UTC', 'HH:mm'),
+        dateOf(row),
+        timeOf(row, row.clockIn!),
+        timeOf(row, row.clockOut!),
         String(row.breakMinutes || 0),
         row.regularHours.toFixed(2),
         row.overtimeHours.toFixed(2),
@@ -221,9 +230,9 @@ ${COLUMNS.map(c => `    <Cell><Data ss:Type="String">${escapeXml(c)}</Data></Cel
    <Row>
     <Cell><Data ss:Type="String">${escapeXml(row.workerName)}</Data></Cell>
     <Cell><Data ss:Type="String">${escapeXml(row.workerEmail)}</Data></Cell>
-    <Cell><Data ss:Type="String">${format(row.scheduledStart, 'yyyy-MM-dd')}</Data></Cell>
-    <Cell><Data ss:Type="String">${formatInTimeZone(row.clockIn!, 'UTC', 'HH:mm')}</Data></Cell>
-    <Cell><Data ss:Type="String">${formatInTimeZone(row.clockOut!, 'UTC', 'HH:mm')}</Data></Cell>
+    <Cell><Data ss:Type="String">${dateOf(row)}</Data></Cell>
+    <Cell><Data ss:Type="String">${timeOf(row, row.clockIn!)}</Data></Cell>
+    <Cell><Data ss:Type="String">${timeOf(row, row.clockOut!)}</Data></Cell>
     <Cell><Data ss:Type="Number">${row.breakMinutes || 0}</Data></Cell>
     <Cell><Data ss:Type="Number">${row.regularHours.toFixed(2)}</Data></Cell>
     <Cell><Data ss:Type="Number">${row.overtimeHours.toFixed(2)}</Data></Cell>

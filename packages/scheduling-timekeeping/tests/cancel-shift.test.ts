@@ -12,11 +12,12 @@ const mockShiftFindFirst = mock(() => Promise.resolve({
     status: "published",
     title: "Event Server",
     location: { name: "Corcoran Commons" },
+    // Pushes go to the app account (worker.userId); someone who has not signed in has none.
     assignments: [
-        { workerId: "worker_1", status: "active" },
-        { workerId: "worker_2", status: "in-progress" },
-        { workerId: null, status: "active" },
-        { workerId: "worker_3", status: "cancelled" },
+        { status: "active", worker: { userId: "user_1" } },
+        { status: "in-progress", worker: { userId: "user_2" } },
+        { status: "active", worker: { userId: null } },
+        { status: "cancelled", worker: { userId: "user_3" } },
     ],
 }));
 
@@ -68,7 +69,7 @@ describe("cancelShift", () => {
         mockSendPushNotification.mockClear();
     });
 
-    test("marks the shift and assignments cancelled, cancels pending reminders, and notifies assigned workers", async () => {
+    test("marks the shift and assignments cancelled, cancels pending reminders, and notifies the workers who have the app", async () => {
         const { cancelShift } = await import("../src/modules/shifts/cancel");
 
         const result = await cancelShift("shift_1", "org_1", "admin_1");
@@ -90,7 +91,7 @@ describe("cancelShift", () => {
 
         expect(mockSendPushNotification).toHaveBeenCalledTimes(2);
         expect(mockSendPushNotification).toHaveBeenCalledWith({
-            workerId: "worker_1",
+            workerId: "user_1",
             title: "Shift cancelled",
             body: "Event Server at Corcoran Commons was cancelled. Check the app for the updated schedule.",
             data: {
@@ -100,7 +101,7 @@ describe("cancelShift", () => {
             },
         });
         expect(mockSendPushNotification).toHaveBeenCalledWith({
-            workerId: "worker_2",
+            workerId: "user_2",
             title: "Shift cancelled",
             body: "Event Server at Corcoran Commons was cancelled. Check the app for the updated schedule.",
             data: {

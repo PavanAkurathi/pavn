@@ -60,6 +60,8 @@ mock.module("@repo/database", () => ({
     jsonPositionToGeography: () => "position_geography",
     toLatLng: (lat: number, lng: number) => ({ lat, lng }),
     logAudit: mock(() => Promise.resolve()),
+    // The signed-in account's worker row at this business: what assignments point at.
+    findWorkerIdForUser: () => Promise.resolve("worker-row-1"),
 }));
 
 mock.module("@repo/database/schema", () => ({

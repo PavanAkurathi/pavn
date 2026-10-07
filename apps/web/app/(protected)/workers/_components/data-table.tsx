@@ -92,13 +92,13 @@ export function DataTable<TData, TValue>({
 
     const handleBulkInvite = () => {
         const selectedRows = table.getFilteredSelectedRowModel().rows;
-        // Extract only the IDs of workers who are truly "uninvited"
+        // Only workers who have not been told about the app yet
         const selectedIds = selectedRows
-            .filter((row) => (row.original as any).status === "uninvited")
+            .filter((row) => (row.original as any).status === "added")
             .map((row) => (row.original as any).id);
 
         if (selectedIds.length === 0) {
-            toast.error("Please select at least one 'Uninvited' worker to send invites.");
+            toast.error("Select at least one worker who hasn't been invited yet.");
             return;
         }
 
@@ -107,13 +107,18 @@ export function DataTable<TData, TValue>({
             if (result?.error) {
                 toast.error(result.error);
             } else if (result?.success) {
-                toast.success(`Successfully sent ${result.count} SMS invitations!`);
+                const skipped = result.skipped ?? [];
+                toast.success(
+                    skipped.length > 0
+                        ? `Sent ${result.count} invites. ${skipped.length} skipped: ${skipped[0]?.name} (${skipped[0]?.reason})`
+                        : `Sent ${result.count} invites by text.`,
+                );
                 setRowSelection({}); // Clear selection after success
             }
         });
     }
 
-    const uninvitedSelectedCount = table.getFilteredSelectedRowModel().rows.filter(r => (r.original as any).status === "uninvited").length;
+    const uninvitedSelectedCount = table.getFilteredSelectedRowModel().rows.filter(r => (r.original as any).status === "added").length;
 
     return (
         <div className="flex flex-col gap-4">
@@ -134,7 +139,7 @@ export function DataTable<TData, TValue>({
                             disabled={isPending}
                         >
                             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            Send SMS Invites ({uninvitedSelectedCount})
+                            Send invites ({uninvitedSelectedCount})
                         </Button>
                     )}
                     <DropdownMenu>

@@ -29,8 +29,6 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
         ),
         with: {
             worker: true,
-            tempWorker: true,
-            rosterEntry: true
         }
     });
 
@@ -75,24 +73,19 @@ export const getShiftTimesheets = async (shiftId: string, orgId: string) => {
     }
 
     const timesheets: TimesheetWorker[] = visibleAssignments.map(a => {
-        const isTemp = !!a.tempWorkerId;
-        const isPendingInvite = !!a.rosterEntryId;
-        // Fallback name if worker relation is missing (deleted user?)
-        const workerName = isTemp
-            ? (a.tempWorker?.name ?? "Temp worker")
-            : isPendingInvite
-                ? (a.rosterEntry?.name ?? "Invited worker")
-                : (a.worker ? a.worker.name : "Unknown Worker");
+        const isTemp = a.worker?.employmentType === "agency";
+        // Fallback name if the worker relation is missing.
+        const workerName = a.worker?.name ?? "Unknown Worker";
 
         return {
             id: a.id,
-            workerId: (a.workerId ?? a.tempWorkerId ?? a.rosterEntryId)!,
+            workerId: a.workerId,
             isTemp,
-            invitePending: isPendingInvite || undefined,
-            agency: a.tempWorker?.agency ?? undefined,
-            phone: (isTemp ? a.tempWorker?.phone : isPendingInvite ? a.rosterEntry?.phoneNumber : a.worker?.phoneNumber) ?? undefined,
+            // Scheduled, but they have not signed in to the app yet.
+            invitePending: (!isTemp && !a.worker?.userId) || undefined,
+            agency: a.worker?.agency ?? undefined,
+            phone: a.worker?.phoneNumber ?? undefined,
             name: workerName,
-            avatarUrl: a.worker?.image || undefined,
             avatarInitials: getInitials(workerName),
             role: validShift.title,
             // hourlyRate: 0,  // REMOVED per TICKET-005/008

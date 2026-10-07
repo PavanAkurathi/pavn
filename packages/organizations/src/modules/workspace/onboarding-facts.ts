@@ -5,8 +5,8 @@ import {
     location,
     member,
     organization,
-    rosterEntry,
     shift,
+    worker,
 } from "@repo/database/schema";
 
 /**
@@ -22,8 +22,7 @@ export async function getOnboardingFacts(
         firstLocation,
         firstPublishedShift,
         firstDraftShift,
-        firstRosterEntry,
-        firstWorkerMember,
+        firstWorker,
         firstManagerMember,
         firstManagerInvite,
     ] = await Promise.all([
@@ -53,17 +52,8 @@ export async function getOnboardingFacts(
             where: and(eq(shift.organizationId, orgId), eq(shift.status, "draft")),
             columns: { id: true },
         }),
-        db.query.rosterEntry.findFirst({
-            where: eq(rosterEntry.organizationId, orgId),
-            columns: { id: true },
-        }),
-        db.query.member.findFirst({
-            where: and(
-                eq(member.organizationId, orgId),
-                ne(member.role, "owner"),
-                ne(member.role, "admin"),
-                ne(member.role, "manager"),
-            ),
+        db.query.worker.findFirst({
+            where: eq(worker.organizationId, orgId),
             columns: { id: true },
         }),
         db.query.member.findFirst({
@@ -99,8 +89,7 @@ export async function getOnboardingFacts(
         hasLocation: Boolean(firstLocation),
         hasPublishedShift: Boolean(firstPublishedShift),
         hasDraftShift: Boolean(firstDraftShift),
-        hasRosterEntry: Boolean(firstRosterEntry),
-        hasWorkerMember: Boolean(firstWorkerMember),
+        hasWorker: Boolean(firstWorker),
         hasManagerMember: Boolean(firstManagerMember),
         hasManagerInvite: Boolean(firstManagerInvite),
     };
