@@ -331,6 +331,10 @@ export function ScheduleWorkspace({
     };
 
     const otherSitesShifts = weeks.filter((w) => !inScopeIds.includes(w.location.id)).reduce((sum, w) => sum + w.shifts.length, 0);
+    // A week with nothing in it still shows the grid when there is a crew to put in it: the grid is where a
+    // shift gets added (click a person's day). The bare card is for a business with nobody on the team yet,
+    // or when the shifts are at another site.
+    const showEmptyCard = weekIsEmpty && (week.people.length === 0 || (siteScoped && otherSitesShifts > 0));
 
     return (
         <div className="flex flex-col gap-4">
@@ -382,7 +386,7 @@ export function ScheduleWorkspace({
                 </div>
             ) : null}
 
-            {view === "week" && week.departments.length > 1 && !weekIsEmpty ? (
+            {view === "week" && week.departments.length > 1 && !showEmptyCard ? (
                 <Segmented
                     label="Department"
                     value={department}
@@ -392,7 +396,7 @@ export function ScheduleWorkspace({
             ) : null}
 
             {view === "week" ? (
-                weekIsEmpty ? (
+                showEmptyCard ? (
                     <div className="rounded-2xl border border-dashed bg-card px-6 py-14 text-center">
                         <p className="text-[15px] font-bold">{siteScoped && otherSitesShifts > 0 ? `No shifts at ${ws.sites[0]!.name} this week` : "Nothing scheduled this week"}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
@@ -422,6 +426,23 @@ export function ScheduleWorkspace({
                         </div>
                     </div>
                 ) : (
+                    <>
+                    {weekIsEmpty ? (
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-dashed bg-card px-4 py-2.5 text-sm">
+                            <span className="font-semibold">Nothing scheduled this week.</span>
+                            <span className="text-muted-foreground">Click the + next to a person to add a shift.</span>
+                            {siteScoped ? (
+                                <span className="flex items-center gap-1">
+                                    <Button size="sm" variant="ghost" onClick={() => setCopyWeekOpen(true)}>
+                                        Copy last week
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => setTemplateOpen(true)}>
+                                        Use a template
+                                    </Button>
+                                </span>
+                            ) : null}
+                        </div>
+                    ) : null}
                     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
                         <div className="overflow-hidden rounded-card border bg-card shadow-sm">
                             <div aria-busy={isValidating || edits.busy} className="max-h-[calc(100vh-14rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity">
@@ -443,6 +464,7 @@ export function ScheduleWorkspace({
                         </div>
                         <DragOverlay dropAnimation={null}>{dragging ? <ChipGhost shift={dragging.shift} copy={copyMode} /> : null}</DragOverlay>
                     </DndContext>
+                    </>
                 )
             ) : (
                 <DayPlan
