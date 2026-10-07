@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Check, ChevronDown, Plus, UserPlus } from "lucide-react";
 import type { SchedulerShift } from "@repo/contracts/scheduler";
@@ -275,11 +276,16 @@ function AgendaRow({
     );
 }
 
+/** Where a day's section sits on the page, for the day strip to jump to. */
+const sectionId = (localDate: string) => `shifts-${localDate}`;
+
 /**
- * One day, as an agenda: pick a day from the week, see its events and services
- * in time order (overlapping ones at different sites side by side in the
- * list), and fill the gaps from the panel beside them. Rows stay short, so
- * eight or ten fit on a screen; one opens to show each role.
+ * The week as one list of shifts, grouped by day: every day of the week in
+ * order, each with its shifts in time order (overlapping ones at different sites
+ * side by side) and its own Add shift, so the whole week is in view while
+ * scheduling. The day strip on top jumps to a day; gaps are filled from the
+ * panel beside the list, which stays in view. Rows stay short; one opens to
+ * show each role.
  */
 export function DayPlan({
     ws,
@@ -318,11 +324,26 @@ export function DayPlan({
     /** One site in view: its name need not repeat on every row. */
     siteScoped: boolean;
 }) {
-    const everything = buildDayPlan(ws, date);
-    const items = filter === "needs" ? everything.filter((i) => i.unfilled > 0) : everything;
     const days = unfilledByDay(ws);
+    const plans = ws.week.days.map((day) => {
+        const all = buildDayPlan(ws, day.localDate);
+        return { day, all, shown: filter === "needs" ? all.filter((i) => i.unfilled > 0) : all };
+    });
+    const total = plans.reduce((sum, p) => sum + p.all.length, 0);
+    const visible = filter === "needs" ? plans.filter((p) => p.shown.length > 0) : plans;
     const assignShift = assignShiftId ? (ws.week.shifts.find((s) => s.id === assignShiftId) ?? null) : null;
-    const assignItem = assignShift ? everything.find((i) => i.blocks.some((b) => b.shift.id === assignShift.id)) : undefined;
+    const assignItem = assignShift ? plans.flatMap((p) => p.all).find((i) => i.blocks.some((b) => b.shift.id === assignShift.id)) : undefined;
+    const todayDate = ws.week.days.find((d) => d.isToday)?.localDate;
+
+    // Picking a day, or arriving on one from the week grid or an Assign, brings its section into view.
+    // A plain visit opens on today at the top of the page, so the first render only scrolls for another day.
+    const mounted = useRef(false);
+    useEffect(() => {
+        const first = !mounted.current;
+        mounted.current = true;
+        if (first && date === todayDate) return;
+        document.getElementById(sectionId(date))?.scrollIntoView({ block: "start", behavior: first ? "auto" : "smooth" });
+    }, [date, todayDate]);
 
     return (
         <div className="flex flex-col gap-6">
@@ -363,9 +384,9 @@ export function DayPlan({
 
             <div className={cn("grid gap-8", assignShift && "lg:grid-cols-[minmax(0,1fr)_24rem]")}>
                 <div className="min-w-0">
-                    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
-                        <h2 className="text-[26px] font-bold leading-tight tracking-tight">
-                            {longDate(date)} <span className="ml-1 text-[17px] font-normal text-muted-foreground">{plural(everything.length, "shift")}</span>
+                    <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+                        <h2 className="text-[22px] font-bold leading-tight tracking-tight">
+                            {total === 0 ? "Nothing scheduled this week" : `${plural(total, "shift")} this week`}
                         </h2>
                         <Segmented
                             label="Show"
@@ -378,45 +399,63 @@ export function DayPlan({
                         />
                     </div>
 
-                    {everything.length === 0 ? (
+                    {filter === "needs" && visible.length === 0 ? (
                         <div className="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
-                            <p className="text-[15px] font-bold">Nothing is scheduled for {longDate(date)}</p>
-                            <p className="mt-1 text-sm text-muted-foreground">{siteScoped ? "Add a shift to start the day." : "Add a shift at any site to start the day."}</p>
-                            <Button className="mt-4" variant="outline" onClick={() => onAddShift({ localDate: date })}>
-                                <Plus data-icon="inline-start" aria-hidden />
-                                Add shift
-                            </Button>
-                        </div>
-                    ) : items.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
-                            <p className="text-[15px] font-bold">Everyone is assigned for {longDate(date)}</p>
+                            <p className="text-[15px] font-bold">{total === 0 ? "Nothing scheduled this week" : "Everyone is assigned this week"}</p>
                             <button type="button" className="mt-2 text-sm font-semibold text-primary hover:underline" onClick={() => onFilter("all")}>
-                                Show all {plural(everything.length, "shift")}
+                                Show all shifts
                             </button>
                         </div>
                     ) : (
-                        <ul className="border-y">
-                            {items.map((item) => (
-                                <AgendaRow
-                                    key={item.key}
-                                    item={item}
-                                    date={date}
-                                    showSite={!siteScoped}
-                                    expanded={expanded.has(item.key)}
-                                    assigning={assignShiftId}
-                                    onToggle={() => onToggle(item.key)}
-                                    onAssign={onAssign}
-                                    onOpenShift={onOpenShift}
-                                    onAddShift={onAddShift}
-                                    onRemovePerson={onRemovePerson}
-                                    onEditEvent={onEditEvent}
-                                />
+                        <div className="flex flex-col gap-7">
+                            {visible.map(({ day, all, shown }) => (
+                                <section key={day.localDate} id={sectionId(day.localDate)} aria-label={longDate(day.localDate)} className="scroll-mt-4">
+                                    <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-2">
+                                        <h3 className={cn("text-[17px] font-bold leading-tight", day.localDate === date && "text-primary")}>
+                                            {longDate(day.localDate)}
+                                            {day.isToday ? <span className="ml-2 text-[13px] font-semibold text-primary">Today</span> : null}
+                                            <span className="ml-2 text-[14px] font-normal text-muted-foreground">{all.length ? plural(all.length, "shift") : "Nothing yet"}</span>
+                                        </h3>
+                                        <Button size="sm" variant="ghost" onClick={() => onAddShift({ localDate: day.localDate })}>
+                                            <Plus data-icon="inline-start" aria-hidden />
+                                            Add shift
+                                        </Button>
+                                    </div>
+                                    {shown.length ? (
+                                        <ul>
+                                            {shown.map((item) => {
+                                                // The same service can run at the same time on two days: key by the day too.
+                                                const key = `${day.localDate}|${item.key}`;
+                                                return (
+                                                    <AgendaRow
+                                                        key={key}
+                                                        item={item}
+                                                        date={day.localDate}
+                                                        showSite={!siteScoped}
+                                                        expanded={expanded.has(key)}
+                                                        assigning={assignShiftId}
+                                                        onToggle={() => onToggle(key)}
+                                                        onAssign={onAssign}
+                                                        onOpenShift={onOpenShift}
+                                                        onAddShift={onAddShift}
+                                                        onRemovePerson={onRemovePerson}
+                                                        onEditEvent={onEditEvent}
+                                                    />
+                                                );
+                                            })}
+                                        </ul>
+                                    ) : null}
+                                </section>
                             ))}
-                        </ul>
+                        </div>
                     )}
                 </div>
 
-                {assignShift ? <AssignPanel key={assignShift.id} ws={ws} shift={assignShift} title={assignItem?.name ?? assignShift.role} run={run} onClose={onCloseAssign} /> : null}
+                {assignShift ? (
+                    <div className="self-start lg:sticky lg:top-4">
+                        <AssignPanel key={assignShift.id} ws={ws} shift={assignShift} title={assignItem?.name ?? assignShift.role} run={run} onClose={onCloseAssign} />
+                    </div>
+                ) : null}
             </div>
         </div>
     );
