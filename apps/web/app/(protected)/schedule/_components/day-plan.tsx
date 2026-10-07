@@ -9,10 +9,10 @@ import { Button } from "@repo/ui/components/ui/button";
 import { roleHue } from "@repo/ui/lib/role-hue";
 import { cn } from "@repo/ui/lib/utils";
 import type { AddShiftPrefill } from "@/lib/scheduler/add-shift";
-import { clockRange, dayOfMonth, longDate, weekdayShort } from "@/lib/scheduler/format";
+import { clockRange, longDate } from "@/lib/scheduler/format";
 import type { Plan } from "@/lib/scheduler/plans";
 import { getSchedulerHref, getShiftTimesheetHref } from "@/lib/routes";
-import { buildDayPlan, unfilledByDay, type DayItem, type RoleBlock, type Workspace } from "@/lib/scheduler/workspace";
+import { buildDayPlan, type DayItem, type RoleBlock, type Workspace } from "@/lib/scheduler/workspace";
 import { AssignPanel } from "./assign-panel";
 import { Segmented } from "./schedule-header";
 
@@ -276,14 +276,15 @@ function AgendaRow({
     );
 }
 
-/** Where a day's section sits on the page, for the day strip to jump to. */
+/** Where a day's section sits on the page, to scroll to it. */
 const sectionId = (localDate: string) => `shifts-${localDate}`;
 
 /**
  * The week as one list of shifts, grouped by day: every day of the week in
  * order, each with its shifts in time order (overlapping ones at different sites
  * side by side) and its own Add shift, so the whole week is in view while
- * scheduling. The day strip on top jumps to a day; gaps are filled from the
+ * scheduling, and each day says how many spots are still open. Arriving on a
+ * day (from the week grid or an Assign) scrolls to it; gaps are filled from the
  * panel beside the list, which stays in view. Rows stay short; one opens to
  * show each role.
  */
@@ -292,7 +293,6 @@ export function DayPlan({
     date,
     filter,
     onFilter,
-    onDate,
     expanded,
     onToggle,
     assignShiftId,
@@ -309,7 +309,6 @@ export function DayPlan({
     date: string;
     filter: DayFilter;
     onFilter: (filter: DayFilter) => void;
-    onDate: (date: string) => void;
     expanded: Set<string>;
     onToggle: (key: string) => void;
     /** The position being filled, or null. */
@@ -324,10 +323,9 @@ export function DayPlan({
     /** One site in view: its name need not repeat on every row. */
     siteScoped: boolean;
 }) {
-    const days = unfilledByDay(ws);
     const plans = ws.week.days.map((day) => {
         const all = buildDayPlan(ws, day.localDate);
-        return { day, all, shown: filter === "needs" ? all.filter((i) => i.unfilled > 0) : all };
+        return { day, all, open: all.reduce((sum, i) => sum + i.unfilled, 0), shown: filter === "needs" ? all.filter((i) => i.unfilled > 0) : all };
     });
     const total = plans.reduce((sum, p) => sum + p.all.length, 0);
     const visible = filter === "needs" ? plans.filter((p) => p.shown.length > 0) : plans;
@@ -335,7 +333,7 @@ export function DayPlan({
     const assignItem = assignShift ? plans.flatMap((p) => p.all).find((i) => i.blocks.some((b) => b.shift.id === assignShift.id)) : undefined;
     const todayDate = ws.week.days.find((d) => d.isToday)?.localDate;
 
-    // Picking a day, or arriving on one from the week grid or an Assign, brings its section into view.
+    // Arriving on a day from the week grid or an Assign brings its section into view.
     // A plain visit opens on today at the top of the page, so the first render only scrolls for another day.
     const mounted = useRef(false);
     useEffect(() => {
@@ -347,40 +345,6 @@ export function DayPlan({
 
     return (
         <div className="flex flex-col gap-6">
-            <nav aria-label="Days of the week" className="grid grid-cols-7 gap-2">
-                {ws.week.days.map((day, index) => {
-                    const selected = day.localDate === date;
-                    const summary = days[index];
-                    return (
-                        <button
-                            key={day.localDate}
-                            type="button"
-                            aria-current={selected ? "date" : undefined}
-                            onClick={() => onDate(day.localDate)}
-                            className={cn(
-                                "flex min-w-0 flex-col items-center gap-1 rounded-xl border px-1 py-3 text-center transition-colors focus-visible:outline-2 focus-visible:outline-ring",
-                                selected ? "border-2 border-primary bg-primary/5" : "bg-card hover:bg-muted/50",
-                            )}
-                        >
-                            <span className="text-[13px] text-muted-foreground">{weekdayShort(day.localDate)}</span>
-                            <span className={cn("flex items-center gap-1 text-[22px] font-semibold leading-none tabular-nums", selected && "text-primary")}>
-                                {dayOfMonth(day.localDate)}
-                                {day.isToday ? <span aria-label="today" className="size-[7px] rounded-full bg-primary" /> : null}
-                            </span>
-                            <span className="mt-0.5 flex min-h-5 items-center justify-center">
-                                {summary && summary.unfilled > 0 ? (
-                                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800">{summary.unfilled} open</span>
-                                ) : summary && summary.items > 0 ? (
-                                    <span className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
-                                        <span aria-hidden className="size-1.5 rounded-full bg-primary/60" />
-                                        {plural(summary.items, "shift")}
-                                    </span>
-                                ) : null}
-                            </span>
-                        </button>
-                    );
-                })}
-            </nav>
 
             <div className={cn("grid gap-8", assignShift && "lg:grid-cols-[minmax(0,1fr)_24rem]")}>
                 <div className="min-w-0">
@@ -408,13 +372,14 @@ export function DayPlan({
                         </div>
                     ) : (
                         <div className="flex flex-col gap-7">
-                            {visible.map(({ day, all, shown }) => (
+                            {visible.map(({ day, all, open, shown }) => (
                                 <section key={day.localDate} id={sectionId(day.localDate)} aria-label={longDate(day.localDate)} className="scroll-mt-4">
                                     <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-2">
                                         <h3 className={cn("text-[17px] font-bold leading-tight", day.localDate === date && "text-primary")}>
                                             {longDate(day.localDate)}
                                             {day.isToday ? <span className="ml-2 text-[13px] font-semibold text-primary">Today</span> : null}
                                             <span className="ml-2 text-[14px] font-normal text-muted-foreground">{all.length ? plural(all.length, "shift") : "Nothing yet"}</span>
+                                            {open > 0 ? <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 align-middle text-[12px] font-semibold text-amber-800">{open} open</span> : null}
                                         </h3>
                                         <Button size="sm" variant="ghost" onClick={() => onAddShift({ localDate: day.localDate })}>
                                             <Plus data-icon="inline-start" aria-hidden />

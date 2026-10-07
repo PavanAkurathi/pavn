@@ -474,10 +474,6 @@ export function ScheduleWorkspace({
                     date={date}
                     filter={dayFilter}
                     onFilter={setDayFilter}
-                    onDate={(next) => {
-                        setDate(next);
-                        setAssignShiftId(null);
-                    }}
                     expanded={expanded}
                     onToggle={toggleExpanded}
                     assignShiftId={assignShiftId}
