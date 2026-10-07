@@ -84,7 +84,7 @@ mock.module("../src/providers/sms", () => ({
     normalizePhoneNumber: (value: string) => value,
 }));
 
-const { getWorkerPhoneAccess, getWorkerInviteByCode, syncWorkerMembershipsForPhone } = await import("../src/worker-access");
+const { getWorkerPhoneAccess, getWorkerInviteByCode, requireInviteForPhoneAccount, syncWorkerMembershipsForPhone } = await import("../src/worker-access");
 
 const invited = (over: Row = {}): Row => ({
     workerId: "wkr_1",
@@ -220,5 +220,39 @@ describe("signing in attaches the account to the invited worker", () => {
         await expect(syncWorkerMembershipsForPhone("user_1", "+13125550100")).rejects.toThrow(
             "has not been invited",
         );
+    });
+});
+
+describe("creating an account from a verified phone number", () => {
+    const phoneSignUp = (over: Row = {}): Row => ({
+        phoneNumber: "+13125550100",
+        email: "worker+13125550100@workershive.local",
+        role: "admin",
+        ...over,
+    });
+
+    test("is refused for a number nobody has invited, even if a code got verified", async () => {
+        invitedWorkers = [];
+        const user = phoneSignUp();
+
+        await expect(requireInviteForPhoneAccount(user)).rejects.toMatchObject({ body: { code: "NOT_INVITED" } });
+    });
+
+    test("is allowed for an invited number, and the account is a worker, not the default admin", async () => {
+        invitedWorkers = [invited()];
+        const user = phoneSignUp();
+
+        await requireInviteForPhoneAccount(user);
+
+        expect(user.role).toBe("worker");
+    });
+
+    test("leaves email sign-ups (managers) alone", async () => {
+        invitedWorkers = [];
+        const user = phoneSignUp({ email: "manager@cafe.com", phoneNumber: "+13125550199" });
+
+        await requireInviteForPhoneAccount(user);
+
+        expect(user.role).toBe("admin");
     });
 });

@@ -6,7 +6,7 @@ mock.module("@repo/database", () => ({
     db: { insert: () => ({ values: () => ({ onConflictDoUpdate: () => Promise.resolve() }) }) },
 }));
 
-const { rateLimit, RATE_LIMITS } = await import("./rate-limit");
+const { rateLimit, RATE_LIMITS, MAX_CACHE_ENTRIES, cleanupRateLimitCache, rateLimitCacheSize } = await import("./rate-limit");
 
 const env = process.env.NODE_ENV;
 beforeAll(() => {
@@ -44,4 +44,37 @@ describe("general limit", () => {
         expect((await hit("198.51.100.1")).status).toBe(429);
         expect((await hit("198.51.100.2")).status).toBe(200);
     });
+});
+
+describe("worker lookups", () => {
+    test("guessing invite codes shares one budget, however the code in the URL changes", async () => {
+        const app = new Hono();
+        app.use("/worker/auth/*", rateLimit(RATE_LIMITS.workerLookup));
+        app.get("/worker/auth/invite/:code", (c) => c.text("nope", 404));
+
+        for (let i = 0; i < RATE_LIMITS.workerLookup.maxRequests; i++) {
+            expect((await app.request(`/worker/auth/invite/CODE${i}`, from("192.0.2.7"))).status).toBe(404);
+        }
+        expect((await app.request("/worker/auth/invite/ANOTHER", from("192.0.2.7"))).status).toBe(429);
+        // Someone else is unaffected.
+        expect((await app.request("/worker/auth/invite/ANOTHER", from("192.0.2.8"))).status).toBe(404);
+    });
+});
+
+describe("memory", () => {
+    test("a caller who varies the path cannot grow the cache past its ceiling", async () => {
+        cleanupRateLimitCache();
+        const app = new Hono();
+        app.use("/shifts/*", rateLimit({ windowMs: 60_000, maxRequests: 1000 }));
+        app.get("/shifts/:id", (c) => c.text("ok"));
+
+        // One more than the ceiling, each on a path nobody has used.
+        for (let i = 0; i <= MAX_CACHE_ENTRIES; i++) {
+            await app.request(`/shifts/id-${i}`, from("198.51.100.9"));
+        }
+
+        expect(rateLimitCacheSize()).toBeLessThanOrEqual(MAX_CACHE_ENTRIES);
+        // And it still works afterwards.
+        expect((await app.request("/shifts/probe", from("198.51.100.9"))).status).toBe(200);
+    }, 60_000);
 });

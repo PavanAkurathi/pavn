@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { APIError } from "better-auth/api";
 import { db } from "@repo/database";
 import { member, organization, user, worker } from "@repo/database/schema";
 import { isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
@@ -35,6 +36,28 @@ export type WorkerPhoneAccess = {
 export function getWorkerTempEmail(phoneNumber: string): string {
     const digits = phoneNumber.replace(/\D/g, "");
     return `worker+${digits}@workershive.local`;
+}
+
+/**
+ * The last lock on the door. An account made by verifying a phone number (it carries
+ * the placeholder worker email) may only be created for a number a business has
+ * invited, whatever got it this far: the code is only sent to invited numbers, but
+ * nothing about creating the account should depend on that staying true. Such an
+ * account is also always a worker, never the default "admin". Email sign-ups
+ * (managers) are not worker accounts and pass through untouched.
+ */
+export async function requireInviteForPhoneAccount(user: Record<string, unknown>): Promise<void> {
+    const phone = typeof user.phoneNumber === "string" ? user.phoneNumber : null;
+    if (!phone || user.email !== getWorkerTempEmail(phone)) return;
+
+    user.role = "worker";
+    const access = await getWorkerPhoneAccess(phone);
+    if (!access.eligible) {
+        throw new APIError("FORBIDDEN", {
+            message: "This phone number has not been invited to any organization yet.",
+            code: "NOT_INVITED",
+        });
+    }
 }
 
 export async function getWorkerPhoneAccess(phoneNumber: string): Promise<WorkerPhoneAccess> {

@@ -165,6 +165,7 @@ for (const attempt of [
 ]) {
     app.use(attempt, rateLimit(RATE_LIMITS.auth));
 }
+app.use("/worker/auth/*", rateLimit(RATE_LIMITS.workerLookup));
 app.use("*", async (c, next) => {
     await next();
 

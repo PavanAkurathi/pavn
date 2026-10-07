@@ -76,6 +76,30 @@ export function clientIp(c: Context): string {
 const memoryCache = new Map<string, { count: number; windowStart: number }>();
 
 /**
+ * Hard ceiling on the cache. Keys carry the request path, so a caller who varies the
+ * path can mint keys faster than the 1% sampled cleanup removes them. Over the ceiling
+ * the oldest entries go first, which can only ever forgive a count, never invent one.
+ */
+export const MAX_CACHE_ENTRIES = 20_000;
+
+/** For tests: how many keys the limiter is holding. */
+export function rateLimitCacheSize() {
+    return memoryCache.size;
+}
+
+function enforceCacheCeiling() {
+    if (memoryCache.size < MAX_CACHE_ENTRIES) return;
+    cleanupRateLimitCache();
+    if (memoryCache.size < MAX_CACHE_ENTRIES) return;
+    // Map iterates in insertion order: drop the oldest tenth.
+    let drop = Math.ceil(MAX_CACHE_ENTRIES / 10);
+    for (const key of memoryCache.keys()) {
+        if (drop-- <= 0) break;
+        memoryCache.delete(key);
+    }
+}
+
+/**
  * Pre-configured rate limit settings for common use cases.
  * Import and use these with the rateLimit() middleware.
  */
@@ -97,6 +121,14 @@ export const RATE_LIMITS = {
      */
     auth: { windowMs: 900_000, maxRequests: 20, keyFn: (c: Context) => `ip:${clientIp(c)}:${c.req.path}` },
     
+    /**
+     * The public worker lookups (is this number invited, who sent this invite code):
+     * 60 per 15 minutes per client IP, in one bucket. The bucket must not depend on the
+     * path, because the invite code is in it: keyed by path, every guess would start
+     * with a fresh budget.
+     */
+    workerLookup: { windowMs: 900_000, maxRequests: 60, keyFn: (c: Context) => `ip:${clientIp(c)}:worker-lookup` },
+
     /** Strict limit - 3 per minute (for sensitive operations) */
     strict: { windowMs: 60_000, maxRequests: 3 },
 } as const;
@@ -137,6 +169,7 @@ export function rateLimit(config: RateLimitConfig) {
         }
         
         cached.count++;
+        enforceCacheCeiling();
         memoryCache.set(key, cached);
         
         // Cleanup old entries on each request (instead of setInterval)

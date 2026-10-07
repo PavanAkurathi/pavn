@@ -10,7 +10,7 @@ import * as schema from "@repo/database/schema";
 import { sendOtp } from "@repo/email";
 import { OTP } from "@repo/config";
 import { sendOTP, isValidPhoneNumber, normalizePhoneNumber } from "./providers/sms";
-import { getWorkerPhoneAccess, getWorkerTempEmail, syncWorkerMembershipsForPhone } from "./worker-access";
+import { getWorkerPhoneAccess, getWorkerTempEmail, requireInviteForPhoneAccount, syncWorkerMembershipsForPhone } from "./worker-access";
 import {
     handleCreatedAuthUser,
     normalizeAuthPhoneNumber,
@@ -156,6 +156,7 @@ export const auth = betterAuth({
                 before: async (user: Record<string, unknown>, ctx: Record<string, unknown> | null) => {
                     user.role = resolveRequestedUserRole(ctx);
                     normalizeAuthPhoneNumber(user);
+                    await requireInviteForPhoneAccount(user);
                     return { data: user };
                 },
                 after: async (user: Record<string, unknown>, ctx: Record<string, unknown> | null) => {
