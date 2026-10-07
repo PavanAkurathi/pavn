@@ -12,6 +12,10 @@ interface ShiftApprovalBannerProps {
     hasErrors: boolean;
     isApproved?: boolean;
     isApproving?: boolean;
+    /** The shift hasn't ended: its hours can't be final yet. */
+    isRunning?: boolean;
+    /** When it ends, in the site's time ("12:45 PM"). */
+    endsAt?: string;
     onApprove: () => void;
 }
 
@@ -23,19 +27,26 @@ export function ShiftApprovalBanner({
     hasErrors,
     isApproved = false,
     isApproving = false,
+    isRunning = false,
+    endsAt,
     onApprove,
 }: ShiftApprovalBannerProps) {
+    const running = isRunning && !isApproved;
     const title = isApproved
         ? "Shift approved"
-        : hasErrors
+        : running
+          ? "Shift still running"
+          : hasErrors
           ? "Timesheets need review"
           : "Ready to approve";
     const description = isApproved
         ? "Timesheets are finalized and this shift is ready for payroll history."
-        : hasErrors
+        : running
+          ? `You can approve it once it ends${endsAt ? ` at ${endsAt}` : ""}. Hours entered so far are saved.`
+          : hasErrors
           ? `${needsAttentionCount} of ${workerCount} worker records still need clock or break updates before approval.`
           : `${filledCount} of ${workerCount} worker records are complete and ready to be finalized.`;
-    const Icon = isApproved || !hasErrors ? CheckCircle2 : AlertCircle;
+    const Icon = isApproved || (!hasErrors && !running) ? CheckCircle2 : AlertCircle;
 
     return (
         <Alert
@@ -45,13 +56,13 @@ export function ShiftApprovalBanner({
                 !isApproved && "bg-background",
             )}
         >
-            <Icon className={cn(isApproved && "text-primary", hasErrors && !isApproved && "text-destructive")} />
+            <Icon className={cn(isApproved && "text-primary", hasErrors && !isApproved && !running && "text-destructive")} />
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                         <AlertTitle>{title}</AlertTitle>
-                        <Badge variant={isApproved ? "secondary" : hasErrors ? "destructive" : "outline"}>
-                            {isApproved ? "Approved" : hasErrors ? "Needs review" : "Ready"}
+                        <Badge variant={isApproved ? "secondary" : running ? "outline" : hasErrors ? "destructive" : "outline"}>
+                            {isApproved ? "Approved" : running ? "In progress" : hasErrors ? "Needs review" : "Ready"}
                         </Badge>
                         <Badge variant="outline">{filledCount}/{workerCount} complete</Badge>
                         <Badge variant="outline">{totalHours} tracked</Badge>
@@ -68,7 +79,7 @@ export function ShiftApprovalBanner({
                 ) : (
                     <Button
                         className="self-start"
-                        disabled={hasErrors || isApproving}
+                        disabled={hasErrors || running || isApproving}
                         onClick={onApprove}
                     >
                         {isApproving ? "Approving…" : "Approve shift"}

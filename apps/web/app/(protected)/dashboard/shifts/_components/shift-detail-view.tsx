@@ -146,6 +146,17 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
     const viewerClock = getShiftClock(shiftStart, shiftEnd, undefined);
     const showViewerClock = !shiftClock.isViewerZone && !zoneMatchesViewer(shiftStart, shift.timezone);
 
+    // Hours can't be final while the shift is still going: the banner says so and holds Approve until the end.
+    const shiftEndMs = shiftEnd.getTime();
+    const [hasEnded, setHasEnded] = React.useState(() => Date.now() >= shiftEndMs);
+    React.useEffect(() => {
+        const wait = shiftEndMs - Date.now();
+        if (wait <= 0) return;
+        const timer = window.setTimeout(() => setHasEnded(true), Math.min(wait, 2_000_000_000));
+        return () => window.clearTimeout(timer);
+    }, [shiftEndMs]);
+    const endsAtLabel = new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", timeZone: shift.timezone || undefined }).format(shiftEnd);
+
     const [workers, setWorkers] = React.useState<TimesheetViewModel[]>(() => getWorkersFromProps());
     const [isAddWorkerOpen, setIsAddWorkerOpen] = React.useState(false);
     const [isTempsOpen, setIsTempsOpen] = React.useState(false);
@@ -463,6 +474,8 @@ export function ShiftDetailView({ onBack, shift, timesheets, onApprove }: ShiftD
                                 hasErrors={hasErrors}
                                 isApproved={isApproved}
                                 isApproving={isApprovingShift}
+                                isRunning={!hasEnded}
+                                endsAt={endsAtLabel}
                                 onApprove={handleApproveShift}
                             />
                         </>
