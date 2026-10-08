@@ -39,7 +39,7 @@ export function getSchedulerHref(options?: {
     location?: string;
     /** Any local date (YYYY-MM-DD) inside the week to open. */
     week?: string;
-    view?: "week" | "day";
+    view?: "week" | "day" | "month";
     /** The day to open, or the day in the week to open. */
     date?: string;
     /** A site id, or "all". */

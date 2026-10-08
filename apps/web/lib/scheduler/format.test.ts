@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { addDays, clockRange, hoursLabel, longDate, shortDate, weekRangeFull } from "./format";
+import { addDays, addMonths, clockRange, hoursLabel, longDate, monthGrid, monthLabel, sameMonth, shortDate, weekRangeFull } from "./format";
 
 describe("dates in words", () => {
   test("the planning week reads with the right weekdays", () => {
@@ -35,4 +35,36 @@ describe("how a shift reads", () => {
     expect(hoursLabel(60)).toBe("1 hr");
     expect(hoursLabel(0)).toBe("0 hrs");
   });
+});
+
+describe("month calendar helpers", () => {
+    test("monthLabel names the month and year", () => {
+        expect(monthLabel("2026-10-07")).toBe("October 2026");
+    });
+
+    test("addMonths lands on the 1st, even from the 31st", () => {
+        expect(addMonths("2026-10-07", 1)).toBe("2026-11-01");
+        expect(addMonths("2026-01-31", 1)).toBe("2026-02-01");
+        expect(addMonths("2026-01-15", -1)).toBe("2025-12-01");
+    });
+
+    test("sameMonth compares the calendar month", () => {
+        expect(sameMonth("2026-10-01", "2026-10-31")).toBe(true);
+        expect(sameMonth("2026-10-31", "2026-11-01")).toBe(false);
+    });
+
+    test("monthGrid covers whole weeks around the month, Sunday first", () => {
+        const days = monthGrid("2026-10-15", 0);
+        // October 2026 starts on a Thursday and ends on a Saturday.
+        expect(days[0]).toBe("2026-09-27");
+        expect(days.at(-1)).toBe("2026-10-31");
+        expect(days.length).toBe(35);
+    });
+
+    test("monthGrid honours a Monday week start", () => {
+        const days = monthGrid("2026-10-15", 1);
+        expect(days[0]).toBe("2026-09-28");
+        expect(days.at(-1)).toBe("2026-11-01");
+        expect(days.length % 7).toBe(0);
+    });
 });

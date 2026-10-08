@@ -105,3 +105,42 @@ export function hoursLabel(minutes: number): string {
     const hours = Math.round((minutes / 60) * 10) / 10;
     return `${Number.isInteger(hours) ? hours : hours.toFixed(1)} ${hours === 1 ? "hr" : "hrs"}`;
 }
+
+const MONTHS_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/** "2026-10-07" → "October 2026". */
+export function monthLabel(localDate: string): string {
+    const { y, m } = parts(localDate);
+    return `${MONTHS_LONG[m - 1]} ${y}`;
+}
+
+/** The first day of the month `months` away: "2026-10-07", 1 → "2026-11-01". Never overflows into the month after. */
+export function addMonths(localDate: string, months: number): string {
+    const { y, m } = parts(localDate);
+    const first = new Date(Date.UTC(y, m - 1 + months, 1));
+    return first.toISOString().slice(0, 10);
+}
+
+/** Whether two local dates fall in the same calendar month. */
+export function sameMonth(a: string, b: string): boolean {
+    return a.slice(0, 7) === b.slice(0, 7);
+}
+
+/**
+ * The days a month calendar shows: whole weeks from the one holding the 1st to
+ * the one holding the last day, starting on `weekStartsOn` (0 = Sunday).
+ */
+export function monthGrid(localDate: string, weekStartsOn: number): string[] {
+    const { y, m } = parts(localDate);
+    const first = new Date(Date.UTC(y, m - 1, 1));
+    const last = new Date(Date.UTC(y, m, 0));
+    const start = new Date(first);
+    start.setUTCDate(first.getUTCDate() - ((first.getUTCDay() - weekStartsOn + 7) % 7));
+    const end = new Date(last);
+    end.setUTCDate(last.getUTCDate() + ((weekStartsOn + 6 - last.getUTCDay() + 7) % 7));
+    const days: string[] = [];
+    for (const d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
+        days.push(d.toISOString().slice(0, 10));
+    }
+    return days;
+}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useSWRConfig } from "swr";
 import {
     DndContext,
     DragOverlay,
@@ -26,11 +27,12 @@ import { Button } from "@repo/ui/components/ui/button";
 import { defaultShiftDate, type AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import { checkPerson } from "@/lib/scheduler/candidates";
 import { discardWeek } from "@/lib/scheduler/client";
-import { addDays, weekRangeFull } from "@/lib/scheduler/format";
+import { addDays, addMonths, monthLabel, sameMonth, weekRangeFull } from "@/lib/scheduler/format";
 import { planMove, planRemove, staying, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
 import { shortDate } from "@/lib/scheduler/format";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
 import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
+import { MONTH_KEY, useMonthShifts } from "@/lib/scheduler/use-month";
 import { useWorkspace } from "@/lib/scheduler/use-workspace";
 import { ALL_DEPARTMENTS, buildPeopleView } from "@/lib/scheduler/view-model";
 import { ALL_SITES, openShiftsByDay, publishScope, unfilledByDay, type Site } from "@/lib/scheduler/workspace";
@@ -42,6 +44,7 @@ import { ConflictDialog } from "./conflict-dialog";
 import { DayPlan, type DayFilter } from "./day-plan";
 import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
+import { MonthCalendar } from "./month-calendar";
 import { ReviewPublish } from "./review-publish";
 import { ScheduleHeader, Segmented, type ScheduleView } from "./schedule-header";
 import { ChipGhost, type Density } from "./shift-chip";
@@ -49,7 +52,7 @@ import { ShiftDrawer } from "./shift-drawer";
 import { CopyWeekDialog, TemplateDialog } from "./week-tools";
 import { PeopleGrid, type DropHint, type GridEditing } from "./week-grid";
 
-const isView = (value: string): value is ScheduleView => value === "week" || value === "day";
+const isView = (value: string): value is ScheduleView => value === "week" || value === "day" || value === "month";
 const isDensityChoice = (value: string): value is Density | "auto" => value === "comfortable" || value === "compact" || value === "auto";
 /** From this many people on, entries default to one line each. */
 const BIG_TEAM = 50;
@@ -120,12 +123,19 @@ export function ScheduleWorkspace({
         initialWeekStart: initialWeeks[0]!.weekStart,
     });
     const week = ws.week;
+    // The month calendar loads its own weeks (every week it shows), only while it is on screen.
+    const month = useMonthShifts({ siteIds: ws.sites.map((s) => s.id), date, weekStartsOn, enabled: view === "month" });
     const today = localToday(week.location.timezone);
     const siteScoped = ws.sites.length === 1;
     const weekIsEmpty = week.shifts.length === 0;
     const singleSiteWeek = siteScoped ? ws.weeks[0]! : null;
 
-    const refresh = useCallback(() => mutate(), [mutate]);
+    const { mutate: mutateKeys } = useSWRConfig();
+    // An edit anywhere also refreshes the month calendar, which loads its weeks separately.
+    const refresh = useCallback(
+        () => Promise.all([mutate(), mutateKeys((key) => Array.isArray(key) && key[0] === MONTH_KEY)]),
+        [mutate, mutateKeys],
+    );
     const edits = useSchedulerEdits(refresh);
 
     const [storedDepartment, setDepartment] = usePersistentState<string>(`wh.scheduler.${orgId}.department`, ALL_DEPARTMENTS);
@@ -153,7 +163,7 @@ export function ScheduleWorkspace({
             null,
             "",
             getSchedulerHref({
-                view: view === "week" ? "week" : undefined,
+                view: view === "day" ? undefined : view,
                 date: date === today ? undefined : date,
                 site: scope === defaultScope ? undefined : scope,
             }),
@@ -162,7 +172,7 @@ export function ScheduleWorkspace({
 
     // ---- Moving around ---------------------------------------------------------
     // The arrows move a week in both views (the date stays on the same weekday); the day strip picks the day.
-    const step = (direction: -1 | 1) => setDate(addDays(date, direction * 7));
+    const step = (direction: -1 | 1) => setDate(view === "month" ? addMonths(date, direction) : addDays(date, direction * 7));
     const openDay = (localDate: string, filter: DayFilter = "all") => {
         setDate(localDate);
         setDayFilter(filter);
@@ -196,8 +206,8 @@ export function ScheduleWorkspace({
         edits.reset();
     };
 
-    const dateLabel = weekRangeFull(week.days[0]!.localDate, week.days[6]!.localDate);
-    const onThisPeriod = view === "week" ? week.days.some((d) => d.localDate === today) : date === today;
+    const dateLabel = view === "month" ? monthLabel(date) : weekRangeFull(week.days[0]!.localDate, week.days[6]!.localDate);
+    const onThisPeriod = view === "month" ? sameMonth(date, today) : view === "week" ? week.days.some((d) => d.localDate === today) : date === today;
 
     // ---- Adding ----------------------------------------------------------------
     // The Day plan adds to the day on screen; a week adds to today, or to tomorrow once today's default window is over.
@@ -468,6 +478,29 @@ export function ScheduleWorkspace({
                     </DndContext>
                     </>
                 )
+            ) : view === "month" ? (
+                <>
+                    {month.error ? (
+                        <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm">
+                            Couldn&apos;t load this month: {month.error.message}
+                        </div>
+                    ) : null}
+                    <MonthCalendar
+                        days={month.days}
+                        month={date}
+                        today={today}
+                        shifts={month.shifts}
+                        eventNames={month.eventNames}
+                        loading={month.loading}
+                        onOpenShift={(shift) => {
+                            // The editor works on the loaded week: move to the shift's week, then open it.
+                            setDate(shift.localDate);
+                            setOpenShiftId(shift.id);
+                        }}
+                        onAddShift={(localDate) => addShift({ localDate })}
+                        onOpenDay={(localDate) => openDay(localDate)}
+                    />
+                </>
             ) : (
                 <DayPlan
                     ws={ws}

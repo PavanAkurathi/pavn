@@ -48,7 +48,8 @@ export default async function SchedulePage(props: { searchParams: SearchParams }
 
     const requestedDate = single(searchParams.date) ?? single(searchParams.week);
     const date = isLocalDate(requestedDate) ? requestedDate : null;
-    const view = single(searchParams.view) === "day" ? "day" : single(searchParams.view) === "week" ? "week" : null;
+    const requestedView = single(searchParams.view);
+    const view = requestedView === "day" || requestedView === "week" || requestedView === "month" ? requestedView : null;
     const site = single(searchParams.site) ?? single(searchParams.location) ?? null;
 
     let weeks: SchedulerWeek[];

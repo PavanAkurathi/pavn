@@ -333,15 +333,23 @@ export function DayPlan({
     const assignItem = assignShift ? plans.flatMap((p) => p.all).find((i) => i.blocks.some((b) => b.shift.id === assignShift.id)) : undefined;
     const todayDate = ws.week.days.find((d) => d.isToday)?.localDate;
 
-    // Arriving on a day from the week grid or an Assign brings its section into view.
-    // A plain visit opens on today at the top of the page, so the first render only scrolls for another day.
-    const mounted = useRef(false);
+    // Arriving on a day from the week grid, the calendar or an Assign brings its section into view. When the
+    // day is in another week, its section only exists once that week has loaded, so this tries again then.
+    // A plain visit opens on today at the top of the page.
+    const scrolledFor = useRef<string | null>(null);
+    const weekFirst = ws.week.days[0]?.localDate;
     useEffect(() => {
-        const first = !mounted.current;
-        mounted.current = true;
-        if (first && date === todayDate) return;
-        document.getElementById(sectionId(date))?.scrollIntoView({ block: "start", behavior: first ? "auto" : "smooth" });
-    }, [date, todayDate]);
+        if (scrolledFor.current === date) return;
+        const first = scrolledFor.current === null;
+        if (first && date === todayDate) {
+            scrolledFor.current = date;
+            return;
+        }
+        const section = document.getElementById(sectionId(date));
+        if (!section) return;
+        scrolledFor.current = date;
+        section.scrollIntoView({ block: "start", behavior: first ? "auto" : "smooth" });
+    }, [date, todayDate, weekFirst]);
 
     return (
         <div className="flex flex-col gap-6">

@@ -18,7 +18,7 @@ import { cn } from "@repo/ui/lib/utils";
 import { ALL_SITES, type Site } from "@/lib/scheduler/workspace";
 import type { Density } from "./shift-chip";
 
-export type ScheduleView = "week" | "day";
+export type ScheduleView = "week" | "day" | "month";
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -163,13 +163,14 @@ export function ScheduleHeader({
                     value={view}
                     onChange={(v) => onView(v as ScheduleView)}
                     options={[
-                        ["day", "Shifts"],
+                        ["day", "List"],
+                        ["month", "Calendar"],
                         ["week", "Team week"],
                     ]}
                 />
 
                 <div className="flex items-center gap-2">
-                    <button type="button" aria-label="Previous week" onClick={onPrev} className={squareButton}>
+                    <button type="button" aria-label={view === "month" ? "Previous month" : "Previous week"} onClick={onPrev} className={squareButton}>
                         <ChevronLeft aria-hidden className="size-4" />
                     </button>
                     <span
@@ -178,7 +179,7 @@ export function ScheduleHeader({
                     >
                         {dateLabel}
                     </span>
-                    <button type="button" aria-label="Next week" onClick={onNext} className={squareButton}>
+                    <button type="button" aria-label={view === "month" ? "Next month" : "Next week"} onClick={onNext} className={squareButton}>
                         <ChevronRight aria-hidden className="size-4" />
                     </button>
                     <Button variant="ghost" className="h-10 px-2 text-sm font-semibold text-primary hover:text-primary" onClick={onToday} disabled={onThisPeriod}>
