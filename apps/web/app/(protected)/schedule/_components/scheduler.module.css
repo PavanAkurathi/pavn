@@ -25,6 +25,15 @@
     line-height: 18px;
 }
 
+/* Time off as a band across the hours it covers, in the Day view. */
+.offBand {
+    background: #e8ecf2;
+}
+
+.offBandPending {
+    background: repeating-linear-gradient(45deg, #e8ecf2 0 6px, transparent 6px 12px);
+}
+
 .offPending {
     background: repeating-linear-gradient(45deg, #e8ecf2 0 6px, var(--card) 6px 12px);
     border-style: dashed;

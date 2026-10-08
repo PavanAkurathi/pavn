@@ -23,9 +23,9 @@ export type ScheduleView = "week" | "day" | "month";
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /**
- * The same header for both views: what this is, which view, which dates, which
- * site, and the two things a manager does most: add a shift and review what
- * staff will see. What is unpublished is one quiet line, not a banner.
+ * The same header for Day, Week and Month: the period switch, the dates in the
+ * middle, and the two things a manager does most, add a shift and publish.
+ * Everything else is in the "…" menu.
  */
 export function ScheduleHeader({
     view,
@@ -101,46 +101,49 @@ export function ScheduleHeader({
         .join(" ");
     const unit = view === "month" ? "month" : view === "day" ? "day" : "week";
 
-    // One line: the period is the heading, and only what is used all day sits beside it. The rest is in the menu.
+    // One line, three parts: which period on the left, the dates in the middle, the actions on the right.
     return (
-        <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <header className="flex flex-wrap items-center gap-x-4 gap-y-3 lg:grid lg:grid-cols-[1fr_auto_1fr]">
             <h1 className="sr-only">Schedule</h1>
-            <div className="flex min-w-0 items-center gap-1">
+            <div className="flex min-w-0 items-center gap-2">
+                <PeriodSwitch value={view} onChange={onView} />
+                {sites.length > 1 ? (
+                    <Select value={scope} onValueChange={onScope}>
+                        <SelectTrigger aria-label="Site" className="h-9 w-auto min-w-40 rounded-lg bg-card text-sm font-medium">
+                            <MapPin aria-hidden className="size-4 text-muted-foreground" />
+                            <SelectValue>{scope === ALL_SITES ? "All sites" : (sites.find((s) => s.id === scope)?.name ?? "All sites")}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={ALL_SITES}>All sites</SelectItem>
+                            {sites.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>
+                                    {s.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : null}
+            </div>
+
+            {/* "Today" hangs off the right arrow, so the dates stay centred whether it shows or not. */}
+            <div className="relative order-first flex w-full min-w-0 items-center justify-center gap-1 lg:order-none lg:w-auto">
                 <button type="button" aria-label={`Previous ${unit}`} onClick={onPrev} className={iconButton}>
                     <ChevronLeft aria-hidden className="size-5" />
                 </button>
-                <p aria-live="polite" className={cn("whitespace-nowrap px-1 text-2xl font-bold tracking-tight tabular-nums", busy && "opacity-60")}>
+                <p aria-live="polite" className={cn("whitespace-nowrap px-1 text-center text-2xl font-bold tracking-tight tabular-nums", busy && "opacity-60")}>
                     {dateLabel}
                 </p>
                 <button type="button" aria-label={`Next ${unit}`} onClick={onNext} className={iconButton}>
                     <ChevronRight aria-hidden className="size-5" />
                 </button>
                 {onThisPeriod ? null : (
-                    <Button variant="ghost" size="sm" className="ml-1 text-sm font-semibold text-primary hover:text-primary" onClick={onToday}>
+                    <Button variant="ghost" size="sm" className="text-sm font-semibold text-primary hover:text-primary lg:absolute lg:left-full lg:ml-1" onClick={onToday}>
                         Today
                     </Button>
                 )}
             </div>
 
-            {sites.length > 1 ? (
-                <Select value={scope} onValueChange={onScope}>
-                    <SelectTrigger aria-label="Site" className="h-9 w-auto min-w-40 rounded-lg bg-card text-sm font-medium">
-                        <MapPin aria-hidden className="size-4 text-muted-foreground" />
-                        <SelectValue>{scope === ALL_SITES ? "All sites" : (sites.find((s) => s.id === scope)?.name ?? "All sites")}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value={ALL_SITES}>All sites</SelectItem>
-                        {sites.map((s) => (
-                            <SelectItem key={s.id} value={s.id}>
-                                {s.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            ) : null}
-
-            <div className="ml-auto flex items-center gap-2">
-                <PeriodSwitch value={view} onChange={onView} />
+            <div className="ml-auto flex items-center gap-2 lg:justify-self-end">
                 <Button variant="outline" size="icon" className="size-9 rounded-lg" aria-label="Add shift" title="Add shift" onClick={onAddShift}>
                     <Plus />
                 </Button>
@@ -213,7 +216,7 @@ export function ScheduleHeader({
 const iconButton =
     "grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring";
 
-/** Day, Week, Month: three quiet words, the current one underlined. */
+/** Day, Week, Month: three quiet words, the current one on a grey pill. */
 function PeriodSwitch({ value, onChange }: { value: ScheduleView; onChange: (view: ScheduleView) => void }) {
     const options: [ScheduleView, string][] = [
         ["day", "Day"],
@@ -221,7 +224,7 @@ function PeriodSwitch({ value, onChange }: { value: ScheduleView; onChange: (vie
         ["month", "Month"],
     ];
     return (
-        <div role="group" aria-label="View" className="mr-1 flex items-center gap-1">
+        <div role="group" aria-label="View" className="flex items-center gap-1">
             {options.map(([id, name]) => (
                 <button
                     key={id}

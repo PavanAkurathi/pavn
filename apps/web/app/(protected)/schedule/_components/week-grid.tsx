@@ -88,7 +88,7 @@ function Header({
     unfilled: UnfilledDay[];
     /** A date heading opens that day in the Day view. */
     onOpenDay: (dayIndex: number) => void;
-    /** The "N open" pill opens that day, showing what needs people. */
+    /** The "N open" pill opens that day too, where the open shifts are the top row. */
     onNeedsPeople: (dayIndex: number) => void;
 }) {
     return (
@@ -115,7 +115,7 @@ function Header({
                                 <button
                                     type="button"
                                     onClick={() => onNeedsPeople(day.index)}
-                                    title="Open this day, showing what needs people"
+                                    title="Open this day in the Day view"
                                     className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800 hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-primary"
                                 >
                                     {open} open
@@ -411,7 +411,7 @@ export function PeopleGrid({
     onToggleSection: (id: string) => void;
     onOpenDay: (dayIndex: number) => void;
     onNeedsPeople: (dayIndex: number) => void;
-    /** Assign someone to an open shift: opens it in the Day view. */
+    /** Assign someone to an open shift: opens the shift, with who could take it. */
     onAssign: (shiftId: string) => void;
     editing: GridEditing;
     /** What the corner says: "People", or a control in its place. */

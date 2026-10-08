@@ -37,8 +37,7 @@ import { defaultShiftDate, type AddShiftPrefill } from "@/lib/scheduler/add-shif
 import { checkPerson } from "@/lib/scheduler/candidates";
 import { discardWeek } from "@/lib/scheduler/client";
 import { addDays, addMonths, longDate, monthLabel, sameMonth, weekRangeFull } from "@/lib/scheduler/format";
-import { planMove, planRemove, staying, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
-import { shortDate } from "@/lib/scheduler/format";
+import { planMove, planRemove, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
 import { useSchedulerEdits } from "@/lib/scheduler/use-scheduler-edits";
 import { MONTH_KEY, useMonthShifts } from "@/lib/scheduler/use-month";
@@ -50,7 +49,7 @@ import { weekStartOf } from "@/lib/shifts/draft-groups";
 import { getSchedulerHref } from "@/lib/routes";
 import { AddShiftPanel } from "./add-shift-panel";
 import { ConflictDialog } from "./conflict-dialog";
-import { DayPlan, type DayFilter } from "./day-plan";
+import { DayGrid } from "./day-grid";
 import { EventDrawer, type EventEditTarget } from "./event-drawer";
 import { HelpDialog } from "./help-dialog";
 import { MonthCalendar } from "./month-calendar";
@@ -99,9 +98,6 @@ export function ScheduleWorkspace({
     const [discardOpen, setDiscardOpen] = useState(false);
     const [reviewOpen, setReviewOpen] = useState(false);
     const [eventTarget, setEventTarget] = useState<EventEditTarget | null>(null);
-    const [dayFilter, setDayFilter] = useState<DayFilter>("all");
-    const [expanded, setExpanded] = useState<Set<string>>(new Set());
-    const [assignShiftId, setAssignShiftId] = useState<string | null>(null);
 
     // ---- What is remembered: the view and the site -------------------------------
     const defaultScope = sites.length > 1 ? ALL_SITES : sites[0]!.id;
@@ -203,30 +199,12 @@ export function ScheduleWorkspace({
     }, [view, date, scope, today, defaultScope]);
 
     // ---- Moving around ---------------------------------------------------------
-    // The arrows move a week in both views (the date stays on the same weekday); the day strip picks the day.
+    // The arrows move by what is on screen: a month, a day, or a week (the date keeps its weekday).
     const step = (direction: -1 | 1) => setDate(view === "month" ? addMonths(date, direction) : addDays(date, direction * (view === "day" ? 1 : 7)));
-    const openDay = (localDate: string, filter: DayFilter = "all") => {
+    const openDay = (localDate: string) => {
         setDate(localDate);
-        setDayFilter(filter);
-        setAssignShiftId(null);
         setView("day");
     };
-    /** Filling a position happens in the Day plan, beside the day it is on. */
-    const startAssign = (shiftId: string) => {
-        const shift = week.shifts.find((s) => s.id === shiftId);
-        if (!shift) return;
-        setDate(shift.localDate);
-        setDayFilter("all");
-        setAssignShiftId(shiftId);
-        setView("day");
-    };
-    const toggleExpanded = (key: string) =>
-        setExpanded((current) => {
-            const next = new Set(current);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-        });
     const toggleSection = (id: string) => {
         const next = new Set(collapsed);
         if (next.has(id)) next.delete(id);
@@ -254,14 +232,6 @@ export function ScheduleWorkspace({
     const runPlan = (plan: Plan | null) => {
         if (!plan) return;
         void edits.run(plan);
-    };
-
-    const removePerson = (shift: SchedulerShift, personId: string) => {
-        const name = week.people.find((p) => p.id === personId)?.name.split(" ")[0] ?? "someone";
-        runPlan({
-            changes: [{ op: "assign", shiftId: shift.id, assignees: staying(shift).filter((r) => r.personId !== personId) }],
-            label: `Took ${name} off ${shift.role}, ${shortDate(shift.localDate)}`,
-        });
     };
 
     // ---- Dragging --------------------------------------------------------------
@@ -430,7 +400,7 @@ export function ScheduleWorkspace({
                 </div>
             ) : null}
 
-            {view === "week" && !showEmptyCard && groupBy === "people" && week.departments.length > 1 ? (
+            {(view === "day" || (view === "week" && !showEmptyCard)) && groupBy === "people" && week.departments.length > 1 ? (
                 <Segmented
                     label="Department"
                     value={department}
@@ -496,7 +466,7 @@ export function ScheduleWorkspace({
                                     unfilled={unfilled}
                                     eventNames={new Map(ws.events.map((e) => [e.id, e.name]))}
                                     onOpenDay={(index) => openDay(week.days[index]!.localDate)}
-                                    onNeedsPeople={(index) => openDay(week.days[index]!.localDate, "needs")}
+                                    onNeedsPeople={(index) => openDay(week.days[index]!.localDate)}
                                     onOpenShift={setOpenShiftId}
                                     onAddShift={addShift}
                                 />
@@ -517,8 +487,8 @@ export function ScheduleWorkspace({
                                     collapsed={collapsed}
                                     onToggleSection={toggleSection}
                                     onOpenDay={(index) => openDay(week.days[index]!.localDate)}
-                                    onNeedsPeople={(index) => openDay(week.days[index]!.localDate, "needs")}
-                                    onAssign={startAssign}
+                                    onNeedsPeople={(index) => openDay(week.days[index]!.localDate)}
+                                    onAssign={setOpenShiftId}
                                     editing={editing}
                                 />
                             </div>
@@ -552,24 +522,25 @@ export function ScheduleWorkspace({
                     />
                 </>
             ) : (
-                <DayPlan
-                    ws={ws}
-                    date={date}
-                    singleDay
-                    filter={dayFilter}
-                    onFilter={setDayFilter}
-                    expanded={expanded}
-                    onToggle={toggleExpanded}
-                    assignShiftId={assignShiftId}
-                    onAssign={startAssign}
-                    onCloseAssign={() => setAssignShiftId(null)}
-                    run={(plan) => edits.run(plan)}
-                    onOpenShift={setOpenShiftId}
-                    onAddShift={addShift}
-                    onRemovePerson={removePerson}
-                    onEditEvent={(eventId) => setEventTarget({ mode: "edit", eventId })}
-                    siteScoped={siteScoped}
-                />
+                <div className="overflow-hidden rounded-card border bg-card shadow-sm">
+                    <div className="max-h-[calc(100vh-8rem)] min-h-[360px] overflow-auto overscroll-contain bg-card">
+                        <DayGrid
+                            week={week}
+                            date={date}
+                            today={today}
+                            groupBy={groupBy}
+                            title={groupByControl}
+                            peopleView={peopleView}
+                            collapsed={collapsed}
+                            onToggleSection={toggleSection}
+                            eventNames={editing.eventNames}
+                            siteNames={siteScoped ? null : editing.siteNames}
+                            loading={isValidating || edits.busy}
+                            onOpenShift={setOpenShiftId}
+                            onAddShift={addShift}
+                        />
+                    </div>
+                </div>
             )}
 
             <p className="text-xs text-muted-foreground">
