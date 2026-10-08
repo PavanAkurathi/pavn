@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
 import {
@@ -24,6 +25,14 @@ import {
     AlertDialogTitle,
 } from "@repo/ui/components/ui/alert-dialog";
 import { Button } from "@repo/ui/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from "@repo/ui/components/ui/dropdown-menu";
 import { defaultShiftDate, type AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import { checkPerson } from "@/lib/scheduler/candidates";
 import { discardWeek } from "@/lib/scheduler/client";
@@ -129,6 +138,24 @@ export function ScheduleWorkspace({
     });
     const week = ws.week;
     // The month calendar loads its own weeks (every week it shows), only while it is on screen.
+    // Group by lives in the grid's corner, where "People" was: the header stays one line.
+    const groupByControl = (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button type="button" className="-mx-1 inline-flex items-center gap-1 rounded px-1 text-[14px] font-semibold hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring" aria-label="Group by">
+                    {groupBy === "positions" ? "Positions" : "People"}
+                    <ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+                <DropdownMenuLabel>Group by</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={groupBy} onValueChange={(v) => setGroupBy(v as "people" | "positions")}>
+                    <DropdownMenuRadioItem value="people">People</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="positions">Positions</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
     const month = useMonthShifts({ siteIds: ws.sites.map((s) => s.id), date, weekStartsOn, enabled: view === "month" });
     const today = localToday(week.location.timezone);
     const siteScoped = ws.sites.length === 1;
@@ -403,27 +430,13 @@ export function ScheduleWorkspace({
                 </div>
             ) : null}
 
-            {view === "week" && !showEmptyCard ? (
-                <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm text-muted-foreground">Group by</span>
-                    <Segmented
-                        label="Group by"
-                        value={groupBy}
-                        onChange={(v) => setGroupBy(v as "people" | "positions")}
-                        options={[
-                            ["people", "Employees"],
-                            ["positions", "Positions"],
-                        ]}
-                    />
-                    {groupBy === "people" && week.departments.length > 1 ? (
-                        <Segmented
-                            label="Department"
-                            value={department}
-                            onChange={setDepartment}
-                            options={[[ALL_DEPARTMENTS, "All"], ...week.departments.map((d) => [d.id, d.name] as [string, string])]}
-                        />
-                    ) : null}
-                </div>
+            {view === "week" && !showEmptyCard && groupBy === "people" && week.departments.length > 1 ? (
+                <Segmented
+                    label="Department"
+                    value={department}
+                    onChange={setDepartment}
+                    options={[[ALL_DEPARTMENTS, "All"], ...week.departments.map((d) => [d.id, d.name] as [string, string])]}
+                />
             ) : null}
 
             {view === "week" ? (
@@ -476,8 +489,9 @@ export function ScheduleWorkspace({
                     ) : null}
                     {groupBy === "positions" ? (
                         <div className="overflow-hidden rounded-card border bg-card shadow-sm">
-                            <div aria-busy={isValidating || edits.busy} className="max-h-[calc(100vh-14rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity">
+                            <div aria-busy={isValidating || edits.busy} className="max-h-[calc(100vh-8rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity">
                                 <PositionsGrid
+                                    title={groupByControl}
                                     week={week}
                                     unfilled={unfilled}
                                     eventNames={new Map(ws.events.map((e) => [e.id, e.name]))}
@@ -491,8 +505,9 @@ export function ScheduleWorkspace({
                     ) : (
                     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
                         <div className="overflow-hidden rounded-card border bg-card shadow-sm">
-                            <div aria-busy={isValidating || edits.busy} className="max-h-[calc(100vh-14rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity">
+                            <div aria-busy={isValidating || edits.busy} className="max-h-[calc(100vh-8rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity">
                                 <PeopleGrid
+                                    title={groupByControl}
                                     week={week}
                                     view={peopleView}
                                     unfilled={unfilled}

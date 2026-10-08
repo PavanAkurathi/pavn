@@ -57,7 +57,8 @@ test.describe("Manager web smoke", () => {
         await expect(page.getByRole("button", { name: "Week", exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Month", exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Add shift" })).toBeVisible();
-        await expect(page.getByRole("button", { name: /^Publish/ })).toBeVisible();
+        // Publishing shows as "Publish N" while there is something to publish, "Published" otherwise.
+        await expect(page.getByText(/^(Publish \d+|Published)$/)).toBeVisible();
     });
 
     test("team page loads with workforce actions", async ({ page }) => {

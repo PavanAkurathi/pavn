@@ -399,6 +399,7 @@ export function PeopleGrid({
     onNeedsPeople,
     onAssign,
     editing,
+    title,
 }: {
     week: SchedulerWeek;
     view: PeopleView;
@@ -410,9 +411,11 @@ export function PeopleGrid({
     onToggleSection: (id: string) => void;
     onOpenDay: (dayIndex: number) => void;
     onNeedsPeople: (dayIndex: number) => void;
-    /** Assign someone to an open shift: opens it in the Day plan. */
+    /** Assign someone to an open shift: opens it in the Day view. */
     onAssign: (shiftId: string) => void;
     editing: GridEditing;
+    /** What the corner says: "People", or a control in its place. */
+    title?: React.ReactNode;
 }) {
     let rowIndex = -1;
     // A short team needs no search; a long one does.
@@ -426,7 +429,7 @@ export function PeopleGrid({
                 onNeedsPeople={onNeedsPeople}
                 corner={
                     <>
-                        <span className="text-[14px] font-semibold">People</span>
+                        {title ?? <span className="text-[14px] font-semibold">People</span>}
                         {searchable ? (
                             <div className="relative">
                                 <Search aria-hidden className="pointer-events-none absolute left-2 top-2 size-3.5 text-muted-foreground" />
@@ -515,10 +518,13 @@ export function PositionsGrid({
     onNeedsPeople,
     onOpenShift,
     onAddShift,
+    title,
 }: {
     week: SchedulerWeek;
     unfilled: UnfilledDay[];
     eventNames: Map<string, string>;
+    /** What the corner says: "Positions", or a control in its place. */
+    title?: React.ReactNode;
     onOpenDay: (dayIndex: number) => void;
     onNeedsPeople: (dayIndex: number) => void;
     onOpenShift: (shiftId: string) => void;
@@ -533,7 +539,7 @@ export function PositionsGrid({
 
     return (
         <div role="table" aria-label={`Week by position, ${week.location.name}`} className={styles.grid}>
-            <Header week={week} unfilled={unfilled} onOpenDay={onOpenDay} onNeedsPeople={onNeedsPeople} corner={<span className="text-[14px] font-semibold">Positions</span>} />
+            <Header week={week} unfilled={unfilled} onOpenDay={onOpenDay} onNeedsPeople={onNeedsPeople} corner={title ?? <span className="text-[14px] font-semibold">Positions</span>} />
             {roles.map((role) => (
                 <div key={role} role="row" className="contents">
                     <div role="rowheader" className={labelCell}>

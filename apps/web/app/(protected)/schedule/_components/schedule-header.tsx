@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, ChevronLeft, ChevronRight, CircleHelp, MapPin, Plus, Redo2, Undo2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CircleHelp, MapPin, MoreHorizontal, Plus, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     DropdownMenu,
@@ -92,150 +92,153 @@ export function ScheduleHeader({
         // Removals and staged people changes are counted in `pending` but are neither drafts nor edits.
         drafts === 0 && edited === 0 && pending > 0 ? plural(pending, "unpublished change") : null,
     ].filter(Boolean);
+    // What used to be a status line under the header: now the publish button's hover text.
+    const pendingNote = [
+        parts.length > 0 ? `${parts.join(" · ")}. Only managers can see ${drafts > 0 && edited === 0 ? "drafts" : "these changes"} until you publish.` : null,
+        elsewhereCount > 0 ? `${plural(elsewhereCount, "more change")} at ${elsewhere.map((s) => s.name).join(", ")} not in view.` : null,
+    ]
+        .filter(Boolean)
+        .join(" ");
+    const unit = view === "month" ? "month" : view === "day" ? "day" : "week";
 
+    // One line: the period is the heading, and only what is used all day sits beside it. The rest is in the menu.
     return (
-        <header className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-3">
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">Schedule</h1>
-                <div className="flex items-center gap-1">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8"
-                        aria-label={history.undoLabel ? `Undo: ${history.undoLabel}` : "Undo"}
-                        title={history.undoLabel ? `Undo: ${history.undoLabel} (z)` : "Undo (z)"}
-                        disabled={!history.canUndo}
-                        onClick={history.onUndo}
-                    >
-                        <Undo2 />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="size-8" aria-label="Redo" title="Redo (Shift+z)" disabled={!history.canRedo} onClick={history.onRedo}>
-                        <Redo2 />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="size-8" aria-label="Help and shortcuts" title="Help and shortcuts (?)" onClick={onHelp}>
-                        <CircleHelp />
-                    </Button>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-8 gap-1 px-3 text-sm font-semibold">
-                                Tools
-                                <ChevronDown aria-hidden className="size-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-60">
-                            <DropdownMenuItem onSelect={tools.onCopyWeek} disabled={!tools.singleSite}>
-                                Copy last week…
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={tools.onTemplate} disabled={!tools.singleSite}>
-                                Use a template…
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={tools.onAddEvent} disabled={!tools.singleSite}>
-                                Add event…
-                            </DropdownMenuItem>
-                            {tools.singleSite ? null : (
-                                <p className="px-2 py-1 text-xs text-muted-foreground">Pick a site to copy a week, use a template or add an event.</p>
-                            )}
-                            <DropdownMenuItem onSelect={tools.onDiscard} disabled={pending === 0} className="text-destructive focus:text-destructive">
-                                Discard unpublished changes…
-                            </DropdownMenuItem>
-                            {showDensity ? (
-                                <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuLabel>Shift entries</DropdownMenuLabel>
-                                    <DropdownMenuRadioGroup value={density} onValueChange={(v) => onDensity(v as Density)}>
-                                        <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
-                                        <DropdownMenuRadioItem value="compact">Compact (one line)</DropdownMenuRadioItem>
-                                    </DropdownMenuRadioGroup>
-                                </>
-                            ) : null}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem asChild>
-                                <Link href="/settings/scheduling">Scheduling settings</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={onHelp}>Help and shortcuts</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-                <Segmented
-                    label="View"
-                    value={view}
-                    onChange={(v) => onView(v as ScheduleView)}
-                    options={[
-                        ["day", "Day"],
-                        ["week", "Week"],
-                        ["month", "Month"],
-                    ]}
-                />
-
-                <div className="flex items-center gap-2">
-                    <button type="button" aria-label={`Previous ${view === "month" ? "month" : view === "day" ? "day" : "week"}`} onClick={onPrev} className={squareButton}>
-                        <ChevronLeft aria-hidden className="size-4" />
-                    </button>
-                    <span
-                        aria-live="polite"
-                        className={cn("flex h-10 min-w-[11.5rem] items-center justify-center whitespace-nowrap rounded-lg border bg-card px-4 text-sm font-medium tabular-nums", busy && "opacity-60")}
-                    >
-                        {dateLabel}
-                    </span>
-                    <button type="button" aria-label={`Next ${view === "month" ? "month" : view === "day" ? "day" : "week"}`} onClick={onNext} className={squareButton}>
-                        <ChevronRight aria-hidden className="size-4" />
-                    </button>
-                    <Button variant="ghost" className="h-10 px-2 text-sm font-semibold text-primary hover:text-primary" onClick={onToday} disabled={onThisPeriod}>
+        <header className="flex flex-wrap items-center gap-x-4 gap-y-3">
+            <h1 className="sr-only">Schedule</h1>
+            <div className="flex min-w-0 items-center gap-1">
+                <button type="button" aria-label={`Previous ${unit}`} onClick={onPrev} className={iconButton}>
+                    <ChevronLeft aria-hidden className="size-5" />
+                </button>
+                <p aria-live="polite" className={cn("whitespace-nowrap px-1 text-2xl font-bold tracking-tight tabular-nums", busy && "opacity-60")}>
+                    {dateLabel}
+                </p>
+                <button type="button" aria-label={`Next ${unit}`} onClick={onNext} className={iconButton}>
+                    <ChevronRight aria-hidden className="size-5" />
+                </button>
+                {onThisPeriod ? null : (
+                    <Button variant="ghost" size="sm" className="ml-1 text-sm font-semibold text-primary hover:text-primary" onClick={onToday}>
                         Today
                     </Button>
-                </div>
-
-                {sites.length > 1 ? (
-                    <Select value={scope} onValueChange={onScope}>
-                        <SelectTrigger aria-label="Site" className="h-10 w-auto min-w-44 rounded-lg bg-card text-sm font-medium">
-                            <MapPin aria-hidden className="size-4 text-muted-foreground" />
-                            <SelectValue>{scope === ALL_SITES ? "All sites" : (sites.find((s) => s.id === scope)?.name ?? "All sites")}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL_SITES}>All sites</SelectItem>
-                            {sites.map((s) => (
-                                <SelectItem key={s.id} value={s.id}>
-                                    {s.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                ) : (
-                    <span className="flex h-10 items-center gap-1.5 rounded-lg border bg-card px-3.5 text-sm font-medium">
-                        <MapPin aria-hidden className="size-4 text-muted-foreground" />
-                        {sites[0]?.name}
-                    </span>
                 )}
-
-                <div className="ml-auto flex items-center gap-2.5">
-                    <Button
-                        variant="outline"
-                        className="h-10 rounded-lg border-primary/30 bg-primary/5 px-4 text-sm font-semibold text-primary hover:bg-primary/10 hover:text-primary"
-                        onClick={onAddShift}
-                    >
-                        <Plus data-icon="inline-start" aria-hidden />
-                        Add shift
-                    </Button>
-                    <Button className="h-10 rounded-lg px-5 text-sm font-semibold" onClick={onReview} disabled={pending === 0 || reviewBusy} title={pending === 0 ? "Nothing to publish in this view" : undefined}>
-                        {pending > 0 ? `Publish and notify (${pending})` : "Publish"}
-                    </Button>
-                </div>
             </div>
 
-            <p className="min-h-5 text-sm text-muted-foreground" aria-live="polite">
-                {parts.length > 0 ? `${parts.join(" · ")} · Only managers can see ${drafts > 0 && edited === 0 ? "drafts" : "these changes"}` : null}
-                {parts.length > 0 && elsewhereCount > 0 ? " · " : null}
-                {elsewhereCount > 0 ? `${plural(elsewhereCount, "more change")} at ${elsewhere.map((s) => s.name).join(", ")} not in view` : null}
-            </p>
+            {sites.length > 1 ? (
+                <Select value={scope} onValueChange={onScope}>
+                    <SelectTrigger aria-label="Site" className="h-9 w-auto min-w-40 rounded-lg bg-card text-sm font-medium">
+                        <MapPin aria-hidden className="size-4 text-muted-foreground" />
+                        <SelectValue>{scope === ALL_SITES ? "All sites" : (sites.find((s) => s.id === scope)?.name ?? "All sites")}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={ALL_SITES}>All sites</SelectItem>
+                        {sites.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            ) : null}
+
+            <div className="ml-auto flex items-center gap-2">
+                <PeriodSwitch value={view} onChange={onView} />
+                <Button variant="outline" size="icon" className="size-9 rounded-lg" aria-label="Add shift" title="Add shift" onClick={onAddShift}>
+                    <Plus />
+                </Button>
+                {pending > 0 ? (
+                    <Button className="h-9 rounded-lg px-4 text-sm font-semibold" onClick={onReview} disabled={reviewBusy} title={pendingNote}>
+                        Publish {pending}
+                    </Button>
+                ) : (
+                    <span className="flex h-9 items-center gap-1 px-2 text-sm text-muted-foreground" title={pendingNote || "Everything in view is published"}>
+                        <Check aria-hidden className="size-4" />
+                        Published
+                    </span>
+                )}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="size-9 rounded-lg" aria-label="More">
+                            <MoreHorizontal />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                        <DropdownMenuItem onSelect={history.onUndo} disabled={!history.canUndo}>
+                            <Undo2 aria-hidden />
+                            {history.undoLabel ? `Undo: ${history.undoLabel}` : "Undo"}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={history.onRedo} disabled={!history.canRedo}>
+                            <Redo2 aria-hidden />
+                            Redo
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={tools.onCopyWeek} disabled={!tools.singleSite}>
+                            Copy last week…
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={tools.onTemplate} disabled={!tools.singleSite}>
+                            Use a template…
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={tools.onAddEvent} disabled={!tools.singleSite}>
+                            Add event…
+                        </DropdownMenuItem>
+                        {tools.singleSite ? null : (
+                            <p className="px-2 py-1 text-xs text-muted-foreground">Pick a site to copy a week, use a template or add an event.</p>
+                        )}
+                        <DropdownMenuItem onSelect={tools.onDiscard} disabled={pending === 0} className="text-destructive focus:text-destructive">
+                            Discard unpublished changes…
+                        </DropdownMenuItem>
+                        {showDensity ? (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuLabel>Shift entries</DropdownMenuLabel>
+                                <DropdownMenuRadioGroup value={density} onValueChange={(v) => onDensity(v as Density)}>
+                                    <DropdownMenuRadioItem value="comfortable">Comfortable</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="compact">Compact (one line)</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </>
+                        ) : null}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link href="/settings/scheduling">Scheduling settings</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={onHelp}>
+                            <CircleHelp aria-hidden />
+                            Help and shortcuts
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </header>
     );
 }
 
-const squareButton =
-    "flex size-10 items-center justify-center rounded-lg border bg-card text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring";
+const iconButton =
+    "grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring";
+
+/** Day, Week, Month: three quiet words, the current one underlined. */
+function PeriodSwitch({ value, onChange }: { value: ScheduleView; onChange: (view: ScheduleView) => void }) {
+    const options: [ScheduleView, string][] = [
+        ["day", "Day"],
+        ["week", "Week"],
+        ["month", "Month"],
+    ];
+    return (
+        <div role="group" aria-label="View" className="mr-1 flex items-center gap-1">
+            {options.map(([id, name]) => (
+                <button
+                    key={id}
+                    type="button"
+                    aria-pressed={value === id}
+                    onClick={() => onChange(id)}
+                    className={cn(
+                        "h-9 rounded-lg px-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                        value === id && "bg-muted font-semibold text-foreground",
+                    )}
+                >
+                    {name}
+                </button>
+            ))}
+        </div>
+    );
+}
 
 /** A small switch: exactly one of a few options is on. */
 export function Segmented({
