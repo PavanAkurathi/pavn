@@ -148,7 +148,7 @@ test.describe('Schedule Management', () => {
         await expect(page.getByText('1 draft shift')).toBeVisible({ timeout: 15000 });
 
         // Review what would change, then publish it.
-        await page.getByRole('button', { name: 'Review & publish' }).click();
+        await page.getByRole('button', { name: /^Publish and notify/ }).click();
         const review = page.getByRole('dialog');
         await expect(review.getByRole('heading', { name: 'Review & publish' })).toBeVisible();
         await review.getByRole('button', { name: /^Publish/ }).click();

@@ -291,6 +291,7 @@ const sectionId = (localDate: string) => `shifts-${localDate}`;
 export function DayPlan({
     ws,
     date,
+    singleDay = false,
     filter,
     onFilter,
     expanded,
@@ -307,6 +308,8 @@ export function DayPlan({
 }: {
     ws: Workspace;
     date: string;
+    /** The Day view: only `date`, not the whole week. */
+    singleDay?: boolean;
     filter: DayFilter;
     onFilter: (filter: DayFilter) => void;
     expanded: Set<string>;
@@ -327,8 +330,10 @@ export function DayPlan({
         const all = buildDayPlan(ws, day.localDate);
         return { day, all, open: all.reduce((sum, i) => sum + i.unfilled, 0), shown: filter === "needs" ? all.filter((i) => i.unfilled > 0) : all };
     });
-    const total = plans.reduce((sum, p) => sum + p.all.length, 0);
-    const visible = filter === "needs" ? plans.filter((p) => p.shown.length > 0) : plans;
+    const inView = singleDay ? plans.filter((p) => p.day.localDate === date) : plans;
+    const total = inView.reduce((sum, p) => sum + p.all.length, 0);
+    const visible = filter === "needs" ? inView.filter((p) => p.shown.length > 0) : inView;
+    const period = singleDay ? "this day" : "this week";
     const assignShift = assignShiftId ? (ws.week.shifts.find((s) => s.id === assignShiftId) ?? null) : null;
     const assignItem = assignShift ? plans.flatMap((p) => p.all).find((i) => i.blocks.some((b) => b.shift.id === assignShift.id)) : undefined;
     const todayDate = ws.week.days.find((d) => d.isToday)?.localDate;
@@ -358,7 +363,7 @@ export function DayPlan({
                 <div className="min-w-0">
                     <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
                         <h2 className="text-[22px] font-bold leading-tight tracking-tight">
-                            {total === 0 ? "Nothing scheduled this week" : `${plural(total, "shift")} this week`}
+                            {total === 0 ? `Nothing scheduled ${period}` : `${plural(total, "shift")} ${period}`}
                         </h2>
                         <Segmented
                             label="Show"
@@ -373,7 +378,7 @@ export function DayPlan({
 
                     {filter === "needs" && visible.length === 0 ? (
                         <div className="rounded-2xl border border-dashed bg-card px-6 py-12 text-center">
-                            <p className="text-[15px] font-bold">{total === 0 ? "Nothing scheduled this week" : "Everyone is assigned this week"}</p>
+                            <p className="text-[15px] font-bold">{total === 0 ? `Nothing scheduled ${period}` : `Everyone is assigned ${period}`}</p>
                             <button type="button" className="mt-2 text-sm font-semibold text-primary hover:underline" onClick={() => onFilter("all")}>
                                 Show all shifts
                             </button>

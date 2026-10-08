@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, CircleHelp, MapPin, MoreHorizontal, Plus, Redo2, Undo2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, CircleHelp, MapPin, Plus, Redo2, Undo2 } from "lucide-react";
 import { Button } from "@repo/ui/components/ui/button";
 import {
     DropdownMenu,
@@ -117,8 +117,9 @@ export function ScheduleHeader({
                     </Button>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="icon" className="size-8" aria-label="More">
-                                <MoreHorizontal />
+                            <Button variant="outline" className="h-8 gap-1 px-3 text-sm font-semibold">
+                                Tools
+                                <ChevronDown aria-hidden className="size-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-60">
@@ -163,14 +164,14 @@ export function ScheduleHeader({
                     value={view}
                     onChange={(v) => onView(v as ScheduleView)}
                     options={[
-                        ["day", "List"],
-                        ["month", "Calendar"],
-                        ["week", "Team week"],
+                        ["day", "Day"],
+                        ["week", "Week"],
+                        ["month", "Month"],
                     ]}
                 />
 
                 <div className="flex items-center gap-2">
-                    <button type="button" aria-label={view === "month" ? "Previous month" : "Previous week"} onClick={onPrev} className={squareButton}>
+                    <button type="button" aria-label={`Previous ${view === "month" ? "month" : view === "day" ? "day" : "week"}`} onClick={onPrev} className={squareButton}>
                         <ChevronLeft aria-hidden className="size-4" />
                     </button>
                     <span
@@ -179,7 +180,7 @@ export function ScheduleHeader({
                     >
                         {dateLabel}
                     </span>
-                    <button type="button" aria-label={view === "month" ? "Next month" : "Next week"} onClick={onNext} className={squareButton}>
+                    <button type="button" aria-label={`Next ${view === "month" ? "month" : view === "day" ? "day" : "week"}`} onClick={onNext} className={squareButton}>
                         <ChevronRight aria-hidden className="size-4" />
                     </button>
                     <Button variant="ghost" className="h-10 px-2 text-sm font-semibold text-primary hover:text-primary" onClick={onToday} disabled={onThisPeriod}>
@@ -219,7 +220,7 @@ export function ScheduleHeader({
                         Add shift
                     </Button>
                     <Button className="h-10 rounded-lg px-5 text-sm font-semibold" onClick={onReview} disabled={pending === 0 || reviewBusy} title={pending === 0 ? "Nothing to publish in this view" : undefined}>
-                        Review &amp; publish
+                        {pending > 0 ? `Publish and notify (${pending})` : "Publish"}
                     </Button>
                 </div>
             </div>

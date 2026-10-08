@@ -6,9 +6,11 @@ import { useDroppable } from "@dnd-kit/core";
 import { CalendarDays, ChevronDown, Plus, Search } from "lucide-react";
 import type { SchedulerPerson, SchedulerShift, SchedulerWeek } from "@repo/contracts/scheduler";
 import { InitialsAvatar } from "@repo/ui/components/app/initials-avatar";
+import { ShiftCard } from "@repo/ui/components/app/shift-card";
 import { roleHue } from "@repo/ui/lib/role-hue";
 import { cn } from "@repo/ui/lib/utils";
-import { clockRange, compactRange, dayOfMonth, hoursLabel, longDate, weekdayShort } from "@/lib/scheduler/format";
+import { clockRange, compactRange, dayOfMonth, formatHours, hoursLabel, longDate, weekdayShort } from "@/lib/scheduler/format";
+import type { AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import type { DropTarget } from "@/lib/scheduler/plans";
 import { hoursTone, type PeopleView, type PersonRow } from "@/lib/scheduler/view-model";
 import type { UnfilledDay } from "@/lib/scheduler/workspace";
@@ -67,6 +69,13 @@ export function moveCellFocus(event: React.KeyboardEvent<HTMLElement>) {
     }
 }
 
+/** Hours on the schedule that day: each shift's paid time, once per person on it. */
+function scheduledMinutesOn(week: SchedulerWeek, localDate: string) {
+    return week.shifts
+        .filter((shift) => shift.localDate === localDate && !shift.pendingRemoval)
+        .reduce((sum, shift) => sum + shift.paidMinutes * shift.assignees.filter((a) => a.pendingState !== "remove").length, 0);
+}
+
 function Header({
     week,
     corner,
@@ -77,7 +86,7 @@ function Header({
     week: SchedulerWeek;
     corner: React.ReactNode;
     unfilled: UnfilledDay[];
-    /** A date heading opens that day in the Day plan. */
+    /** A date heading opens that day in the Day view. */
     onOpenDay: (dayIndex: number) => void;
     /** The "N open" pill opens that day, showing what needs people. */
     onNeedsPeople: (dayIndex: number) => void;
@@ -95,7 +104,7 @@ function Header({
                             <button
                                 type="button"
                                 onClick={() => onOpenDay(day.index)}
-                                title={`Open ${longDate(day.localDate)} in Shifts`}
+                                title={`Open ${longDate(day.localDate)} in the Day view`}
                                 className="-mx-1 flex items-baseline gap-1.5 rounded px-1 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
                             >
                                 <span className="text-[14px] font-semibold">{weekdayShort(day.localDate)}</span>
@@ -106,13 +115,14 @@ function Header({
                                 <button
                                     type="button"
                                     onClick={() => onNeedsPeople(day.index)}
-                                    title="Open this day in Shifts, showing what needs people"
+                                    title="Open this day, showing what needs people"
                                     className="rounded-full bg-amber-100 px-2 py-0.5 text-[12px] font-semibold text-amber-800 hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-primary"
                                 >
                                     {open} open
                                 </button>
                             ) : null}
                         </div>
+                        <span className="text-[12px] tabular-nums text-muted-foreground">{formatHours(scheduledMinutesOn(week, day.localDate))} scheduled</span>
                     </div>
                 );
             })}
@@ -181,7 +191,7 @@ function DayCell({
                     type="button"
                     aria-label={addLabel}
                     onClick={() => editing.onAddAt(target)}
-                    className="absolute inset-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-transparent text-sm text-muted-foreground/45 transition-colors hover:border-border hover:bg-card hover:text-foreground focus-visible:border-primary focus-visible:text-primary focus-visible:outline-2 focus-visible:outline-primary"
+                    className="absolute inset-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-transparent text-sm text-muted-foreground opacity-0 transition-opacity hover:border-border hover:bg-card hover:text-foreground focus-visible:border-primary focus-visible:text-primary focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-primary group-hover/cell:opacity-100"
                 >
                     <Plus aria-hidden className="size-4" />
                     <span className="hidden group-hover/cell:inline group-focus-within/cell:inline">Add</span>
@@ -486,6 +496,101 @@ export function PeopleGrid({
                     ) : (
                         <>Nobody in this department yet.</>
                     )}
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
+/**
+ * The week by position instead of by person: one row per role, each day's
+ * shifts for it with who is on them and how full they are. A shift opens the
+ * same editor; an empty spot adds a shift for that role on that day.
+ */
+export function PositionsGrid({
+    week,
+    unfilled,
+    eventNames,
+    onOpenDay,
+    onNeedsPeople,
+    onOpenShift,
+    onAddShift,
+}: {
+    week: SchedulerWeek;
+    unfilled: UnfilledDay[];
+    eventNames: Map<string, string>;
+    onOpenDay: (dayIndex: number) => void;
+    onNeedsPeople: (dayIndex: number) => void;
+    onOpenShift: (shiftId: string) => void;
+    onAddShift: (prefill: AddShiftPrefill) => void;
+}) {
+    const names = new Map(week.people.map((p) => [p.id, p.name]));
+    const live = week.shifts.filter((shift) => !shift.pendingRemoval);
+    // Roles on the schedule this week, and the team's own roles, so an empty role can still get its first shift.
+    const roles = [...new Set([...live.map((s) => s.role), ...week.people.map((p) => p.primaryRole).filter((r): r is string => Boolean(r))])].sort((a, b) =>
+        a.localeCompare(b),
+    );
+
+    return (
+        <div role="table" aria-label={`Week by position, ${week.location.name}`} className={styles.grid}>
+            <Header week={week} unfilled={unfilled} onOpenDay={onOpenDay} onNeedsPeople={onNeedsPeople} corner={<span className="text-[14px] font-semibold">Positions</span>} />
+            {roles.map((role) => (
+                <div key={role} role="row" className="contents">
+                    <div role="rowheader" className={labelCell}>
+                        <span aria-hidden className="size-3 shrink-0 rounded-full" style={{ background: roleHue(role) }} />
+                        <span className="truncate text-[14.5px] font-semibold">{role}</span>
+                    </div>
+                    {week.days.map((day) => {
+                        const shifts = live.filter((s) => s.role === role && s.localDate === day.localDate).sort((a, b) => a.startLocal.localeCompare(b.startLocal));
+                        return (
+                            <div
+                                key={day.localDate}
+                                role="cell"
+                                className={dayCell}
+                                onClick={(event) => {
+                                    if ((event.target as HTMLElement).closest("button")) return;
+                                    onAddShift({ localDate: day.localDate, role });
+                                }}
+                            >
+                                {shifts.map((shift) => {
+                                    const people = shift.assignees.filter((a) => a.pendingState !== "remove").map((a) => (names.get(a.personId) ?? "Someone").split(" ")[0]);
+                                    return (
+                                        <ShiftCard
+                                            key={shift.id}
+                                            leadWith="time"
+                                            time={clockRange(shift.startLocal, shift.endLocal)}
+                                            overnight={shift.overnight}
+                                            title={`${people.length ? people.join(", ") : "Nobody yet"}${shift.open > 0 ? ` · ${shift.open} open` : ""}`}
+                                            subtitle={shift.eventId ? eventNames.get(shift.eventId) : undefined}
+                                            detail={`${shift.filled}/${shift.capacity}`}
+                                            hue={roleHue(role)}
+                                            draft={shift.status === "draft"}
+                                            edited={shift.hasUnpublishedEdits}
+                                            event={Boolean(shift.eventId)}
+                                            density="comfortable"
+                                            onClick={() => onOpenShift(shift.id)}
+                                        />
+                                    );
+                                })}
+                                {shifts.length === 0 ? (
+                                    <button
+                                        type="button"
+                                        aria-label={`Add a ${role} shift on ${longDate(day.localDate)}`}
+                                        onClick={() => onAddShift({ localDate: day.localDate, role })}
+                                        className="absolute inset-1.5 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-transparent text-sm text-muted-foreground opacity-0 transition-opacity hover:border-border hover:bg-card hover:text-foreground focus-visible:border-primary focus-visible:text-primary focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-primary group-hover/cell:opacity-100"
+                                    >
+                                        <Plus aria-hidden className="size-4" />
+                                        <span className="hidden group-hover/cell:inline group-focus-within/cell:inline">Add</span>
+                                    </button>
+                                ) : null}
+                            </div>
+                        );
+                    })}
+                </div>
+            ))}
+            {roles.length === 0 ? (
+                <div role="row" className="col-span-full border-b bg-card px-4 py-6 text-sm text-muted-foreground">
+                    No positions yet. Add a shift, or give your team their roles in Team.
                 </div>
             ) : null}
         </div>

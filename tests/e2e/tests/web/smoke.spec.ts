@@ -53,11 +53,11 @@ test.describe("Manager web smoke", () => {
 
         await expect(page).toHaveURL(/\/schedule/);
         await expect(page.getByRole("heading", { name: "Schedule", exact: true })).toBeVisible({ timeout: 30000 });
-        await expect(page.getByRole("button", { name: "List", exact: true })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Calendar", exact: true })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Team week" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Day", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Week", exact: true })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Month", exact: true })).toBeVisible();
         await expect(page.getByRole("button", { name: "Add shift" })).toBeVisible();
-        await expect(page.getByRole("button", { name: "Review & publish" })).toBeVisible();
+        await expect(page.getByRole("button", { name: /^Publish/ })).toBeVisible();
     });
 
     test("team page loads with workforce actions", async ({ page }) => {

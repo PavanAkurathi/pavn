@@ -27,7 +27,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { defaultShiftDate, type AddShiftPrefill } from "@/lib/scheduler/add-shift";
 import { checkPerson } from "@/lib/scheduler/candidates";
 import { discardWeek } from "@/lib/scheduler/client";
-import { addDays, addMonths, monthLabel, sameMonth, weekRangeFull } from "@/lib/scheduler/format";
+import { addDays, addMonths, longDate, monthLabel, sameMonth, weekRangeFull } from "@/lib/scheduler/format";
 import { planMove, planRemove, staying, type DragSource, type DropTarget, type Plan } from "@/lib/scheduler/plans";
 import { shortDate } from "@/lib/scheduler/format";
 import { usePersistentState } from "@/lib/scheduler/use-persistent-state";
@@ -50,7 +50,7 @@ import { ScheduleHeader, Segmented, type ScheduleView } from "./schedule-header"
 import { ChipGhost, type Density } from "./shift-chip";
 import { ShiftDrawer } from "./shift-drawer";
 import { CopyWeekDialog, TemplateDialog } from "./week-tools";
-import { PeopleGrid, type DropHint, type GridEditing } from "./week-grid";
+import { PeopleGrid, PositionsGrid, type DropHint, type GridEditing } from "./week-grid";
 
 const isView = (value: string): value is ScheduleView => value === "week" || value === "day" || value === "month";
 const isDensityChoice = (value: string): value is Density | "auto" => value === "comfortable" || value === "compact" || value === "auto";
@@ -97,9 +97,14 @@ export function ScheduleWorkspace({
     // ---- What is remembered: the view and the site -------------------------------
     const defaultScope = sites.length > 1 ? ALL_SITES : sites[0]!.id;
     const isScope = useCallback((value: string): value is string => value === ALL_SITES || sites.some((s) => s.id === value), [sites]);
-    // The shift list is the front door (start from the shift: what is on, who is on it, what still needs people);
-    // the people grid is the second view. New key, so a "week" remembered from before this change doesn't stick.
-    const [view, setView] = usePersistentState<ScheduleView>(`wh.scheduler.${orgId}.workspace.layout`, "day", isView);
+    // Week is the front door (people down the side, days across, like When I Work); Day and Month are the other
+    // two periods. New key, so a view remembered from the earlier layouts doesn't stick.
+    const [view, setView] = usePersistentState<ScheduleView>(`wh.scheduler.${orgId}.workspace.period`, "week", isView);
+    const [groupBy, setGroupBy] = usePersistentState<"people" | "positions">(
+        `wh.scheduler.${orgId}.groupBy`,
+        "people",
+        (value): value is "people" | "positions" => value === "people" || value === "positions",
+    );
     const [storedScope, setScope] = usePersistentState<string>(`wh.scheduler.${orgId}.workspace.site`, defaultScope, isScope);
     const scope = sites.length === 1 ? sites[0]!.id : storedScope;
 
@@ -163,7 +168,7 @@ export function ScheduleWorkspace({
             null,
             "",
             getSchedulerHref({
-                view: view === "day" ? undefined : view,
+                view: view === "week" ? undefined : view,
                 date: date === today ? undefined : date,
                 site: scope === defaultScope ? undefined : scope,
             }),
@@ -172,7 +177,7 @@ export function ScheduleWorkspace({
 
     // ---- Moving around ---------------------------------------------------------
     // The arrows move a week in both views (the date stays on the same weekday); the day strip picks the day.
-    const step = (direction: -1 | 1) => setDate(view === "month" ? addMonths(date, direction) : addDays(date, direction * 7));
+    const step = (direction: -1 | 1) => setDate(view === "month" ? addMonths(date, direction) : addDays(date, direction * (view === "day" ? 1 : 7)));
     const openDay = (localDate: string, filter: DayFilter = "all") => {
         setDate(localDate);
         setDayFilter(filter);
@@ -206,7 +211,7 @@ export function ScheduleWorkspace({
         edits.reset();
     };
 
-    const dateLabel = view === "month" ? monthLabel(date) : weekRangeFull(week.days[0]!.localDate, week.days[6]!.localDate);
+    const dateLabel = view === "month" ? monthLabel(date) : view === "day" ? `${longDate(date)}, ${date.slice(0, 4)}` : weekRangeFull(week.days[0]!.localDate, week.days[6]!.localDate);
     const onThisPeriod = view === "month" ? sameMonth(date, today) : view === "week" ? week.days.some((d) => d.localDate === today) : date === today;
 
     // ---- Adding ----------------------------------------------------------------
@@ -398,13 +403,27 @@ export function ScheduleWorkspace({
                 </div>
             ) : null}
 
-            {view === "week" && week.departments.length > 1 && !showEmptyCard ? (
-                <Segmented
-                    label="Department"
-                    value={department}
-                    onChange={setDepartment}
-                    options={[[ALL_DEPARTMENTS, "All"], ...week.departments.map((d) => [d.id, d.name] as [string, string])]}
-                />
+            {view === "week" && !showEmptyCard ? (
+                <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm text-muted-foreground">Group by</span>
+                    <Segmented
+                        label="Group by"
+                        value={groupBy}
+                        onChange={(v) => setGroupBy(v as "people" | "positions")}
+                        options={[
+                            ["people", "Employees"],
+                            ["positions", "Positions"],
+                        ]}
+                    />
+                    {groupBy === "people" && week.departments.length > 1 ? (
+                        <Segmented
+                            label="Department"
+                            value={department}
+                            onChange={setDepartment}
+                            options={[[ALL_DEPARTMENTS, "All"], ...week.departments.map((d) => [d.id, d.name] as [string, string])]}
+                        />
+                    ) : null}
+                </div>
             ) : null}
 
             {view === "week" ? (
@@ -442,7 +461,7 @@ export function ScheduleWorkspace({
                     {weekIsEmpty ? (
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-dashed bg-card px-4 py-2.5 text-sm">
                             <span className="font-semibold">Nothing scheduled this week.</span>
-                            <span className="text-muted-foreground">Click the + next to a person to add a shift.</span>
+                            <span className="text-muted-foreground">Click an empty spot to add a shift.</span>
                             {siteScoped ? (
                                 <span className="flex items-center gap-1">
                                     <Button size="sm" variant="ghost" onClick={() => setCopyWeekOpen(true)}>
@@ -455,6 +474,21 @@ export function ScheduleWorkspace({
                             ) : null}
                         </div>
                     ) : null}
+                    {groupBy === "positions" ? (
+                        <div className="overflow-hidden rounded-card border bg-card shadow-sm">
+                            <div aria-busy={isValidating || edits.busy} className="max-h-[calc(100vh-14rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity">
+                                <PositionsGrid
+                                    week={week}
+                                    unfilled={unfilled}
+                                    eventNames={new Map(ws.events.map((e) => [e.id, e.name]))}
+                                    onOpenDay={(index) => openDay(week.days[index]!.localDate)}
+                                    onNeedsPeople={(index) => openDay(week.days[index]!.localDate, "needs")}
+                                    onOpenShift={setOpenShiftId}
+                                    onAddShift={addShift}
+                                />
+                            </div>
+                        </div>
+                    ) : (
                     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragCancel={() => setDragging(null)}>
                         <div className="overflow-hidden rounded-card border bg-card shadow-sm">
                             <div aria-busy={isValidating || edits.busy} className="max-h-[calc(100vh-14rem)] min-h-[360px] overflow-auto overscroll-contain bg-card transition-opacity">
@@ -476,6 +510,7 @@ export function ScheduleWorkspace({
                         </div>
                         <DragOverlay dropAnimation={null}>{dragging ? <ChipGhost shift={dragging.shift} copy={copyMode} /> : null}</DragOverlay>
                     </DndContext>
+                    )}
                     </>
                 )
             ) : view === "month" ? (
@@ -505,6 +540,7 @@ export function ScheduleWorkspace({
                 <DayPlan
                     ws={ws}
                     date={date}
+                    singleDay
                     filter={dayFilter}
                     onFilter={setDayFilter}
                     expanded={expanded}
