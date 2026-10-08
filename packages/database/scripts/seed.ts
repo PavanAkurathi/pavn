@@ -79,6 +79,12 @@ export async function seed() {
             })
             .onConflictDoNothing();
 
+        // Which worker row each alias ended up with: one made earlier (migration 0004 gave existing people
+
+        // their own ids) is kept, and the shifts below must point at whichever exists.
+
+        const workerIds = new Map<string, string>();
+
         for (const account of DEV_SEED_ACCOUNTS) {
             const userId = userIdFor(account.alias);
             const isWorker = account.memberRole === "member";
@@ -135,6 +141,12 @@ export async function seed() {
                         updatedAt: now,
                     })
                     .onConflictDoNothing();
+                const [existing] = await tx
+                    .select({ id: worker.id })
+                    .from(worker)
+                    .where(and(eq(worker.organizationId, DEV_SEED_ORGANIZATION.id), eq(worker.userId, userId)))
+                    .limit(1);
+                if (existing) workerIds.set(account.alias, existing.id);
             }
         }
 
@@ -200,7 +212,7 @@ export async function seed() {
                         await tx.insert(shiftAssignment).values({
                             id: `asg_dev_${String(n).padStart(3, "0")}`,
                             shiftId: id,
-                            workerId: workerIdFor(pattern.alias),
+                            workerId: workerIds.get(pattern.alias) ?? workerIdFor(pattern.alias),
                             status: "active",
                             // A draft's people are staged too: nobody has been told yet.
                             pendingState: draft ? "add" : null,
